@@ -1,97 +1,97 @@
 # Fitness Project — Agent Instructions
 
 > This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
-> Contributors: kubamika16, kklecki97-coder
+> Contributors: kubamika16 (Jakub), kklecki97-coder (Kamil)
 
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
+## Project Overview
+
+We sell custom dashboards to fitness coaches worldwide. Coaches need better tools to manage clients, track progress, and run their business — we build those dashboards for them.
+
+**Two workstreams, one repo:**
+- **Jakub** — Marketing, cold outreach, emails, finding and closing clients
+- **Kamil** — Building the dashboard product, integrations, deployment
+
+## Boundary Rule
+
+Each person works in their own directory. This keeps changes isolated so one side never breaks the other.
+
+- Jakub works in `jakub/` only
+- Kamil works in `kamil/` only
+- Shared resources (client handoff, shared SOPs) go in `shared/`
+
+**Do not modify files outside your directory unless coordinating with the other person.**
+
+## Directory Structure
+
+```
+Fitness Project/
+├── Claude.md              # Project instructions (shared)
+├── .env                   # API keys and environment variables
+├── .gitignore
+│
+├── jakub/                 # Jakub — marketing & client acquisition
+│   ├── directives/        # SOPs: outreach templates, email campaigns, lead gen
+│   ├── execution/         # Scripts: scraping, emailing, CRM, lead tracking
+│   └── .tmp/              # Intermediate files (gitignored)
+│
+├── kamil/                 # Kamil — dashboard product development
+│   ├── directives/        # SOPs: dashboard features, client onboarding, deployment
+│   ├── execution/         # Scripts: dashboard, integrations, APIs
+│   └── .tmp/              # Intermediate files (gitignored)
+│
+└── shared/                # Shared between both
+    └── directives/        # SOPs that span both sides (e.g. client handoff process)
+```
 
 ## The 3-Layer Architecture
 
+Each workstream follows the same 3-layer pattern independently:
+
 **Layer 1: Directive (What to do)**
-- Basically just SOPs written in Markdown, live in `directives/`
-- Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
+- SOPs written in Markdown, live in `{person}/directives/`
+- Define goals, inputs, tools/scripts to use, outputs, and edge cases
 
 **Layer 2: Orchestration (Decision making)**
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
+- This is you (the AI agent). Read directives, call execution tools, handle errors.
+- You're the glue between intent and execution.
 
 **Layer 3: Execution (Doing the work)**
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work.
-
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
+- Deterministic Python scripts in `{person}/execution/`
+- Environment variables and API tokens stored in `.env`
+- Reliable, testable, fast.
 
 ## Operating Principles
 
 **1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
+Before writing a script, check the relevant `execution/` folder. Only create new scripts if none exist.
 
 **2. Self-anneal when things break**
 - Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+- Fix the script and test again (check with user first if it uses paid credits)
+- Update the directive with what you learned
 
 **3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
+Directives are living documents. When you discover API constraints, better approaches, or common errors — update the directive. Don't create or overwrite directives without asking.
 
-## Self-annealing loop
+**4. Stay in your lane**
+When working for Jakub, only touch `jakub/`. When working for Kamil, only touch `kamil/`. Shared resources go in `shared/`.
+
+## Self-annealing Loop
 
 Errors are learning opportunities. When something breaks:
 1. Fix it
 2. Update the tool
-3. Test tool, make sure it works
+3. Test — make sure it works
 4. Update directive to include new flow
 5. System is now stronger
 
 ## File Organization
 
-**Deliverables vs Intermediates:**
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
-
-**Directory structure:**
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
-
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
-
-## Cloud Webhooks (Modal)
-
-The system supports event-driven execution via Modal webhooks. Each webhook maps to exactly one directive with scoped tool access.
-
-**When user says "add a webhook that...":**
-1. Read `directives/add_webhook.md` for complete instructions
-2. Create the directive file in `directives/`
-3. Add entry to `execution/webhooks.json`
-4. Deploy: `modal deploy execution/modal_webhook.py`
-5. Test the endpoint
-
-**Key files:**
-- `execution/webhooks.json` - Webhook slug → directive mapping
-- `execution/modal_webhook.py` - Modal app (do not modify unless necessary)
-- `directives/add_webhook.md` - Complete setup guide
-
-**Endpoints:**
-- `https://nick-90891--claude-orchestrator-list-webhooks.modal.run` - List webhooks
-- `https://nick-90891--claude-orchestrator-directive.modal.run?slug={slug}` - Execute directive
-- `https://nick-90891--claude-orchestrator-test-email.modal.run` - Test email
-
-**Available tools for webhooks:** `send_email`, `read_sheet`, `update_sheet`
-
-**All webhook activity streams to Slack in real-time.**
+- **Deliverables**: Google Sheets, Slides, or other cloud-based outputs
+- **Intermediates**: Temporary files in `{person}/.tmp/` — never committed, always regenerated
+- `.env` — Environment variables and API keys
+- `credentials.json`, `token.json` — Google OAuth credentials (gitignored)
 
 ## Summary
 
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
-
-Also, use Opus-4.5 for everything while building. It came out a few days ago and is an order of magnitude better than Sonnet and other models. If you can't find it, look it up first.
+Two independent workstreams, one shared repo. Jakub finds the clients, Kamil builds the product. The 3-layer architecture (directives → orchestration → execution) applies within each workstream. Stay in your lane, self-anneal, and ship.
