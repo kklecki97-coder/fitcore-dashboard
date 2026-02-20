@@ -1,0 +1,257 @@
+import { motion } from 'framer-motion';
+import {
+  LayoutDashboard,
+  Users,
+  MessageSquare,
+  BarChart3,
+  CalendarDays,
+  Settings,
+  LogOut,
+  Zap,
+} from 'lucide-react';
+import type { Page } from '../types';
+
+interface SidebarProps {
+  currentPage: Page;
+  onNavigate: (page: Page) => void;
+  unreadCount: number;
+}
+
+const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = [
+  { icon: LayoutDashboard, label: 'Overview', page: 'overview' },
+  { icon: Users, label: 'Clients', page: 'clients' },
+  { icon: MessageSquare, label: 'Messages', page: 'messages' },
+  { icon: BarChart3, label: 'Analytics', page: 'analytics' },
+  { icon: CalendarDays, label: 'Schedule', page: 'schedule' },
+];
+
+export default function Sidebar({ currentPage, onNavigate, unreadCount }: SidebarProps) {
+  return (
+    <aside style={styles.sidebar}>
+      {/* Logo */}
+      <div style={styles.logoSection}>
+        <div style={styles.logoIcon}>
+          <Zap size={22} color="#07090e" strokeWidth={2.5} />
+        </div>
+        <div>
+          <div style={styles.logoText}>FitCore</div>
+          <div style={styles.logoSub}>Coach Pro</div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav style={styles.nav}>
+        <div style={styles.navLabel}>MENU</div>
+        {navItems.map((item) => {
+          const isActive = currentPage === item.page;
+          const Icon = item.icon;
+          return (
+            <motion.button
+              key={item.page}
+              onClick={() => onNavigate(item.page)}
+              style={{
+                ...styles.navItem,
+                ...(isActive ? styles.navItemActive : {}),
+              }}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeNav"
+                  style={styles.activeIndicator}
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
+              )}
+              <Icon size={18} style={{ opacity: isActive ? 1 : 0.5 }} />
+              <span style={{ opacity: isActive ? 1 : 0.6 }}>{item.label}</span>
+              {item.page === 'messages' && unreadCount > 0 && (
+                <span style={styles.badge}>{unreadCount}</span>
+              )}
+            </motion.button>
+          );
+        })}
+      </nav>
+
+      {/* Bottom */}
+      <div style={styles.bottom}>
+        <div style={styles.divider} />
+        <motion.button
+          onClick={() => onNavigate('settings')}
+          style={{
+            ...styles.navItem,
+            ...(currentPage === 'settings' ? styles.navItemActive : {}),
+          }}
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {currentPage === 'settings' && (
+            <motion.div
+              layoutId="activeNav"
+              style={styles.activeIndicator}
+              transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            />
+          )}
+          <Settings size={18} style={{ opacity: currentPage === 'settings' ? 1 : 0.5 }} />
+          <span style={{ opacity: currentPage === 'settings' ? 1 : 0.6 }}>Settings</span>
+        </motion.button>
+        <button style={styles.navItem}>
+          <LogOut size={18} style={{ opacity: 0.5 }} />
+          <span style={{ opacity: 0.6 }}>Log Out</span>
+        </button>
+
+        {/* Coach Profile */}
+        <div style={styles.coachCard}>
+          <div style={styles.coachAvatar}>K</div>
+          <div>
+            <div style={styles.coachName}>Coach Kamil</div>
+            <div style={styles.coachPlan}>Pro Plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  sidebar: {
+    width: 'var(--sidebar-width)',
+    height: '100vh',
+    background: 'var(--bg-secondary)',
+    borderRight: '1px solid var(--glass-border)',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '24px 16px',
+    position: 'relative',
+    zIndex: 10,
+    flexShrink: 0,
+  },
+  logoSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '0 8px',
+    marginBottom: '32px',
+  },
+  logoIcon: {
+    width: '38px',
+    height: '38px',
+    borderRadius: '10px',
+    background: 'var(--accent-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 0 20px var(--accent-primary-dim)',
+  },
+  logoText: {
+    fontSize: '18px',
+    fontWeight: 700,
+    letterSpacing: '-0.5px',
+    color: 'var(--text-primary)',
+  },
+  logoSub: {
+    fontSize: '11px',
+    fontWeight: 500,
+    color: 'var(--accent-primary)',
+    letterSpacing: '1px',
+    textTransform: 'uppercase' as const,
+  },
+  nav: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+    flex: 1,
+  },
+  navLabel: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    letterSpacing: '1.5px',
+    padding: '8px 12px 12px',
+  },
+  navItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    position: 'relative',
+    transition: 'background 0.15s',
+    width: '100%',
+    textAlign: 'left',
+  },
+  navItemActive: {
+    background: 'var(--accent-primary-dim)',
+    color: 'var(--accent-primary)',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: '3px',
+    height: '20px',
+    borderRadius: '0 3px 3px 0',
+    background: 'var(--accent-primary)',
+    boxShadow: '0 0 8px var(--accent-primary-glow)',
+  },
+  badge: {
+    marginLeft: 'auto',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    fontSize: '11px',
+    fontWeight: 700,
+    padding: '2px 7px',
+    borderRadius: '10px',
+    minWidth: '20px',
+    textAlign: 'center',
+  },
+  bottom: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  divider: {
+    height: '1px',
+    background: 'var(--glass-border)',
+    margin: '8px 0 12px',
+  },
+  coachCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px',
+    marginTop: '12px',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--glass-border)',
+  },
+  coachAvatar: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '14px',
+    fontWeight: 700,
+    color: '#fff',
+  },
+  coachName: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  coachPlan: {
+    fontSize: '11px',
+    color: 'var(--text-secondary)',
+  },
+};
