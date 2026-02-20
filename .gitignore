@@ -1,0 +1,17 @@
+# Intermediate/temp files
+.tmp/
+
+# Environment and credentials
+.env
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# OS
+.DS_Store
