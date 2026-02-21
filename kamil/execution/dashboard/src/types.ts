@@ -22,7 +22,7 @@ export interface Client {
   streak: number;
 }
 
-export type MessageChannel = 'in-app' | 'telegram' | 'whatsapp';
+export type MessageChannel = 'in-app' | 'telegram' | 'whatsapp' | 'email';
 
 export interface Message {
   id: string;

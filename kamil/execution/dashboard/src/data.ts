@@ -199,6 +199,41 @@ export const clients: Client[] = [
     lastActive: '6 hours ago',
     streak: 6,
   },
+  // ── Potential clients (email leads) ──
+  {
+    id: 'c9',
+    name: 'Ryan Kowalski',
+    avatar: '',
+    email: 'ryan.kowalski@gmail.com',
+    plan: 'Basic',
+    status: 'pending',
+    startDate: '',
+    nextCheckIn: '',
+    monthlyRate: 0,
+    progress: 0,
+    metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+    goals: ['Lose 15kg', 'Run a 5K'],
+    notes: 'Inbound lead from Instagram. Interested in weight loss coaching.',
+    lastActive: '1 day ago',
+    streak: 0,
+  },
+  {
+    id: 'c10',
+    name: 'Natalie Souza',
+    avatar: '',
+    email: 'natalie.souza@outlook.com',
+    plan: 'Premium',
+    status: 'pending',
+    startDate: '',
+    nextCheckIn: '',
+    monthlyRate: 0,
+    progress: 0,
+    metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+    goals: ['Body recomp', 'Compete in bikini'],
+    notes: 'Referral from Marcus Chen. Experienced lifter looking for comp prep.',
+    lastActive: '3 hours ago',
+    streak: 0,
+  },
 ];
 
 export const messages: Message[] = [
@@ -256,16 +291,16 @@ export const messages: Message[] = [
     text: "Sounds good! I'm excited to push a bit further.",
     timestamp: '2026-02-20T10:20:00', isRead: true, isFromCoach: false,
   },
-  // David Park — missed session
+  // David Park — missed session (via Email)
   {
     id: 'm6', clientId: 'c5', clientName: 'David Park', clientAvatar: '',
     text: 'Missed yesterday — double shift at work. Will make it up tomorrow morning.',
-    timestamp: '2026-02-19T22:30:00', isRead: true, isFromCoach: false,
+    timestamp: '2026-02-19T22:30:00', isRead: true, isFromCoach: false, channel: 'email',
   },
   {
     id: 'm6a', clientId: 'c5', clientName: 'David Park', clientAvatar: '',
     text: "No worries, life happens. Just don't skip two in a row — keep the momentum going.",
-    timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true,
+    timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true, channel: 'email',
   },
   // Tom Bradley — weight milestone (via Telegram)
   {
@@ -298,6 +333,38 @@ export const messages: Message[] = [
     id: 'm9a', clientId: 'c8', clientName: 'Aisha Patel', clientAvatar: '',
     text: "Absolutely. I'll swap Friday's session to a glute/hamstring focus. Check your program tomorrow.",
     timestamp: '2026-02-19T16:30:00', isRead: true, isFromCoach: true,
+  },
+  // Ryan Kowalski — potential client inquiry (via Email)
+  {
+    id: 'm10', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
+    text: "Hi Coach Kamil, I found you on Instagram and I'm really interested in your coaching. I'm 32, about 105kg and want to lose weight properly this time. I've tried diets before but nothing sticks. Do you offer online coaching? What are your rates?",
+    timestamp: '2026-02-20T08:15:00', isRead: false, isFromCoach: false, channel: 'email',
+  },
+  {
+    id: 'm10a', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
+    text: "Hey Ryan! Thanks for reaching out. I totally understand the frustration with yo-yo dieting. My approach is sustainable — we build habits, not just meal plans. I offer 3 tiers starting at $99/mo. Want to book a free 15-min discovery call this week?",
+    timestamp: '2026-02-20T10:00:00', isRead: true, isFromCoach: true, channel: 'email',
+  },
+  {
+    id: 'm10b', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
+    text: "That sounds great! I'm free Thursday afternoon or Friday morning. Also, do you provide meal plans or just training?",
+    timestamp: '2026-02-20T14:20:00', isRead: false, isFromCoach: false, channel: 'email',
+  },
+  // Natalie Souza — referral from Marcus (via Email)
+  {
+    id: 'm11', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
+    text: "Hi! Marcus Chen referred me to you. I've been lifting for 4 years and I'm looking to do my first bikini competition later this year. I need a coach who understands periodization and peak week. Do you have experience with contest prep?",
+    timestamp: '2026-02-21T07:30:00', isRead: false, isFromCoach: false, channel: 'email',
+  },
+  {
+    id: 'm11a', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
+    text: "Marcus is a great client — glad he sent you my way! I've coached 3 competitors through their preps. For comp prep I'd recommend the Elite tier ($299/mo) which includes daily check-ins, posing feedback, and peak week protocol. When's your target show date?",
+    timestamp: '2026-02-21T09:00:00', isRead: true, isFromCoach: true, channel: 'email',
+  },
+  {
+    id: 'm11b', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
+    text: "I'm looking at a show in late September — so about 7 months out. That gives us plenty of time for a proper off-season into prep. Can we set up a video call to discuss the plan?",
+    timestamp: '2026-02-21T11:45:00', isRead: false, isFromCoach: false, channel: 'email',
   },
 ];
 

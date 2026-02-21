@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Send, ArrowLeft } from 'lucide-react';
+import { Search, Send, ArrowLeft, Mail } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import type { Client, Message, MessageChannel } from '../types';
@@ -18,21 +18,28 @@ const WhatsAppIcon = ({ size = 12, color = '#25D366' }: { size?: number; color?:
   </svg>
 );
 
+const EmailIcon = ({ size = 12, color = '#EA4335' }: { size?: number; color?: string }) => (
+  <Mail size={size} color={color} style={{ flexShrink: 0 }} />
+);
+
 const CHANNEL_COLORS: Record<MessageChannel, string> = {
   'in-app': 'var(--accent-primary)',
   telegram: '#29ABE2',
   whatsapp: '#25D366',
+  email: '#EA4335',
 };
 
 const CHANNEL_LABELS: Record<MessageChannel, string> = {
   'in-app': 'In-App',
   telegram: 'Telegram',
   whatsapp: 'WhatsApp',
+  email: 'Email',
 };
 
 function ChannelIcon({ channel, size = 12 }: { channel: MessageChannel; size?: number }) {
   if (channel === 'telegram') return <TelegramIcon size={size} />;
   if (channel === 'whatsapp') return <WhatsAppIcon size={size} />;
+  if (channel === 'email') return <EmailIcon size={size} />;
   return null;
 }
 
@@ -123,6 +130,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     { key: 'in-app', label: 'In-App' },
     { key: 'telegram', label: 'Telegram' },
     { key: 'whatsapp', label: 'WhatsApp' },
+    { key: 'email', label: 'Email' },
   ];
 
   return (
