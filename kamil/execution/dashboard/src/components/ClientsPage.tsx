@@ -1,26 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Plus, Filter, ArrowUpDown,
   Flame, Pause, Sparkles, MoreHorizontal,
-  User, MessageSquare, Edit3, Play, Trash2,
+  User, MessageSquare, Edit3, Play, Trash2, X, Save, Dumbbell,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { clients, getInitials, getAvatarColor } from '../data';
+import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client } from '../types';
+import type { Client, WorkoutProgram } from '../types';
 
 interface ClientsPageProps {
+  clients: Client[];
+  programs: WorkoutProgram[];
   onViewClient: (id: string) => void;
   onAddClient: () => void;
+  onNavigate?: (page: 'messages') => void;
+  onUpdateClient: (id: string, updates: Partial<Client>) => void;
+  onDeleteClient: (id: string) => void;
 }
 
-export default function ClientsPage({ onViewClient, onAddClient }: ClientsPageProps) {
+export default function ClientsPage({ clients: allClients, programs, onViewClient, onAddClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Edit Plan modal state
+  const [editModal, setEditModal] = useState<{ clientId: string; plan: Client['plan']; status: Client['status'] } | null>(null);
+  // Delete confirmation
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Close dropdown when clicking anywhere
   const closeMenu = useCallback(() => setOpenMenuId(null), []);
@@ -31,7 +41,7 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
     }
   }, [openMenuId, closeMenu]);
 
-  const filtered = clients.filter(c => {
+  const filtered = allClients.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           c.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPlan = filterPlan === 'all' || c.plan === filterPlan;
@@ -43,7 +53,7 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
     switch (status) {
       case 'active': return <Flame size={14} color="var(--accent-success)" />;
       case 'paused': return <Pause size={14} color="var(--accent-warm)" />;
-      case 'new': return <Sparkles size={14} color="var(--accent-secondary)" />;
+      case 'pending': return <Sparkles size={14} color="var(--accent-secondary)" />;
     }
   };
 
@@ -54,6 +64,29 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
       Basic: { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)' },
     };
     return colors[plan];
+  };
+
+  const handleTogglePause = (clientId: string) => {
+    const client = allClients.find(c => c.id === clientId);
+    if (client) {
+      onUpdateClient(clientId, { status: client.status === 'paused' ? 'active' : 'paused' });
+    }
+  };
+
+  const handleDelete = (clientId: string) => {
+    onDeleteClient(clientId);
+    setDeleteConfirm(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editModal) return;
+    const rateMap: Record<string, number> = { Basic: 99, Premium: 199, Elite: 299 };
+    onUpdateClient(editModal.clientId, {
+      plan: editModal.plan,
+      status: editModal.status,
+      monthlyRate: rateMap[editModal.plan],
+    });
+    setEditModal(null);
   };
 
   return (
@@ -95,7 +128,7 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
-              <option value="new">New</option>
+              <option value="pending">Pending</option>
             </select>
           </div>
         </div>
@@ -110,22 +143,22 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
       <div style={{ ...styles.miniStats, gap: isMobile ? '12px' : '24px', flexWrap: isMobile ? 'wrap' : undefined }}>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--accent-success)' }}>
-            {clients.filter(c => c.status === 'active').length}
+            {allClients.filter(c => c.status === 'active').length}
           </span> Active
         </div>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--accent-warm)' }}>
-            {clients.filter(c => c.status === 'paused').length}
+            {allClients.filter(c => c.status === 'paused').length}
           </span> Paused
         </div>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--accent-secondary)' }}>
-            {clients.filter(c => c.status === 'new').length}
-          </span> New
+            {allClients.filter(c => c.status === 'pending').length}
+          </span> Pending
         </div>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--text-primary)' }}>
-            {clients.length}
+            {allClients.length}
           </span> Total
         </div>
       </div>
@@ -179,19 +212,27 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
                         </button>
                         <button
                           style={styles.menuItem}
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log('Message', client.name); }}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onNavigate?.('messages'); }}
                         >
                           <MessageSquare size={14} /> Message
                         </button>
                         <button
                           style={styles.menuItem}
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log('Edit plan', client.name); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                            setEditModal({ clientId: client.id, plan: client.plan, status: client.status });
+                          }}
                         >
                           <Edit3 size={14} /> Edit Plan
                         </button>
                         <button
                           style={styles.menuItem}
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log(client.status === 'paused' ? 'Resume' : 'Pause', client.name); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                            handleTogglePause(client.id);
+                          }}
                         >
                           {client.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
                           {client.status === 'paused' ? 'Resume' : 'Pause'}
@@ -199,7 +240,11 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
                         <div style={styles.menuDivider} />
                         <button
                           style={{ ...styles.menuItem, color: 'var(--accent-danger)' }}
-                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log('Delete', client.name); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                            setDeleteConfirm(client.id);
+                          }}
                         >
                           <Trash2 size={14} /> Delete
                         </button>
@@ -216,6 +261,12 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
                   {statusIcon(client.status)}
                   <span style={{ textTransform: 'capitalize' }}>{client.status}</span>
                 </span>
+                {programs.filter(p => p.clientIds.includes(client.id)).map(p => (
+                  <span key={p.id} style={styles.programBadge}>
+                    <Dumbbell size={10} />
+                    {p.name}
+                  </span>
+                ))}
               </div>
 
               <div style={styles.cardStats}>
@@ -257,6 +308,137 @@ export default function ClientsPage({ onViewClient, onAddClient }: ClientsPagePr
           );
         })}
       </div>
+
+      {/* Edit Plan Modal */}
+      <AnimatePresence>
+        {editModal && (
+          <>
+            <motion.div
+              key="edit-overlay"
+              style={styles.overlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditModal(null)}
+            />
+            <motion.div
+              key="edit-modal"
+              style={styles.modal}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            >
+              <div style={styles.modalHeader}>
+                <h3 style={styles.modalTitle}>Edit Plan</h3>
+                <button style={styles.closeBtn} onClick={() => setEditModal(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={styles.modalBody}>
+                <div style={styles.modalField}>
+                  <span style={styles.modalLabel}>Plan Tier</span>
+                  <div style={styles.modalPlanPicker}>
+                    {(['Basic', 'Premium', 'Elite'] as const).map(p => {
+                      const isActive = editModal.plan === p;
+                      const accentMap = { Basic: 'var(--accent-primary)', Premium: 'var(--accent-secondary)', Elite: 'var(--accent-warm)' };
+                      const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setEditModal({ ...editModal, plan: p })}
+                          style={{
+                            ...styles.modalPlanOption,
+                            ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'rgba(255,255,255,0.04)' } : {}),
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, fontSize: '13px' }}>{p}</div>
+                          <div style={{ fontSize: '11px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={styles.modalField}>
+                  <span style={styles.modalLabel}>Status</span>
+                  <div style={styles.modalPlanPicker}>
+                    {(['active', 'paused', 'pending'] as const).map(s => {
+                      const isActive = editModal.status === s;
+                      const colorMap = { active: 'var(--accent-success)', paused: 'var(--accent-warm)', pending: 'var(--accent-secondary)' };
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => setEditModal({ ...editModal, status: s })}
+                          style={{
+                            ...styles.modalPlanOption,
+                            ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'rgba(255,255,255,0.04)' } : {}),
+                          }}
+                        >
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              <div style={styles.modalActions}>
+                <button style={styles.modalCancelBtn} onClick={() => setEditModal(null)}>Cancel</button>
+                <button style={styles.modalPrimaryBtn} onClick={handleSaveEdit}>
+                  <Save size={14} />
+                  Save Changes
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <>
+            <motion.div
+              key="del-overlay"
+              style={styles.overlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteConfirm(null)}
+            />
+            <motion.div
+              key="del-modal"
+              style={styles.modal}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            >
+              <div style={styles.modalHeader}>
+                <h3 style={styles.modalTitle}>Delete Client</h3>
+                <button style={styles.closeBtn} onClick={() => setDeleteConfirm(null)}>
+                  <X size={18} />
+                </button>
+              </div>
+              <div style={styles.modalBody}>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>
+                    {allClients.find(c => c.id === deleteConfirm)?.name}
+                  </strong>? This action cannot be undone.
+                </p>
+              </div>
+              <div style={styles.modalActions}>
+                <button style={styles.modalCancelBtn} onClick={() => setDeleteConfirm(null)}>Cancel</button>
+                <button
+                  style={{ ...styles.modalPrimaryBtn, background: 'var(--accent-danger)', boxShadow: 'none' }}
+                  onClick={() => handleDelete(deleteConfirm)}
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -507,5 +689,127 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.5px',
     textTransform: 'uppercase',
     marginBottom: '4px',
+  },
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 100,
+  },
+  modal: {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-lg)',
+    width: '420px',
+    maxWidth: '90vw',
+    zIndex: 101,
+    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '20px 24px 16px',
+    borderBottom: '1px solid var(--glass-border)',
+  },
+  modalTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+  },
+  closeBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    padding: '4px',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBody: {
+    padding: '20px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  modalField: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  modalLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+    letterSpacing: '0.3px',
+  },
+  modalPlanPicker: {
+    display: 'flex',
+    gap: '8px',
+  },
+  modalPlanOption: {
+    flex: 1,
+    padding: '12px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    textAlign: 'center',
+    fontFamily: 'var(--font-display)',
+    transition: 'all 0.2s',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'flex-end',
+    padding: '0 24px 20px',
+  },
+  modalCancelBtn: {
+    padding: '8px 16px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+  },
+  modalPrimaryBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-primary)',
+    border: 'none',
+    color: '#07090e',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    boxShadow: '0 0 16px var(--accent-primary-dim)',
+  },
+  programBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '10px',
+    fontWeight: 600,
+    padding: '2px 8px',
+    borderRadius: '20px',
+    color: 'var(--accent-primary)',
+    background: 'var(--accent-primary-dim)',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: '120px',
   },
 };

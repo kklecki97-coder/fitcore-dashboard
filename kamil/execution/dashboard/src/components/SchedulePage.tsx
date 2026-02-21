@@ -5,8 +5,9 @@ import {
   ChevronLeft, ChevronRight, Dumbbell, X,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { scheduleToday, clients, getInitials, getAvatarColor } from '../data';
+import { scheduleToday, getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import type { Client, WorkoutProgram } from '../types';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -26,7 +27,14 @@ function formatFullDate(date: Date): string {
   return `${dayName}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
-export default function SchedulePage() {
+interface SchedulePageProps {
+  clients: Client[];
+  programs: WorkoutProgram[];
+  sessionsByDate: Record<string, typeof scheduleToday>;
+  onSessionsChange: (sessions: Record<string, typeof scheduleToday>) => void;
+}
+
+export default function SchedulePage({ clients, programs, sessionsByDate, onSessionsChange }: SchedulePageProps) {
   const isMobile = useIsMobile();
   const hours = Array.from({ length: 14 }, (_, i) => i + 6); // 6 AM to 7 PM
 
@@ -39,17 +47,18 @@ export default function SchedulePage() {
   });
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSession, setNewSession] = useState({ client: '', type: '', time: '09:00' });
-  const [localSessions, setLocalSessions] = useState(scheduleToday);
+
+  const todayKey = today.toISOString().split('T')[0];
 
   // Compute selected date
   const selectedDate = new Date(weekStart);
   selectedDate.setDate(selectedDate.getDate() + selectedDayIndex);
 
-  // Check if selected date is today (for showing real session data)
-  const isSelectedToday = selectedDate.getTime() === today.getTime();
+  const selectedKey = selectedDate.toISOString().split('T')[0];
+  const isSelectedToday = selectedKey === todayKey;
 
-  // Sessions to show — only show data for today (mock data day)
-  const displaySessions = isSelectedToday ? localSessions : [];
+  // Sessions to show for selected day
+  const displaySessions = sessionsByDate[selectedKey] || [];
 
   const prevWeek = () => {
     const d = new Date(weekStart);
@@ -67,12 +76,14 @@ export default function SchedulePage() {
 
   const handleAddSession = () => {
     if (!newSession.client || !newSession.type) return;
-    setLocalSessions(prev => [...prev, {
+    const existing = sessionsByDate[selectedKey] || [];
+    const updated = [...existing, {
       time: newSession.time,
       client: newSession.client,
       type: newSession.type,
       status: 'upcoming' as const,
-    }].sort((a, b) => a.time.localeCompare(b.time)));
+    }].sort((a, b) => a.time.localeCompare(b.time));
+    onSessionsChange({ ...sessionsByDate, [selectedKey]: updated });
     setNewSession({ client: '', type: '', time: '09:00' });
     setShowAddModal(false);
   };
@@ -204,7 +215,7 @@ export default function SchedulePage() {
             })}
           </div>
 
-          {!isSelectedToday && displaySessions.length === 0 && (
+          {displaySessions.length === 0 && (
             <div style={styles.emptyDay}>
               <p style={styles.emptyText}>No sessions scheduled</p>
               <button style={styles.addSessionBtn} onClick={() => setShowAddModal(true)}>
@@ -335,6 +346,24 @@ export default function SchedulePage() {
                     style={styles.modalSelect}
                   >
                     <option value="">Select type...</option>
+                    {(() => {
+                      const selectedClient = clients.find(c => c.name === newSession.client);
+                      const clientPrograms = selectedClient
+                        ? programs.filter(p => p.clientIds.includes(selectedClient.id) && p.status === 'active')
+                        : [];
+                      return clientPrograms.length > 0 ? (
+                        <>
+                          {clientPrograms.flatMap(p =>
+                            p.days.map(d => (
+                              <option key={`${p.id}-${d.id}`} value={`${p.name} — ${d.name}`}>
+                                {p.name} — {d.name}
+                              </option>
+                            ))
+                          )}
+                          <option disabled>──────────</option>
+                        </>
+                      ) : null;
+                    })()}
                     <option value="Upper Body">Upper Body</option>
                     <option value="Lower Body">Lower Body</option>
                     <option value="Full Body">Full Body</option>

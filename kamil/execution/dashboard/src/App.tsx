@@ -10,18 +10,41 @@ import AnalyticsPage from './components/AnalyticsPage';
 import SchedulePage from './components/SchedulePage';
 import SettingsPage from './components/SettingsPage';
 import AddClientPage from './components/AddClientPage';
-import { messages } from './data';
+import WorkoutProgramsPage from './components/WorkoutProgramsPage';
+import ProgramBuilderPage from './components/ProgramBuilderPage';
 import useIsMobile from './hooks/useIsMobile';
-import type { Page, Theme } from './types';
+import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary } from './data';
+import type { Page, Theme, Client, Message, WorkoutProgram } from './types';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('overview');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('fitcore-theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
+  });
+
+  // ── Shared state lifted from child pages ──
+  const [allClients, setAllClients] = useState<Client[]>(initialClients);
+  const [allMessages, setAllMessages] = useState<Message[]>(initialMessages);
+  const [allPrograms, setAllPrograms] = useState<WorkoutProgram[]>(initialPrograms);
+
+  const todayKey = new Date().toISOString().split('T')[0];
+  const [sessionsByDate, setSessionsByDate] = useState<Record<string, typeof scheduleToday>>({
+    [todayKey]: scheduleToday,
+  });
+
+  // Settings state
+  const [profileName, setProfileName] = useState('Coach Kamil');
+  const [profileEmail, setProfileEmail] = useState('kamil@fitcore.io');
+  const [notifications, setNotifications] = useState({
+    messages: true,
+    checkins: true,
+    payments: true,
+    weekly: false,
   });
 
   useEffect(() => {
@@ -34,8 +57,6 @@ function App() {
     setCurrentPage(page);
     if (isMobile) setSidebarOpen(false);
   };
-
-  const unreadCount = messages.filter(m => !m.isRead && !m.isFromCoach).length;
 
   const handleViewClient = (id: string) => {
     setSelectedClientId(id);
@@ -51,33 +72,150 @@ function App() {
     setCurrentPage('add-client');
   };
 
-  const handleSaveNewClient = (client: import('./types').Client) => {
-    // In a real app this would POST to an API.
-    // For now, just navigate back to clients list.
-    console.log('New client created:', client);
+  const handleSaveNewClient = (client: Client) => {
+    setAllClients(prev => [...prev, client]);
     setCurrentPage('clients');
+  };
+
+  const handleUpdateClient = (id: string, updates: Partial<Client>) => {
+    setAllClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const handleDeleteClient = (id: string) => {
+    setAllClients(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleSendMessage = (msg: Message) => {
+    setAllMessages(prev => [...prev, msg]);
+  };
+
+  // ── Program handlers ──
+  const handleAddProgram = (program: WorkoutProgram) => {
+    setAllPrograms(prev => [...prev, program]);
+  };
+
+  const handleUpdateProgram = (id: string, updates: Partial<WorkoutProgram>) => {
+    setAllPrograms(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const handleDeleteProgram = (id: string) => {
+    setAllPrograms(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleDuplicateProgram = (id: string) => {
+    const source = allPrograms.find(p => p.id === id);
+    if (!source) return;
+    const now = new Date().toISOString().split('T')[0];
+    const newProgram: WorkoutProgram = {
+      ...source,
+      id: `wp${Date.now()}`,
+      name: `${source.name} (Copy)`,
+      status: 'draft',
+      clientIds: [],
+      createdAt: now,
+      updatedAt: now,
+      days: source.days.map(d => ({
+        ...d,
+        id: `wd${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        exercises: d.exercises.map(e => ({
+          ...e,
+          id: `e${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        })),
+      })),
+    };
+    setAllPrograms(prev => [...prev, newProgram]);
+  };
+
+  const handleViewProgram = (id: string) => {
+    setSelectedProgramId(id);
+    setCurrentPage('program-builder');
+  };
+
+  const handleBackFromProgram = () => {
+    setCurrentPage('programs');
+    setSelectedProgramId('');
   };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
       case 'clients':
-        return <ClientsPage onViewClient={handleViewClient} onAddClient={handleAddClient} />;
+        return (
+          <ClientsPage
+            clients={allClients}
+            programs={allPrograms}
+            onViewClient={handleViewClient}
+            onAddClient={handleAddClient}
+            onNavigate={handleNavigate}
+            onUpdateClient={handleUpdateClient}
+            onDeleteClient={handleDeleteClient}
+          />
+        );
       case 'add-client':
         return <AddClientPage onBack={() => setCurrentPage('clients')} onSave={handleSaveNewClient} />;
       case 'client-detail':
-        return <ClientDetailPage clientId={selectedClientId} onBack={handleBackFromClient} />;
+        return (
+          <ClientDetailPage
+            clientId={selectedClientId}
+            clients={allClients}
+            programs={allPrograms}
+            onBack={handleBackFromClient}
+            onUpdateClient={handleUpdateClient}
+            onSendMessage={handleSendMessage}
+            onUpdateProgram={handleUpdateProgram}
+          />
+        );
       case 'messages':
-        return <MessagesPage isMobile={isMobile} />;
+        return <MessagesPage isMobile={isMobile} clients={allClients} messages={allMessages} onSendMessage={handleSendMessage} />;
       case 'analytics':
-        return <AnalyticsPage />;
+        return <AnalyticsPage clients={allClients} />;
+      case 'programs':
+        return (
+          <WorkoutProgramsPage
+            programs={allPrograms}
+            clients={allClients}
+            onViewProgram={handleViewProgram}
+            onAddProgram={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
+            onDeleteProgram={handleDeleteProgram}
+            onDuplicateProgram={handleDuplicateProgram}
+            onUpdateProgram={handleUpdateProgram}
+          />
+        );
+      case 'program-builder':
+        return (
+          <ProgramBuilderPage
+            program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : null}
+            clients={allClients}
+            exerciseLibrary={exerciseLibrary}
+            onSave={(program: WorkoutProgram) => {
+              if (allPrograms.find(p => p.id === program.id)) {
+                handleUpdateProgram(program.id, program);
+              } else {
+                handleAddProgram(program);
+              }
+              setCurrentPage('programs');
+              setSelectedProgramId('');
+            }}
+            onBack={handleBackFromProgram}
+          />
+        );
       case 'schedule':
-        return <SchedulePage />;
+        return <SchedulePage clients={allClients} programs={allPrograms} sessionsByDate={sessionsByDate} onSessionsChange={setSessionsByDate} />;
       case 'settings':
-        return <SettingsPage theme={theme} onThemeChange={setTheme} />;
+        return (
+          <SettingsPage
+            theme={theme}
+            onThemeChange={setTheme}
+            profileName={profileName}
+            profileEmail={profileEmail}
+            onProfileChange={(name, email) => { setProfileName(name); setProfileEmail(email); }}
+            notifications={notifications}
+            onNotificationsChange={setNotifications}
+          />
+        );
       default:
-        return <OverviewPage onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
     }
   };
 
@@ -104,20 +242,19 @@ function App() {
         <Sidebar
           currentPage={currentPage}
           onNavigate={handleNavigate}
-          unreadCount={unreadCount}
+          profileName={profileName}
         />
       </div>
 
       <div style={styles.main}>
         <Header
           currentPage={currentPage}
-          unreadCount={unreadCount}
           isMobile={isMobile}
           onMenuToggle={() => setSidebarOpen(o => !o)}
         />
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPage + selectedClientId}
+            key={currentPage + selectedClientId + selectedProgramId}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

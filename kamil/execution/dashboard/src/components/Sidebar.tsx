@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   Users,
+  Dumbbell,
   MessageSquare,
   BarChart3,
   CalendarDays,
@@ -14,18 +15,19 @@ import type { Page } from '../types';
 interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
-  unreadCount: number;
+  profileName?: string;
 }
 
 const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = [
   { icon: LayoutDashboard, label: 'Overview', page: 'overview' },
   { icon: Users, label: 'Clients', page: 'clients' },
+  { icon: Dumbbell, label: 'Programs', page: 'programs' },
   { icon: MessageSquare, label: 'Messages', page: 'messages' },
   { icon: BarChart3, label: 'Analytics', page: 'analytics' },
   { icon: CalendarDays, label: 'Schedule', page: 'schedule' },
 ];
 
-export default function Sidebar({ currentPage, onNavigate, unreadCount }: SidebarProps) {
+export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach Kamil' }: SidebarProps) {
   return (
     <aside style={styles.sidebar}>
       {/* Logo */}
@@ -65,9 +67,6 @@ export default function Sidebar({ currentPage, onNavigate, unreadCount }: Sideba
               )}
               <Icon size={18} style={{ opacity: isActive ? 1 : 0.5 }} />
               <span style={{ opacity: isActive ? 1 : 0.6 }}>{item.label}</span>
-              {item.page === 'messages' && unreadCount > 0 && (
-                <span style={styles.badge}>{unreadCount}</span>
-              )}
             </motion.button>
           );
         })}
@@ -95,16 +94,23 @@ export default function Sidebar({ currentPage, onNavigate, unreadCount }: Sideba
           <Settings size={18} style={{ opacity: currentPage === 'settings' ? 1 : 0.5 }} />
           <span style={{ opacity: currentPage === 'settings' ? 1 : 0.6 }}>Settings</span>
         </motion.button>
-        <button style={styles.navItem}>
+        <button
+          onClick={() => {
+            if (window.confirm('Are you sure you want to log out?')) {
+              window.location.reload();
+            }
+          }}
+          style={styles.navItem}
+        >
           <LogOut size={18} style={{ opacity: 0.5 }} />
           <span style={{ opacity: 0.6 }}>Log Out</span>
         </button>
 
         {/* Coach Profile */}
         <div style={styles.coachCard}>
-          <div style={styles.coachAvatar}>K</div>
+          <div style={styles.coachAvatar}>{profileName.charAt(0).toUpperCase()}</div>
           <div>
-            <div style={styles.coachName}>Coach Kamil</div>
+            <div style={styles.coachName}>{profileName}</div>
             <div style={styles.coachPlan}>Pro Plan</div>
           </div>
         </div>
@@ -202,17 +208,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '0 3px 3px 0',
     background: 'var(--accent-primary)',
     boxShadow: '0 0 8px var(--accent-primary-glow)',
-  },
-  badge: {
-    marginLeft: 'auto',
-    background: 'var(--accent-primary)',
-    color: '#07090e',
-    fontSize: '11px',
-    fontWeight: 700,
-    padding: '2px 7px',
-    borderRadius: '10px',
-    minWidth: '20px',
-    textAlign: 'center',
   },
   bottom: {
     display: 'flex',

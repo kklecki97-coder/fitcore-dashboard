@@ -1,4 +1,4 @@
-import type { Client, Message, RevenueData, WorkoutLog } from './types';
+import type { Client, Message, RevenueData, WorkoutLog, WorkoutProgram } from './types';
 
 const avatarColors = [
   '#00e5c8', '#6366f1', '#f59e0b', '#ef4444', '#22c55e',
@@ -90,7 +90,7 @@ export const clients: Client[] = [
     avatar: '',
     email: 'emma@example.com',
     plan: 'Basic',
-    status: 'new',
+    status: 'pending',
     startDate: '2026-02-10',
     nextCheckIn: '2026-02-24',
     monthlyRate: 99,
@@ -327,4 +327,114 @@ export const scheduleToday = [
   { time: '14:00', client: 'Tom Bradley', type: 'Full Body', status: 'current' as const },
   { time: '16:00', client: 'David Park', type: 'Push Day', status: 'upcoming' as const },
   { time: '18:00', client: 'Aisha Patel', type: 'Upper Body', status: 'upcoming' as const },
+];
+
+export const exerciseLibrary: string[] = [
+  'Barbell Back Squat', 'Front Squat', 'Goblet Squat', 'Bulgarian Split Squat',
+  'Leg Press', 'Romanian Deadlift', 'Conventional Deadlift', 'Sumo Deadlift',
+  'Hip Thrust', 'Leg Extension', 'Leg Curl', 'Calf Raise',
+  'Barbell Bench Press', 'Incline Bench Press', 'Dumbbell Bench Press',
+  'Overhead Press', 'Dumbbell Shoulder Press', 'Lateral Raise',
+  'Barbell Row', 'Dumbbell Row', 'Lat Pulldown', 'Pull-Up', 'Chin-Up',
+  'Cable Row', 'Face Pull', 'Rear Delt Fly',
+  'Barbell Curl', 'Hammer Curl', 'Tricep Pushdown', 'Skull Crusher',
+  'Plank', 'Ab Rollout', 'Cable Crunch', 'Hanging Leg Raise',
+  'Lunges', 'Step-Up', 'Glute Bridge', 'Good Morning',
+];
+
+export const workoutPrograms: WorkoutProgram[] = [
+  {
+    id: 'wp1',
+    name: 'Hypertrophy Block A',
+    status: 'active',
+    durationWeeks: 6,
+    clientIds: ['c1'],
+    isTemplate: false,
+    createdAt: '2026-01-15',
+    updatedAt: '2026-02-18',
+    days: [
+      {
+        id: 'wd1a',
+        name: 'Upper Body A',
+        exercises: [
+          { id: 'e1', name: 'Barbell Bench Press', sets: 4, reps: '6-8', weight: '90kg', rpe: 8, tempo: '3-1-2-0', restSeconds: 180, notes: '' },
+          { id: 'e2', name: 'Barbell Row', sets: 4, reps: '8-10', weight: '75kg', rpe: 7, tempo: '', restSeconds: 120, notes: '' },
+          { id: 'e3', name: 'Overhead Press', sets: 3, reps: '8-12', weight: '50kg', rpe: 7, tempo: '', restSeconds: 120, notes: '' },
+          { id: 'e4', name: 'Lateral Raise', sets: 3, reps: '12-15', weight: '12kg', rpe: null, tempo: '', restSeconds: 60, notes: 'Controlled eccentric' },
+        ],
+      },
+      {
+        id: 'wd1b',
+        name: 'Lower Body A',
+        exercises: [
+          { id: 'e5', name: 'Barbell Back Squat', sets: 4, reps: '5-6', weight: '120kg', rpe: 8, tempo: '3-1-2-0', restSeconds: 240, notes: 'Belt on working sets' },
+          { id: 'e6', name: 'Romanian Deadlift', sets: 3, reps: '8-10', weight: '100kg', rpe: 7, tempo: '3-0-1-0', restSeconds: 120, notes: '' },
+          { id: 'e7', name: 'Leg Press', sets: 3, reps: '10-12', weight: '180kg', rpe: null, tempo: '', restSeconds: 120, notes: '' },
+          { id: 'e8', name: 'Calf Raise', sets: 4, reps: '12-15', weight: '60kg', rpe: null, tempo: '2-1-1-0', restSeconds: 60, notes: '' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'wp2',
+    name: 'Powerlifting Peak',
+    status: 'active',
+    durationWeeks: 4,
+    clientIds: ['c3'],
+    isTemplate: false,
+    createdAt: '2026-02-01',
+    updatedAt: '2026-02-20',
+    days: [
+      {
+        id: 'wd2a',
+        name: 'Squat Day',
+        exercises: [
+          { id: 'e9', name: 'Barbell Back Squat', sets: 5, reps: '3', weight: '155kg', rpe: 9, tempo: '', restSeconds: 300, notes: 'Competition stance' },
+          { id: 'e10', name: 'Front Squat', sets: 3, reps: '5', weight: '120kg', rpe: 7, tempo: '', restSeconds: 180, notes: '' },
+          { id: 'e11', name: 'Leg Extension', sets: 3, reps: '10-12', weight: '', rpe: null, tempo: '', restSeconds: 90, notes: '' },
+        ],
+      },
+      {
+        id: 'wd2b',
+        name: 'Bench Day',
+        exercises: [
+          { id: 'e12', name: 'Barbell Bench Press', sets: 5, reps: '3', weight: '115kg', rpe: 9, tempo: '', restSeconds: 300, notes: 'Competition pause' },
+          { id: 'e13', name: 'Incline Bench Press', sets: 3, reps: '6-8', weight: '80kg', rpe: 7, tempo: '', restSeconds: 180, notes: '' },
+          { id: 'e14', name: 'Tricep Pushdown', sets: 3, reps: '12-15', weight: '', rpe: null, tempo: '', restSeconds: 60, notes: '' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'wp3',
+    name: 'Beginner Full Body Template',
+    status: 'draft',
+    durationWeeks: 8,
+    clientIds: [],
+    isTemplate: true,
+    createdAt: '2026-01-10',
+    updatedAt: '2026-01-10',
+    days: [
+      {
+        id: 'wd3a',
+        name: 'Full Body A',
+        exercises: [
+          { id: 'e15', name: 'Goblet Squat', sets: 3, reps: '10-12', weight: '', rpe: 6, tempo: '2-1-2-0', restSeconds: 90, notes: 'Focus on form' },
+          { id: 'e16', name: 'Dumbbell Bench Press', sets: 3, reps: '10-12', weight: '', rpe: 6, tempo: '', restSeconds: 90, notes: '' },
+          { id: 'e17', name: 'Lat Pulldown', sets: 3, reps: '10-12', weight: '', rpe: 6, tempo: '', restSeconds: 90, notes: '' },
+          { id: 'e18', name: 'Plank', sets: 3, reps: '30s', weight: '', rpe: null, tempo: '', restSeconds: 60, notes: '' },
+        ],
+      },
+      {
+        id: 'wd3b',
+        name: 'Full Body B',
+        exercises: [
+          { id: 'e19', name: 'Romanian Deadlift', sets: 3, reps: '10-12', weight: '', rpe: 6, tempo: '3-0-1-0', restSeconds: 90, notes: 'Hip hinge cue' },
+          { id: 'e20', name: 'Dumbbell Shoulder Press', sets: 3, reps: '10-12', weight: '', rpe: 6, tempo: '', restSeconds: 90, notes: '' },
+          { id: 'e21', name: 'Cable Row', sets: 3, reps: '10-12', weight: '', rpe: 6, tempo: '', restSeconds: 90, notes: '' },
+          { id: 'e22', name: 'Glute Bridge', sets: 3, reps: '12-15', weight: '', rpe: null, tempo: '', restSeconds: 60, notes: '' },
+        ],
+      },
+    ],
+  },
 ];

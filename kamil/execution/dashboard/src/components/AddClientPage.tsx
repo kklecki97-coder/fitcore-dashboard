@@ -55,7 +55,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
       avatar: '',
       email: email.trim().toLowerCase(),
       plan,
-      status: 'new',
+      status: 'pending',
       startDate: today,
       nextCheckIn: nextWeek.toISOString().split('T')[0],
       monthlyRate: planRates[plan],
@@ -251,7 +251,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
             <div style={styles.summaryDivider} />
             <div style={styles.summaryItem}>
               <span style={styles.summaryLabel}>Status</span>
-              <span style={styles.summaryValue}>New</span>
+              <span style={styles.summaryValue}>Pending</span>
             </div>
           </div>
 

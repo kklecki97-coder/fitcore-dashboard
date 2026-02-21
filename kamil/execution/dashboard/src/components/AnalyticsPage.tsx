@@ -8,14 +8,30 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import GlassCard from './GlassCard';
-import { clients, revenueData } from '../data';
+import { revenueData } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import type { Client } from '../types';
 
-export default function AnalyticsPage() {
+interface AnalyticsPageProps {
+  clients: Client[];
+}
+
+export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
   const isMobile = useIsMobile();
-  const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
+  const activePayingClients = clients.filter(c => c.status !== 'paused');
+  const totalRevenue = activePayingClients.reduce((sum, c) => sum + c.monthlyRate, 0);
   const projectedAnnual = totalRevenue * 12;
-  const avgClientValue = Math.round(totalRevenue / clients.filter(c => c.status !== 'paused').length);
+  const avgClientValue = activePayingClients.length > 0 ? Math.round(totalRevenue / activePayingClients.length) : 0;
+
+  // Calculate retention from actual client data
+  const retentionRate = clients.length > 0
+    ? Math.round((clients.filter(c => c.status === 'active').length / clients.length) * 1000) / 10
+    : 100;
+
+  // Compute revenue change
+  const lastMonth = revenueData[revenueData.length - 1];
+  const prevMonth = revenueData[revenueData.length - 2];
+  const revenueChangePercent = prevMonth ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100) : 0;
 
   const planDistribution = [
     { name: 'Elite', value: clients.filter(c => c.plan === 'Elite').length, color: '#f59e0b' },
@@ -29,14 +45,10 @@ export default function AnalyticsPage() {
     { name: 'Basic', revenue: clients.filter(c => c.plan === 'Basic').reduce((s, c) => s + c.monthlyRate, 0) },
   ];
 
-  const retentionData = [
-    { month: 'Sep', rate: 100 },
-    { month: 'Oct', rate: 100 },
-    { month: 'Nov', rate: 100 },
-    { month: 'Dec', rate: 100 },
-    { month: 'Jan', rate: 87.5 },
-    { month: 'Feb', rate: 87.5 },
-  ];
+  const retentionData = revenueData.map((rd) => {
+    // Use per-month client count from revenueData vs total for a rough retention estimate
+    return { month: rd.month, rate: clients.length > 0 ? Math.round((rd.clients / clients.length) * 1000) / 10 : 100 };
+  });
 
   const progressDistribution = [
     { range: '0-25%', count: clients.filter(c => c.progress <= 25).length },
@@ -53,7 +65,7 @@ export default function AnalyticsPage() {
           {
             label: 'Monthly Revenue',
             value: `$${totalRevenue.toLocaleString()}`,
-            change: '+12%',
+            change: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
             icon: DollarSign,
             color: 'var(--accent-success)',
             dim: 'var(--accent-success-dim)',
@@ -61,7 +73,7 @@ export default function AnalyticsPage() {
           {
             label: 'Projected Annual',
             value: `$${projectedAnnual.toLocaleString()}`,
-            change: '+15%',
+            change: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
             icon: TrendingUp,
             color: 'var(--accent-primary)',
             dim: 'var(--accent-primary-dim)',
@@ -69,15 +81,15 @@ export default function AnalyticsPage() {
           {
             label: 'Avg. Client Value',
             value: `$${avgClientValue}`,
-            change: '+8%',
+            change: `${activePayingClients.length} clients`,
             icon: CreditCard,
             color: 'var(--accent-secondary)',
             dim: 'var(--accent-secondary-dim)',
           },
           {
             label: 'Retention Rate',
-            value: '87.5%',
-            change: 'Stable',
+            value: `${retentionRate}%`,
+            change: retentionRate >= 90 ? 'Excellent' : retentionRate >= 75 ? 'Good' : 'Needs focus',
             icon: Target,
             color: 'var(--accent-warm)',
             dim: 'var(--accent-warm-dim)',

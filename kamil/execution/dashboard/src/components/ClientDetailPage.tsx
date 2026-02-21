@@ -4,21 +4,28 @@ import {
   ArrowLeft, Mail, Calendar, Flame, Target,
   TrendingUp, TrendingDown, Minus, DollarSign,
   Edit3, MessageSquare, FileText, X, Send, Save,
+  Activity, Dumbbell, Check,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, Radar,
 } from 'recharts';
 import GlassCard from './GlassCard';
-import { clients, getInitials, getAvatarColor } from '../data';
+import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import type { Client, Message, WorkoutProgram } from '../types';
 
 interface ClientDetailPageProps {
   clientId: string;
+  clients: Client[];
+  programs: WorkoutProgram[];
   onBack: () => void;
+  onUpdateClient: (id: string, updates: Partial<Client>) => void;
+  onSendMessage: (msg: Message) => void;
+  onUpdateProgram: (programId: string, updates: Partial<WorkoutProgram>) => void;
 }
 
-export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, onBack, onUpdateClient, onSendMessage, onUpdateProgram }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const client = clients.find(c => c.id === clientId);
   if (!client) return null;
@@ -42,12 +49,17 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
   const prevBF = client.metrics.bodyFat[client.metrics.bodyFat.length - 2] || latestBF;
   const bfChange = latestBF - prevBF;
 
+  // Deterministic radar values derived from client data
+  const enduranceScore = Math.min(100, 60 + (client.progress * 0.3) + (client.streak * 0.5));
+  const nutritionScore = Math.min(100, 45 + (client.progress * 0.4) + (client.streak * 0.3));
+  const recoveryScore = Math.min(100, 55 + (client.streak * 1.2) + (client.progress * 0.15));
+
   const radarData = [
     { metric: 'Strength', value: Math.min(100, (client.metrics.benchPress[client.metrics.benchPress.length - 1] / 120) * 100) },
-    { metric: 'Endurance', value: 65 + Math.random() * 20 },
+    { metric: 'Endurance', value: enduranceScore },
     { metric: 'Consistency', value: Math.min(100, client.streak * 3.5) },
-    { metric: 'Nutrition', value: 50 + Math.random() * 30 },
-    { metric: 'Recovery', value: 60 + Math.random() * 25 },
+    { metric: 'Nutrition', value: nutritionScore },
+    { metric: 'Recovery', value: recoveryScore },
     { metric: 'Progress', value: client.progress },
   ];
 
@@ -59,27 +71,82 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
 
   const badge = planColors[client.plan];
 
-  const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | null>(null);
+  const assignedPrograms = programs.filter(p => p.clientIds.includes(client.id));
+
+  const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | 'logMetrics' | 'assignProgram' | null>(null);
   const [messageText, setMessageText] = useState('');
   const [editPlan, setEditPlan] = useState<'Basic' | 'Premium' | 'Elite'>(client.plan);
-  const [editStatus, setEditStatus] = useState<'active' | 'paused' | 'new'>(client.status);
+  const [editStatus, setEditStatus] = useState<'active' | 'paused' | 'pending'>(client.status);
   const [editNotes, setEditNotes] = useState(client.notes);
+  const [saveFlash, setSaveFlash] = useState('');
+  const [metricsForm, setMetricsForm] = useState({
+    weight: '',
+    bodyFat: '',
+    benchPress: '',
+    squat: '',
+    deadlift: '',
+  });
+
+  const flashSaved = (label: string) => {
+    setSaveFlash(label);
+    setTimeout(() => setSaveFlash(''), 1500);
+  };
 
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
-    console.log('Message sent to', client.name, ':', messageText);
+    const msg: Message = {
+      id: `m-${Date.now()}`,
+      clientId: client.id,
+      clientName: client.name,
+      clientAvatar: '',
+      text: messageText.trim(),
+      timestamp: new Date().toISOString(),
+      isRead: true,
+      isFromCoach: true,
+    };
+    onSendMessage(msg);
     setMessageText('');
     setActiveModal(null);
+    flashSaved('Message sent');
   };
 
   const handleSavePlan = () => {
-    console.log('Plan updated for', client.name, ':', { plan: editPlan, status: editStatus });
+    const rateMap: Record<string, number> = { Basic: 99, Premium: 199, Elite: 299 };
+    onUpdateClient(client.id, { plan: editPlan, status: editStatus, monthlyRate: rateMap[editPlan] });
     setActiveModal(null);
+    flashSaved('Plan updated');
   };
 
   const handleSaveNotes = () => {
-    console.log('Notes updated for', client.name, ':', editNotes);
+    onUpdateClient(client.id, { notes: editNotes });
     setActiveModal(null);
+    flashSaved('Notes saved');
+  };
+
+  const handleLogMetrics = () => {
+    const updates: Partial<Client> = {
+      metrics: { ...client.metrics },
+    };
+    if (metricsForm.weight) updates.metrics!.weight = [...client.metrics.weight, parseFloat(metricsForm.weight)];
+    if (metricsForm.bodyFat) updates.metrics!.bodyFat = [...client.metrics.bodyFat, parseFloat(metricsForm.bodyFat)];
+    if (metricsForm.benchPress) updates.metrics!.benchPress = [...client.metrics.benchPress, parseFloat(metricsForm.benchPress)];
+    if (metricsForm.squat) updates.metrics!.squat = [...client.metrics.squat, parseFloat(metricsForm.squat)];
+    if (metricsForm.deadlift) updates.metrics!.deadlift = [...client.metrics.deadlift, parseFloat(metricsForm.deadlift)];
+    onUpdateClient(client.id, updates);
+    setMetricsForm({ weight: '', bodyFat: '', benchPress: '', squat: '', deadlift: '' });
+    setActiveModal(null);
+    flashSaved('Metrics logged');
+  };
+
+  const handleToggleProgram = (programId: string) => {
+    const program = programs.find(p => p.id === programId);
+    if (!program) return;
+    const isAssigned = program.clientIds.includes(client.id);
+    onUpdateProgram(programId, {
+      clientIds: isAssigned
+        ? program.clientIds.filter(id => id !== client.id)
+        : [...program.clientIds, client.id],
+    });
   };
 
   return (
@@ -95,6 +162,20 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
           Back to Clients
         </button>
       </motion.div>
+
+      {/* Save Flash */}
+      <AnimatePresence>
+        {saveFlash && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={styles.saveFlash}
+          >
+            {saveFlash}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Profile Header */}
       <GlassCard delay={0.05}>
@@ -121,7 +202,7 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
                 <span>Since {client.startDate}</span>
               </div>
               <div style={{ ...styles.profileTags, flexWrap: 'wrap' }}>
-                <span style={{ ...styles.planTag, color: badge.color, background: badge.bg }}>
+                <span style={{ ...styles.planTag, color: planColors[client.plan].color, background: planColors[client.plan].bg }}>
                   {client.plan}
                 </span>
                 <span style={styles.statusTag}>
@@ -134,14 +215,24 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
                     {client.streak} day streak
                   </span>
                 )}
+                {assignedPrograms.map(prog => (
+                  <span key={prog.id} style={styles.programTag}>
+                    <Dumbbell size={12} />
+                    {prog.name}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
 
-          <div style={{ ...styles.profileActions, ...(isMobile ? { width: '100%' } : {}) }}>
+          <div style={{ ...styles.profileActions, ...(isMobile ? { width: '100%', flexWrap: 'wrap' } : {}) }}>
             <button onClick={() => setActiveModal('message')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <MessageSquare size={15} />
               Message
+            </button>
+            <button onClick={() => setActiveModal('logMetrics')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-primary)' }}>
+              <Activity size={15} />
+              Log Metrics
             </button>
             <button onClick={() => setActiveModal('editPlan')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Edit3 size={15} />
@@ -150,6 +241,10 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
             <button onClick={() => setActiveModal('notes')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <FileText size={15} />
               Notes
+            </button>
+            <button onClick={() => setActiveModal('assignProgram')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
+              <Dumbbell size={15} />
+              Program
             </button>
           </div>
         </div>
@@ -354,6 +449,8 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
                   {activeModal === 'message' && 'Send Message'}
                   {activeModal === 'editPlan' && 'Edit Plan'}
                   {activeModal === 'notes' && 'Coach Notes'}
+                  {activeModal === 'logMetrics' && 'Log Metrics'}
+                  {activeModal === 'assignProgram' && 'Assign Program'}
                 </h3>
                 <button onClick={() => setActiveModal(null)} style={styles.closeBtn}>
                   <X size={18} />
@@ -423,9 +520,9 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>Status</span>
                     <div style={styles.modalStatusPicker}>
-                      {(['active', 'paused', 'new'] as const).map((s) => {
+                      {(['active', 'paused', 'pending'] as const).map((s) => {
                         const isActive = editStatus === s;
-                        const colorMap = { active: 'var(--accent-success)', paused: 'var(--accent-warm)', new: 'var(--accent-secondary)' };
+                        const colorMap = { active: 'var(--accent-success)', paused: 'var(--accent-warm)', pending: 'var(--accent-secondary)' };
                         return (
                           <button
                             key={s}
@@ -474,6 +571,133 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
                   </div>
                 </div>
               )}
+
+              {/* Log Metrics Modal */}
+              {activeModal === 'logMetrics' && (
+                <div style={styles.modalBody}>
+                  <div style={styles.metricsGrid}>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Weight (kg)</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={metricsForm.weight}
+                        onChange={(e) => setMetricsForm(prev => ({ ...prev, weight: e.target.value }))}
+                        placeholder={`Current: ${latestWeight}`}
+                        style={styles.modalInput}
+                        autoFocus
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Body Fat (%)</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={metricsForm.bodyFat}
+                        onChange={(e) => setMetricsForm(prev => ({ ...prev, bodyFat: e.target.value }))}
+                        placeholder={`Current: ${latestBF}`}
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Bench Press (kg)</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={metricsForm.benchPress}
+                        onChange={(e) => setMetricsForm(prev => ({ ...prev, benchPress: e.target.value }))}
+                        placeholder={`Current: ${client.metrics.benchPress[client.metrics.benchPress.length - 1]}`}
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Squat (kg)</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={metricsForm.squat}
+                        onChange={(e) => setMetricsForm(prev => ({ ...prev, squat: e.target.value }))}
+                        placeholder={`Current: ${client.metrics.squat[client.metrics.squat.length - 1]}`}
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Deadlift (kg)</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={metricsForm.deadlift}
+                        onChange={(e) => setMetricsForm(prev => ({ ...prev, deadlift: e.target.value }))}
+                        placeholder={`Current: ${client.metrics.deadlift[client.metrics.deadlift.length - 1]}`}
+                        style={styles.modalInput}
+                      />
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: 0 }}>
+                    Leave fields empty to skip — only filled values will be logged.
+                  </p>
+                  <div style={styles.modalActions}>
+                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
+                    <button
+                      onClick={handleLogMetrics}
+                      style={{
+                        ...styles.modalPrimaryBtn,
+                        opacity: Object.values(metricsForm).some(v => v) ? 1 : 0.5,
+                      }}
+                    >
+                      <Activity size={14} />
+                      Log Metrics
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Assign Program Modal */}
+              {activeModal === 'assignProgram' && (
+                <div style={styles.modalBody}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                    Select which programs to assign to <strong style={{ color: 'var(--text-primary)' }}>{client.name}</strong>:
+                  </p>
+                  <div style={styles.programList}>
+                    {programs.filter(p => !p.isTemplate).length === 0 ? (
+                      <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 0' }}>
+                        No programs available. Create one in the Programs page first.
+                      </p>
+                    ) : (
+                      programs.filter(p => !p.isTemplate).map(prog => {
+                        const isAssigned = prog.clientIds.includes(client.id);
+                        return (
+                          <button
+                            key={prog.id}
+                            onClick={() => handleToggleProgram(prog.id)}
+                            style={{
+                              ...styles.programRow,
+                              background: isAssigned ? 'var(--accent-primary-dim)' : 'transparent',
+                              borderColor: isAssigned ? 'rgba(0, 229, 200, 0.15)' : 'var(--glass-border)',
+                            }}
+                          >
+                            <div style={styles.programRowInfo}>
+                              <div style={styles.programRowName}>{prog.name}</div>
+                              <div style={styles.programRowMeta}>
+                                <span style={{ ...styles.programStatusDot, background: prog.status === 'active' ? 'var(--accent-success)' : prog.status === 'draft' ? 'var(--accent-warm)' : 'var(--text-tertiary)' }} />
+                                {prog.status} &middot; {prog.days.length} days &middot; {prog.durationWeeks}w
+                              </div>
+                            </div>
+                            {isAssigned && (
+                              <div style={styles.checkCircle}><Check size={12} /></div>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  <div style={styles.modalActions}>
+                    <button onClick={() => { setActiveModal(null); flashSaved('Program updated'); }} style={styles.modalPrimaryBtn}>
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </>
         )}
@@ -490,6 +714,16 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '20px',
     overflowY: 'auto',
     height: 'calc(100vh - var(--header-height))',
+  },
+  saveFlash: {
+    padding: '10px 20px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-success-dim)',
+    border: '1px solid rgba(34,197,94,0.2)',
+    color: 'var(--accent-success)',
+    fontSize: '13px',
+    fontWeight: 600,
+    textAlign: 'center',
   },
   backRow: {
     display: 'flex',
@@ -895,5 +1129,90 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     transition: 'all 0.2s',
+  },
+  programTag: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '11px',
+    fontWeight: 600,
+    padding: '3px 10px',
+    borderRadius: '20px',
+    color: 'var(--accent-primary)',
+    background: 'var(--accent-primary-dim)',
+  },
+  metricsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+  },
+  modalInput: {
+    padding: '9px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontFamily: 'var(--font-display)',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  programList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    maxHeight: '320px',
+    overflowY: 'auto',
+  },
+  programRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    padding: '12px 14px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    cursor: 'pointer',
+    width: '100%',
+    fontFamily: 'var(--font-display)',
+    color: 'var(--text-primary)',
+    transition: 'background 0.15s',
+    textAlign: 'left',
+  },
+  programRowInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  programRowName: {
+    fontSize: '13px',
+    fontWeight: 600,
+  },
+  programRowMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    fontSize: '11px',
+    color: 'var(--text-secondary)',
+    textTransform: 'capitalize',
+  },
+  programStatusDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  checkCircle: {
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    background: 'var(--accent-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#07090e',
+    flexShrink: 0,
   },
 };

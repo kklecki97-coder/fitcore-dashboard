@@ -5,28 +5,30 @@ import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import type { Theme } from '../types';
 
+interface Notifications {
+  messages: boolean;
+  checkins: boolean;
+  payments: boolean;
+  weekly: boolean;
+}
+
 interface SettingsPageProps {
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
+  profileName: string;
+  profileEmail: string;
+  onProfileChange: (name: string, email: string) => void;
+  notifications: Notifications;
+  onNotificationsChange: (n: Notifications) => void;
 }
 
-export default function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
+export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, notifications, onNotificationsChange }: SettingsPageProps) {
   const isMobile = useIsMobile();
 
-  // Profile state
+  // Profile editing state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileName, setProfileName] = useState('Coach Kamil');
-  const [profileEmail, setProfileEmail] = useState('kamil@fitcore.io');
   const [editName, setEditName] = useState(profileName);
   const [editEmail, setEditEmail] = useState(profileEmail);
-
-  // Notification state
-  const [notifications, setNotifications] = useState({
-    messages: true,
-    checkins: true,
-    payments: true,
-    weekly: false,
-  });
 
   // Security modal state
   const [securityModal, setSecurityModal] = useState<'password' | '2fa' | null>(null);
@@ -40,8 +42,7 @@ export default function SettingsPage({ theme, onThemeChange }: SettingsPageProps
   ];
 
   const handleSaveProfile = () => {
-    setProfileName(editName);
-    setProfileEmail(editEmail);
+    onProfileChange(editName, editEmail);
     setIsEditingProfile(false);
   };
 
@@ -51,8 +52,8 @@ export default function SettingsPage({ theme, onThemeChange }: SettingsPageProps
     setIsEditingProfile(false);
   };
 
-  const toggleNotification = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  const toggleNotification = (key: keyof Notifications) => {
+    onNotificationsChange({ ...notifications, [key]: !notifications[key] });
   };
 
   const notifItems = [

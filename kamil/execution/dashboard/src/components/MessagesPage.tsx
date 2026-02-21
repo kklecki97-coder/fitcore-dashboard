@@ -2,19 +2,21 @@ import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Send, ArrowLeft } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { messages as initialMessages, clients, getInitials, getAvatarColor } from '../data';
-import type { Message } from '../types';
+import { getInitials, getAvatarColor } from '../data';
+import type { Client, Message } from '../types';
 
 interface MessagesPageProps {
   isMobile?: boolean;
+  clients: Client[];
+  messages: Message[];
+  onSendMessage: (msg: Message) => void;
 }
 
-export default function MessagesPage({ isMobile = false }: MessagesPageProps) {
+export default function MessagesPage({ isMobile = false, clients, messages, onSendMessage }: MessagesPageProps) {
   const [selectedClient, setSelectedClient] = useState<string>('c1');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showChat, setShowChat] = useState(false);
-  const [localMessages, setLocalMessages] = useState<Message[]>(initialMessages);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom
@@ -22,19 +24,19 @@ export default function MessagesPage({ isMobile = false }: MessagesPageProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const activeConversation = localMessages.filter(m => m.clientId === selectedClient);
+  const activeConversation = messages.filter(m => m.clientId === selectedClient);
   const activeClient = clients.find(c => c.id === selectedClient);
 
   // Scroll on conversation switch or new message
   useEffect(() => {
     scrollToBottom();
-  }, [selectedClient, localMessages]);
+  }, [selectedClient, messages]);
 
   // Group messages by client
-  const clientIds = [...new Set(localMessages.map(m => m.clientId))];
+  const clientIds = [...new Set(messages.map(m => m.clientId))];
   const conversationClients = clientIds.map(id => {
     const client = clients.find(c => c.id === id)!;
-    const clientMessages = localMessages.filter(m => m.clientId === id);
+    const clientMessages = messages.filter(m => m.clientId === id);
     const lastMsg = clientMessages[clientMessages.length - 1];
     const unread = clientMessages.filter(m => !m.isRead && !m.isFromCoach).length;
     return { ...client, lastMessage: lastMsg, unreadCount: unread };
@@ -61,7 +63,7 @@ export default function MessagesPage({ isMobile = false }: MessagesPageProps) {
       isRead: true,
       isFromCoach: true,
     };
-    setLocalMessages(prev => [...prev, msg]);
+    onSendMessage(msg);
     setNewMessage('');
   };
 
@@ -191,6 +193,22 @@ export default function MessagesPage({ isMobile = false }: MessagesPageProps) {
 
         {/* Input Area */}
         <div style={styles.inputArea}>
+          <div style={styles.templateRow}>
+            {[
+              'Great session today!',
+              'How are you feeling?',
+              'Don\'t forget to log your meals',
+              'Rest day reminder',
+            ].map((tpl) => (
+              <button
+                key={tpl}
+                onClick={() => setNewMessage(tpl)}
+                style={styles.templateBtn}
+              >
+                {tpl}
+              </button>
+            ))}
+          </div>
           <div style={styles.inputRow}>
             <input
               type="text"
@@ -495,5 +513,25 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: '6px',
+  },
+  templateRow: {
+    display: 'flex',
+    gap: '6px',
+    overflowX: 'auto',
+    paddingBottom: '8px',
+    flexWrap: 'nowrap',
+  },
+  templateBtn: {
+    padding: '5px 12px',
+    borderRadius: '20px',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text-secondary)',
+    fontSize: '11px',
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'border-color 0.15s, color 0.15s',
+    flexShrink: 0,
   },
 };

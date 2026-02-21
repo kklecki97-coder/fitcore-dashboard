@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -8,26 +9,52 @@ import {
   AlertTriangle,
   CalendarCheck,
   MessageSquare,
+  Sparkles,
+  Flame,
+  Dumbbell,
+  Clock,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import GlassCard from './GlassCard';
-import { clients, revenueData, messages } from '../data';
+import { revenueData } from '../data';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client } from '../types';
+import type { Client, Message, WorkoutProgram } from '../types';
+
+const QUOTES = [
+  { text: 'The only bad workout is the one that didn\'t happen.', author: 'Unknown' },
+  { text: 'Success isn\'t always about greatness. It\'s about consistency.', author: 'Dwayne Johnson' },
+  { text: 'Take care of your body. It\'s the only place you have to live.', author: 'Jim Rohn' },
+  { text: 'The pain you feel today will be the strength you feel tomorrow.', author: 'Arnold Schwarzenegger' },
+  { text: 'Your body can stand almost anything. It\'s your mind that you have to convince.', author: 'Unknown' },
+  { text: 'Discipline is the bridge between goals and accomplishment.', author: 'Jim Rohn' },
+  { text: 'The resistance that you fight physically in the gym strengthens you.', author: 'Arnold Schwarzenegger' },
+  { text: 'Don\'t count the days. Make the days count.', author: 'Muhammad Ali' },
+  { text: 'What seems impossible today will one day become your warm-up.', author: 'Unknown' },
+  { text: 'The best project you\'ll ever work on is you.', author: 'Sonny Franco' },
+];
 
 interface OverviewPageProps {
+  clients: Client[];
+  messages: Message[];
+  programs: WorkoutProgram[];
   onViewClient: (id: string) => void;
   onNavigate: (page: 'messages') => void;
 }
 
-export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageProps) {
+export default function OverviewPage({ clients, messages, programs, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const activeClients = clients.filter(c => c.status === 'active').length;
+  const pendingClients = clients.filter(c => c.status === 'pending').length;
   const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
   const unreadMessages = messages.filter(m => !m.isRead && !m.isFromCoach);
+
+  // Compute revenue change from last two months
+  const lastMonth = revenueData[revenueData.length - 1];
+  const prevMonth = revenueData[revenueData.length - 2];
+  const revenueChange = prevMonth ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100) : 0;
 
   // At-risk: paused, streak dropped to 0, or progress below 30%
   const atRiskClients = clients.filter(c =>
@@ -45,12 +72,93 @@ export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageP
   });
 
 
+  // Daily quote — rotate by day of year
+  const dailyQuote = useMemo(() => {
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    return QUOTES[dayOfYear % QUOTES.length];
+  }, []);
+
+  // AI Summary — smart aggregation from real data
+  const insights = useMemo(() => {
+    const items: { icon: React.ElementType; text: string; color: string }[] = [];
+
+    // Active clients this week
+    const active = clients.filter(c => c.status === 'active');
+    items.push({
+      icon: Users,
+      text: `${active.length}/${clients.length} clients active this week`,
+      color: 'var(--accent-primary)',
+    });
+
+    // Best streak
+    const topStreak = [...clients].sort((a, b) => b.streak - a.streak)[0];
+    if (topStreak && topStreak.streak > 0) {
+      items.push({
+        icon: Flame,
+        text: `${topStreak.name}'s ${topStreak.streak}-day streak — longest active`,
+        color: 'var(--accent-warm)',
+      });
+    }
+
+    // PR / top progress
+    const topProgress = [...clients].sort((a, b) => b.progress - a.progress)[0];
+    if (topProgress) {
+      const latestBench = topProgress.metrics.benchPress[topProgress.metrics.benchPress.length - 1];
+      items.push({
+        icon: TrendingUp,
+        text: `${topProgress.name} leading at ${topProgress.progress}% progress (Bench: ${latestBench}kg)`,
+        color: 'var(--accent-success)',
+      });
+    }
+
+    // Overdue check-ins
+    if (pendingCheckIns.length > 0) {
+      const names = pendingCheckIns.slice(0, 3).map(c => c.name.split(' ')[0]);
+      items.push({
+        icon: Clock,
+        text: `${pendingCheckIns.length} check-in${pendingCheckIns.length > 1 ? 's' : ''} overdue (${names.join(', ')})`,
+        color: 'var(--accent-danger)',
+      });
+    }
+
+    // Unread messages
+    if (unreadMessages.length > 0) {
+      items.push({
+        icon: MessageSquare,
+        text: `${unreadMessages.length} unread message${unreadMessages.length > 1 ? 's' : ''} waiting`,
+        color: 'var(--accent-secondary)',
+      });
+    }
+
+    // Revenue trend
+    const revChange = prevMonth ? ((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100 : 0;
+    items.push({
+      icon: DollarSign,
+      text: revChange >= 0
+        ? `Revenue up ${Math.round(revChange)}% vs last month`
+        : `Revenue down ${Math.abs(Math.round(revChange))}% vs last month`,
+      color: revChange >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
+    });
+
+    // Active programs
+    const activePrograms = programs.filter(p => p.status === 'active' && !p.isTemplate);
+    if (activePrograms.length > 0) {
+      items.push({
+        icon: Dumbbell,
+        text: `${activePrograms.length} active program${activePrograms.length > 1 ? 's' : ''} running`,
+        color: 'var(--accent-primary)',
+      });
+    }
+
+    return items;
+  }, [clients, pendingCheckIns, unreadMessages, programs, lastMonth, prevMonth]);
+
   const statCards = [
     {
       label: 'Active Clients',
       value: activeClients.toString(),
-      change: '+2',
-      trend: 'up' as const,
+      change: pendingClients > 0 ? `${pendingClients} pending` : 'Stable',
+      trend: pendingClients > 0 ? 'neutral' as const : 'up' as const,
       icon: Users,
       color: 'var(--accent-primary)',
       dimColor: 'var(--accent-primary-dim)',
@@ -58,8 +166,8 @@ export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageP
     {
       label: 'Monthly Revenue',
       value: `$${totalRevenue.toLocaleString()}`,
-      change: '+12%',
-      trend: 'up' as const,
+      change: revenueChange >= 0 ? `+${revenueChange}%` : `${revenueChange}%`,
+      trend: revenueChange >= 0 ? 'up' as const : 'down' as const,
       icon: DollarSign,
       color: 'var(--accent-success)',
       dimColor: 'var(--accent-success-dim)',
@@ -86,6 +194,17 @@ export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageP
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+      {/* Daily Motivation — Top of Page */}
+      <motion.div
+        style={styles.quoteBar}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div style={styles.quoteText}>"{dailyQuote.text}"</div>
+        <div style={styles.quoteAuthor}>— {dailyQuote.author}</div>
+      </motion.div>
+
       {/* Stat Cards Row */}
       <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '10px' : '16px' }}>
         {statCards.map((stat, i) => {
@@ -113,6 +232,35 @@ export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageP
           );
         })}
       </div>
+
+      {/* Dashboard Summary */}
+      <GlassCard delay={0.15}>
+        <div style={styles.cardHeader}>
+          <div style={styles.insightTitleRow}>
+            <Sparkles size={15} color="var(--accent-primary)" />
+            <h3 style={styles.cardTitle}>Dashboard Summary</h3>
+          </div>
+        </div>
+        <div style={{ ...styles.insightList, ...(isMobile ? {} : { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 24px' }) }}>
+          {insights.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={i}
+                style={styles.insightRow}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 + i * 0.04 }}
+              >
+                <div style={{ ...styles.insightIcon, background: `${item.color}15` }}>
+                  <Icon size={14} color={item.color} />
+                </div>
+                <span style={styles.insightText}>{item.text}</span>
+              </motion.div>
+            );
+          })}
+        </div>
+      </GlassCard>
 
       {/* Revenue Chart */}
       <GlassCard delay={0.2}>
@@ -303,6 +451,7 @@ export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageP
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.45 + i * 0.05 }}
+                  onClick={() => onNavigate('messages')}
                 >
                   <div style={{ ...styles.avatar, background: getAvatarColor(msg.clientId), flexShrink: 0 }}>
                     {getInitials(msg.clientName)}
@@ -314,7 +463,7 @@ export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageP
                     </div>
                     <div style={styles.msgText}>{msg.text}</div>
                   </div>
-                  <MessageSquare size={14} color="var(--text-tertiary)" style={{ flexShrink: 0 }} />
+                  <MessageSquare size={14} color="var(--accent-primary)" style={{ flexShrink: 0, cursor: 'pointer' }} />
                 </motion.div>
               ))}
           </div>
@@ -548,5 +697,56 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '4px 8px',
     borderRadius: '6px',
     transition: 'background 0.15s',
+  },
+  insightTitleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  insightList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  insightRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '8px 10px',
+    borderRadius: 'var(--radius-sm)',
+  },
+  insightIcon: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  insightText: {
+    fontSize: '13px',
+    color: 'var(--text-primary)',
+    fontWeight: 500,
+  },
+  quoteBar: {
+    textAlign: 'center',
+    padding: '16px 20px',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+  },
+  quoteText: {
+    fontSize: '15px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
+    lineHeight: 1.6,
+    fontStyle: 'italic',
+  },
+  quoteAuthor: {
+    fontSize: '12px',
+    color: 'var(--text-tertiary)',
+    marginTop: '6px',
+    fontWeight: 500,
   },
 };
