@@ -92,6 +92,17 @@ Errors are learning opportunities. When something breaks:
 - `.env` — Environment variables and API keys
 - `credentials.json`, `token.json` — Google OAuth credentials (gitignored)
 
+## Outreach Pipeline Dashboard
+
+Jakub's internal tool for managing daily Instagram outreach. React + TypeScript + Vite app that connects to Supabase (`instagram_leads` table).
+
+- **Location:** `jakub/execution/pipeline-dashboard/`
+- **Run:** `cd jakub/execution/pipeline-dashboard && npm run dev`
+- **Main file:** `jakub/execution/pipeline-dashboard/src/App.tsx`
+- **Two views:** Daily Tasks (engage batch + DM batch) and Pipeline (stats, funnel, activity chart, lead list)
+- **DM generation script:** `jakub/execution/generate_dm_drafts.py` — generates AI DM drafts and stores them in Supabase
+- **Directive:** `jakub/directives/instagram_dm_outreach.md`
+
 ## Summary
 
 Two independent workstreams, one shared repo. Jakub finds the clients, Kamil builds the product. The 3-layer architecture (directives → orchestration → execution) applies within each workstream. Stay in your lane, self-anneal, and ship.
