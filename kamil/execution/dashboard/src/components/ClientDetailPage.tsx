@@ -203,7 +203,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         <div style={{ ...styles.profileHeader, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : undefined }}>
           <div style={{ ...styles.profileLeft, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '20px' }}>
             <div className="avatar-tooltip-wrap" style={{ position: 'relative' }}>
-              <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '48px', height: '48px', fontSize: '18px' } : {}) }}>
+              <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '48px', height: '48px', fontSize: '25px' } : {}) }}>
                 {getInitials(client.name)}
               </div>
               {client.notes && (
@@ -334,13 +334,13 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
           <div style={{ height: 240, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weightData}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                    fontSize: '13px', fontFamily: 'Outfit',
+                    fontSize: '18px', fontFamily: 'Outfit',
                   }}
                 />
                 <Line type="monotone" dataKey="value" stroke="#00e5c8" strokeWidth={2.5} dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} name="Weight (kg)" />
@@ -355,13 +355,13 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
           <div style={{ height: 240, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={liftData}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                    fontSize: '13px', fontFamily: 'Outfit',
+                    fontSize: '18px', fontFamily: 'Outfit',
                   }}
                 />
                 <Line type="monotone" dataKey="bench" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name="Bench (kg)" />
@@ -589,7 +589,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
 
             <div style={styles.checkInList}>
               {clientCheckIns.length === 0 && (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '13px' }}>
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '18px' }}>
                   No check-ins yet.
                 </div>
               )}
@@ -678,7 +678,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: '#8b92a5' }} />
+                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 15, fill: '#8b92a5' }} />
                 <Radar
                   dataKey="value"
                   stroke="#00e5c8"
@@ -721,12 +721,12 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
           <div style={{ height: 200, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={bfData}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '10px', fontSize: '13px',
+                    borderRadius: '10px', fontSize: '18px',
                   }}
                 />
                 <Line type="monotone" dataKey="value" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 4, fill: '#ec4899', strokeWidth: 0 }} name="Body Fat %" />
@@ -827,8 +827,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                               ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'rgba(255,255,255,0.04)' } : {}),
                             }}
                           >
-                            <div style={{ fontWeight: 600, fontSize: '13px' }}>{p}</div>
-                            <div style={{ fontSize: '11px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
+                            <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
+                            <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
                           </button>
                         );
                       })}
@@ -951,7 +951,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                       />
                     </div>
                   </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', margin: 0 }}>
+                  <p style={{ fontSize: '15px', color: 'var(--text-tertiary)', margin: 0 }}>
                     Leave fields empty to skip — only filled values will be logged.
                   </p>
                   <div style={styles.modalActions}>
@@ -973,12 +973,12 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               {/* Assign Program Modal */}
               {activeModal === 'assignProgram' && (
                 <div style={styles.modalBody}>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                  <p style={{ fontSize: '18px', color: 'var(--text-secondary)', margin: 0 }}>
                     Select which programs to assign to <strong style={{ color: 'var(--text-primary)' }}>{client.name}</strong>:
                   </p>
                   <div style={styles.programList}>
                     {programs.filter(p => !p.isTemplate).length === 0 ? (
-                      <p style={{ fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 0' }}>
+                      <p style={{ fontSize: '18px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 0' }}>
                         No programs available. Create one in the Programs page first.
                       </p>
                     ) : (
@@ -1020,12 +1020,12 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               {/* Check-In Modal */}
               {activeModal === 'checkIn' && (
                 <div style={{ ...styles.modalBody, maxHeight: '70vh', overflowY: 'auto' }}>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                  <p style={{ fontSize: '18px', color: 'var(--text-secondary)', margin: 0 }}>
                     Record weekly check-in for <strong style={{ color: 'var(--text-primary)' }}>{client.name}</strong>
                   </p>
 
                   {/* Body Metrics */}
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>BODY METRICS</div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>BODY METRICS</div>
                   <div style={styles.metricsGrid}>
                     <div style={styles.modalField}>
                       <span style={styles.modalLabel}>Weight (kg)</span>
@@ -1053,7 +1053,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   </div>
 
                   {/* Wellness Scores */}
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>WELLNESS</div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>WELLNESS</div>
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>Mood</span>
                     <div style={styles.moodPicker}>
@@ -1073,7 +1073,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                           }}
                         >
                           <m.Icon size={18} />
-                          <span style={{ fontSize: '10px' }}>{m.label}</span>
+                          <span style={{ fontSize: '14px' }}>{m.label}</span>
                         </button>
                       ))}
                     </div>
@@ -1129,7 +1129,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   </div>
 
                   {/* Compliance */}
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COMPLIANCE</div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COMPLIANCE</div>
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>Adherence (%)</span>
                     <input
@@ -1144,7 +1144,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   </div>
 
                   {/* Qualitative */}
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>CLIENT SELF-REPORT</div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>CLIENT SELF-REPORT</div>
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>Notes</span>
                     <textarea
@@ -1176,7 +1176,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     />
                   </div>
 
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COACH</div>
+                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COACH</div>
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>Coach Feedback</span>
                     <textarea
@@ -1301,7 +1301,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {selectedCheckIn.notes && (
                     <div style={styles.modalField}>
                       <span style={styles.modalLabel}>Client Notes</span>
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)' }}>
+                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)' }}>
                         {selectedCheckIn.notes}
                       </p>
                     </div>
@@ -1310,7 +1310,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {selectedCheckIn.wins && (
                     <div style={styles.modalField}>
                       <span style={{ ...styles.modalLabel, color: 'var(--accent-success)' }}>Wins</span>
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-success-dim)', border: '1px solid rgba(34,197,94,0.1)' }}>
+                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-success-dim)', border: '1px solid rgba(34,197,94,0.1)' }}>
                         {selectedCheckIn.wins}
                       </p>
                     </div>
@@ -1319,7 +1319,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {selectedCheckIn.challenges && (
                     <div style={styles.modalField}>
                       <span style={{ ...styles.modalLabel, color: 'var(--accent-warm)' }}>Challenges</span>
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-warm-dim)', border: '1px solid rgba(245,158,11,0.1)' }}>
+                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-warm-dim)', border: '1px solid rgba(245,158,11,0.1)' }}>
                         {selectedCheckIn.challenges}
                       </p>
                     </div>
@@ -1340,7 +1340,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {selectedCheckIn.reviewStatus === 'flagged' && selectedCheckIn.flagReason && (
                     <div style={styles.modalField}>
                       <span style={{ ...styles.modalLabel, color: 'var(--accent-danger)' }}>Flagged</span>
-                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
                         {selectedCheckIn.flagReason}
                       </p>
                     </div>
@@ -1348,13 +1348,13 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
 
                   {/* Review Status Badge */}
                   {selectedCheckIn.reviewStatus && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px' }}>
                       <span style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>Status:</span>
                       <span style={{
                         padding: '3px 10px',
                         borderRadius: '20px',
                         fontWeight: 600,
-                        fontSize: '11px',
+                        fontSize: '15px',
                         textTransform: 'capitalize' as const,
                         color: selectedCheckIn.reviewStatus === 'reviewed' ? 'var(--accent-success)' : selectedCheckIn.reviewStatus === 'flagged' ? 'var(--accent-danger)' : 'var(--accent-warm)',
                         background: selectedCheckIn.reviewStatus === 'reviewed' ? 'var(--accent-success-dim)' : selectedCheckIn.reviewStatus === 'flagged' ? 'rgba(239,68,68,0.1)' : 'var(--accent-warm-dim)',
@@ -1423,7 +1423,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-success-dim)',
     border: '1px solid rgba(34,197,94,0.2)',
     color: 'var(--accent-success)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     textAlign: 'center',
   },
@@ -1438,7 +1438,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     border: 'none',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     padding: '6px 12px',
@@ -1462,12 +1462,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '22px',
+    fontSize: '31px',
     fontWeight: 700,
     color: '#07090e',
   },
   profileName: {
-    fontSize: '22px',
+    fontSize: '31px',
     fontWeight: 700,
     letterSpacing: '-0.5px',
   },
@@ -1475,7 +1475,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-secondary)',
     marginTop: '4px',
   },
@@ -1492,7 +1492,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '10px',
   },
   planTag: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -1502,7 +1502,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     background: 'rgba(255,255,255,0.04)',
     padding: '3px 10px',
@@ -1512,7 +1512,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--accent-warm)',
     background: 'var(--accent-warm-dim)',
     padding: '3px 10px',
@@ -1531,7 +1531,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-elevated)',
     border: '1px solid var(--glass-border)',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     transition: 'border-color 0.15s, color 0.15s',
@@ -1541,12 +1541,12 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
   },
   metricLabel: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     marginBottom: '4px',
   },
   metricValue: {
-    fontSize: '28px',
+    fontSize: '39px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     letterSpacing: '-1px',
@@ -1555,7 +1555,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '2px',
   },
   metricUnit: {
-    fontSize: '14px',
+    fontSize: '20px',
     fontWeight: 400,
     color: 'var(--text-secondary)',
   },
@@ -1563,7 +1563,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     marginTop: '4px',
   },
@@ -1585,7 +1585,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
   },
   chartTitle: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
   },
   chartLegend: {
@@ -1598,7 +1598,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   legendDot: {
@@ -1621,7 +1621,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    fontSize: '14px',
+    fontSize: '20px',
     padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
     background: 'rgba(255,255,255,0.02)',
@@ -1633,7 +1633,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '16px 0 0',
   },
   notes: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-secondary)',
     lineHeight: 1.6,
     marginTop: '8px',
@@ -1647,7 +1647,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-sm)',
     padding: '10px 14px',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
     width: '240px',
@@ -1658,7 +1658,7 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 10,
   },
   tooltipLabel: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 700,
     color: 'var(--text-tertiary)',
     letterSpacing: '0.5px',
@@ -1692,7 +1692,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--glass-border)',
   },
   modalTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
@@ -1719,7 +1719,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '10px',
   },
   modalLabel: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -1732,7 +1732,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '20px',
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid var(--glass-border)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     color: 'var(--text-primary)',
   },
@@ -1743,7 +1743,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '9px',
+    fontSize: '13px',
     fontWeight: 700,
     color: '#07090e',
   },
@@ -1753,7 +1753,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-md)',
     padding: '12px 14px',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
     resize: 'vertical',
@@ -1772,7 +1772,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1786,7 +1786,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1827,7 +1827,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)',
     cursor: 'pointer',
     textAlign: 'center',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     transition: 'all 0.2s',
@@ -1836,7 +1836,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -1851,7 +1851,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '16px',
   },
   trainingSubtitle: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-tertiary)',
     margin: '2px 0 0',
   },
@@ -1866,13 +1866,13 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '2px',
   },
   trainingStatValue: {
-    fontSize: '18px',
+    fontSize: '25px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     color: 'var(--text-primary)',
   },
   trainingStatLabel: {
-    fontSize: '10px',
+    fontSize: '14px',
     color: 'var(--text-tertiary)',
     fontWeight: 500,
     textTransform: 'uppercase' as const,
@@ -1884,7 +1884,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '3px',
   },
   calDayHeader: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textAlign: 'center' as const,
@@ -1910,7 +1910,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
   },
   calDayNum: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontFamily: 'var(--font-display)',
     lineHeight: 1,
   },
@@ -1927,7 +1927,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   calSessionType: {
-    fontSize: '7px',
+    fontSize: '10px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase' as const,
@@ -1949,7 +1949,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '5px',
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
   },
   calLegendDot: {
@@ -1969,7 +1969,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'rgba(255,255,255,0.03)',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
     width: '100%',
@@ -2004,14 +2004,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '2px',
   },
   programRowName: {
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
   },
   programRowMeta: {
     display: 'flex',
     alignItems: 'center',
     gap: '5px',
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
     textTransform: 'capitalize',
   },
@@ -2050,7 +2050,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     color: 'var(--text-primary)',
     minWidth: '130px',
@@ -2066,7 +2066,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '3px',
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '2px 8px',
     borderRadius: '10px',
@@ -2075,7 +2075,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
   },
   checkInStatusBadge: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -2116,14 +2116,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
   },
   checkInDetailLabel: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
   },
   checkInDetailValue: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     color: 'var(--text-primary)',

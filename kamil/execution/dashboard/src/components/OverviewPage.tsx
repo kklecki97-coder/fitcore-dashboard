@@ -287,12 +287,12 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                 dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'Outfit' }}
+                tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'Outfit' }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}
+                tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}
                 tickFormatter={(v) => `$${v}`}
               />
               <Tooltip
@@ -301,7 +301,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                   border: '1px solid rgba(255,255,255,0.08)',
                   borderRadius: '10px',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                  fontSize: '13px',
+                  fontSize: '18px',
                   fontFamily: 'Outfit',
                 }}
                 labelStyle={{ color: '#8b92a5' }}
@@ -323,7 +323,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
       </GlassCard>
 
       {/* Bottom Row */}
-      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
+      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)' }}>
         {/* At-Risk Clients */}
         <GlassCard delay={0.3}>
           <div style={styles.cardHeader}>
@@ -340,7 +340,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
           <div style={styles.riskList}>
             {atRiskClients.length === 0 ? (
               <div style={styles.emptyState}>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>No at-risk clients right now</span>
+                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>No at-risk clients right now</span>
               </div>
             ) : (
               atRiskClients.map((client, i) => {
@@ -361,14 +361,14 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                       {getInitials(client.name)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 500 }}>{client.name}</div>
+                      <div style={{ fontSize: '18px', fontWeight: 500 }}>{client.name}</div>
                       <div style={styles.riskReasons}>
                         {reasons.map((r, j) => (
                           <span key={j} style={styles.riskTag}>{r}</span>
                         ))}
                       </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                    <div style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>
                       {client.lastActive}
                     </div>
                   </motion.div>
@@ -407,8 +407,8 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                     {getInitials(client.name)}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 500 }}>{client.name}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{client.plan}</div>
+                    <div style={{ fontSize: '18px', fontWeight: 500 }}>{client.name}</div>
+                    <div style={{ fontSize: '17px', color: 'var(--text-secondary)' }}>{client.plan}</div>
                   </div>
                   <div style={styles.progressContainer}>
                     <div style={styles.progressBar}>
@@ -430,7 +430,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
         </GlassCard>
 
         {/* Recent Messages */}
-        <GlassCard delay={0.4}>
+        <GlassCard delay={0.4} style={{ gridColumn: '1 / -1' }}>
           <div style={styles.cardHeader}>
             <div>
               <h3 style={styles.cardTitle}>Recent Messages</h3>
@@ -458,7 +458,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={styles.msgHeader}>
-                      <span style={{ fontSize: '13px', fontWeight: 500 }}>{msg.clientName}</span>
+                      <span style={{ fontSize: '18px', fontWeight: 500 }}>{msg.clientName}</span>
                       {!msg.isRead && <span style={styles.unreadDot} />}
                     </div>
                     <div style={styles.msgText}>{msg.text}</div>
@@ -514,20 +514,20 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '3px',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     padding: '3px 8px',
     borderRadius: '20px',
   },
   statValue: {
-    fontSize: '28px',
+    fontSize: '39px',
     fontWeight: 700,
     letterSpacing: '-1px',
     fontFamily: 'var(--font-display)',
     lineHeight: 1.1,
   },
   statLabel: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-secondary)',
     marginTop: '4px',
   },
@@ -542,12 +542,12 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
   },
   cardTitle: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
   cardSubtitle: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     marginTop: '2px',
   },
@@ -557,7 +557,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
   },
   legendText: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   riskList: {
@@ -582,7 +582,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
   },
   riskTag: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     padding: '1px 6px',
     borderRadius: '8px',
@@ -610,7 +610,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'background 0.15s',
   },
   rank: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
     width: '24px',
@@ -622,7 +622,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 700,
     color: '#07090e',
     flexShrink: 0,
@@ -645,7 +645,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '2px',
   },
   progressText: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     fontFamily: 'var(--font-mono)',
     color: 'var(--text-secondary)',
@@ -673,12 +673,10 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
   },
   msgText: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     marginTop: '2px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
+    lineHeight: 1.5,
   },
   unreadDot: {
     width: '6px',
@@ -690,7 +688,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     border: 'none',
     color: 'var(--accent-primary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     cursor: 'pointer',
     fontFamily: 'var(--font-display)',
@@ -725,7 +723,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   insightText: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-primary)',
     fontWeight: 500,
   },
@@ -737,14 +735,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
   },
   quoteText: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 500,
     color: 'var(--text-primary)',
     lineHeight: 1.6,
     fontStyle: 'italic',
   },
   quoteAuthor: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-tertiary)',
     marginTop: '6px',
     fontWeight: 500,

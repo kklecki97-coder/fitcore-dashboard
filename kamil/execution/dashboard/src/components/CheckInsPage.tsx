@@ -57,11 +57,11 @@ function DeltaBadge({ current, previous, unit, inverse }: { current: number; pre
   const diff = current - previous;
   const isGood = inverse ? diff < 0 : diff > 0;
   const isBad = inverse ? diff > 0 : diff < 0;
-  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>—</span>;
+  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>—</span>;
   const color = isGood ? 'var(--accent-success)' : isBad ? 'var(--accent-danger)' : 'var(--text-tertiary)';
   const Icon = diff > 0 ? TrendingUp : TrendingDown;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '10px', fontWeight: 600, color }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '14px', fontWeight: 600, color }}>
       <Icon size={10} />
       {diff > 0 ? '+' : ''}{diff.toFixed(1)}{unit}
     </span>
@@ -83,7 +83,7 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
       <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)' }}>
         <div style={{ width: `${pct}%`, height: '100%', borderRadius: '2px', background: color, transition: 'width 0.3s' }} />
       </div>
-      <span style={{ fontSize: '11px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
+      <span style={{ fontSize: '15px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
     </div>
   );
 }
@@ -617,21 +617,21 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
   },
   summaryLabel: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
   },
   summaryValue: {
-    fontSize: '28px',
+    fontSize: '39px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     color: 'var(--text-primary)',
     marginTop: '4px',
   },
   summaryHint: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
     marginTop: '2px',
   },
@@ -647,7 +647,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   queueTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 700,
     color: 'var(--text-primary)',
     margin: 0,
@@ -666,14 +666,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid transparent',
     background: 'transparent',
     color: 'var(--text-tertiary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     transition: 'all 0.15s',
   },
   tabBadge: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 700,
     padding: '1px 6px',
     borderRadius: '10px',
@@ -697,7 +697,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
   },
   queueList: {
@@ -712,7 +712,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '40px 20px',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
   },
   queueItem: {
     borderRadius: 'var(--radius-sm)',
@@ -742,18 +742,18 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 700,
     color: '#fff',
     flexShrink: 0,
   },
   queueClientName: {
-    fontSize: '14px',
+    fontSize: '20px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
   queueDate: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   queueMetrics: {
@@ -770,12 +770,12 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '3px 8px',
     borderRadius: '8px',
     background: 'rgba(255,255,255,0.04)',
-    fontSize: '12px',
+    fontSize: '17px',
   },
   metricChipValue: {
     fontWeight: 600,
     color: 'var(--text-primary)',
-    fontSize: '12px',
+    fontSize: '17px',
   },
   queueItemRight: {
     display: 'flex',
@@ -808,7 +808,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   comparisonLabel: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
@@ -830,14 +830,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(255,255,255,0.04)',
   },
   metricCellLabel: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
     letterSpacing: '0.3px',
   },
   metricCellValue: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     color: 'var(--text-primary)',
@@ -849,7 +849,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   wellnessLabel: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 500,
     color: 'var(--text-secondary)',
   },
@@ -863,7 +863,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(255,255,255,0.04)',
   },
   trendLabel: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 500,
     color: 'var(--text-secondary)',
     minWidth: '60px',
@@ -878,7 +878,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
   },
   noteLabel: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
@@ -888,7 +888,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
   },
   noteText: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
     margin: 0,
@@ -911,7 +911,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(239,68,68,0.08)',
     border: '1px solid rgba(239,68,68,0.15)',
     color: 'var(--accent-danger)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
   },
   actionBar: {
@@ -926,7 +926,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     resize: 'vertical',
     outline: 'none',
@@ -946,7 +946,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'var(--accent-primary)',
     color: '#07090e',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -960,7 +960,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -974,7 +974,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(239,68,68,0.2)',
     background: 'rgba(239,68,68,0.08)',
     color: 'var(--accent-danger)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -990,7 +990,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(239,68,68,0.15)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
     width: '160px',

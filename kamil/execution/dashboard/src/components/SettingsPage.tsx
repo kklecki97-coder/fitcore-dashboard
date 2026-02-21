@@ -370,7 +370,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       ...styles.tfaDot,
                       background: twoFactorEnabled ? 'var(--accent-success)' : 'var(--text-tertiary)',
                     }} />
-                    <span style={{ fontSize: '14px', fontWeight: 500 }}>
+                    <span style={{ fontSize: '20px', fontWeight: 500 }}>
                       2FA is currently <strong>{twoFactorEnabled ? 'enabled' : 'disabled'}</strong>
                     </span>
                   </div>
@@ -435,11 +435,11 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   sectionTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 600,
   },
   sectionSub: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     marginTop: '2px',
   },
@@ -452,12 +452,12 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '14px',
   },
   settingLabel: {
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     color: 'var(--text-primary)',
   },
   settingDesc: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     marginTop: '2px',
   },
@@ -520,11 +520,11 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '10px',
   },
   themeName: {
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
   },
   themeDesc: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
   },
   activeCheck: {
@@ -554,24 +554,24 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '18px',
+    fontSize: '25px',
     fontWeight: 700,
     color: '#fff',
     flexShrink: 0,
   },
   profileName: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
   },
   profileEmail: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   editBtn: {
     background: 'var(--bg-elevated)',
     border: '1px solid var(--glass-border)',
     color: 'var(--text-secondary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     padding: '5px 12px',
@@ -591,14 +591,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
   },
   fieldLabel: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
   },
   fieldValue: {
-    fontSize: '14px',
+    fontSize: '20px',
     fontWeight: 500,
     color: 'var(--text-primary)',
   },
@@ -608,7 +608,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-elevated)',
     border: '1px solid var(--glass-border)',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
   },
@@ -629,7 +629,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
@@ -642,7 +642,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'var(--accent-primary)',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -701,7 +701,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '20px',
   },
   modalTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 600,
   },
   closeBtn: {
@@ -746,7 +746,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   tfaDesc: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
   },

@@ -264,7 +264,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                     <span style={{ ...styles.td, flex: 1, textAlign: 'right', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
                       ${inv.amount}
                     </span>
-                    <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '12px' }}>
+                    <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '17px' }}>
                       {new Date(inv.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                     <span style={{ ...styles.td, flex: 1 }}>
@@ -282,7 +282,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                           Mark Paid
                         </button>
                       ) : (
-                        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                        <span style={{ fontSize: '15px', color: 'var(--text-tertiary)' }}>
                           {inv.paidDate && new Date(inv.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       )}
@@ -348,8 +348,8 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                             ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--accent-primary-dim)' } : {}),
                           }}
                         >
-                          <div style={{ fontWeight: 600, fontSize: '13px' }}>{p}</div>
-                          <div style={{ fontSize: '11px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
+                          <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
+                          <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
                         </button>
                       );
                     })}
@@ -390,18 +390,18 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '8px',
   },
   summaryLabel: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     marginBottom: '4px',
   },
   summaryValue: {
-    fontSize: '28px',
+    fontSize: '39px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     letterSpacing: '-1px',
   },
   summaryMeta: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     marginTop: '4px',
   },
@@ -423,7 +423,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
   },
   sectionTitle: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
   },
   filterTabs: {
@@ -439,7 +439,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid transparent',
     background: 'transparent',
     color: 'var(--text-tertiary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -451,7 +451,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderColor: 'rgba(0,229,200,0.15)',
   },
   filterCount: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     opacity: 0.6,
   },
@@ -469,7 +469,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     width: '140px',
   },
@@ -488,7 +488,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     appearance: 'none',
@@ -503,7 +503,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -517,7 +517,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '4px',
   },
   th: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     letterSpacing: '0.5px',
@@ -535,7 +535,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'background 0.1s',
   },
   td: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-primary)',
   },
   avatar: {
@@ -545,22 +545,22 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 700,
     color: '#07090e',
     flexShrink: 0,
   },
   clientName: {
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
   },
   amount: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
   },
   planChip: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '2px 8px',
     borderRadius: '10px',
@@ -571,7 +571,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -586,7 +586,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-success-dim)',
     border: '1px solid rgba(34,197,94,0.15)',
     color: 'var(--accent-success)',
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -606,7 +606,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
   },
   mobileCardMeta: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
     marginTop: '2px',
   },
@@ -620,7 +620,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-success-dim)',
     border: '1px solid rgba(34,197,94,0.15)',
     color: 'var(--accent-success)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -630,7 +630,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '40px 20px',
     textAlign: 'center',
     color: 'var(--text-tertiary)',
-    fontSize: '13px',
+    fontSize: '18px',
   },
   // Modal
   overlay: {
@@ -660,7 +660,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--glass-border)',
   },
   modalTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 600,
   },
   closeBtn: {
@@ -686,7 +686,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   modalLabel: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -697,7 +697,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'rgba(255,255,255,0.03)',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
   },
@@ -729,7 +729,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -743,7 +743,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',

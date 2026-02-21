@@ -203,7 +203,7 @@ export default function WorkoutProgramsPage({
                       </span>
                     </div>
                   ) : (
-                    <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Unassigned</span>
+                    <span style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>Unassigned</span>
                   )}
                 </div>
 
@@ -257,7 +257,7 @@ export default function WorkoutProgramsPage({
                 <button onClick={() => setDeleteConfirm(null)} style={styles.closeBtn}><X size={16} /></button>
               </div>
               <div style={styles.modalBody}>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '20px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                   Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>
                     {programs.find(p => p.id === deleteConfirm)?.name}
                   </strong>? This action cannot be undone.
@@ -308,7 +308,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     flex: 1,
   },
@@ -318,7 +318,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-elevated)',
     border: '1px solid var(--glass-border)',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     outline: 'none',
@@ -332,7 +332,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -349,7 +349,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
     padding: '6px 14px',
     borderRadius: '20px',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
   },
   statValue: {
@@ -376,7 +376,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   cardTitle: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
@@ -415,7 +415,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     width: '100%',
@@ -435,7 +435,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -458,17 +458,17 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '9px',
+    fontSize: '13px',
     fontWeight: 700,
     color: '#07090e',
   },
   moreClients: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
     marginLeft: '2px',
   },
   clientNames: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     marginLeft: '4px',
   },
@@ -478,7 +478,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   summaryText: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   cardFooter: {
@@ -488,7 +488,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: '1px solid var(--glass-border)',
   },
   dateText: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
   },
   empty: {
@@ -528,7 +528,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--glass-border)',
   },
   modalTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 600,
   },
   closeBtn: {
@@ -558,7 +558,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -572,7 +572,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'var(--accent-danger)',
     color: '#fff',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
