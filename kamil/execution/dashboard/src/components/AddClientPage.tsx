@@ -146,8 +146,8 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
                     ...(plan === p && p === 'Basic' ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' } : {}),
                   }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: '13px' }}>{p}</div>
-                  <div style={{ fontSize: '11px', opacity: 0.7 }}>${planRates[p]}/mo</div>
+                  <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
+                  <div style={{ fontSize: '15px', opacity: 0.7 }}>${planRates[p]}/mo</div>
                 </button>
               ))}
             </div>
@@ -289,7 +289,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     border: 'none',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     padding: '6px 10px',
@@ -297,7 +297,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'color 0.15s',
   },
   pageTitle: {
-    fontSize: '20px',
+    fontSize: '28px',
     fontWeight: 700,
     color: 'var(--text-primary)',
   },
@@ -312,12 +312,12 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '16px',
   },
   sectionTitle: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
   sectionSub: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-tertiary)',
     marginTop: '-10px',
     marginBottom: '16px',
@@ -329,7 +329,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '16px',
   },
   label: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -349,7 +349,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     flex: 1,
     width: '100%',
@@ -360,7 +360,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-md)',
     padding: '10px 14px',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
     resize: 'vertical',
@@ -368,11 +368,11 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'border-color 0.2s',
   },
   hint: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
   },
   error: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--accent-danger)',
     fontWeight: 500,
   },
@@ -416,11 +416,11 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '2px',
   },
   summaryLabel: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
   },
   summaryValue: {
-    fontSize: '14px',
+    fontSize: '20px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
@@ -439,7 +439,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -454,7 +454,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',

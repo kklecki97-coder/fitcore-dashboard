@@ -351,8 +351,8 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                             ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'rgba(255,255,255,0.04)' } : {}),
                           }}
                         >
-                          <div style={{ fontWeight: 600, fontSize: '13px' }}>{p}</div>
-                          <div style={{ fontSize: '11px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
+                          <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
+                          <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
                         </button>
                       );
                     })}
@@ -419,7 +419,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 </button>
               </div>
               <div style={styles.modalBody}>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '20px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>
                     {allClients.find(c => c.id === deleteConfirm)?.name}
                   </strong>? This action cannot be undone.
@@ -473,7 +473,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     flex: 1,
   },
@@ -495,7 +495,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
@@ -508,7 +508,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -522,7 +522,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0 4px',
   },
   miniStat: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-secondary)',
     display: 'flex',
     gap: '4px',
@@ -550,16 +550,16 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '14px',
+    fontSize: '20px',
     fontWeight: 700,
     color: '#07090e',
   },
   clientName: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
   },
   clientEmail: {
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   moreBtn: {
@@ -576,7 +576,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '16px',
   },
   planBadge: {
-    fontSize: '11px',
+    fontSize: '15px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -586,7 +586,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   cardStats: {
@@ -598,12 +598,12 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
   },
   cardStatLabel: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
     marginBottom: '2px',
   },
   cardStatValue: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
   },
@@ -624,7 +624,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
   },
   footerText: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
   },
   dropdownMenu: {
@@ -649,7 +649,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     textAlign: 'left',
@@ -672,7 +672,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-sm)',
     padding: '10px 14px',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
     width: '220px',
@@ -683,7 +683,7 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 10,
   },
   tooltipLabel: {
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 700,
     color: 'var(--text-tertiary)',
     letterSpacing: '0.5px',
@@ -719,7 +719,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--glass-border)',
   },
   modalTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 600,
   },
   closeBtn: {
@@ -745,7 +745,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   modalLabel: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -778,7 +778,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
@@ -791,7 +791,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -801,7 +801,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '3px',
-    fontSize: '10px',
+    fontSize: '14px',
     fontWeight: 600,
     padding: '2px 8px',
     borderRadius: '20px',

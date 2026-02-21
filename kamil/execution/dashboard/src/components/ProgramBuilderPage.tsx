@@ -245,7 +245,7 @@ export default function ProgramBuilderPage({
                   onChange={(e) => setDraft(prev => ({ ...prev, durationWeeks: parseInt(e.target.value) || 1 }))}
                   style={{ ...styles.input, width: '70px', textAlign: 'center' }}
                 />
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>weeks</span>
+                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>weeks</span>
               </div>
             </div>
             <div style={styles.fieldGroup}>
@@ -277,7 +277,7 @@ export default function ProgramBuilderPage({
               ))}
             </div>
           ) : (
-            <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>No clients assigned</span>
+            <span style={{ fontSize: '18px', color: 'var(--text-tertiary)' }}>No clients assigned</span>
           )}
           <button onClick={() => setAssignModal(true)} style={styles.assignBtn}>
             <Plus size={13} /> Assign
@@ -299,7 +299,7 @@ export default function ProgramBuilderPage({
                       onChange={(e) => setRenameValue(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') confirmRenameDay(); if (e.key === 'Escape') setRenamingDay(null); }}
                       onBlur={confirmRenameDay}
-                      style={{ ...styles.input, width: '120px', padding: '6px 10px', fontSize: '12px' }}
+                      style={{ ...styles.input, width: '120px', padding: '6px 10px', fontSize: '17px' }}
                     />
                   </div>
                 ) : (
@@ -422,7 +422,7 @@ export default function ProgramBuilderPage({
           ) : (
             <div style={styles.emptyDay}>
               <Dumbbell size={32} color="var(--text-tertiary)" />
-              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '13px' }}>No exercises yet</p>
+              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '18px' }}>No exercises yet</p>
               <button onClick={openAddExercise} style={styles.addExerciseBtn}>
                 <Plus size={14} /> Add Exercise
               </button>
@@ -433,7 +433,7 @@ export default function ProgramBuilderPage({
         <GlassCard delay={0.15}>
           <div style={styles.emptyDay}>
             <Dumbbell size={40} color="var(--text-tertiary)" />
-            <p style={{ color: 'var(--text-secondary)', margin: '12px 0', fontSize: '14px' }}>
+            <p style={{ color: 'var(--text-secondary)', margin: '12px 0', fontSize: '20px' }}>
               No workout days yet. Add your first day to get started.
             </p>
             <button onClick={addDay} style={styles.addExerciseBtn}>
@@ -694,7 +694,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -708,7 +708,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -726,7 +726,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
   },
   label: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -737,7 +737,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '20px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
   },
@@ -747,7 +747,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     outline: 'none',
@@ -772,7 +772,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '20px',
     background: 'var(--bg-elevated)',
     border: '1px solid var(--glass-border)',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-primary)',
     fontFamily: 'var(--font-display)',
   },
@@ -783,7 +783,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '8px',
+    fontSize: '11px',
     fontWeight: 700,
     color: '#07090e',
   },
@@ -805,7 +805,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--accent-primary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -826,7 +826,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     border: '1px solid transparent',
     background: 'transparent',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -852,7 +852,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px dashed var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-tertiary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -866,11 +866,11 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '16px 20px 12px',
   },
   dayTitle: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
   },
   exerciseCount: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
     background: 'rgba(255,255,255,0.05)',
     padding: '2px 8px',
@@ -886,7 +886,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary-dim)',
     border: '1px solid rgba(0, 229, 200, 0.15)',
     color: 'var(--accent-primary)',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -913,7 +913,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     fontFamily: 'var(--font-mono)',
@@ -928,7 +928,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
   },
   exerciseName: {
-    fontSize: '14px',
+    fontSize: '20px',
     fontWeight: 500,
     color: 'var(--text-primary)',
   },
@@ -938,7 +938,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
   },
   prescriptionChip: {
-    fontSize: '12px',
+    fontSize: '17px',
     fontFamily: 'var(--font-mono)',
     color: 'var(--text-secondary)',
   },
@@ -949,7 +949,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '2px',
   },
   detailText: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
   },
   exerciseActions: {
@@ -995,7 +995,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '12px',
+    fontSize: '17px',
     color: 'var(--text-secondary)',
   },
   cancelBtnBottom: {
@@ -1004,7 +1004,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1018,7 +1018,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1053,7 +1053,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--glass-border)',
   },
   modalTitle: {
-    fontSize: '16px',
+    fontSize: '22px',
     fontWeight: 600,
   },
   closeBtn: {
@@ -1086,7 +1086,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1100,7 +1100,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1116,7 +1116,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
     resize: 'vertical',
@@ -1146,7 +1146,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'transparent',
     color: 'var(--text-primary)',
-    fontSize: '13px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     textAlign: 'left',
@@ -1175,7 +1175,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 700,
     color: '#07090e',
     flexShrink: 0,
@@ -1187,11 +1187,11 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'left',
   },
   clientName: {
-    fontSize: '13px',
+    fontSize: '18px',
     fontWeight: 600,
   },
   clientPlan: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
   },
   checkCircle: {

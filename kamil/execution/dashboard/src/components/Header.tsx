@@ -112,7 +112,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-primary)',
   },
   subtitle: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-secondary)',
     fontWeight: 400,
   },
@@ -121,7 +121,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
   },
   date: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-tertiary)',
     fontWeight: 400,
   },

@@ -127,13 +127,13 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
                     <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                    fontSize: '13px',
+                    fontSize: '18px',
                   }}
                   formatter={(value) => [`$${value}`, 'Revenue']}
                 />
@@ -167,12 +167,12 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
                   verticalAlign="bottom"
                   iconType="circle"
                   iconSize={8}
-                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: '12px', fontFamily: 'Outfit' }}>{value}</span>}
+                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: '17px', fontFamily: 'Outfit' }}>{value}</span>}
                 />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '10px', fontSize: '13px',
+                    borderRadius: '10px', fontSize: '18px',
                   }}
                   formatter={(value, name) => [`${value} clients`, name]}
                 />
@@ -190,12 +190,12 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
           <div style={{ height: 220, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={planRevenue} layout="vertical">
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
-                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#8b92a5' }} width={70} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
+                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={70} />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '10px', fontSize: '13px',
+                    borderRadius: '10px', fontSize: '18px',
                   }}
                   formatter={(value) => [`$${value}/mo`, 'Revenue']}
                 />
@@ -221,12 +221,12 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
                     <stop offset="100%" stopColor="#00e5c8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e' }} />
-                <YAxis domain={[70, 105]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
+                <YAxis domain={[70, 105]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '10px', fontSize: '13px',
+                    borderRadius: '10px', fontSize: '18px',
                   }}
                   formatter={(value) => [`${value}%`, 'Retention']}
                 />
@@ -242,12 +242,12 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
           <div style={{ height: 220, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={progressDistribution}>
-                <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#525a6e' }} />
+                <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 15, fill: '#525a6e' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '10px', fontSize: '13px',
+                    borderRadius: '10px', fontSize: '18px',
                   }}
                 />
                 <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={36} name="Clients">
@@ -269,7 +269,7 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
             <Award size={18} color="var(--accent-warm)" />
             <h3 style={styles.chartTitle}>Revenue Breakdown by Client</h3>
           </div>
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>
             {clients.filter(c => c.status !== 'paused').length} active paying clients
           </span>
         </div>
@@ -296,7 +296,7 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
               <span style={{ ...styles.tableCell, flex: 1, fontWeight: 500 }}>{client.name}</span>
               <span style={{ ...styles.tableCell, width: '80px' }}>
                 <span style={{
-                  fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '12px',
+                  fontSize: '15px', fontWeight: 600, padding: '2px 8px', borderRadius: '12px',
                   color: client.plan === 'Elite' ? 'var(--accent-warm)' : client.plan === 'Premium' ? 'var(--accent-secondary)' : 'var(--text-secondary)',
                   background: client.plan === 'Elite' ? 'var(--accent-warm-dim)' : client.plan === 'Premium' ? 'var(--accent-secondary-dim)' : 'rgba(255,255,255,0.05)',
                 }}>
@@ -315,7 +315,7 @@ export default function AnalyticsPage({ clients }: AnalyticsPageProps) {
                   background: client.status === 'active' ? 'var(--accent-success)' : client.status === 'paused' ? 'var(--accent-warm)' : 'var(--accent-secondary)',
                   marginRight: '6px',
                 }} />
-                <span style={{ textTransform: 'capitalize', fontSize: '13px' }}>{client.status}</span>
+                <span style={{ textTransform: 'capitalize', fontSize: '18px' }}>{client.status}</span>
               </span>
             </motion.div>
           ))}
@@ -357,19 +357,19 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '3px',
-    fontSize: '12px',
+    fontSize: '17px',
     fontWeight: 600,
     padding: '3px 8px',
     borderRadius: '20px',
   },
   statValue: {
-    fontSize: '28px',
+    fontSize: '39px',
     fontWeight: 700,
     letterSpacing: '-1px',
     lineHeight: 1.1,
   },
   statLabel: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-secondary)',
     marginTop: '4px',
   },
@@ -378,7 +378,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
   },
   chartTitle: {
-    fontSize: '15px',
+    fontSize: '21px',
     fontWeight: 600,
   },
   bottomRow: {
@@ -405,14 +405,14 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
   },
   tableHead: {
-    fontSize: '11px',
+    fontSize: '15px',
     color: 'var(--text-tertiary)',
     fontWeight: 600,
     letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
   },
   tableCell: {
-    fontSize: '13px',
+    fontSize: '18px',
     color: 'var(--text-primary)',
     display: 'flex',
     alignItems: 'center',
