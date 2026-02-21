@@ -1,8 +1,9 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Mail, Calendar, Flame, Target,
   TrendingUp, TrendingDown, Minus, DollarSign,
-  Edit3, MessageSquare, FileText,
+  Edit3, MessageSquare, FileText, X, Send, Save,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -10,6 +11,7 @@ import {
 } from 'recharts';
 import GlassCard from './GlassCard';
 import { clients, getInitials, getAvatarColor } from '../data';
+import useIsMobile from '../hooks/useIsMobile';
 
 interface ClientDetailPageProps {
   clientId: string;
@@ -17,6 +19,7 @@ interface ClientDetailPageProps {
 }
 
 export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageProps) {
+  const isMobile = useIsMobile();
   const client = clients.find(c => c.id === clientId);
   if (!client) return null;
 
@@ -56,8 +59,31 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
 
   const badge = planColors[client.plan];
 
+  const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const [editPlan, setEditPlan] = useState<'Basic' | 'Premium' | 'Elite'>(client.plan);
+  const [editStatus, setEditStatus] = useState<'active' | 'paused' | 'new'>(client.status);
+  const [editNotes, setEditNotes] = useState(client.notes);
+
+  const handleSendMessage = () => {
+    if (!messageText.trim()) return;
+    console.log('Message sent to', client.name, ':', messageText);
+    setMessageText('');
+    setActiveModal(null);
+  };
+
+  const handleSavePlan = () => {
+    console.log('Plan updated for', client.name, ':', { plan: editPlan, status: editStatus });
+    setActiveModal(null);
+  };
+
+  const handleSaveNotes = () => {
+    console.log('Notes updated for', client.name, ':', editNotes);
+    setActiveModal(null);
+  };
+
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Back Button + Client Header */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -72,21 +98,29 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
 
       {/* Profile Header */}
       <GlassCard delay={0.05}>
-        <div style={styles.profileHeader}>
-          <div style={styles.profileLeft}>
-            <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id) }}>
-              {getInitials(client.name)}
+        <div style={{ ...styles.profileHeader, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : undefined }}>
+          <div style={{ ...styles.profileLeft, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '20px' }}>
+            <div className="avatar-tooltip-wrap" style={{ position: 'relative' }}>
+              <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '48px', height: '48px', fontSize: '18px' } : {}) }}>
+                {getInitials(client.name)}
+              </div>
+              {client.notes && (
+                <div className="avatar-tooltip" style={styles.avatarTooltip}>
+                  <div style={styles.tooltipLabel}>Coach Notes</div>
+                  {client.notes}
+                </div>
+              )}
             </div>
             <div>
-              <h2 style={styles.profileName}>{client.name}</h2>
-              <div style={styles.profileMeta}>
+              <h2 style={{ ...styles.profileName, fontSize: isMobile ? '18px' : '22px' }}>{client.name}</h2>
+              <div style={{ ...styles.profileMeta, flexWrap: 'wrap' }}>
                 <Mail size={13} color="var(--text-tertiary)" />
                 <span>{client.email}</span>
                 <span style={styles.dot} />
                 <Calendar size={13} color="var(--text-tertiary)" />
                 <span>Since {client.startDate}</span>
               </div>
-              <div style={styles.profileTags}>
+              <div style={{ ...styles.profileTags, flexWrap: 'wrap' }}>
                 <span style={{ ...styles.planTag, color: badge.color, background: badge.bg }}>
                   {client.plan}
                 </span>
@@ -104,16 +138,16 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
             </div>
           </div>
 
-          <div style={styles.profileActions}>
-            <button style={styles.actionBtn}>
+          <div style={{ ...styles.profileActions, ...(isMobile ? { width: '100%' } : {}) }}>
+            <button onClick={() => setActiveModal('message')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <MessageSquare size={15} />
               Message
             </button>
-            <button style={styles.actionBtn}>
+            <button onClick={() => setActiveModal('editPlan')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Edit3 size={15} />
               Edit Plan
             </button>
-            <button style={styles.actionBtn}>
+            <button onClick={() => setActiveModal('notes')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <FileText size={15} />
               Notes
             </button>
@@ -122,7 +156,7 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
       </GlassCard>
 
       {/* Key Metrics */}
-      <div style={styles.metricsRow}>
+      <div style={{ ...styles.metricsRow, ...(isMobile ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' } : {}) }}>
         <GlassCard delay={0.1} style={{ flex: 1 }}>
           <div style={styles.metricLabel}>Current Weight</div>
           <div style={styles.metricValue}>
@@ -173,7 +207,7 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
       </div>
 
       {/* Charts */}
-      <div style={styles.chartsGrid}>
+      <div style={{ ...styles.chartsGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
         {/* Weight + Body Fat */}
         <GlassCard delay={0.2}>
           <h3 style={styles.chartTitle}>Weight & Body Fat Trend</h3>
@@ -225,7 +259,7 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
       </div>
 
       {/* Bottom Row */}
-      <div style={styles.bottomGrid}>
+      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
         {/* Performance Radar */}
         <GlassCard delay={0.3}>
           <h3 style={styles.chartTitle}>Performance Profile</h3>
@@ -290,6 +324,160 @@ export default function ClientDetailPage({ clientId, onBack }: ClientDetailPageP
           </div>
         </GlassCard>
       </div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {activeModal && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              key="overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveModal(null)}
+              style={styles.overlay}
+            />
+
+            {/* Modal Panel */}
+            <motion.div
+              key="modal"
+              initial={{ opacity: 0, y: 40, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.97 }}
+              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+              style={{ ...styles.modal, width: isMobile ? 'calc(100% - 32px)' : '480px' }}
+            >
+              {/* Modal Header */}
+              <div style={styles.modalHeader}>
+                <h3 style={styles.modalTitle}>
+                  {activeModal === 'message' && 'Send Message'}
+                  {activeModal === 'editPlan' && 'Edit Plan'}
+                  {activeModal === 'notes' && 'Coach Notes'}
+                </h3>
+                <button onClick={() => setActiveModal(null)} style={styles.closeBtn}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Message Modal */}
+              {activeModal === 'message' && (
+                <div style={styles.modalBody}>
+                  <div style={styles.modalRecipient}>
+                    <span style={styles.modalLabel}>To</span>
+                    <div style={styles.recipientChip}>
+                      <div style={{ ...styles.miniAvatar, background: getAvatarColor(client.id) }}>
+                        {getInitials(client.name)}
+                      </div>
+                      {client.name}
+                    </div>
+                  </div>
+                  <textarea
+                    placeholder="Type your message..."
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    style={styles.modalTextarea}
+                    rows={5}
+                    autoFocus
+                  />
+                  <div style={styles.modalActions}>
+                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
+                    <button
+                      onClick={handleSendMessage}
+                      style={{ ...styles.modalPrimaryBtn, opacity: messageText.trim() ? 1 : 0.5 }}
+                    >
+                      <Send size={14} />
+                      Send
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Plan Modal */}
+              {activeModal === 'editPlan' && (
+                <div style={styles.modalBody}>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Plan Tier</span>
+                    <div style={styles.modalPlanPicker}>
+                      {(['Basic', 'Premium', 'Elite'] as const).map((p) => {
+                        const isActive = editPlan === p;
+                        const accentMap = { Basic: 'var(--accent-primary)', Premium: 'var(--accent-secondary)', Elite: 'var(--accent-warm)' };
+                        const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => setEditPlan(p)}
+                            style={{
+                              ...styles.modalPlanOption,
+                              ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'rgba(255,255,255,0.04)' } : {}),
+                            }}
+                          >
+                            <div style={{ fontWeight: 600, fontSize: '13px' }}>{p}</div>
+                            <div style={{ fontSize: '11px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Status</span>
+                    <div style={styles.modalStatusPicker}>
+                      {(['active', 'paused', 'new'] as const).map((s) => {
+                        const isActive = editStatus === s;
+                        const colorMap = { active: 'var(--accent-success)', paused: 'var(--accent-warm)', new: 'var(--accent-secondary)' };
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => setEditStatus(s)}
+                            style={{
+                              ...styles.modalStatusOption,
+                              ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'rgba(255,255,255,0.04)' } : {}),
+                            }}
+                          >
+                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={styles.modalActions}>
+                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
+                    <button onClick={handleSavePlan} style={styles.modalPrimaryBtn}>
+                      <Save size={14} />
+                      Save Changes
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes Modal */}
+              {activeModal === 'notes' && (
+                <div style={styles.modalBody}>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Coach Notes for {client.name}</span>
+                    <textarea
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      style={styles.modalTextarea}
+                      rows={8}
+                      autoFocus
+                    />
+                  </div>
+                  <div style={styles.modalActions}>
+                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
+                    <button onClick={handleSaveNotes} style={styles.modalPrimaryBtn}>
+                      <Save size={14} />
+                      Save Notes
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -513,5 +701,199 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)',
     lineHeight: 1.6,
     marginTop: '8px',
+  },
+  avatarTooltip: {
+    position: 'absolute',
+    left: 'calc(100% + 12px)',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '10px 14px',
+    fontSize: '12px',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.5,
+    width: '240px',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    pointerEvents: 'none',
+    opacity: 0,
+    transition: 'opacity 0.15s',
+    zIndex: 10,
+  },
+  tooltipLabel: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: 'var(--text-tertiary)',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    marginBottom: '4px',
+  },
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 100,
+  },
+  modal: {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-lg)',
+    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    zIndex: 101,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '20px 24px 16px',
+    borderBottom: '1px solid var(--glass-border)',
+  },
+  modalTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  closeBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    padding: '4px',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBody: {
+    padding: '20px 24px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  modalRecipient: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  modalLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+    letterSpacing: '0.3px',
+  },
+  recipientChip: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '4px 12px 4px 4px',
+    borderRadius: '20px',
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid var(--glass-border)',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
+  },
+  miniAvatar: {
+    width: '24px',
+    height: '24px',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '9px',
+    fontWeight: 700,
+    color: '#07090e',
+  },
+  modalTextarea: {
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-md)',
+    padding: '12px 14px',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontFamily: 'var(--font-display)',
+    outline: 'none',
+    resize: 'vertical',
+    minHeight: '80px',
+    transition: 'border-color 0.2s',
+  },
+  modalActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '8px',
+    marginTop: '4px',
+  },
+  modalCancelBtn: {
+    padding: '8px 16px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+  },
+  modalPrimaryBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-primary)',
+    border: 'none',
+    color: '#07090e',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    boxShadow: '0 0 16px var(--accent-primary-dim)',
+    transition: 'transform 0.15s',
+  },
+  modalField: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  modalPlanPicker: {
+    display: 'flex',
+    gap: '8px',
+  },
+  modalPlanOption: {
+    flex: 1,
+    padding: '12px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    textAlign: 'center',
+    fontFamily: 'var(--font-display)',
+    transition: 'all 0.2s',
+  },
+  modalStatusPicker: {
+    display: 'flex',
+    gap: '8px',
+  },
+  modalStatusOption: {
+    flex: 1,
+    padding: '10px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    textAlign: 'center',
+    fontSize: '13px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    transition: 'all 0.2s',
   },
 };

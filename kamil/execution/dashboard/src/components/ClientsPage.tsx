@@ -1,21 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Search, Plus, Filter, ArrowUpDown,
   Flame, Pause, Sparkles, MoreHorizontal,
+  User, MessageSquare, Edit3, Play, Trash2,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { clients, getInitials, getAvatarColor } from '../data';
+import useIsMobile from '../hooks/useIsMobile';
 import type { Client } from '../types';
 
 interface ClientsPageProps {
   onViewClient: (id: string) => void;
+  onAddClient: () => void;
 }
 
-export default function ClientsPage({ onViewClient }: ClientsPageProps) {
+export default function ClientsPage({ onViewClient, onAddClient }: ClientsPageProps) {
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  // Close dropdown when clicking anywhere
+  const closeMenu = useCallback(() => setOpenMenuId(null), []);
+  useEffect(() => {
+    if (openMenuId) {
+      document.addEventListener('click', closeMenu);
+      return () => document.removeEventListener('click', closeMenu);
+    }
+  }, [openMenuId, closeMenu]);
 
   const filtered = clients.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -43,10 +57,10 @@ export default function ClientsPage({ onViewClient }: ClientsPageProps) {
   };
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Top Bar */}
-      <div style={styles.topBar}>
-        <div style={styles.searchBox}>
+      <div style={{ ...styles.topBar, flexWrap: isMobile ? 'wrap' : undefined }}>
+        <div style={{ ...styles.searchBox, maxWidth: isMobile ? '100%' : '360px', order: isMobile ? -1 : undefined }}>
           <Search size={16} color="var(--text-tertiary)" />
           <input
             type="text"
@@ -57,8 +71,8 @@ export default function ClientsPage({ onViewClient }: ClientsPageProps) {
           />
         </div>
 
-        <div style={styles.filters}>
-          <div style={styles.filterGroup}>
+        <div style={{ ...styles.filters, flex: isMobile ? '1 1 100%' : undefined }}>
+          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
             <Filter size={14} color="var(--text-tertiary)" />
             <select
               value={filterPlan}
@@ -71,7 +85,7 @@ export default function ClientsPage({ onViewClient }: ClientsPageProps) {
               <option value="Basic">Basic</option>
             </select>
           </div>
-          <div style={styles.filterGroup}>
+          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
             <ArrowUpDown size={14} color="var(--text-tertiary)" />
             <select
               value={filterStatus}
@@ -86,14 +100,14 @@ export default function ClientsPage({ onViewClient }: ClientsPageProps) {
           </div>
         </div>
 
-        <button style={styles.addBtn}>
+        <button onClick={onAddClient} style={{ ...styles.addBtn, ...(isMobile ? { width: '100%', justifyContent: 'center' } : {}) }}>
           <Plus size={16} />
           Add Client
         </button>
       </div>
 
       {/* Stats */}
-      <div style={styles.miniStats}>
+      <div style={{ ...styles.miniStats, gap: isMobile ? '12px' : '24px', flexWrap: isMobile ? 'wrap' : undefined }}>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--accent-success)' }}>
             {clients.filter(c => c.status === 'active').length}
@@ -117,7 +131,7 @@ export default function ClientsPage({ onViewClient }: ClientsPageProps) {
       </div>
 
       {/* Client Cards Grid */}
-      <div style={styles.grid}>
+      <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))' }}>
         {filtered.map((client, i) => {
           const badge = planBadge(client.plan);
           return (
@@ -129,17 +143,69 @@ export default function ClientsPage({ onViewClient }: ClientsPageProps) {
             >
               <div style={styles.cardTop}>
                 <div style={styles.clientInfo}>
-                  <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
-                    {getInitials(client.name)}
+                  <div className="avatar-tooltip-wrap" style={styles.avatarWrap}>
+                    <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
+                      {getInitials(client.name)}
+                    </div>
+                    {client.notes && (
+                      <div className="avatar-tooltip" style={styles.tooltip}>
+                        <div style={styles.tooltipLabel}>Coach Notes</div>
+                        {client.notes}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div style={styles.clientName}>{client.name}</div>
                     <div style={styles.clientEmail}>{client.email}</div>
                   </div>
                 </div>
-                <button style={styles.moreBtn}>
-                  <MoreHorizontal size={16} color="var(--text-tertiary)" />
-                </button>
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === client.id ? null : client.id);
+                    }}
+                    style={styles.moreBtn}
+                  >
+                    <MoreHorizontal size={16} color="var(--text-tertiary)" />
+                  </button>
+                  {openMenuId === client.id && (
+                      <div className="dropdown-menu" style={styles.dropdownMenu}>
+                        <button
+                          style={styles.menuItem}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onViewClient(client.id); }}
+                        >
+                          <User size={14} /> View Profile
+                        </button>
+                        <button
+                          style={styles.menuItem}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log('Message', client.name); }}
+                        >
+                          <MessageSquare size={14} /> Message
+                        </button>
+                        <button
+                          style={styles.menuItem}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log('Edit plan', client.name); }}
+                        >
+                          <Edit3 size={14} /> Edit Plan
+                        </button>
+                        <button
+                          style={styles.menuItem}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log(client.status === 'paused' ? 'Resume' : 'Pause', client.name); }}
+                        >
+                          {client.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
+                          {client.status === 'paused' ? 'Resume' : 'Pause'}
+                        </button>
+                        <div style={styles.menuDivider} />
+                        <button
+                          style={{ ...styles.menuItem, color: 'var(--accent-danger)' }}
+                          onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); console.log('Delete', client.name); }}
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </div>
+                  )}
+                </div>
               </div>
 
               <div style={styles.cardMeta}>
@@ -378,5 +444,68 @@ const styles: Record<string, React.CSSProperties> = {
   footerText: {
     fontSize: '11px',
     color: 'var(--text-tertiary)',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 'calc(100% + 4px)',
+    right: 0,
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '4px',
+    minWidth: '160px',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    zIndex: 10,
+  },
+  menuItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    width: '100%',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'background 0.1s, color 0.1s',
+  },
+  menuDivider: {
+    height: '1px',
+    background: 'var(--glass-border)',
+    margin: '4px 8px',
+  },
+  avatarWrap: {
+    position: 'relative',
+  },
+  tooltip: {
+    position: 'absolute',
+    left: 'calc(100% + 12px)',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '10px 14px',
+    fontSize: '12px',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.5,
+    width: '220px',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    pointerEvents: 'none',
+    opacity: 0,
+    transition: 'opacity 0.15s',
+    zIndex: 10,
+  },
+  tooltipLabel: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: 'var(--text-tertiary)',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    marginBottom: '4px',
   },
 };

@@ -115,7 +115,8 @@ export default function Sidebar({ currentPage, onNavigate, unreadCount }: Sideba
 
 const styles: Record<string, React.CSSProperties> = {
   sidebar: {
-    width: 'var(--sidebar-width)',
+    width: '100%',
+    minWidth: '260px',
     height: '100vh',
     background: 'var(--bg-secondary)',
     borderRight: '1px solid var(--glass-border)',

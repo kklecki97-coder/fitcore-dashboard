@@ -49,6 +49,6 @@ export interface WorkoutLog {
   completed: boolean;
 }
 
-export type Page = 'overview' | 'clients' | 'client-detail' | 'messages' | 'analytics' | 'schedule' | 'settings';
+export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings';
 
 export type Theme = 'dark' | 'light';

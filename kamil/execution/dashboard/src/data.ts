@@ -202,20 +202,44 @@ export const clients: Client[] = [
 ];
 
 export const messages: Message[] = [
+  // Marcus Chen — bench PR conversation
+  {
+    id: 'm1a', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
+    text: 'How did the bench session feel today? You were due for a heavy single.',
+    timestamp: '2026-02-20T13:00:00', isRead: true, isFromCoach: true,
+  },
+  {
+    id: 'm1b', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
+    text: 'Felt amazing honestly. Warm-ups were flying.',
+    timestamp: '2026-02-20T13:45:00', isRead: true, isFromCoach: false,
+  },
   {
     id: 'm1', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'Hit a new PR on bench today! 102.5kg for 2 reps. Feeling strong.',
     timestamp: '2026-02-20T14:30:00', isRead: false, isFromCoach: false,
+  },
+  // Jake Morrison — deload question
+  {
+    id: 'm2a', clientId: 'c3', clientName: 'Jake Morrison', clientAvatar: '',
+    text: 'Squats felt heavy yesterday, RPE was way higher than usual.',
+    timestamp: '2026-02-20T12:00:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm2', clientId: 'c3', clientName: 'Jake Morrison', clientAvatar: '',
     text: 'Coach, should I deload this week before peak? Feeling a bit beat up.',
     timestamp: '2026-02-20T13:15:00', isRead: false, isFromCoach: false,
   },
+  // Emma Rodriguez — first workout
   {
     id: 'm3', clientId: 'c4', clientName: 'Emma Rodriguez', clientAvatar: '',
     text: "Had my first workout today — it was tough but I loved it! Thanks for the program.",
     timestamp: '2026-02-20T11:45:00', isRead: false, isFromCoach: false,
+  },
+  // Sarah Williams — knee rehab conversation
+  {
+    id: 'm4a', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
+    text: "How's the knee feeling with the modified squats?",
+    timestamp: '2026-02-20T09:30:00', isRead: true, isFromCoach: true,
   },
   {
     id: 'm4', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
@@ -228,10 +252,22 @@ export const messages: Message[] = [
     timestamp: '2026-02-20T10:15:00', isRead: true, isFromCoach: true,
   },
   {
+    id: 'm5a', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
+    text: "Sounds good! I'm excited to push a bit further.",
+    timestamp: '2026-02-20T10:20:00', isRead: true, isFromCoach: false,
+  },
+  // David Park — missed session
+  {
     id: 'm6', clientId: 'c5', clientName: 'David Park', clientAvatar: '',
     text: 'Missed yesterday — double shift at work. Will make it up tomorrow morning.',
     timestamp: '2026-02-19T22:30:00', isRead: true, isFromCoach: false,
   },
+  {
+    id: 'm6a', clientId: 'c5', clientName: 'David Park', clientAvatar: '',
+    text: "No worries, life happens. Just don't skip two in a row — keep the momentum going.",
+    timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true,
+  },
+  // Tom Bradley — weight milestone
   {
     id: 'm7', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: 'Weighed in at 95.8kg this morning! First time under 96 in years.',
@@ -243,9 +279,25 @@ export const messages: Message[] = [
     timestamp: '2026-02-19T09:30:00', isRead: true, isFromCoach: true,
   },
   {
+    id: 'm8a', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
+    text: "Thanks coach! Couldn't have done it without the accountability. What's next?",
+    timestamp: '2026-02-19T09:45:00', isRead: true, isFromCoach: false,
+  },
+  {
+    id: 'm8b', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
+    text: "Next target: 93kg by end of March. We'll bump cardio slightly and keep protein high.",
+    timestamp: '2026-02-19T10:00:00', isRead: true, isFromCoach: true,
+  },
+  // Aisha Patel — program request
+  {
     id: 'm9', clientId: 'c8', clientName: 'Aisha Patel', clientAvatar: '',
     text: 'Can we add a glute day? I feel like I need more lower body focus.',
     timestamp: '2026-02-19T16:00:00', isRead: true, isFromCoach: false,
+  },
+  {
+    id: 'm9a', clientId: 'c8', clientName: 'Aisha Patel', clientAvatar: '',
+    text: "Absolutely. I'll swap Friday's session to a glute/hamstring focus. Check your program tomorrow.",
+    timestamp: '2026-02-19T16:30:00', isRead: true, isFromCoach: true,
   },
 ];
 

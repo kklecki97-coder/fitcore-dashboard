@@ -109,6 +109,34 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* ── Select / Option theming ── */
+select,
+select option {
+  color-scheme: dark;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+
+[data-theme="light"] select,
+[data-theme="light"] select option {
+  color-scheme: light;
+}
+
+/* ── Avatar Tooltip ── */
+.avatar-tooltip-wrap:hover .avatar-tooltip {
+  opacity: 1 !important;
+}
+
+/* ── Dropdown Menu Items ── */
+.dropdown-menu button:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .dropdown-menu button:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 6px;
@@ -158,4 +186,43 @@ body::after {
   0%, 100% { transform: translate(0, 0); }
   33% { transform: translate(-80px, 60px); }
   66% { transform: translate(40px, -40px); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Responsive — Mobile (<768px)
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --header-height: 60px;
+  }
+
+  body::after {
+    width: 300px;
+    height: 300px;
+    top: -100px;
+    right: -100px;
+  }
+}
+
+/* ── Mobile overlay backdrop ── */
+.mobile-overlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 40;
+    animation: fade-in 0.2s ease;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

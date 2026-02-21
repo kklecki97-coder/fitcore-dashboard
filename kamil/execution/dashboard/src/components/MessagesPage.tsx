@@ -1,20 +1,40 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Send, Paperclip, Image, Smile } from 'lucide-react';
+import { Search, Send, ArrowLeft } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { messages, clients, getInitials, getAvatarColor } from '../data';
+import { messages as initialMessages, clients, getInitials, getAvatarColor } from '../data';
 import type { Message } from '../types';
 
-export default function MessagesPage() {
+interface MessagesPageProps {
+  isMobile?: boolean;
+}
+
+export default function MessagesPage({ isMobile = false }: MessagesPageProps) {
   const [selectedClient, setSelectedClient] = useState<string>('c1');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showChat, setShowChat] = useState(false);
+  const [localMessages, setLocalMessages] = useState<Message[]>(initialMessages);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const activeConversation = localMessages.filter(m => m.clientId === selectedClient);
+  const activeClient = clients.find(c => c.id === selectedClient);
+
+  // Scroll on conversation switch or new message
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedClient, localMessages]);
 
   // Group messages by client
-  const clientIds = [...new Set(messages.map(m => m.clientId))];
+  const clientIds = [...new Set(localMessages.map(m => m.clientId))];
   const conversationClients = clientIds.map(id => {
     const client = clients.find(c => c.id === id)!;
-    const clientMessages = messages.filter(m => m.clientId === id);
+    const clientMessages = localMessages.filter(m => m.clientId === id);
     const lastMsg = clientMessages[clientMessages.length - 1];
     const unread = clientMessages.filter(m => !m.isRead && !m.isFromCoach).length;
     return { ...client, lastMessage: lastMsg, unreadCount: unread };
@@ -24,80 +44,101 @@ export default function MessagesPage() {
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const activeConversation = messages.filter(m => m.clientId === selectedClient);
-  const activeClient = clients.find(c => c.id === selectedClient);
-
   const formatTime = (ts: string) => {
     const d = new Date(ts);
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   const handleSend = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !activeClient) return;
+    const msg: Message = {
+      id: `m-${Date.now()}`,
+      clientId: selectedClient,
+      clientName: activeClient.name,
+      clientAvatar: '',
+      text: newMessage.trim(),
+      timestamp: new Date().toISOString(),
+      isRead: true,
+      isFromCoach: true,
+    };
+    setLocalMessages(prev => [...prev, msg]);
     setNewMessage('');
+  };
+
+  const handleSelectConversation = (id: string) => {
+    setSelectedClient(id);
+    if (isMobile) setShowChat(true);
   };
 
   return (
     <div style={styles.page}>
       {/* Conversations List */}
-      <GlassCard delay={0} style={styles.sidebar}>
-        <div style={styles.sidebarHeader}>
-          <h3 style={styles.sidebarTitle}>Conversations</h3>
-          <span style={styles.convCount}>{clientIds.length}</span>
-        </div>
+      {(!isMobile || !showChat) && (
+        <GlassCard delay={0} style={{ ...styles.sidebar, width: isMobile ? '100%' : '340px' }}>
+          <div style={styles.sidebarHeader}>
+            <h3 style={styles.sidebarTitle}>Conversations</h3>
+            <span style={styles.convCount}>{clientIds.length}</span>
+          </div>
 
-        <div style={styles.searchBox}>
-          <Search size={15} color="var(--text-tertiary)" />
-          <input
-            type="text"
-            placeholder="Search conversations..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={styles.searchInput}
-          />
-        </div>
+          <div style={styles.searchBox}>
+            <Search size={15} color="var(--text-tertiary)" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={styles.searchInput}
+            />
+          </div>
 
-        <div style={styles.convList}>
-          {filteredConversations.map((conv, i) => (
-            <motion.button
-              key={conv.id}
-              onClick={() => setSelectedClient(conv.id)}
-              style={{
-                ...styles.convItem,
-                background: selectedClient === conv.id ? 'var(--accent-primary-dim)' : 'transparent',
-                borderColor: selectedClient === conv.id ? 'rgba(0, 229, 200, 0.15)' : 'transparent',
-              }}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.03 }}
-              whileHover={{ background: selectedClient === conv.id ? 'var(--accent-primary-dim)' : 'rgba(255,255,255,0.03)' }}
-            >
-              <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
-                {getInitials(conv.name)}
-              </div>
-              <div style={styles.convInfo}>
-                <div style={styles.convName}>{conv.name}</div>
-                <div style={styles.convPreview}>
-                  {conv.lastMessage.isFromCoach && <span style={{ color: 'var(--accent-primary)' }}>You: </span>}
-                  {conv.lastMessage.text}
+          <div style={styles.convList}>
+            {filteredConversations.map((conv, i) => (
+              <motion.button
+                key={conv.id}
+                onClick={() => handleSelectConversation(conv.id)}
+                style={{
+                  ...styles.convItem,
+                  background: selectedClient === conv.id ? 'var(--accent-primary-dim)' : 'transparent',
+                  borderColor: selectedClient === conv.id ? 'rgba(0, 229, 200, 0.15)' : 'transparent',
+                }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.03 }}
+                whileHover={{ background: selectedClient === conv.id ? 'var(--accent-primary-dim)' : 'rgba(255,255,255,0.03)' }}
+              >
+                <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
+                  {getInitials(conv.name)}
                 </div>
-              </div>
-              <div style={styles.convRight}>
-                <span style={styles.convTime}>{formatTime(conv.lastMessage.timestamp)}</span>
-                {conv.unreadCount > 0 && (
-                  <span style={styles.unreadBadge}>{conv.unreadCount}</span>
-                )}
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      </GlassCard>
+                <div style={styles.convInfo}>
+                  <div style={styles.convName}>{conv.name}</div>
+                  <div style={styles.convPreview}>
+                    {conv.lastMessage.isFromCoach && <span style={{ color: 'var(--accent-primary)' }}>You: </span>}
+                    {conv.lastMessage.text}
+                  </div>
+                </div>
+                <div style={styles.convRight}>
+                  <span style={styles.convTime}>{formatTime(conv.lastMessage.timestamp)}</span>
+                  {conv.unreadCount > 0 && (
+                    <span style={styles.unreadBadge}>{conv.unreadCount}</span>
+                  )}
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </GlassCard>
+      )}
 
       {/* Chat Area */}
+      {(!isMobile || showChat) && (
       <div style={styles.chatArea}>
         {/* Chat Header */}
         <div style={styles.chatHeader}>
           <div style={styles.chatHeaderLeft}>
+            {isMobile && (
+              <button onClick={() => setShowChat(false)} style={styles.backBtn}>
+                <ArrowLeft size={18} />
+              </button>
+            )}
             <div style={{ ...styles.chatAvatar, background: getAvatarColor(selectedClient) }}>
               {activeClient && getInitials(activeClient.name)}
             </div>
@@ -145,17 +186,12 @@ export default function MessagesPage() {
               </div>
             </motion.div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
         <div style={styles.inputArea}>
           <div style={styles.inputRow}>
-            <button style={styles.inputIconBtn}>
-              <Paperclip size={16} />
-            </button>
-            <button style={styles.inputIconBtn}>
-              <Image size={16} />
-            </button>
             <input
               type="text"
               placeholder="Type your message..."
@@ -164,9 +200,6 @@ export default function MessagesPage() {
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               style={styles.messageInput}
             />
-            <button style={styles.inputIconBtn}>
-              <Smile size={16} />
-            </button>
             <button
               onClick={handleSend}
               style={{
@@ -179,6 +212,7 @@ export default function MessagesPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -428,17 +462,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-elevated)',
     border: '1px solid var(--glass-border)',
   },
-  inputIconBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--text-tertiary)',
-    cursor: 'pointer',
-    padding: '6px',
-    borderRadius: '6px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   messageInput: {
     flex: 1,
     background: 'transparent',
@@ -461,5 +484,16 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     transition: 'opacity 0.15s',
     boxShadow: '0 0 12px var(--accent-primary-dim)',
+  },
+  backBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    padding: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '6px',
   },
 };

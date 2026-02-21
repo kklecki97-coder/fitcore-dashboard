@@ -1,9 +1,11 @@
-import { Bell, Search, ChevronDown } from 'lucide-react';
+import { Bell, Search, ChevronDown, Menu } from 'lucide-react';
 import type { Page } from '../types';
 
 interface HeaderProps {
   currentPage: Page;
   unreadCount: number;
+  isMobile?: boolean;
+  onMenuToggle?: () => void;
 }
 
 const pageTitles: Record<Page, string> = {
@@ -26,7 +28,7 @@ const pageSubtitles: Record<Page, string> = {
   settings: 'Customize your dashboard experience',
 };
 
-export default function Header({ currentPage, unreadCount }: HeaderProps) {
+export default function Header({ currentPage, unreadCount, isMobile, onMenuToggle }: HeaderProps) {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -35,37 +37,61 @@ export default function Header({ currentPage, unreadCount }: HeaderProps) {
   });
 
   return (
-    <header style={styles.header}>
+    <header style={{
+      ...styles.header,
+      padding: isMobile ? '0 16px' : '0 32px',
+    }}>
       <div style={styles.left}>
-        <h1 style={styles.title}>{pageTitles[currentPage]}</h1>
-        <p style={styles.subtitle}>{pageSubtitles[currentPage]}</p>
+        {isMobile && (
+          <button onClick={onMenuToggle} style={styles.menuBtn}>
+            <Menu size={20} />
+          </button>
+        )}
+        <div>
+          <h1 style={{
+            ...styles.title,
+            fontSize: isMobile ? '17px' : '20px',
+          }}>{pageTitles[currentPage]}</h1>
+          {!isMobile && <p style={styles.subtitle}>{pageSubtitles[currentPage]}</p>}
+        </div>
       </div>
 
-      <div style={styles.right}>
-        <span style={styles.date}>{today}</span>
+      <div style={{
+        ...styles.right,
+        gap: isMobile ? '8px' : '16px',
+      }}>
+        {!isMobile && <span style={styles.date}>{today}</span>}
 
-        {/* Search */}
-        <div style={styles.searchBox}>
-          <Search size={15} color="var(--text-tertiary)" />
-          <input
-            type="text"
-            placeholder="Search..."
-            style={styles.searchInput}
-          />
-          <kbd style={styles.kbd}>/</kbd>
-        </div>
+        {/* Search — hidden on mobile */}
+        {!isMobile && (
+          <div style={styles.searchBox}>
+            <Search size={15} color="var(--text-tertiary)" />
+            <input
+              type="text"
+              placeholder="Search..."
+              style={styles.searchInput}
+            />
+            <kbd style={styles.kbd}>/</kbd>
+          </div>
+        )}
 
         {/* Notifications */}
-        <button style={styles.iconBtn}>
-          <Bell size={18} />
+        <button style={{
+          ...styles.iconBtn,
+          width: isMobile ? '36px' : '38px',
+          height: isMobile ? '36px' : '38px',
+        }}>
+          <Bell size={isMobile ? 16 : 18} />
           {unreadCount > 0 && <span style={styles.notifDot} />}
         </button>
 
         {/* Profile */}
-        <button style={styles.profileBtn}>
-          <div style={styles.profileAvatar}>K</div>
-          <ChevronDown size={14} color="var(--text-secondary)" />
-        </button>
+        {!isMobile && (
+          <button style={styles.profileBtn}>
+            <div style={styles.profileAvatar}>K</div>
+            <ChevronDown size={14} color="var(--text-secondary)" />
+          </button>
+        )}
       </div>
     </header>
   );
@@ -74,7 +100,6 @@ export default function Header({ currentPage, unreadCount }: HeaderProps) {
 const styles: Record<string, React.CSSProperties> = {
   header: {
     height: 'var(--header-height)',
-    padding: '0 32px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -88,11 +113,23 @@ const styles: Record<string, React.CSSProperties> = {
   },
   left: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  menuBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-elevated)',
+    color: 'var(--text-primary)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   title: {
-    fontSize: '20px',
     fontWeight: 700,
     letterSpacing: '-0.5px',
     color: 'var(--text-primary)',
@@ -105,7 +142,6 @@ const styles: Record<string, React.CSSProperties> = {
   right: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
   },
   date: {
     fontSize: '13px',
@@ -142,8 +178,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-mono)',
   },
   iconBtn: {
-    width: '38px',
-    height: '38px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',

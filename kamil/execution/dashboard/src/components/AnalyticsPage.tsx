@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import {
-  DollarSign, TrendingUp, Users, ArrowUpRight,
+  DollarSign, TrendingUp, ArrowUpRight,
   CreditCard, Target, Award,
 } from 'lucide-react';
 import {
@@ -9,8 +9,10 @@ import {
 } from 'recharts';
 import GlassCard from './GlassCard';
 import { clients, revenueData } from '../data';
+import useIsMobile from '../hooks/useIsMobile';
 
 export default function AnalyticsPage() {
+  const isMobile = useIsMobile();
   const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
   const projectedAnnual = totalRevenue * 12;
   const avgClientValue = Math.round(totalRevenue / clients.filter(c => c.status !== 'paused').length);
@@ -44,9 +46,9 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
       {/* Revenue Stats */}
-      <div style={styles.statsRow}>
+      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
         {[
           {
             label: 'Monthly Revenue',
@@ -101,10 +103,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Revenue Over Time + Plan Distribution */}
-      <div style={styles.chartRow}>
+      <div style={{ ...styles.chartRow, flexDirection: isMobile ? 'column' : 'row' }}>
         <GlassCard delay={0.2} style={{ flex: 2 }}>
           <h3 style={styles.chartTitle}>Revenue Over Time</h3>
-          <div style={{ height: 280, marginTop: '16px' }}>
+          <div style={{ height: isMobile ? 220 : 280, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
@@ -121,7 +123,7 @@ export default function AnalyticsPage() {
                     borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                     fontSize: '13px',
                   }}
-                  formatter={(value: number) => [`$${value}`, 'Revenue']}
+                  formatter={(value) => [`$${value}`, 'Revenue']}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
               </AreaChart>
@@ -131,7 +133,7 @@ export default function AnalyticsPage() {
 
         <GlassCard delay={0.25} style={{ flex: 1 }}>
           <h3 style={styles.chartTitle}>Client Distribution</h3>
-          <div style={{ height: 280, marginTop: '8px' }}>
+          <div style={{ height: isMobile ? 220 : 280, marginTop: '8px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -153,14 +155,14 @@ export default function AnalyticsPage() {
                   verticalAlign="bottom"
                   iconType="circle"
                   iconSize={8}
-                  formatter={(value: string) => <span style={{ color: '#8b92a5', fontSize: '12px', fontFamily: 'Outfit' }}>{value}</span>}
+                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: '12px', fontFamily: 'Outfit' }}>{value}</span>}
                 />
                 <Tooltip
                   contentStyle={{
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '10px', fontSize: '13px',
                   }}
-                  formatter={(value: number, name: string) => [`${value} clients`, name]}
+                  formatter={(value, name) => [`${value} clients`, name]}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -169,7 +171,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Bottom Row */}
-      <div style={styles.bottomRow}>
+      <div style={{ ...styles.bottomRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
         {/* Revenue by Plan */}
         <GlassCard delay={0.3}>
           <h3 style={styles.chartTitle}>Revenue by Plan</h3>
@@ -183,7 +185,7 @@ export default function AnalyticsPage() {
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '10px', fontSize: '13px',
                   }}
-                  formatter={(value: number) => [`$${value}/mo`, 'Revenue']}
+                  formatter={(value) => [`$${value}/mo`, 'Revenue']}
                 />
                 <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
                   <Cell fill="#f59e0b" />
@@ -214,7 +216,7 @@ export default function AnalyticsPage() {
                     background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '10px', fontSize: '13px',
                   }}
-                  formatter={(value: number) => [`${value}%`, 'Retention']}
+                  formatter={(value) => [`${value}%`, 'Retention']}
                 />
                 <Area type="monotone" dataKey="rate" stroke="#00e5c8" strokeWidth={2} fill="url(#retentionGrad)" dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} />
               </AreaChart>
@@ -250,7 +252,7 @@ export default function AnalyticsPage() {
 
       {/* Top Earners */}
       <GlassCard delay={0.45}>
-        <div style={styles.tableHeader}>
+        <div style={{ ...styles.tableHeader, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : undefined }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Award size={18} color="var(--accent-warm)" />
             <h3 style={styles.chartTitle}>Revenue Breakdown by Client</h3>
@@ -259,8 +261,8 @@ export default function AnalyticsPage() {
             {clients.filter(c => c.status !== 'paused').length} active paying clients
           </span>
         </div>
-        <div style={styles.table}>
-          <div style={styles.tableRow}>
+        <div style={{ ...styles.table, overflowX: isMobile ? 'auto' : undefined }}>
+          <div style={{ ...styles.tableRow, minWidth: isMobile ? '500px' : undefined }}>
             <span style={{ ...styles.tableHead, width: '40px' }}>#</span>
             <span style={{ ...styles.tableHead, flex: 1 }}>Client</span>
             <span style={{ ...styles.tableHead, width: '80px' }}>Plan</span>
@@ -271,7 +273,7 @@ export default function AnalyticsPage() {
           {[...clients].sort((a, b) => b.monthlyRate - a.monthlyRate).map((client, i) => (
             <motion.div
               key={client.id}
-              style={styles.tableRow}
+              style={{ ...styles.tableRow, minWidth: isMobile ? '500px' : undefined }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 + i * 0.03 }}
