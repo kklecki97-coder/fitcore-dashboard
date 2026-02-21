@@ -22,6 +22,8 @@ export interface Client {
   streak: number;
 }
 
+export type MessageChannel = 'in-app' | 'telegram' | 'whatsapp';
+
 export interface Message {
   id: string;
   clientId: string;
@@ -31,6 +33,7 @@ export interface Message {
   timestamp: string;
   isRead: boolean;
   isFromCoach: boolean;
+  channel?: MessageChannel;
 }
 
 export interface RevenueData {

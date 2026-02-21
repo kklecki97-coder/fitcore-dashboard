@@ -202,38 +202,38 @@ export const clients: Client[] = [
 ];
 
 export const messages: Message[] = [
-  // Marcus Chen — bench PR conversation
+  // Marcus Chen — bench PR conversation (via Telegram)
   {
     id: 'm1a', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'How did the bench session feel today? You were due for a heavy single.',
-    timestamp: '2026-02-20T13:00:00', isRead: true, isFromCoach: true,
+    timestamp: '2026-02-20T13:00:00', isRead: true, isFromCoach: true, channel: 'telegram',
   },
   {
     id: 'm1b', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'Felt amazing honestly. Warm-ups were flying.',
-    timestamp: '2026-02-20T13:45:00', isRead: true, isFromCoach: false,
+    timestamp: '2026-02-20T13:45:00', isRead: true, isFromCoach: false, channel: 'telegram',
   },
   {
     id: 'm1', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'Hit a new PR on bench today! 102.5kg for 2 reps. Feeling strong.',
-    timestamp: '2026-02-20T14:30:00', isRead: false, isFromCoach: false,
+    timestamp: '2026-02-20T14:30:00', isRead: false, isFromCoach: false, channel: 'telegram',
   },
-  // Jake Morrison — deload question
+  // Jake Morrison — deload question (via WhatsApp)
   {
     id: 'm2a', clientId: 'c3', clientName: 'Jake Morrison', clientAvatar: '',
     text: 'Squats felt heavy yesterday, RPE was way higher than usual.',
-    timestamp: '2026-02-20T12:00:00', isRead: true, isFromCoach: false,
+    timestamp: '2026-02-20T12:00:00', isRead: true, isFromCoach: false, channel: 'whatsapp',
   },
   {
     id: 'm2', clientId: 'c3', clientName: 'Jake Morrison', clientAvatar: '',
     text: 'Coach, should I deload this week before peak? Feeling a bit beat up.',
-    timestamp: '2026-02-20T13:15:00', isRead: false, isFromCoach: false,
+    timestamp: '2026-02-20T13:15:00', isRead: false, isFromCoach: false, channel: 'whatsapp',
   },
-  // Emma Rodriguez — first workout
+  // Emma Rodriguez — first workout (via WhatsApp)
   {
     id: 'm3', clientId: 'c4', clientName: 'Emma Rodriguez', clientAvatar: '',
     text: "Had my first workout today — it was tough but I loved it! Thanks for the program.",
-    timestamp: '2026-02-20T11:45:00', isRead: false, isFromCoach: false,
+    timestamp: '2026-02-20T11:45:00', isRead: false, isFromCoach: false, channel: 'whatsapp',
   },
   // Sarah Williams — knee rehab conversation
   {
@@ -267,26 +267,26 @@ export const messages: Message[] = [
     text: "No worries, life happens. Just don't skip two in a row — keep the momentum going.",
     timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true,
   },
-  // Tom Bradley — weight milestone
+  // Tom Bradley — weight milestone (via Telegram)
   {
     id: 'm7', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: 'Weighed in at 95.8kg this morning! First time under 96 in years.',
-    timestamp: '2026-02-19T08:00:00', isRead: true, isFromCoach: false,
+    timestamp: '2026-02-19T08:00:00', isRead: true, isFromCoach: false, channel: 'telegram',
   },
   {
     id: 'm8', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Incredible progress Tom! That's 9kg down. Let's celebrate that win.",
-    timestamp: '2026-02-19T09:30:00', isRead: true, isFromCoach: true,
+    timestamp: '2026-02-19T09:30:00', isRead: true, isFromCoach: true, channel: 'telegram',
   },
   {
     id: 'm8a', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Thanks coach! Couldn't have done it without the accountability. What's next?",
-    timestamp: '2026-02-19T09:45:00', isRead: true, isFromCoach: false,
+    timestamp: '2026-02-19T09:45:00', isRead: true, isFromCoach: false, channel: 'telegram',
   },
   {
     id: 'm8b', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Next target: 93kg by end of March. We'll bump cardio slightly and keep protein high.",
-    timestamp: '2026-02-19T10:00:00', isRead: true, isFromCoach: true,
+    timestamp: '2026-02-19T10:00:00', isRead: true, isFromCoach: true, channel: 'telegram',
   },
   // Aisha Patel — program request
   {
@@ -311,13 +311,140 @@ export const revenueData: RevenueData[] = [
 ];
 
 export const workoutLogs: WorkoutLog[] = [
-  { id: 'w1', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body', duration: 75, date: '2026-02-20', completed: true },
-  { id: 'w2', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 90, date: '2026-02-20', completed: true },
-  { id: 'w3', clientId: 'c7', clientName: 'Tom Bradley', type: 'Full Body', duration: 60, date: '2026-02-20', completed: true },
-  { id: 'w4', clientId: 'c5', clientName: 'David Park', type: 'Push Day', duration: 65, date: '2026-02-20', completed: false },
-  { id: 'w5', clientId: 'c2', clientName: 'Sarah Williams', type: 'Lower Body', duration: 55, date: '2026-02-20', completed: true },
-  { id: 'w6', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body A', duration: 45, date: '2026-02-20', completed: true },
-  { id: 'w7', clientId: 'c8', clientName: 'Aisha Patel', type: 'Upper Body', duration: 50, date: '2026-02-20', completed: false },
+  // ── Marcus Chen (c1) — 4-5x/week ──
+  { id: 'w1-01', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body A', duration: 75, date: '2026-02-20', completed: true },
+  { id: 'w1-02', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body A', duration: 70, date: '2026-02-18', completed: true },
+  { id: 'w1-03', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body B', duration: 65, date: '2026-02-17', completed: true },
+  { id: 'w1-04', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body B', duration: 70, date: '2026-02-15', completed: true },
+  { id: 'w1-05', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body A', duration: 75, date: '2026-02-13', completed: true },
+  { id: 'w1-06', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body A', duration: 70, date: '2026-02-11', completed: true },
+  { id: 'w1-07', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body B', duration: 65, date: '2026-02-10', completed: true },
+  { id: 'w1-08', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body B', duration: 72, date: '2026-02-08', completed: false },
+  { id: 'w1-09', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body A', duration: 75, date: '2026-02-06', completed: true },
+  { id: 'w1-10', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body A', duration: 68, date: '2026-02-04', completed: true },
+  { id: 'w1-11', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body B', duration: 70, date: '2026-02-03', completed: true },
+  { id: 'w1-12', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body B', duration: 65, date: '2026-02-01', completed: true },
+  { id: 'w1-13', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body A', duration: 75, date: '2026-01-30', completed: true },
+  { id: 'w1-14', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body A', duration: 70, date: '2026-01-28', completed: true },
+  { id: 'w1-15', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body B', duration: 65, date: '2026-01-27', completed: true },
+  { id: 'w1-16', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body B', duration: 70, date: '2026-01-25', completed: true },
+  { id: 'w1-17', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body A', duration: 72, date: '2026-01-23', completed: true },
+  { id: 'w1-18', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body A', duration: 68, date: '2026-01-21', completed: false },
+  { id: 'w1-19', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body B', duration: 70, date: '2026-01-20', completed: true },
+  { id: 'w1-20', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body B', duration: 65, date: '2026-01-18', completed: true },
+  { id: 'w1-21', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body A', duration: 75, date: '2026-01-16', completed: true },
+  { id: 'w1-22', clientId: 'c1', clientName: 'Marcus Chen', type: 'Lower Body A', duration: 70, date: '2026-01-14', completed: true },
+  { id: 'w1-23', clientId: 'c1', clientName: 'Marcus Chen', type: 'Upper Body B', duration: 68, date: '2026-01-12', completed: true },
+
+  // ── Sarah Williams (c2) — 3-4x/week ──
+  { id: 'w2-01', clientId: 'c2', clientName: 'Sarah Williams', type: 'Lower Body', duration: 55, date: '2026-02-20', completed: true },
+  { id: 'w2-02', clientId: 'c2', clientName: 'Sarah Williams', type: 'Upper Body', duration: 50, date: '2026-02-18', completed: true },
+  { id: 'w2-03', clientId: 'c2', clientName: 'Sarah Williams', type: 'Full Body', duration: 55, date: '2026-02-16', completed: true },
+  { id: 'w2-04', clientId: 'c2', clientName: 'Sarah Williams', type: 'Lower Body', duration: 50, date: '2026-02-13', completed: true },
+  { id: 'w2-05', clientId: 'c2', clientName: 'Sarah Williams', type: 'Upper Body', duration: 48, date: '2026-02-11', completed: true },
+  { id: 'w2-06', clientId: 'c2', clientName: 'Sarah Williams', type: 'Full Body', duration: 55, date: '2026-02-09', completed: false },
+  { id: 'w2-07', clientId: 'c2', clientName: 'Sarah Williams', type: 'Lower Body', duration: 52, date: '2026-02-06', completed: true },
+  { id: 'w2-08', clientId: 'c2', clientName: 'Sarah Williams', type: 'Upper Body', duration: 50, date: '2026-02-04', completed: true },
+  { id: 'w2-09', clientId: 'c2', clientName: 'Sarah Williams', type: 'Full Body', duration: 55, date: '2026-02-02', completed: true },
+  { id: 'w2-10', clientId: 'c2', clientName: 'Sarah Williams', type: 'Lower Body', duration: 50, date: '2026-01-30', completed: true },
+  { id: 'w2-11', clientId: 'c2', clientName: 'Sarah Williams', type: 'Upper Body', duration: 48, date: '2026-01-28', completed: true },
+  { id: 'w2-12', clientId: 'c2', clientName: 'Sarah Williams', type: 'Lower Body', duration: 50, date: '2026-01-25', completed: true },
+  { id: 'w2-13', clientId: 'c2', clientName: 'Sarah Williams', type: 'Full Body', duration: 55, date: '2026-01-23', completed: false },
+  { id: 'w2-14', clientId: 'c2', clientName: 'Sarah Williams', type: 'Upper Body', duration: 48, date: '2026-01-21', completed: true },
+  { id: 'w2-15', clientId: 'c2', clientName: 'Sarah Williams', type: 'Lower Body', duration: 52, date: '2026-01-18', completed: true },
+
+  // ── Jake Morrison (c3) — 5-6x/week (powerlifter) ──
+  { id: 'w3-01', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 90, date: '2026-02-20', completed: true },
+  { id: 'w3-02', clientId: 'c3', clientName: 'Jake Morrison', type: 'Bench Day', duration: 85, date: '2026-02-19', completed: true },
+  { id: 'w3-03', clientId: 'c3', clientName: 'Jake Morrison', type: 'Deadlift Day', duration: 80, date: '2026-02-18', completed: true },
+  { id: 'w3-04', clientId: 'c3', clientName: 'Jake Morrison', type: 'Accessories', duration: 60, date: '2026-02-17', completed: true },
+  { id: 'w3-05', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 90, date: '2026-02-16', completed: true },
+  { id: 'w3-06', clientId: 'c3', clientName: 'Jake Morrison', type: 'Bench Day', duration: 85, date: '2026-02-14', completed: true },
+  { id: 'w3-07', clientId: 'c3', clientName: 'Jake Morrison', type: 'Deadlift Day', duration: 82, date: '2026-02-13', completed: true },
+  { id: 'w3-08', clientId: 'c3', clientName: 'Jake Morrison', type: 'Accessories', duration: 55, date: '2026-02-12', completed: true },
+  { id: 'w3-09', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 88, date: '2026-02-11', completed: true },
+  { id: 'w3-10', clientId: 'c3', clientName: 'Jake Morrison', type: 'Bench Day', duration: 85, date: '2026-02-09', completed: true },
+  { id: 'w3-11', clientId: 'c3', clientName: 'Jake Morrison', type: 'Deadlift Day', duration: 80, date: '2026-02-07', completed: true },
+  { id: 'w3-12', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 92, date: '2026-02-06', completed: true },
+  { id: 'w3-13', clientId: 'c3', clientName: 'Jake Morrison', type: 'Bench Day', duration: 85, date: '2026-02-04', completed: true },
+  { id: 'w3-14', clientId: 'c3', clientName: 'Jake Morrison', type: 'Deadlift Day', duration: 78, date: '2026-02-03', completed: false },
+  { id: 'w3-15', clientId: 'c3', clientName: 'Jake Morrison', type: 'Accessories', duration: 60, date: '2026-02-02', completed: true },
+  { id: 'w3-16', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 90, date: '2026-01-31', completed: true },
+  { id: 'w3-17', clientId: 'c3', clientName: 'Jake Morrison', type: 'Bench Day', duration: 85, date: '2026-01-30', completed: true },
+  { id: 'w3-18', clientId: 'c3', clientName: 'Jake Morrison', type: 'Deadlift Day', duration: 80, date: '2026-01-28', completed: true },
+  { id: 'w3-19', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 88, date: '2026-01-27', completed: true },
+  { id: 'w3-20', clientId: 'c3', clientName: 'Jake Morrison', type: 'Bench Day', duration: 85, date: '2026-01-25', completed: true },
+  { id: 'w3-21', clientId: 'c3', clientName: 'Jake Morrison', type: 'Deadlift Day', duration: 82, date: '2026-01-23', completed: true },
+  { id: 'w3-22', clientId: 'c3', clientName: 'Jake Morrison', type: 'Accessories', duration: 58, date: '2026-01-22', completed: true },
+  { id: 'w3-23', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 90, date: '2026-01-20', completed: true },
+  { id: 'w3-24', clientId: 'c3', clientName: 'Jake Morrison', type: 'Bench Day', duration: 85, date: '2026-01-18', completed: true },
+  { id: 'w3-25', clientId: 'c3', clientName: 'Jake Morrison', type: 'Deadlift Day', duration: 80, date: '2026-01-16', completed: true },
+  { id: 'w3-26', clientId: 'c3', clientName: 'Jake Morrison', type: 'Squat Day', duration: 90, date: '2026-01-14', completed: true },
+
+  // ── Emma Rodriguez (c4) — 3x/week (beginner) ──
+  { id: 'w4-01', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body A', duration: 45, date: '2026-02-20', completed: true },
+  { id: 'w4-02', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body B', duration: 40, date: '2026-02-18', completed: true },
+  { id: 'w4-03', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body A', duration: 45, date: '2026-02-15', completed: true },
+  { id: 'w4-04', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body B', duration: 42, date: '2026-02-13', completed: false },
+  { id: 'w4-05', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body A', duration: 45, date: '2026-02-11', completed: true },
+  { id: 'w4-06', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body B', duration: 40, date: '2026-02-08', completed: true },
+  { id: 'w4-07', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body A', duration: 43, date: '2026-02-06', completed: true },
+  { id: 'w4-08', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body B', duration: 40, date: '2026-02-04', completed: true },
+  { id: 'w4-09', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body A', duration: 45, date: '2026-02-01', completed: false },
+  { id: 'w4-10', clientId: 'c4', clientName: 'Emma Rodriguez', type: 'Full Body B', duration: 38, date: '2026-01-29', completed: true },
+
+  // ── David Park (c5) — 3-4x/week ──
+  { id: 'w5-01', clientId: 'c5', clientName: 'David Park', type: 'Push Day', duration: 65, date: '2026-02-20', completed: false },
+  { id: 'w5-02', clientId: 'c5', clientName: 'David Park', type: 'Pull Day', duration: 60, date: '2026-02-18', completed: true },
+  { id: 'w5-03', clientId: 'c5', clientName: 'David Park', type: 'Leg Day', duration: 65, date: '2026-02-16', completed: true },
+  { id: 'w5-04', clientId: 'c5', clientName: 'David Park', type: 'Push Day', duration: 60, date: '2026-02-13', completed: true },
+  { id: 'w5-05', clientId: 'c5', clientName: 'David Park', type: 'Pull Day', duration: 58, date: '2026-02-11', completed: true },
+  { id: 'w5-06', clientId: 'c5', clientName: 'David Park', type: 'Leg Day', duration: 65, date: '2026-02-09', completed: false },
+  { id: 'w5-07', clientId: 'c5', clientName: 'David Park', type: 'Push Day', duration: 62, date: '2026-02-06', completed: true },
+  { id: 'w5-08', clientId: 'c5', clientName: 'David Park', type: 'Pull Day', duration: 60, date: '2026-02-04', completed: true },
+  { id: 'w5-09', clientId: 'c5', clientName: 'David Park', type: 'Leg Day', duration: 65, date: '2026-02-02', completed: true },
+  { id: 'w5-10', clientId: 'c5', clientName: 'David Park', type: 'Push Day', duration: 60, date: '2026-01-30', completed: true },
+  { id: 'w5-11', clientId: 'c5', clientName: 'David Park', type: 'Pull Day', duration: 58, date: '2026-01-28', completed: true },
+  { id: 'w5-12', clientId: 'c5', clientName: 'David Park', type: 'Leg Day', duration: 65, date: '2026-01-25', completed: true },
+  { id: 'w5-13', clientId: 'c5', clientName: 'David Park', type: 'Push Day', duration: 60, date: '2026-01-23', completed: true },
+
+  // ── Lisa Thompson (c6) — paused, few early entries ──
+  { id: 'w6-01', clientId: 'c6', clientName: 'Lisa Thompson', type: 'Upper Body', duration: 50, date: '2026-01-20', completed: true },
+  { id: 'w6-02', clientId: 'c6', clientName: 'Lisa Thompson', type: 'Lower Body', duration: 48, date: '2026-01-18', completed: true },
+  { id: 'w6-03', clientId: 'c6', clientName: 'Lisa Thompson', type: 'Upper Body', duration: 50, date: '2026-01-15', completed: false },
+  { id: 'w6-04', clientId: 'c6', clientName: 'Lisa Thompson', type: 'Lower Body', duration: 45, date: '2026-01-13', completed: true },
+
+  // ── Tom Bradley (c7) — 4x/week ──
+  { id: 'w7-01', clientId: 'c7', clientName: 'Tom Bradley', type: 'Full Body', duration: 60, date: '2026-02-20', completed: true },
+  { id: 'w7-02', clientId: 'c7', clientName: 'Tom Bradley', type: 'Upper Body', duration: 55, date: '2026-02-18', completed: true },
+  { id: 'w7-03', clientId: 'c7', clientName: 'Tom Bradley', type: 'Lower Body', duration: 60, date: '2026-02-16', completed: true },
+  { id: 'w7-04', clientId: 'c7', clientName: 'Tom Bradley', type: 'Cardio', duration: 40, date: '2026-02-15', completed: true },
+  { id: 'w7-05', clientId: 'c7', clientName: 'Tom Bradley', type: 'Full Body', duration: 62, date: '2026-02-13', completed: true },
+  { id: 'w7-06', clientId: 'c7', clientName: 'Tom Bradley', type: 'Upper Body', duration: 55, date: '2026-02-11', completed: true },
+  { id: 'w7-07', clientId: 'c7', clientName: 'Tom Bradley', type: 'Lower Body', duration: 60, date: '2026-02-09', completed: true },
+  { id: 'w7-08', clientId: 'c7', clientName: 'Tom Bradley', type: 'Cardio', duration: 38, date: '2026-02-08', completed: false },
+  { id: 'w7-09', clientId: 'c7', clientName: 'Tom Bradley', type: 'Full Body', duration: 60, date: '2026-02-06', completed: true },
+  { id: 'w7-10', clientId: 'c7', clientName: 'Tom Bradley', type: 'Upper Body', duration: 55, date: '2026-02-04', completed: true },
+  { id: 'w7-11', clientId: 'c7', clientName: 'Tom Bradley', type: 'Lower Body', duration: 58, date: '2026-02-02', completed: true },
+  { id: 'w7-12', clientId: 'c7', clientName: 'Tom Bradley', type: 'Cardio', duration: 40, date: '2026-02-01', completed: true },
+  { id: 'w7-13', clientId: 'c7', clientName: 'Tom Bradley', type: 'Full Body', duration: 60, date: '2026-01-30', completed: true },
+  { id: 'w7-14', clientId: 'c7', clientName: 'Tom Bradley', type: 'Upper Body', duration: 55, date: '2026-01-28', completed: true },
+  { id: 'w7-15', clientId: 'c7', clientName: 'Tom Bradley', type: 'Lower Body', duration: 60, date: '2026-01-26', completed: true },
+  { id: 'w7-16', clientId: 'c7', clientName: 'Tom Bradley', type: 'Cardio', duration: 40, date: '2026-01-25', completed: true },
+  { id: 'w7-17', clientId: 'c7', clientName: 'Tom Bradley', type: 'Full Body', duration: 62, date: '2026-01-23', completed: true },
+
+  // ── Aisha Patel (c8) — 3x/week ──
+  { id: 'w8-01', clientId: 'c8', clientName: 'Aisha Patel', type: 'Upper Body', duration: 50, date: '2026-02-20', completed: false },
+  { id: 'w8-02', clientId: 'c8', clientName: 'Aisha Patel', type: 'Lower Body', duration: 48, date: '2026-02-18', completed: true },
+  { id: 'w8-03', clientId: 'c8', clientName: 'Aisha Patel', type: 'Full Body', duration: 50, date: '2026-02-15', completed: true },
+  { id: 'w8-04', clientId: 'c8', clientName: 'Aisha Patel', type: 'Upper Body', duration: 48, date: '2026-02-13', completed: true },
+  { id: 'w8-05', clientId: 'c8', clientName: 'Aisha Patel', type: 'Lower Body', duration: 50, date: '2026-02-11', completed: true },
+  { id: 'w8-06', clientId: 'c8', clientName: 'Aisha Patel', type: 'Full Body', duration: 45, date: '2026-02-08', completed: true },
+  { id: 'w8-07', clientId: 'c8', clientName: 'Aisha Patel', type: 'Upper Body', duration: 50, date: '2026-02-06', completed: false },
+  { id: 'w8-08', clientId: 'c8', clientName: 'Aisha Patel', type: 'Lower Body', duration: 48, date: '2026-02-04', completed: true },
+  { id: 'w8-09', clientId: 'c8', clientName: 'Aisha Patel', type: 'Full Body', duration: 50, date: '2026-02-01', completed: true },
+  { id: 'w8-10', clientId: 'c8', clientName: 'Aisha Patel', type: 'Upper Body', duration: 45, date: '2026-01-29', completed: true },
+  { id: 'w8-11', clientId: 'c8', clientName: 'Aisha Patel', type: 'Lower Body', duration: 48, date: '2026-01-27', completed: true },
 ];
 
 export const scheduleToday = [

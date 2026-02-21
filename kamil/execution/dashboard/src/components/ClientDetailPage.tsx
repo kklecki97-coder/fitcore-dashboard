@@ -13,19 +13,20 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, Message, WorkoutProgram } from '../types';
+import type { Client, Message, WorkoutProgram, WorkoutLog } from '../types';
 
 interface ClientDetailPageProps {
   clientId: string;
   clients: Client[];
   programs: WorkoutProgram[];
+  workoutLogs: WorkoutLog[];
   onBack: () => void;
   onUpdateClient: (id: string, updates: Partial<Client>) => void;
   onSendMessage: (msg: Message) => void;
   onUpdateProgram: (programId: string, updates: Partial<WorkoutProgram>) => void;
 }
 
-export default function ClientDetailPage({ clientId, clients, programs, onBack, onUpdateClient, onSendMessage, onUpdateProgram }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, onBack, onUpdateClient, onSendMessage, onUpdateProgram }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const client = clients.find(c => c.id === clientId);
   if (!client) return null;
@@ -352,6 +353,158 @@ export default function ClientDetailPage({ clientId, clients, programs, onBack, 
           </div>
         </GlassCard>
       </div>
+
+      {/* Training History */}
+      {(() => {
+        const clientLogs = workoutLogs
+          .filter(w => w.clientId === client.id)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        const totalSessions = clientLogs.length;
+        const completedSessions = clientLogs.filter(w => w.completed).length;
+        const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+        const avgDuration = totalSessions > 0 ? Math.round(clientLogs.reduce((s, w) => s + w.duration, 0) / totalSessions) : 0;
+
+        // Build month calendar data
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const logsByDate: Record<string, WorkoutLog[]> = {};
+        clientLogs.forEach(w => {
+          if (!logsByDate[w.date]) logsByDate[w.date] = [];
+          logsByDate[w.date].push(w);
+        });
+
+        // Current month grid
+        const calYear = today.getFullYear();
+        const calMonth = today.getMonth();
+        const firstDay = new Date(calYear, calMonth, 1);
+        const lastDay = new Date(calYear, calMonth + 1, 0);
+        const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
+        const daysInMonth = lastDay.getDate();
+        const monthName = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        // Build 6-row x 7-col grid (pad with nulls)
+        const calendarCells: (number | null)[] = [];
+        for (let i = 0; i < startDow; i++) calendarCells.push(null);
+        for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);
+        while (calendarCells.length < 42) calendarCells.push(null);
+
+        const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+        return (
+          <div>
+            {/* Month Calendar */}
+            <GlassCard delay={0.28}>
+              <div style={styles.trainingSectionHeader}>
+                <div>
+                  <h3 style={styles.chartTitle}>Training Activity</h3>
+                  <p style={styles.trainingSubtitle}>{monthName}</p>
+                </div>
+                <div style={styles.trainingStats}>
+                  <div style={styles.trainingStat}>
+                    <span style={styles.trainingStatValue}>{completedSessions}</span>
+                    <span style={styles.trainingStatLabel}>sessions</span>
+                  </div>
+                  <div style={styles.trainingStat}>
+                    <span style={{ ...styles.trainingStatValue, color: completionRate >= 80 ? 'var(--accent-success)' : completionRate >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
+                      {completionRate}%
+                    </span>
+                    <span style={styles.trainingStatLabel}>rate</span>
+                  </div>
+                  <div style={styles.trainingStat}>
+                    <span style={styles.trainingStatValue}>{avgDuration}</span>
+                    <span style={styles.trainingStatLabel}>avg min</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Day-of-week headers */}
+              <div style={styles.calGrid}>
+                {dayHeaders.map(d => (
+                  <div key={d} style={styles.calDayHeader}>{d}</div>
+                ))}
+
+                {/* Calendar cells */}
+                {calendarCells.map((day, idx) => {
+                  if (day === null) return <div key={`empty-${idx}`} style={styles.calCellEmpty} />;
+
+                  const dateKey = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const entries = logsByDate[dateKey];
+                  const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+                  const isFuture = new Date(calYear, calMonth, day) > today;
+
+                  let cellBg = 'rgba(255,255,255,0.02)';
+                  let dotColor = '';
+                  let label = '';
+                  if (entries && !isFuture) {
+                    const allCompleted = entries.every(e => e.completed);
+                    if (allCompleted) {
+                      cellBg = 'rgba(0, 229, 200, 0.08)';
+                      dotColor = 'var(--accent-success)';
+                      label = entries.map(e => `${e.type} (${e.duration}min)`).join(', ');
+                    } else {
+                      cellBg = 'rgba(239, 68, 68, 0.08)';
+                      dotColor = 'var(--accent-danger)';
+                      label = 'Missed';
+                    }
+                  }
+
+                  return (
+                    <div
+                      key={dateKey}
+                      title={label || dateKey}
+                      style={{
+                        ...styles.calCell,
+                        background: cellBg,
+                        opacity: isFuture ? 0.35 : 1,
+                        ...(isToday ? { border: '1px solid var(--accent-primary)', boxShadow: '0 0 8px var(--accent-primary-dim)' } : {}),
+                      }}
+                    >
+                      <span style={{
+                        ...styles.calDayNum,
+                        color: isToday ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        fontWeight: isToday ? 700 : 500,
+                      }}>
+                        {day}
+                      </span>
+                      {dotColor && (
+                        <div style={styles.calDotRow}>
+                          {entries!.map((e, ei) => (
+                            <div key={ei} style={{ ...styles.calDot, background: dotColor }} />
+                          ))}
+                        </div>
+                      )}
+                      {entries && !isFuture && entries.every(e => e.completed) && (
+                        <span style={styles.calSessionType}>
+                          {entries[0].type.split(' ')[0]}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Legend */}
+              <div style={styles.calLegend}>
+                <div style={styles.calLegendItem}>
+                  <div style={{ ...styles.calLegendDot, background: 'var(--accent-success)' }} />
+                  <span>Completed</span>
+                </div>
+                <div style={styles.calLegendItem}>
+                  <div style={{ ...styles.calLegendDot, background: 'var(--accent-danger)' }} />
+                  <span>Missed</span>
+                </div>
+                <div style={styles.calLegendItem}>
+                  <div style={{ ...styles.calLegendDot, background: 'transparent', border: '1px solid var(--accent-primary)' }} />
+                  <span>Today</span>
+                </div>
+              </div>
+            </GlassCard>
+
+          </div>
+        );
+      })()}
 
       {/* Bottom Row */}
       <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
@@ -1140,6 +1293,121 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '20px',
     color: 'var(--accent-primary)',
     background: 'var(--accent-primary-dim)',
+  },
+  trainingGrid: {},
+  trainingSectionHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: '16px',
+  },
+  trainingSubtitle: {
+    fontSize: '12px',
+    color: 'var(--text-tertiary)',
+    margin: '2px 0 0',
+  },
+  trainingStats: {
+    display: 'flex',
+    gap: '16px',
+  },
+  trainingStat: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '2px',
+  },
+  trainingStatValue: {
+    fontSize: '18px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    color: 'var(--text-primary)',
+  },
+  trainingStatLabel: {
+    fontSize: '10px',
+    color: 'var(--text-tertiary)',
+    fontWeight: 500,
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  },
+  calGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '3px',
+  },
+  calDayHeader: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textAlign: 'center' as const,
+    padding: '2px 0 6px',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  },
+  calCellEmpty: {
+    height: '36px',
+    borderRadius: '6px',
+  },
+  calCell: {
+    height: '36px',
+    borderRadius: '6px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1px',
+    cursor: 'default',
+    transition: 'background 0.15s',
+    border: '1px solid transparent',
+    overflow: 'hidden',
+  },
+  calDayNum: {
+    fontSize: '12px',
+    fontFamily: 'var(--font-display)',
+    lineHeight: 1,
+  },
+  calDotRow: {
+    display: 'flex',
+    gap: '2px',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calDot: {
+    width: '5px',
+    height: '5px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  calSessionType: {
+    fontSize: '7px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.3px',
+    lineHeight: 1,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+  },
+  calLegend: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    marginTop: '12px',
+    justifyContent: 'center',
+  },
+  calLegendItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    fontSize: '11px',
+    color: 'var(--text-tertiary)',
+  },
+  calLegendDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    flexShrink: 0,
   },
   metricsGrid: {
     display: 'grid',

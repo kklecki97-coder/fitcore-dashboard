@@ -16,6 +16,7 @@ interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
   profileName?: string;
+  onLogout?: () => void;
 }
 
 const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = [
@@ -27,7 +28,7 @@ const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = 
   { icon: CalendarDays, label: 'Schedule', page: 'schedule' },
 ];
 
-export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach Kamil' }: SidebarProps) {
+export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach Kamil', onLogout }: SidebarProps) {
   return (
     <aside style={styles.sidebar}>
       {/* Logo */}
@@ -97,7 +98,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
         <button
           onClick={() => {
             if (window.confirm('Are you sure you want to log out?')) {
-              window.location.reload();
+              onLogout?.();
             }
           }}
           style={styles.navItem}

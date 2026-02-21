@@ -12,11 +12,32 @@ import SettingsPage from './components/SettingsPage';
 import AddClientPage from './components/AddClientPage';
 import WorkoutProgramsPage from './components/WorkoutProgramsPage';
 import ProgramBuilderPage from './components/ProgramBuilderPage';
+import LoginPage from './components/LoginPage';
 import useIsMobile from './hooks/useIsMobile';
-import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary } from './data';
+import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs } from './data';
 import type { Page, Theme, Client, Message, WorkoutProgram } from './types';
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('fitcore-auth') === 'true'
+      || sessionStorage.getItem('fitcore-auth') === 'true';
+  });
+
+  const handleLogin = (remember: boolean) => {
+    if (remember) {
+      localStorage.setItem('fitcore-auth', 'true');
+    } else {
+      sessionStorage.setItem('fitcore-auth', 'true');
+    }
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('fitcore-auth');
+    sessionStorage.removeItem('fitcore-auth');
+    setIsLoggedIn(false);
+  };
+
   const [currentPage, setCurrentPage] = useState<Page>('overview');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
@@ -160,6 +181,7 @@ function App() {
             clientId={selectedClientId}
             clients={allClients}
             programs={allPrograms}
+            workoutLogs={workoutLogs}
             onBack={handleBackFromClient}
             onUpdateClient={handleUpdateClient}
             onSendMessage={handleSendMessage}
@@ -219,6 +241,10 @@ function App() {
     }
   };
 
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div style={styles.app}>
       {/* Mobile overlay */}
@@ -243,6 +269,7 @@ function App() {
           currentPage={currentPage}
           onNavigate={handleNavigate}
           profileName={profileName}
+          onLogout={handleLogout}
         />
       </div>
 
