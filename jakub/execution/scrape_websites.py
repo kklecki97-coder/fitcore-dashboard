@@ -786,13 +786,9 @@ async def process_lead(session, lead, i, total, use_tavily, use_linkedin, tavily
         company = lead.get("company_name", "")
         lead_id = lead.get("id")
 
-        if not website or website.strip() == "":
-            stats["failed"] += 1
-            return
-
         info = {}
         method = "keyword"
-        website_failed = False
+        website_failed = not website or website.strip() == ""
 
         if use_tavily:
             text, method = await fetch_with_tavily(session, tavily_key, website)
@@ -903,7 +899,8 @@ async def async_main():
         print("RERUN MODE: re-scraping all leads with websites")
         endpoint = f"leads?website=neq.&select={select_fields}&limit={limit}"
     else:
-        endpoint = f"leads?website=neq.&enriched_at=is.null&select={select_fields}&limit={limit}"
+        # Pick up leads with a website OR leads with no website but with LinkedIn
+        endpoint = f"leads?enriched_at=is.null&or=(website.neq.,linkedin.neq.)&select={select_fields}&limit={limit}"
     leads = supabase_get_sync(sb_url, sb_key, endpoint)
 
     if not leads:
