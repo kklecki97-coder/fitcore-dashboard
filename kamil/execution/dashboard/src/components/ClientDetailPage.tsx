@@ -4,7 +4,9 @@ import {
   ArrowLeft, Mail, Calendar, Flame, Target,
   TrendingUp, TrendingDown, Minus, DollarSign,
   Edit3, MessageSquare, FileText, X, Send, Save,
-  Activity, Dumbbell, Check,
+  Activity, Dumbbell, Check, ClipboardCheck, Flag,
+  Smile, Frown, Meh, SmilePlus, Angry,
+  Moon, Percent,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -13,22 +15,56 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, Message, WorkoutProgram, WorkoutLog } from '../types';
+import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn } from '../types';
 
 interface ClientDetailPageProps {
   clientId: string;
   clients: Client[];
   programs: WorkoutProgram[];
   workoutLogs: WorkoutLog[];
+  checkIns: CheckIn[];
   onBack: () => void;
   onUpdateClient: (id: string, updates: Partial<Client>) => void;
   onSendMessage: (msg: Message) => void;
   onUpdateProgram: (programId: string, updates: Partial<WorkoutProgram>) => void;
+  onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
+  onAddCheckIn: (checkIn: CheckIn) => void;
 }
 
-export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, onBack, onUpdateClient, onSendMessage, onUpdateProgram }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const client = clients.find(c => c.id === clientId);
+
+  // All hooks must be called before any early return
+  const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | 'logMetrics' | 'assignProgram' | 'checkIn' | 'viewCheckIn' | null>(null);
+  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
+  const [checkInForm, setCheckInForm] = useState({
+    weight: '',
+    bodyFat: '',
+    mood: '' as string,
+    sleepHours: '',
+    adherence: '',
+    energy: '',
+    stress: '',
+    nutritionScore: '',
+    notes: '',
+    wins: '',
+    challenges: '',
+    coachFeedback: '',
+  });
+  const [messageText, setMessageText] = useState('');
+  const [editPlan, setEditPlan] = useState<'Basic' | 'Premium' | 'Elite'>(client?.plan ?? 'Basic');
+  const [editStatus, setEditStatus] = useState<'active' | 'paused' | 'pending'>(client?.status ?? 'active');
+  const [editNotes, setEditNotes] = useState(client?.notes ?? '');
+  const [saveFlash, setSaveFlash] = useState('');
+  const [metricsForm, setMetricsForm] = useState({
+    weight: '',
+    bodyFat: '',
+    benchPress: '',
+    squat: '',
+    deadlift: '',
+  });
+
   if (!client) return null;
 
   const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
@@ -70,23 +106,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     Basic: { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)' },
   };
 
-  const badge = planColors[client.plan];
-
   const assignedPrograms = programs.filter(p => p.clientIds.includes(client.id));
-
-  const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | 'logMetrics' | 'assignProgram' | null>(null);
-  const [messageText, setMessageText] = useState('');
-  const [editPlan, setEditPlan] = useState<'Basic' | 'Premium' | 'Elite'>(client.plan);
-  const [editStatus, setEditStatus] = useState<'active' | 'paused' | 'pending'>(client.status);
-  const [editNotes, setEditNotes] = useState(client.notes);
-  const [saveFlash, setSaveFlash] = useState('');
-  const [metricsForm, setMetricsForm] = useState({
-    weight: '',
-    bodyFat: '',
-    benchPress: '',
-    squat: '',
-    deadlift: '',
-  });
 
   const flashSaved = (label: string) => {
     setSaveFlash(label);
@@ -246,6 +266,10 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
             <button onClick={() => setActiveModal('assignProgram')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Dumbbell size={15} />
               Program
+            </button>
+            <button onClick={() => setActiveModal('checkIn')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-success)' }}>
+              <ClipboardCheck size={15} />
+              Check In
             </button>
           </div>
         </div>
@@ -506,6 +530,145 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         );
       })()}
 
+      {/* Check-In History */}
+      {(() => {
+        const clientCheckIns = checkIns
+          .filter(ci => ci.clientId === client.id)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        const nextScheduled = clientCheckIns.find(ci => ci.status === 'scheduled');
+        const completed = clientCheckIns.filter(ci => ci.status === 'completed');
+        const missed = clientCheckIns.filter(ci => ci.status === 'missed');
+        const avgMood = completed.length > 0
+          ? (completed.reduce((s, ci) => s + (ci.mood || 0), 0) / completed.filter(ci => ci.mood).length).toFixed(1)
+          : '—';
+        const avgAdherence = completed.length > 0
+          ? Math.round(completed.reduce((s, ci) => s + (ci.adherence || 0), 0) / completed.filter(ci => ci.adherence).length)
+          : 0;
+
+        const moodIcons: Record<number, { icon: typeof Smile; color: string }> = {
+          1: { icon: Angry, color: 'var(--accent-danger)' },
+          2: { icon: Frown, color: 'var(--accent-warm)' },
+          3: { icon: Meh, color: 'var(--text-secondary)' },
+          4: { icon: Smile, color: 'var(--accent-success)' },
+          5: { icon: SmilePlus, color: 'var(--accent-primary)' },
+        };
+
+        return (
+          <GlassCard delay={0.3}>
+            <div style={styles.trainingSectionHeader}>
+              <div>
+                <h3 style={styles.chartTitle}>Check-In History</h3>
+                {nextScheduled && (
+                  <p style={styles.trainingSubtitle}>
+                    Next: {new Date(nextScheduled.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                )}
+              </div>
+              <div style={styles.trainingStats}>
+                <div style={styles.trainingStat}>
+                  <span style={styles.trainingStatValue}>{completed.length}</span>
+                  <span style={styles.trainingStatLabel}>done</span>
+                </div>
+                <div style={styles.trainingStat}>
+                  <span style={styles.trainingStatValue}>{missed.length}</span>
+                  <span style={styles.trainingStatLabel}>missed</span>
+                </div>
+                <div style={styles.trainingStat}>
+                  <span style={styles.trainingStatValue}>{avgMood}</span>
+                  <span style={styles.trainingStatLabel}>avg mood</span>
+                </div>
+                <div style={styles.trainingStat}>
+                  <span style={{ ...styles.trainingStatValue, color: avgAdherence >= 80 ? 'var(--accent-success)' : avgAdherence >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
+                    {avgAdherence}%
+                  </span>
+                  <span style={styles.trainingStatLabel}>adherence</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.checkInList}>
+              {clientCheckIns.length === 0 && (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '13px' }}>
+                  No check-ins yet.
+                </div>
+              )}
+              {clientCheckIns.map((ci, idx) => {
+                const MoodIcon = ci.mood ? moodIcons[ci.mood]?.icon || Meh : null;
+                const moodColor = ci.mood ? moodIcons[ci.mood]?.color || 'var(--text-secondary)' : '';
+                const statusColor = ci.status === 'completed' ? 'var(--accent-success)' : ci.status === 'scheduled' ? 'var(--accent-primary)' : 'var(--accent-danger)';
+                const statusBg = ci.status === 'completed' ? 'var(--accent-success-dim)' : ci.status === 'scheduled' ? 'var(--accent-primary-dim)' : 'rgba(239,68,68,0.1)';
+
+                return (
+                  <motion.div
+                    key={ci.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    onClick={() => {
+                      if (ci.status === 'completed') {
+                        setSelectedCheckIn(ci);
+                        setActiveModal('viewCheckIn');
+                      }
+                    }}
+                    style={{
+                      ...styles.checkInRow,
+                      cursor: ci.status === 'completed' ? 'pointer' : 'default',
+                      flexDirection: isMobile ? 'column' : 'row',
+                      alignItems: isMobile ? 'flex-start' : 'center',
+                      gap: isMobile ? '8px' : '16px',
+                    }}
+                  >
+                    <div style={styles.checkInDate}>
+                      <Calendar size={13} color={statusColor} />
+                      <span>{new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+
+                    {ci.status === 'completed' && (
+                      <div style={{ ...styles.checkInMetrics, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                        {ci.weight && <span style={styles.checkInChip}>{ci.weight} kg</span>}
+                        {ci.bodyFat && <span style={styles.checkInChip}>{ci.bodyFat}% BF</span>}
+                        {ci.sleepHours && (
+                          <span style={styles.checkInChip}>
+                            <Moon size={10} /> {ci.sleepHours}h
+                          </span>
+                        )}
+                        {ci.adherence !== null && (
+                          <span style={{
+                            ...styles.checkInChip,
+                            color: ci.adherence >= 80 ? 'var(--accent-success)' : ci.adherence >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                          }}>
+                            <Percent size={10} /> {ci.adherence}
+                          </span>
+                        )}
+                        {ci.energy !== null && ci.energy !== undefined && (
+                          <span style={styles.checkInChip}>E:{ci.energy}</span>
+                        )}
+                        {ci.stress !== null && ci.stress !== undefined && (
+                          <span style={{
+                            ...styles.checkInChip,
+                            color: ci.stress >= 7 ? 'var(--accent-danger)' : ci.stress >= 5 ? 'var(--accent-warm)' : 'var(--text-secondary)',
+                          }}>S:{ci.stress}</span>
+                        )}
+                        {MoodIcon && (
+                          <span style={{ ...styles.checkInChip, color: moodColor }}>
+                            <MoodIcon size={12} />
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <span style={{ ...styles.checkInStatusBadge, color: statusColor, background: statusBg, marginLeft: isMobile ? '0' : 'auto' }}>
+                      {ci.status}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </GlassCard>
+        );
+      })()}
+
       {/* Bottom Row */}
       <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
         {/* Performance Radar */}
@@ -604,6 +767,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {activeModal === 'notes' && 'Coach Notes'}
                   {activeModal === 'logMetrics' && 'Log Metrics'}
                   {activeModal === 'assignProgram' && 'Assign Program'}
+                  {activeModal === 'checkIn' && 'Weekly Check-In'}
+                  {activeModal === 'viewCheckIn' && 'Check-In Details'}
                 </h3>
                 <button onClick={() => setActiveModal(null)} style={styles.closeBtn}>
                   <X size={18} />
@@ -847,6 +1012,390 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   <div style={styles.modalActions}>
                     <button onClick={() => { setActiveModal(null); flashSaved('Program updated'); }} style={styles.modalPrimaryBtn}>
                       Done
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Check-In Modal */}
+              {activeModal === 'checkIn' && (
+                <div style={{ ...styles.modalBody, maxHeight: '70vh', overflowY: 'auto' }}>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                    Record weekly check-in for <strong style={{ color: 'var(--text-primary)' }}>{client.name}</strong>
+                  </p>
+
+                  {/* Body Metrics */}
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>BODY METRICS</div>
+                  <div style={styles.metricsGrid}>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Weight (kg)</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={checkInForm.weight}
+                        onChange={(e) => setCheckInForm(prev => ({ ...prev, weight: e.target.value }))}
+                        placeholder={`Current: ${client.metrics.weight[client.metrics.weight.length - 1] || '—'}`}
+                        style={styles.modalInput}
+                        autoFocus
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Body Fat (%)</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={checkInForm.bodyFat}
+                        onChange={(e) => setCheckInForm(prev => ({ ...prev, bodyFat: e.target.value }))}
+                        placeholder={`Current: ${client.metrics.bodyFat[client.metrics.bodyFat.length - 1] || '—'}`}
+                        style={styles.modalInput}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Wellness Scores */}
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>WELLNESS</div>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Mood</span>
+                    <div style={styles.moodPicker}>
+                      {[
+                        { val: '1', Icon: Angry, label: 'Terrible', color: 'var(--accent-danger)' },
+                        { val: '2', Icon: Frown, label: 'Bad', color: 'var(--accent-warm)' },
+                        { val: '3', Icon: Meh, label: 'Okay', color: 'var(--text-secondary)' },
+                        { val: '4', Icon: Smile, label: 'Good', color: 'var(--accent-success)' },
+                        { val: '5', Icon: SmilePlus, label: 'Great', color: 'var(--accent-primary)' },
+                      ].map(m => (
+                        <button
+                          key={m.val}
+                          onClick={() => setCheckInForm(prev => ({ ...prev, mood: prev.mood === m.val ? '' : m.val }))}
+                          style={{
+                            ...styles.moodOption,
+                            ...(checkInForm.mood === m.val ? { borderColor: m.color, color: m.color, background: 'rgba(255,255,255,0.04)' } : {}),
+                          }}
+                        >
+                          <m.Icon size={18} />
+                          <span style={{ fontSize: '10px' }}>{m.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={styles.metricsGrid}>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Energy (1-10)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={checkInForm.energy}
+                        onChange={(e) => setCheckInForm(prev => ({ ...prev, energy: e.target.value }))}
+                        placeholder="e.g. 7"
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Stress (1-10)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={checkInForm.stress}
+                        onChange={(e) => setCheckInForm(prev => ({ ...prev, stress: e.target.value }))}
+                        placeholder="e.g. 4"
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Sleep (hours)</span>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={checkInForm.sleepHours}
+                        onChange={(e) => setCheckInForm(prev => ({ ...prev, sleepHours: e.target.value }))}
+                        placeholder="e.g. 7.5"
+                        style={styles.modalInput}
+                      />
+                    </div>
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Nutrition (1-10)</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={checkInForm.nutritionScore}
+                        onChange={(e) => setCheckInForm(prev => ({ ...prev, nutritionScore: e.target.value }))}
+                        placeholder="e.g. 8"
+                        style={styles.modalInput}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Compliance */}
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COMPLIANCE</div>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Adherence (%)</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={checkInForm.adherence}
+                      onChange={(e) => setCheckInForm(prev => ({ ...prev, adherence: e.target.value }))}
+                      placeholder="e.g. 85"
+                      style={styles.modalInput}
+                    />
+                  </div>
+
+                  {/* Qualitative */}
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>CLIENT SELF-REPORT</div>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Notes</span>
+                    <textarea
+                      value={checkInForm.notes}
+                      onChange={(e) => setCheckInForm(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="How did the client feel this week?"
+                      style={styles.modalTextarea}
+                      rows={2}
+                    />
+                  </div>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Wins this week</span>
+                    <textarea
+                      value={checkInForm.wins}
+                      onChange={(e) => setCheckInForm(prev => ({ ...prev, wins: e.target.value }))}
+                      placeholder="What went well? PRs, consistency, nutrition wins..."
+                      style={styles.modalTextarea}
+                      rows={2}
+                    />
+                  </div>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Challenges</span>
+                    <textarea
+                      value={checkInForm.challenges}
+                      onChange={(e) => setCheckInForm(prev => ({ ...prev, challenges: e.target.value }))}
+                      placeholder="What was difficult? Barriers, setbacks..."
+                      style={styles.modalTextarea}
+                      rows={2}
+                    />
+                  </div>
+
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COACH</div>
+                  <div style={styles.modalField}>
+                    <span style={styles.modalLabel}>Coach Feedback</span>
+                    <textarea
+                      value={checkInForm.coachFeedback}
+                      onChange={(e) => setCheckInForm(prev => ({ ...prev, coachFeedback: e.target.value }))}
+                      placeholder="Your feedback and recommendations..."
+                      style={styles.modalTextarea}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div style={styles.modalActions}>
+                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
+                    <button
+                      onClick={() => {
+                        const ci: CheckIn = {
+                          id: `ci-${Date.now()}`,
+                          clientId: client.id,
+                          clientName: client.name,
+                          date: new Date().toISOString().split('T')[0],
+                          status: 'completed',
+                          weight: checkInForm.weight ? parseFloat(checkInForm.weight) : null,
+                          bodyFat: checkInForm.bodyFat ? parseFloat(checkInForm.bodyFat) : null,
+                          mood: checkInForm.mood ? (parseInt(checkInForm.mood) as 1 | 2 | 3 | 4 | 5) : null,
+                          energy: checkInForm.energy ? parseInt(checkInForm.energy) : null,
+                          stress: checkInForm.stress ? parseInt(checkInForm.stress) : null,
+                          sleepHours: checkInForm.sleepHours ? parseFloat(checkInForm.sleepHours) : null,
+                          adherence: checkInForm.adherence ? parseInt(checkInForm.adherence) : null,
+                          nutritionScore: checkInForm.nutritionScore ? parseInt(checkInForm.nutritionScore) : null,
+                          notes: checkInForm.notes,
+                          wins: checkInForm.wins,
+                          challenges: checkInForm.challenges,
+                          coachFeedback: checkInForm.coachFeedback,
+                          reviewStatus: 'reviewed',
+                          flagReason: '',
+                        };
+                        onAddCheckIn(ci);
+                        // Also update client metrics if weight/bodyFat provided
+                        if (checkInForm.weight || checkInForm.bodyFat) {
+                          const updates: Partial<Client> = { metrics: { ...client.metrics } };
+                          if (checkInForm.weight) updates.metrics!.weight = [...client.metrics.weight, parseFloat(checkInForm.weight)];
+                          if (checkInForm.bodyFat) updates.metrics!.bodyFat = [...client.metrics.bodyFat, parseFloat(checkInForm.bodyFat)];
+                          onUpdateClient(client.id, updates);
+                        }
+                        setCheckInForm({ weight: '', bodyFat: '', mood: '', sleepHours: '', adherence: '', energy: '', stress: '', nutritionScore: '', notes: '', wins: '', challenges: '', coachFeedback: '' });
+                        setActiveModal(null);
+                        flashSaved('Check-in recorded');
+                      }}
+                      style={styles.modalPrimaryBtn}
+                    >
+                      <ClipboardCheck size={14} />
+                      Save Check-In
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* View Check-In Detail Modal */}
+              {activeModal === 'viewCheckIn' && selectedCheckIn && (
+                <div style={{ ...styles.modalBody, maxHeight: '70vh', overflowY: 'auto' }}>
+                  <div style={styles.checkInDetailGrid}>
+                    <div style={styles.checkInDetailItem}>
+                      <span style={styles.checkInDetailLabel}>Date</span>
+                      <span style={styles.checkInDetailValue}>
+                        {new Date(selectedCheckIn.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                    {selectedCheckIn.weight && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Weight</span>
+                        <span style={styles.checkInDetailValue}>{selectedCheckIn.weight} kg</span>
+                      </div>
+                    )}
+                    {selectedCheckIn.bodyFat && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Body Fat</span>
+                        <span style={styles.checkInDetailValue}>{selectedCheckIn.bodyFat}%</span>
+                      </div>
+                    )}
+                    {selectedCheckIn.mood && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Mood</span>
+                        <span style={styles.checkInDetailValue}>{selectedCheckIn.mood}/5</span>
+                      </div>
+                    )}
+                    {selectedCheckIn.energy !== null && selectedCheckIn.energy !== undefined && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Energy</span>
+                        <span style={styles.checkInDetailValue}>{selectedCheckIn.energy}/10</span>
+                      </div>
+                    )}
+                    {selectedCheckIn.stress !== null && selectedCheckIn.stress !== undefined && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Stress</span>
+                        <span style={{ ...styles.checkInDetailValue, color: (selectedCheckIn.stress || 0) >= 7 ? 'var(--accent-danger)' : (selectedCheckIn.stress || 0) >= 5 ? 'var(--accent-warm)' : 'var(--accent-success)' }}>
+                          {selectedCheckIn.stress}/10
+                        </span>
+                      </div>
+                    )}
+                    {selectedCheckIn.sleepHours && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Sleep</span>
+                        <span style={styles.checkInDetailValue}>{selectedCheckIn.sleepHours}h</span>
+                      </div>
+                    )}
+                    {selectedCheckIn.adherence !== null && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Adherence</span>
+                        <span style={{ ...styles.checkInDetailValue, color: (selectedCheckIn.adherence || 0) >= 80 ? 'var(--accent-success)' : (selectedCheckIn.adherence || 0) >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
+                          {selectedCheckIn.adherence}%
+                        </span>
+                      </div>
+                    )}
+                    {selectedCheckIn.nutritionScore !== null && selectedCheckIn.nutritionScore !== undefined && (
+                      <div style={styles.checkInDetailItem}>
+                        <span style={styles.checkInDetailLabel}>Nutrition</span>
+                        <span style={styles.checkInDetailValue}>{selectedCheckIn.nutritionScore}/10</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedCheckIn.notes && (
+                    <div style={styles.modalField}>
+                      <span style={styles.modalLabel}>Client Notes</span>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)' }}>
+                        {selectedCheckIn.notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedCheckIn.wins && (
+                    <div style={styles.modalField}>
+                      <span style={{ ...styles.modalLabel, color: 'var(--accent-success)' }}>Wins</span>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-success-dim)', border: '1px solid rgba(34,197,94,0.1)' }}>
+                        {selectedCheckIn.wins}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedCheckIn.challenges && (
+                    <div style={styles.modalField}>
+                      <span style={{ ...styles.modalLabel, color: 'var(--accent-warm)' }}>Challenges</span>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-warm-dim)', border: '1px solid rgba(245,158,11,0.1)' }}>
+                        {selectedCheckIn.challenges}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Editable Coach Feedback */}
+                  <div style={styles.modalField}>
+                    <span style={{ ...styles.modalLabel, color: 'var(--accent-primary)' }}>Coach Feedback</span>
+                    <textarea
+                      defaultValue={selectedCheckIn.coachFeedback}
+                      onChange={(e) => setSelectedCheckIn(prev => prev ? { ...prev, coachFeedback: e.target.value } : null)}
+                      placeholder="Add your feedback for this check-in..."
+                      style={styles.modalTextarea}
+                      rows={3}
+                    />
+                  </div>
+
+                  {selectedCheckIn.reviewStatus === 'flagged' && selectedCheckIn.flagReason && (
+                    <div style={styles.modalField}>
+                      <span style={{ ...styles.modalLabel, color: 'var(--accent-danger)' }}>Flagged</span>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                        {selectedCheckIn.flagReason}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Review Status Badge */}
+                  {selectedCheckIn.reviewStatus && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>Status:</span>
+                      <span style={{
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        fontWeight: 600,
+                        fontSize: '11px',
+                        textTransform: 'capitalize' as const,
+                        color: selectedCheckIn.reviewStatus === 'reviewed' ? 'var(--accent-success)' : selectedCheckIn.reviewStatus === 'flagged' ? 'var(--accent-danger)' : 'var(--accent-warm)',
+                        background: selectedCheckIn.reviewStatus === 'reviewed' ? 'var(--accent-success-dim)' : selectedCheckIn.reviewStatus === 'flagged' ? 'rgba(239,68,68,0.1)' : 'var(--accent-warm-dim)',
+                      }}>
+                        {selectedCheckIn.reviewStatus}
+                      </span>
+                    </div>
+                  )}
+
+                  <div style={styles.modalActions}>
+                    <button onClick={() => { setActiveModal(null); setSelectedCheckIn(null); }} style={styles.modalCancelBtn}>
+                      Cancel
+                    </button>
+                    {selectedCheckIn.reviewStatus !== 'flagged' && (
+                      <button
+                        onClick={() => {
+                          const reason = window.prompt('Flag reason (e.g. needs program change, schedule a call):');
+                          if (reason) {
+                            onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'flagged', flagReason: reason });
+                            setActiveModal(null);
+                            setSelectedCheckIn(null);
+                            flashSaved('Check-in flagged');
+                          }
+                        }}
+                        style={{ ...styles.modalCancelBtn, color: 'var(--accent-danger)', borderColor: 'rgba(239,68,68,0.3)' }}
+                      >
+                        <Flag size={14} />
+                        Flag
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'reviewed' });
+                        setActiveModal(null);
+                        setSelectedCheckIn(null);
+                        flashSaved('Check-in reviewed');
+                      }}
+                      style={styles.modalPrimaryBtn}
+                    >
+                      <Save size={14} />
+                      {selectedCheckIn.reviewStatus === 'reviewed' ? 'Save' : 'Mark Reviewed'}
                     </button>
                   </div>
                 </div>
@@ -1482,5 +2031,101 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     color: '#07090e',
     flexShrink: 0,
+  },
+  // Check-in styles
+  checkInList: {
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  checkInRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '10px 12px',
+    borderBottom: '1px solid rgba(255,255,255,0.03)',
+    borderRadius: 'var(--radius-sm)',
+    transition: 'background 0.1s',
+  },
+  checkInDate: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
+    minWidth: '130px',
+    flexShrink: 0,
+  },
+  checkInMetrics: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    flex: 1,
+  },
+  checkInChip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '11px',
+    fontWeight: 600,
+    padding: '2px 8px',
+    borderRadius: '10px',
+    background: 'rgba(255,255,255,0.04)',
+    color: 'var(--text-secondary)',
+    whiteSpace: 'nowrap',
+  },
+  checkInStatusBadge: {
+    fontSize: '11px',
+    fontWeight: 600,
+    padding: '3px 10px',
+    borderRadius: '20px',
+    textTransform: 'capitalize' as const,
+    flexShrink: 0,
+  },
+  moodPicker: {
+    display: 'flex',
+    gap: '6px',
+  },
+  moodOption: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '4px',
+    padding: '10px 4px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    fontFamily: 'var(--font-display)',
+    transition: 'all 0.2s',
+  },
+  checkInDetailGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '12px',
+  },
+  checkInDetailItem: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '4px',
+    padding: '10px 12px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid var(--glass-border)',
+  },
+  checkInDetailLabel: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+  },
+  checkInDetailValue: {
+    fontSize: '16px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    color: 'var(--text-primary)',
   },
 };

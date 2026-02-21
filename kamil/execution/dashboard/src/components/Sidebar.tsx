@@ -9,6 +9,8 @@ import {
   Settings,
   LogOut,
   Zap,
+  CreditCard,
+  ClipboardCheck,
 } from 'lucide-react';
 import type { Page } from '../types';
 
@@ -24,6 +26,8 @@ const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = 
   { icon: Users, label: 'Clients', page: 'clients' },
   { icon: Dumbbell, label: 'Programs', page: 'programs' },
   { icon: MessageSquare, label: 'Messages', page: 'messages' },
+  { icon: ClipboardCheck, label: 'Check-Ins', page: 'check-ins' },
+  { icon: CreditCard, label: 'Payments', page: 'payments' },
   { icon: BarChart3, label: 'Analytics', page: 'analytics' },
   { icon: CalendarDays, label: 'Schedule', page: 'schedule' },
 ];

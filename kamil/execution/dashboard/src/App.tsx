@@ -12,10 +12,12 @@ import SettingsPage from './components/SettingsPage';
 import AddClientPage from './components/AddClientPage';
 import WorkoutProgramsPage from './components/WorkoutProgramsPage';
 import ProgramBuilderPage from './components/ProgramBuilderPage';
+import PaymentsPage from './components/PaymentsPage';
+import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
 import useIsMobile from './hooks/useIsMobile';
-import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs } from './data';
-import type { Page, Theme, Client, Message, WorkoutProgram } from './types';
+import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs, invoices as initialInvoices, checkIns as initialCheckIns } from './data';
+import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn } from './types';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -52,6 +54,8 @@ function App() {
   const [allClients, setAllClients] = useState<Client[]>(initialClients);
   const [allMessages, setAllMessages] = useState<Message[]>(initialMessages);
   const [allPrograms, setAllPrograms] = useState<WorkoutProgram[]>(initialPrograms);
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>(initialInvoices);
+  const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>(initialCheckIns);
 
   const todayKey = new Date().toISOString().split('T')[0];
   const [sessionsByDate, setSessionsByDate] = useState<Record<string, typeof scheduleToday>>({
@@ -147,6 +151,24 @@ function App() {
     setAllPrograms(prev => [...prev, newProgram]);
   };
 
+  // ── Invoice handlers ──
+  const handleUpdateInvoice = (id: string, updates: Partial<Invoice>) => {
+    setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
+  };
+
+  const handleAddInvoice = (invoice: Invoice) => {
+    setAllInvoices(prev => [...prev, invoice]);
+  };
+
+  // ── Check-in handlers ──
+  const handleUpdateCheckIn = (id: string, updates: Partial<CheckIn>) => {
+    setAllCheckIns(prev => prev.map(ci => ci.id === id ? { ...ci, ...updates } : ci));
+  };
+
+  const handleAddCheckIn = (checkIn: CheckIn) => {
+    setAllCheckIns(prev => [...prev, checkIn]);
+  };
+
   const handleViewProgram = (id: string) => {
     setSelectedProgramId(id);
     setCurrentPage('program-builder');
@@ -182,10 +204,13 @@ function App() {
             clients={allClients}
             programs={allPrograms}
             workoutLogs={workoutLogs}
+            checkIns={allCheckIns}
             onBack={handleBackFromClient}
             onUpdateClient={handleUpdateClient}
             onSendMessage={handleSendMessage}
             onUpdateProgram={handleUpdateProgram}
+            onUpdateCheckIn={handleUpdateCheckIn}
+            onAddCheckIn={handleAddCheckIn}
           />
         );
       case 'messages':
@@ -220,6 +245,24 @@ function App() {
               setSelectedProgramId('');
             }}
             onBack={handleBackFromProgram}
+          />
+        );
+      case 'payments':
+        return (
+          <PaymentsPage
+            clients={allClients}
+            invoices={allInvoices}
+            onUpdateInvoice={handleUpdateInvoice}
+            onAddInvoice={handleAddInvoice}
+          />
+        );
+      case 'check-ins':
+        return (
+          <CheckInsPage
+            clients={allClients}
+            checkIns={allCheckIns}
+            onUpdateCheckIn={handleUpdateCheckIn}
+            onViewClient={handleViewClient}
           />
         );
       case 'schedule':

@@ -18,6 +18,8 @@ const pageTitles: Record<Page, string> = {
   settings: 'Settings',
   programs: 'Programs',
   'program-builder': 'Program Builder',
+  payments: 'Payments',
+  'check-ins': 'Check-Ins',
 };
 
 const pageSubtitles: Record<Page, string> = {
@@ -31,6 +33,8 @@ const pageSubtitles: Record<Page, string> = {
   settings: 'Customize your dashboard experience',
   programs: 'Build and manage workout programs',
   'program-builder': 'Design your workout program',
+  payments: 'Invoices and payment tracking',
+  'check-ins': 'Review and manage weekly client check-ins',
 };
 
 export default function Header({ currentPage, isMobile, onMenuToggle }: HeaderProps) {

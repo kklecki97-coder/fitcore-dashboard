@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, User, Mail, DollarSign, Target,
+  ArrowLeft, User, Mail, Target,
   FileText, Weight, Save,
 } from 'lucide-react';
 import GlassCard from './GlassCard';

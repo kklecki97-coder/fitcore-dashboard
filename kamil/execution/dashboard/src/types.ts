@@ -82,6 +82,45 @@ export interface WorkoutProgram {
   updatedAt: string;
 }
 
-export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder';
+export interface Invoice {
+  id: string;
+  clientId: string;
+  clientName: string;
+  amount: number;
+  status: 'paid' | 'pending' | 'overdue';
+  dueDate: string;
+  paidDate: string | null;
+  period: string; // e.g. "Feb 2026"
+  plan: 'Basic' | 'Premium' | 'Elite';
+}
+
+export interface CheckIn {
+  id: string;
+  clientId: string;
+  clientName: string;
+  date: string;
+  status: 'completed' | 'scheduled' | 'missed';
+  // ── Body metrics ──
+  weight: number | null;
+  bodyFat: number | null;
+  // ── Wellness scores (1-10 scales) ──
+  mood: 1 | 2 | 3 | 4 | 5 | null;
+  energy: number | null;       // 1-10
+  stress: number | null;       // 1-10
+  sleepHours: number | null;
+  // ── Compliance ──
+  adherence: number | null;    // 0-100 percentage
+  nutritionScore: number | null; // 1-10 (how well they stuck to macros/plan)
+  // ── Qualitative ──
+  notes: string;               // client self-report
+  wins: string;                // 3-5 wins this week
+  challenges: string;          // challenges faced
+  coachFeedback: string;
+  // ── Review workflow ──
+  reviewStatus: 'pending' | 'reviewed' | 'flagged'; // coach review state
+  flagReason: string;          // why flagged (needs program change, call, etc.)
+}
+
+export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';
 
 export type Theme = 'dark' | 'light';
