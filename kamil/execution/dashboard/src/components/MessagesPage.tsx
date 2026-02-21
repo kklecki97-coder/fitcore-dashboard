@@ -22,24 +22,33 @@ const EmailIcon = ({ size = 12, color = '#EA4335' }: { size?: number; color?: st
   <Mail size={size} color={color} style={{ flexShrink: 0 }} />
 );
 
+const InstagramIcon = ({ size = 12, color = '#E1306C' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+);
+
 const CHANNEL_COLORS: Record<MessageChannel, string> = {
-  'in-app': 'var(--accent-primary)',
   telegram: '#29ABE2',
   whatsapp: '#25D366',
   email: '#EA4335',
+  instagram: '#E1306C',
 };
 
 const CHANNEL_LABELS: Record<MessageChannel, string> = {
-  'in-app': 'In-App',
   telegram: 'Telegram',
   whatsapp: 'WhatsApp',
   email: 'Email',
+  instagram: 'Instagram',
 };
 
 function ChannelIcon({ channel, size = 12 }: { channel: MessageChannel; size?: number }) {
   if (channel === 'telegram') return <TelegramIcon size={size} />;
   if (channel === 'whatsapp') return <WhatsAppIcon size={size} />;
   if (channel === 'email') return <EmailIcon size={size} />;
+  if (channel === 'instagram') return <InstagramIcon size={size} />;
   return null;
 }
 
@@ -51,7 +60,7 @@ function getConversationChannel(msgs: Message[]): MessageChannel {
   for (let i = msgs.length - 1; i >= 0; i--) {
     if (msgs[i].channel) return msgs[i].channel!;
   }
-  return 'in-app';
+  return 'telegram';
 }
 
 interface MessagesPageProps {
@@ -127,10 +136,10 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
 
   const filterTabs: { key: 'all' | MessageChannel; label: string }[] = [
     { key: 'all', label: 'All' },
-    { key: 'in-app', label: 'In-App' },
     { key: 'telegram', label: 'Telegram' },
     { key: 'whatsapp', label: 'WhatsApp' },
     { key: 'email', label: 'Email' },
+    { key: 'instagram', label: 'Instagram' },
   ];
 
   return (
@@ -156,7 +165,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                   borderColor: channelFilter === tab.key ? 'rgba(0,229,200,0.15)' : 'transparent',
                 }}
               >
-                {tab.key !== 'all' && tab.key !== 'in-app' && (
+                {tab.key !== 'all' && (
                   <ChannelIcon channel={tab.key} size={11} />
                 )}
                 {tab.label}
@@ -194,7 +203,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                   <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
                     {getInitials(conv.name)}
                   </div>
-                  {conv.channel !== 'in-app' && (
+                  {conv.channel && (
                     <div style={{
                       ...styles.channelDot,
                       background: CHANNEL_COLORS[conv.channel],
@@ -207,7 +216,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                 <div style={styles.convInfo}>
                   <div style={styles.convNameRow}>
                     <span style={styles.convName}>{conv.name}</span>
-                    {conv.channel !== 'in-app' && (
+                    {conv.channel && (
                       <span style={{ ...styles.channelBadge, color: CHANNEL_COLORS[conv.channel], background: `${CHANNEL_COLORS[conv.channel]}15` }}>
                         {CHANNEL_LABELS[conv.channel]}
                       </span>
@@ -253,7 +262,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
             </div>
           </div>
           <div style={styles.chatHeaderRight}>
-            {activeChannel !== 'in-app' && (
+            {activeChannel && (
               <span style={{
                 ...styles.channelHeaderBadge,
                 color: CHANNEL_COLORS[activeChannel],
@@ -273,7 +282,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
         {/* Messages */}
         <div style={styles.messagesArea}>
           {activeConversation.map((msg: Message, i: number) => {
-            const msgChannel = msg.channel || 'in-app';
+            const msgChannel = msg.channel;
             return (
               <motion.div
                 key={msg.id}
@@ -298,7 +307,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                 }}>
                   <p style={styles.msgText}>{msg.text}</p>
                   <div style={styles.msgMeta}>
-                    {msgChannel !== 'in-app' && (
+                    {msgChannel && (
                       <span style={{ ...styles.msgChannelTag, color: CHANNEL_COLORS[msgChannel] }}>
                         <ChannelIcon channel={msgChannel} size={10} />
                       </span>
@@ -315,7 +324,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
         {/* Input Area */}
         <div style={styles.inputArea}>
           {/* Reply channel hint */}
-          {activeChannel !== 'in-app' && (
+          {activeChannel && (
             <div style={{
               ...styles.replyHint,
               color: CHANNEL_COLORS[activeChannel],
