@@ -494,7 +494,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                       </span>
                       {dotColor && (
                         <div style={styles.calDotRow}>
-                          {entries!.map((e, ei) => (
+                          {entries!.map((_e, ei) => (
                             <div key={ei} style={{ ...styles.calDot, background: dotColor }} />
                           ))}
                         </div>
