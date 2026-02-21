@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LogIn, Zap } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 interface LoginPageProps {
   onLogin: (remember: boolean) => void;
@@ -37,7 +37,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       >
         {/* Logo */}
         <div style={styles.logoWrap}>
-          <div style={styles.logoIcon}><Zap size={20} /></div>
+          <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 42, height: 42, borderRadius: '50%' }} />
           <div>
             <div style={styles.logoTitle}>FitCore</div>
             <div style={styles.logoSub}>CLIENT PORTAL</div>

@@ -11,9 +11,7 @@ export default function Header({ clientName, theme, onThemeChange }: HeaderProps
   return (
     <div style={styles.header}>
       <div style={styles.left}>
-        <div style={styles.logoIcon}>
-          <span style={{ fontSize: '14px', fontWeight: 800 }}>F</span>
-        </div>
+        <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 32, height: 32, borderRadius: '50%' }} />
         <div>
           <div style={styles.title}>FitCore</div>
           <div style={styles.subtitle}>{clientName}</div>

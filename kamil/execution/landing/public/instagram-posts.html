@@ -133,17 +133,39 @@
     }
 
     function drawLogo(ctx, x, y, size) {
-      // Gradient square
-      const grad = ctx.createLinearGradient(x, y, x + size, y + size);
-      grad.addColorStop(0, ACCENT);
-      grad.addColorStop(1, ACCENT2);
-      fillRoundRect(ctx, x, y, size, size, size * 0.22, grad);
-      // F letter
-      ctx.fillStyle = BG;
-      ctx.font = `800 ${size * 0.55}px 'Outfit', sans-serif`;
-      ctx.textAlign = 'center';
+      // Dark circle background (matches official logo)
+      const half = size / 2;
+      const cx = x + half;
+      const cy = y + half;
+      const bgGrad = ctx.createLinearGradient(x, y, x + size, y + size);
+      bgGrad.addColorStop(0, '#0c1017');
+      bgGrad.addColorStop(1, BG);
+      ctx.beginPath();
+      ctx.arc(cx, cy, half, 0, Math.PI * 2);
+      ctx.fillStyle = bgGrad;
+      ctx.fill();
+      // Subtle cyan border ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, half - size * 0.012, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 229, 200, 0.2)';
+      ctx.lineWidth = size * 0.005;
+      ctx.stroke();
+      // FC text — F white, C cyan
+      const fontSize = size * 0.39;
+      ctx.font = `800 ${fontSize}px 'Outfit', sans-serif`;
       ctx.textBaseline = 'middle';
-      ctx.fillText('F', x + size / 2, y + size / 2 + size * 0.02);
+      const fW = ctx.measureText('F').width;
+      const cW = ctx.measureText('C').width;
+      const startX = cx - (fW + cW) / 2;
+      const textY = cy + fontSize * 0.04;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('F', startX, textY);
+      const tGrad = ctx.createLinearGradient(cx - size * 0.2, 0, cx + size * 0.2, y + size);
+      tGrad.addColorStop(0, '#00e5c8');
+      tGrad.addColorStop(1, '#00c4aa');
+      ctx.fillStyle = tGrad;
+      ctx.fillText('C', startX + fW, textY);
     }
 
     function drawBrandName(ctx, x, y, fontSize) {
