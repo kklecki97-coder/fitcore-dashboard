@@ -48,9 +48,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       >
         {/* Logo */}
         <div style={styles.logoSection}>
-          <div style={styles.logoIcon}>
-            <Zap size={20} color="#07090e" fill="#07090e" />
-          </div>
+          <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 42, height: 42, borderRadius: '50%' }} />
           <div>
             <div style={styles.logoText}>FitCore</div>
             <div style={styles.logoSub}>COACH DASHBOARD</div>

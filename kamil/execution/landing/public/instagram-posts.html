@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore — Instagram Posts Export</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07090e; color: #f0f2f5; font-family: 'Outfit', sans-serif;
+      padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 48px;
+    }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    h1 span { color: #00e5c8; }
+    .subtitle { color: #8b92a5; font-size: 14px; margin-top: 8px; }
+    .posts-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 32px; max-width: 1200px; width: 100%;
+    }
+    .post-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .post-label { font-size: 13px; color: #8b92a5; font-weight: 500; }
+    .post-frame {
+      width: 540px; height: 540px; border-radius: 16px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    canvas { width: 540px; height: 540px; display: block; }
+    button {
+      background: linear-gradient(135deg, #00e5c8, #00c4aa);
+      color: #07090e; border: none; padding: 10px 24px; border-radius: 10px;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px;
+      cursor: pointer; transition: transform 0.2s;
+    }
+    button:hover { transform: translateY(-2px); }
+    .dl-all {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      padding: 14px 36px; font-size: 15px; border-radius: 12px;
+    }
+    .caption-box {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 14px 18px; font-size: 12px; color: #8b92a5;
+      max-width: 540px; width: 100%; line-height: 1.6; white-space: pre-wrap;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .caption-box:hover { border-color: rgba(255,255,255,0.12); }
+    .caption-box .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #525a6e; margin-bottom: 6px; }
+    .copied { color: #00e5c8; font-size: 11px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div style="text-align:center">
+    <h1>Fit<span>Core</span> — Instagram Posts</h1>
+    <p class="subtitle">5 branded posts ready to download. Click each button or download all at once.</p>
+  </div>
+
+  <button class="dl-all" onclick="downloadAll()">Download All 5 Posts</button>
+
+  <div class="posts-grid" id="grid"></div>
+
+  <script>
+    const S = 1080; // actual render size
+    const ACCENT = '#00e5c8';
+    const ACCENT2 = '#6366f1';
+    const BG = '#07090e';
+    const BG2 = '#0c1017';
+    const TEXT = '#f0f2f5';
+    const TEXT2 = '#8b92a5';
+    const TEXT3 = '#525a6e';
+
+    const posts = [
+      {
+        id: 'post1',
+        label: 'Post 1 — Introduction',
+        caption: `Meet FitCore — the all-in-one dashboard built for fitness coaches. 💪\n\nManage clients, program workouts, track payments, and communicate across all channels — from one premium platform.\n\nBuilt different. Built for coaches.\n\n#FitCore #FitnessCoach #CoachingBusiness #FitnessTech #OnlineCoaching #PersonalTrainer #FitnessApp`,
+        draw: drawPost1
+      },
+      {
+        id: 'post2',
+        label: 'Post 2 — Client Management',
+        caption: `Your clients deserve better than a spreadsheet. 📊\n\nFitCore gives you complete client profiles with progress tracking, metrics history, goals, and status management.\n\nFilter by plan. Search instantly. Never lose track of a client again.\n\n#ClientManagement #FitnessCoach #FitCore #CoachingTools #PersonalTraining`,
+        draw: drawPost2
+      },
+      {
+        id: 'post3',
+        label: 'Post 3 — Workout Programming',
+        caption: `Build a full 12-week program in minutes. 🏋️\n\n70+ exercises. Sets, reps, RPE, tempo, rest periods. Assign to any client instantly.\n\nFitCore's program builder makes workout programming effortless.\n\n#WorkoutProgramming #FitCore #FitnessCoach #StrengthTraining #ProgramDesign`,
+        draw: drawPost3
+      },
+      {
+        id: 'post4',
+        label: 'Post 4 — Multi-Channel Inbox',
+        caption: `One inbox. Every channel. Zero missed messages. 💬\n\nTelegram, WhatsApp, Email, Instagram — all your client conversations in one unified feed.\n\nStop switching between apps. Start coaching.\n\n#FitCore #ClientCommunication #FitnessCoach #OnlineCoaching #Messaging`,
+        draw: drawPost4
+      },
+      {
+        id: 'post5',
+        label: 'Post 5 — Analytics & CTA',
+        caption: `Know exactly how your coaching business is performing. 📈\n\nRevenue trends. Retention rates. Client distribution. AI-powered insights.\n\nFitCore gives you the data to grow.\n\n🔗 DM us or email Fitcorehq@gmail.com to get started.\n\n#FitCore #FitnessAnalytics #CoachingBusiness #FitnessTech #DataDriven`,
+        draw: drawPost5
+      }
+    ];
+
+    // ── Helper Functions ──
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function fillRoundRect(ctx, x, y, w, h, r, color) {
+      roundRect(ctx, x, y, w, h, r);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function strokeRoundRect(ctx, x, y, w, h, r, color, lw) {
+      roundRect(ctx, x, y, w, h, r);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw || 1;
+      ctx.stroke();
+    }
+
+    function drawLogo(ctx, x, y, size) {
+      // Gradient square
+      const grad = ctx.createLinearGradient(x, y, x + size, y + size);
+      grad.addColorStop(0, ACCENT);
+      grad.addColorStop(1, ACCENT2);
+      fillRoundRect(ctx, x, y, size, size, size * 0.22, grad);
+      // F letter
+      ctx.fillStyle = BG;
+      ctx.font = `800 ${size * 0.55}px 'Outfit', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('F', x + size / 2, y + size / 2 + size * 0.02);
+    }
+
+    function drawBrandName(ctx, x, y, fontSize) {
+      ctx.font = `700 ${fontSize}px 'Outfit', sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = TEXT;
+      const fitW = ctx.measureText('Fit').width;
+      ctx.fillText('Fit', x, y);
+      ctx.fillStyle = ACCENT;
+      ctx.fillText('Core', x + fitW, y);
+    }
+
+    function drawBackground(ctx) {
+      // Base
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, S, S);
+      // Subtle gradient overlay
+      const grad = ctx.createRadialGradient(S * 0.8, S * 0.1, 0, S * 0.8, S * 0.1, S * 0.7);
+      grad.addColorStop(0, 'rgba(0, 229, 200, 0.06)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, S, S);
+      // Second orb
+      const grad2 = ctx.createRadialGradient(S * 0.1, S * 0.9, 0, S * 0.1, S * 0.9, S * 0.5);
+      grad2.addColorStop(0, 'rgba(99, 102, 241, 0.04)');
+      grad2.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad2;
+      ctx.fillRect(0, 0, S, S);
+    }
+
+    function drawGlassCard(ctx, x, y, w, h, r) {
+      fillRoundRect(ctx, x, y, w, h, r || 20, 'rgba(14, 18, 27, 0.85)');
+      strokeRoundRect(ctx, x, y, w, h, r || 20, 'rgba(255,255,255,0.06)', 1.5);
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '';
+      let ty = y;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (ctx.measureText(test).width > maxWidth && i > 0) {
+          ctx.fillText(line.trim(), x, ty);
+          line = words[i] + ' ';
+          ty += lineHeight;
+        } else {
+          line = test;
+        }
+      }
+      ctx.fillText(line.trim(), x, ty);
+      return ty;
+    }
+
+    // ── POST 1: Introduction ──
+    function drawPost1(ctx) {
+      drawBackground(ctx);
+
+      // Big logo center-top
+      drawLogo(ctx, S / 2 - 44, 100, 88);
+      drawBrandName(ctx, S / 2 - 80, 230, 36);
+      ctx.textAlign = 'center';
+      ctx.fillText('', 0, 0); // reset
+
+      // Tagline
+      ctx.font = '300 22px "Outfit", sans-serif';
+      ctx.fillStyle = TEXT2;
+      ctx.textAlign = 'center';
+      ctx.fillText('The Dashboard Built for Fitness Coaches', S / 2, 290);
+
+      // Divider line
+      const grad = ctx.createLinearGradient(S / 2 - 100, 0, S / 2 + 100, 0);
+      grad.addColorStop(0, 'transparent');
+      grad.addColorStop(0.5, ACCENT);
+      grad.addColorStop(1, 'transparent');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(S / 2 - 100, 330);
+      ctx.lineTo(S / 2 + 100, 330);
+      ctx.stroke();
+
+      // Feature pills
+      const pills = ['Client Management', 'Workout Programming', 'Multi-Channel Inbox', 'Analytics & Insights', 'Payments & Invoicing', 'Schedule & Check-ins'];
+      const pillY = 380;
+      const pillH = 42;
+      const pillGap = 14;
+      const pillPadX = 24;
+
+      // Calculate rows
+      let row = [];
+      const rows = [];
+      let rowW = 0;
+      ctx.font = '500 15px "Outfit", sans-serif';
+      pills.forEach(p => {
+        const pw = ctx.measureText(p).width + pillPadX * 2;
+        if (rowW + pw + (row.length > 0 ? pillGap : 0) > S - 140) {
+          rows.push(row);
+          row = [{ text: p, w: pw }];
+          rowW = pw;
+        } else {
+          rowW += pw + (row.length > 0 ? pillGap : 0);
+          row.push({ text: p, w: pw });
+        }
+      });
+      if (row.length) rows.push(row);
+
+      rows.forEach((r, ri) => {
+        const totalW = r.reduce((a, p) => a + p.w, 0) + (r.length - 1) * pillGap;
+        let px = (S - totalW) / 2;
+        const py = pillY + ri * (pillH + pillGap);
+        r.forEach(p => {
+          fillRoundRect(ctx, px, py, p.w, pillH, pillH / 2, 'rgba(0, 229, 200, 0.1)');
+          strokeRoundRect(ctx, px, py, p.w, pillH, pillH / 2, 'rgba(0, 229, 200, 0.2)', 1);
+          ctx.fillStyle = ACCENT;
+          ctx.font = '500 15px "Outfit", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.text, px + p.w / 2, py + pillH / 2);
+          px += p.w + pillGap;
+        });
+      });
+
+      // Bottom bar
+      fillRoundRect(ctx, 80, S - 160, S - 160, 64, 16, 'rgba(14, 18, 27, 0.85)');
+      strokeRoundRect(ctx, 80, S - 160, S - 160, 64, 16, 'rgba(255,255,255,0.06)', 1);
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 16px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('All-in-one. Built for coaches worldwide.', S / 2, S - 128);
+
+      // Bottom accent
+      ctx.fillStyle = TEXT3;
+      ctx.font = '500 13px "Outfit", sans-serif';
+      ctx.fillText('fitcorehq@gmail.com', S / 2, S - 60);
+    }
+
+    // ── POST 2: Client Management ──
+    function drawPost2(ctx) {
+      drawBackground(ctx);
+
+      // Header
+      drawLogo(ctx, 70, 60, 48);
+      drawBrandName(ctx, 130, 84, 22);
+
+      // Section label
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 12px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.letterSpacing = '1.5px';
+      ctx.fillText('CLIENT MANAGEMENT', 70, 155);
+
+      // Title
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 38px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      wrapText(ctx, 'Every Client. One Place. Total Control.', 70, 210, S - 140, 48);
+
+      // Mock client cards
+      const clients = [
+        { name: 'Sarah Mitchell', plan: 'Elite', status: 'Active', progress: 85, color: '#f59e0b' },
+        { name: 'Marcus Chen', plan: 'Premium', status: 'Active', progress: 72, color: ACCENT2 },
+        { name: 'Elena Rodriguez', plan: 'Basic', status: 'Pending', progress: 45, color: ACCENT },
+      ];
+
+      clients.forEach((c, i) => {
+        const cy = 340 + i * 120;
+        drawGlassCard(ctx, 70, cy, S - 140, 100, 16);
+
+        // Avatar circle
+        const avatarGrad = ctx.createLinearGradient(94, cy + 20, 94 + 56, cy + 76);
+        avatarGrad.addColorStop(0, c.color);
+        avatarGrad.addColorStop(1, ACCENT);
+        ctx.beginPath();
+        ctx.arc(122, cy + 50, 28, 0, Math.PI * 2);
+        ctx.fillStyle = avatarGrad;
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = '700 16px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(c.name.split(' ').map(w => w[0]).join(''), 122, cy + 50);
+
+        // Name
+        ctx.fillStyle = TEXT;
+        ctx.font = '600 17px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(c.name, 170, cy + 38);
+
+        // Plan badge
+        ctx.fillStyle = TEXT3;
+        ctx.font = '500 13px "Outfit", sans-serif';
+        ctx.fillText(c.plan + ' Plan', 170, cy + 62);
+
+        // Status badge
+        const statusColor = c.status === 'Active' ? '#22c55e' : '#f59e0b';
+        fillRoundRect(ctx, S - 250, cy + 28, 80, 28, 14, statusColor + '20');
+        ctx.fillStyle = statusColor;
+        ctx.font = '600 12px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(c.status, S - 210, cy + 42);
+
+        // Progress bar
+        const barX = S - 250;
+        const barY = cy + 66;
+        const barW = 140;
+        fillRoundRect(ctx, barX, barY, barW, 6, 3, 'rgba(255,255,255,0.06)');
+        fillRoundRect(ctx, barX, barY, barW * (c.progress / 100), 6, 3, ACCENT);
+      });
+
+      // Bottom text
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 15px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Search, filter, and manage — instantly.', S / 2, S - 70);
+    }
+
+    // ── POST 3: Workout Programming ──
+    function drawPost3(ctx) {
+      drawBackground(ctx);
+
+      drawLogo(ctx, 70, 60, 48);
+      drawBrandName(ctx, 130, 84, 22);
+
+      ctx.fillStyle = ACCENT2;
+      ctx.font = '600 12px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('WORKOUT PROGRAMMING', 70, 155);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 38px "Outfit", sans-serif';
+      wrapText(ctx, 'Build Programs. Assign Instantly.', 70, 210, S - 140, 48);
+
+      // Program card mock
+      drawGlassCard(ctx, 70, 310, S - 140, 200, 16);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '700 18px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Hypertrophy Phase A', 94, 348);
+
+      ctx.fillStyle = TEXT3;
+      ctx.font = '400 13px "Outfit", sans-serif';
+      ctx.fillText('12 weeks  •  4 days/week  •  Active', 94, 374);
+
+      // Exercise rows
+      const exercises = [
+        { name: 'Barbell Back Squat', sets: '4 × 8', weight: '100kg', rpe: '8' },
+        { name: 'Romanian Deadlift', sets: '3 × 10', weight: '80kg', rpe: '7' },
+        { name: 'Leg Press', sets: '3 × 12', weight: '140kg', rpe: '8' },
+        { name: 'Walking Lunges', sets: '3 × 12', weight: '24kg', rpe: '7' },
+      ];
+
+      exercises.forEach((ex, i) => {
+        const ey = 400 + i * 26;
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+        ctx.fillRect(94, ey, S - 188, 24);
+
+        ctx.font = '500 13px "Outfit", sans-serif';
+        ctx.fillStyle = TEXT;
+        ctx.textAlign = 'left';
+        ctx.fillText(ex.name, 104, ey + 16);
+
+        ctx.fillStyle = ACCENT;
+        ctx.font = '500 13px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${ex.sets}  ${ex.weight}  RPE ${ex.rpe}`, S - 104, ey + 16);
+      });
+
+      // 70+ exercises badge
+      drawGlassCard(ctx, 70, 540, S - 140, 80, 16);
+      ctx.font = '700 32px "JetBrains Mono", monospace';
+      ctx.fillStyle = ACCENT;
+      ctx.textAlign = 'center';
+      ctx.fillText('70+', S / 2 - 120, 590);
+      ctx.font = '500 16px "Outfit", sans-serif';
+      ctx.fillStyle = TEXT;
+      ctx.textAlign = 'left';
+      ctx.fillText('exercises in the library', S / 2 - 70, 584);
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 13px "Outfit", sans-serif';
+      ctx.fillText('Sets, reps, RPE, tempo, rest — all customizable', S / 2 - 70, 606);
+
+      // Stat cards row
+      const stats = [
+        { val: '4×', label: 'Faster than\nspreadsheets' },
+        { val: '1-click', label: 'Program\nassignment' },
+        { val: '∞', label: 'Templates\n& programs' },
+      ];
+      stats.forEach((s, i) => {
+        const sx = 70 + i * ((S - 140) / 3);
+        const sw = (S - 140) / 3 - 10;
+        drawGlassCard(ctx, sx + (i > 0 ? 5 : 0), 650, sw, 90, 12);
+        ctx.font = '700 24px "JetBrains Mono", monospace';
+        ctx.fillStyle = ACCENT;
+        ctx.textAlign = 'center';
+        ctx.fillText(s.val, sx + sw / 2 + (i > 0 ? 5 : 0), 686);
+        ctx.font = '400 11px "Outfit", sans-serif';
+        ctx.fillStyle = TEXT3;
+        s.label.split('\n').forEach((line, li) => {
+          ctx.fillText(line, sx + sw / 2 + (i > 0 ? 5 : 0), 706 + li * 14);
+        });
+      });
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 15px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('From template to assigned — in seconds.', S / 2, S - 70);
+    }
+
+    // ── POST 4: Multi-Channel Inbox ──
+    function drawPost4(ctx) {
+      drawBackground(ctx);
+
+      drawLogo(ctx, 70, 60, 48);
+      drawBrandName(ctx, 130, 84, 22);
+
+      ctx.fillStyle = '#29ABE2';
+      ctx.font = '600 12px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('MULTI-CHANNEL INBOX', 70, 155);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 38px "Outfit", sans-serif';
+      wrapText(ctx, 'Every Channel. One Inbox. Zero Missed.', 70, 210, S - 140, 48);
+
+      // Channel icons row
+      const channels = [
+        { name: 'Telegram', color: '#29ABE2', icon: '✈' },
+        { name: 'WhatsApp', color: '#25D366', icon: '💬' },
+        { name: 'Email', color: '#EA4335', icon: '✉' },
+        { name: 'Instagram', color: '#E1306C', icon: '📷' },
+      ];
+
+      channels.forEach((ch, i) => {
+        const cx = 70 + i * ((S - 140) / 4);
+        const cw = (S - 140) / 4 - 12;
+        drawGlassCard(ctx, cx + (i > 0 ? 6 : 0), 320, cw, 80, 12);
+
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(ch.icon, cx + cw / 2 + (i > 0 ? 6 : 0), 354);
+
+        ctx.font = '600 13px "Outfit", sans-serif';
+        ctx.fillStyle = ch.color;
+        ctx.fillText(ch.name, cx + cw / 2 + (i > 0 ? 6 : 0), 382);
+      });
+
+      // Message thread mock
+      drawGlassCard(ctx, 70, 430, S - 140, 300, 16);
+
+      const messages = [
+        { from: 'Sarah M.', text: 'Hey coach, finished my leg day! 🔥', time: '2:34 PM', channel: 'WhatsApp', isCoach: false },
+        { from: 'You', text: 'Amazing work Sarah! How did the squats feel?', time: '2:36 PM', channel: '', isCoach: true },
+        { from: 'Marcus C.', text: 'Can we adjust my program next week?', time: '3:15 PM', channel: 'Telegram', isCoach: false },
+        { from: 'You', text: 'Of course! I\'ll update it tonight.', time: '3:18 PM', channel: '', isCoach: true },
+        { from: 'Elena R.', text: 'Just sent my check-in photos!', time: '4:02 PM', channel: 'Instagram', isCoach: false },
+      ];
+
+      messages.forEach((m, i) => {
+        const my = 460 + i * 52;
+        const isCoach = m.isCoach;
+        const mx = isCoach ? S / 2 + 20 : 100;
+        const mw = S / 2 - 80;
+
+        fillRoundRect(ctx, mx, my, mw, 40, 12, isCoach ? 'rgba(0, 229, 200, 0.1)' : 'rgba(255,255,255,0.04)');
+
+        ctx.font = '600 11px "Outfit", sans-serif';
+        ctx.fillStyle = isCoach ? ACCENT : TEXT;
+        ctx.textAlign = 'left';
+        ctx.fillText(m.from, mx + 12, my + 16);
+
+        if (m.channel) {
+          ctx.fillStyle = TEXT3;
+          ctx.font = '400 10px "Outfit", sans-serif';
+          const nameW = ctx.measureText(m.from).width;
+          // recalculate after font change
+          ctx.fillText('via ' + m.channel, mx + 12 + 60, my + 16);
+        }
+
+        ctx.font = '400 12px "Outfit", sans-serif';
+        ctx.fillStyle = TEXT2;
+        ctx.fillText(m.text.length > 40 ? m.text.slice(0, 40) + '…' : m.text, mx + 12, my + 32);
+
+        ctx.fillStyle = TEXT3;
+        ctx.font = '400 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(m.time, mx + mw - 10, my + 16);
+      });
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 15px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Stop switching apps. Start coaching.', S / 2, S - 70);
+    }
+
+    // ── POST 5: Analytics & CTA ──
+    function drawPost5(ctx) {
+      drawBackground(ctx);
+
+      drawLogo(ctx, 70, 60, 48);
+      drawBrandName(ctx, 130, 84, 22);
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '600 12px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('ANALYTICS & INSIGHTS', 70, 155);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 38px "Outfit", sans-serif';
+      wrapText(ctx, 'Data-Driven Coaching. Real Results.', 70, 210, S - 140, 48);
+
+      // KPI cards
+      const kpis = [
+        { val: '$4,850', label: 'Monthly Revenue', color: '#22c55e', change: '+12%' },
+        { val: '94%', label: 'Retention Rate', color: ACCENT, change: '+3%' },
+        { val: '24', label: 'Active Clients', color: ACCENT2, change: '+4' },
+        { val: '$201', label: 'Avg. Client Value', color: '#f59e0b', change: '+8%' },
+      ];
+
+      kpis.forEach((k, i) => {
+        const kx = 70 + (i % 2) * ((S - 140) / 2 + 5);
+        const ky = 310 + Math.floor(i / 2) * 110;
+        const kw = (S - 140) / 2 - 8;
+        drawGlassCard(ctx, kx, ky, kw, 94, 14);
+
+        ctx.fillStyle = TEXT3;
+        ctx.font = '500 11px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(k.label.toUpperCase(), kx + 20, ky + 28);
+
+        ctx.fillStyle = k.color;
+        ctx.font = '700 28px "JetBrains Mono", monospace';
+        ctx.fillText(k.val, kx + 20, ky + 62);
+
+        // Change badge
+        fillRoundRect(ctx, kx + kw - 64, ky + 44, 48, 24, 12, k.color + '20');
+        ctx.fillStyle = k.color;
+        ctx.font = '600 12px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(k.change, kx + kw - 40, ky + 57);
+      });
+
+      // Chart mock
+      drawGlassCard(ctx, 70, 540, S - 140, 150, 16);
+      ctx.fillStyle = TEXT3;
+      ctx.font = '500 11px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('REVENUE TREND', 94, 568);
+
+      // Draw chart line
+      ctx.beginPath();
+      const chartX = 94;
+      const chartW = S - 188;
+      const chartY = 590;
+      const chartH = 70;
+      const points = [0.3, 0.35, 0.5, 0.45, 0.6, 0.55, 0.7, 0.65, 0.8, 0.75, 0.85, 0.92];
+      points.forEach((p, i) => {
+        const px = chartX + (i / (points.length - 1)) * chartW;
+        const py = chartY + chartH - p * chartH;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.strokeStyle = ACCENT;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Fill under
+      ctx.lineTo(chartX + chartW, chartY + chartH);
+      ctx.lineTo(chartX, chartY + chartH);
+      ctx.closePath();
+      const chartGrad = ctx.createLinearGradient(0, chartY, 0, chartY + chartH);
+      chartGrad.addColorStop(0, 'rgba(0, 229, 200, 0.15)');
+      chartGrad.addColorStop(1, 'rgba(0, 229, 200, 0)');
+      ctx.fillStyle = chartGrad;
+      ctx.fill();
+
+      // CTA section
+      drawGlassCard(ctx, 70, 720, S - 140, 100, 16);
+
+      // CTA gradient border
+      strokeRoundRect(ctx, 70, 720, S - 140, 100, 16, 'rgba(0, 229, 200, 0.2)', 1.5);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '700 20px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Ready to level up your coaching?', S / 2, 758);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 14px "Outfit", sans-serif';
+      ctx.fillText('DM us or email Fitcorehq@gmail.com', S / 2, 790);
+
+      // Bottom
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.fillText('fitcore — built for coaches', S / 2, S - 60);
+    }
+
+    // ── Render All Posts ──
+    document.fonts.ready.then(() => {
+      const grid = document.getElementById('grid');
+
+      posts.forEach(post => {
+        const wrap = document.createElement('div');
+        wrap.className = 'post-wrap';
+
+        const label = document.createElement('div');
+        label.className = 'post-label';
+        label.textContent = post.label;
+
+        const frame = document.createElement('div');
+        frame.className = 'post-frame';
+
+        const canvas = document.createElement('canvas');
+        canvas.id = post.id;
+        canvas.width = S;
+        canvas.height = S;
+
+        frame.appendChild(canvas);
+
+        const btn = document.createElement('button');
+        btn.textContent = 'Download PNG';
+        btn.onclick = () => downloadPost(post.id);
+
+        // Caption box
+        const capBox = document.createElement('div');
+        capBox.className = 'caption-box';
+        capBox.onclick = () => {
+          navigator.clipboard.writeText(post.caption);
+          const copied = capBox.querySelector('.copied');
+          if (copied) copied.textContent = 'Copied to clipboard!';
+          setTimeout(() => { if (copied) copied.textContent = ''; }, 2000);
+        };
+        capBox.innerHTML = `<div class="label">Caption (click to copy)</div>${post.caption.replace(/\n/g, '<br>')}<div class="copied"></div>`;
+
+        wrap.appendChild(label);
+        wrap.appendChild(frame);
+        wrap.appendChild(btn);
+        wrap.appendChild(capBox);
+        grid.appendChild(wrap);
+
+        const ctx = canvas.getContext('2d');
+        post.draw(ctx);
+      });
+    });
+
+    function downloadPost(id) {
+      const canvas = document.getElementById(id);
+      const link = document.createElement('a');
+      link.download = `fitcore-${id}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadAll() {
+      posts.forEach(p => downloadPost(p.id));
+    }
+  </script>
+</body>
+</html>

@@ -37,9 +37,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
     <aside style={styles.sidebar}>
       {/* Logo */}
       <div style={styles.logoSection}>
-        <div style={styles.logoIcon}>
-          <Zap size={22} color="#07090e" strokeWidth={2.5} />
-        </div>
+        <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 38, height: 38, borderRadius: '50%' }} />
         <div>
           <div style={styles.logoText}>FitCore</div>
           <div style={styles.logoSub}>Coach Pro</div>
