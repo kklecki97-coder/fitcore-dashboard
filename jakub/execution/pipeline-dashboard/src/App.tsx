@@ -722,7 +722,7 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
       return
     }
 
-    // Open the rest every 3 seconds
+    // Open the rest every 5 seconds
     let idx = 1
     const timer = setInterval(() => {
       if (idx >= leads.length) {
@@ -734,7 +734,7 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
       window.open(`https://instagram.com/${leads[idx].instagram_handle}`, '_blank')
       idx++
       setOpenedCount(idx)
-    }, 3000)
+    }, 5000)
 
     setOpenTimerRef(timer)
   }
@@ -796,7 +796,7 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
           >
             {openingAll
               ? <><Pause size={14} /> Opening {openedCount}/{leads.length}...</>
-              : <><Play size={14} /> Open All (3s apart)</>}
+              : <><Play size={14} /> Open All (5s apart)</>}
           </button>
           <button
             onClick={handleMarkAll}
@@ -1009,7 +1009,7 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
       window.open(`https://instagram.com/${leads[idx].instagram_handle}`, '_blank')
       idx++
       setOpenedCount(idx)
-    }, 3000)
+    }, 20000)
 
     setOpenTimerRef(timer)
   }
@@ -1061,7 +1061,7 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
           >
             {openingAll
               ? <><Pause size={14} /> Opening {openedCount}/{leads.length}...</>
-              : <><Play size={14} /> Open All (3s apart)</>}
+              : <><Play size={14} /> Open All (20s apart)</>}
           </button>
           <button
             onClick={handleMarkAll}
@@ -1564,15 +1564,16 @@ export default function App() {
     [leads, remainingEngageSlots]
   )
 
-  // DM-ready batch: leads with status=engaged AND engaged_at >= 24h ago
+  // DM-ready batch: leads with status=engaged AND engaged on a previous day (not today)
   const dmBatch = useMemo(() => {
-    const now = Date.now()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayStartMs = today.getTime()
     return leads
       .filter(l => {
         if (l.status !== 'engaged') return false
         if (!l.engaged_at) return false
-        const engagedTime = new Date(l.engaged_at).getTime()
-        return (now - engagedTime) >= TWENTY_FOUR_HOURS
+        return new Date(l.engaged_at).getTime() < todayStartMs
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [leads])
