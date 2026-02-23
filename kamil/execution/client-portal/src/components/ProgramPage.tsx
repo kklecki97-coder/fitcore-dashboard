@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Clock, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
 import GlassCard from './GlassCard';
+import useIsMobile from '../hooks/useIsMobile';
 import type { WorkoutProgram, WorkoutSetLog } from '../types';
 
 interface ProgramPageProps {
@@ -11,6 +12,7 @@ interface ProgramPageProps {
 }
 
 export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageProps) {
+  const isMobile = useIsMobile();
   const [selectedDay, setSelectedDay] = useState(0);
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
 
@@ -41,7 +43,7 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
   }).length;
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
       {/* Program Header */}
       <div style={styles.header}>
         <h2 style={styles.title}>{program.name}</h2>
@@ -281,7 +283,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
-    width: '60px',
+    minWidth: '48px',
+    width: 'auto',
   },
   setTarget: {
     fontSize: '13px',
@@ -291,8 +294,8 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
   },
   setCheckBtn: {
-    width: '36px',
-    height: '36px',
+    width: '44px',
+    height: '44px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid',
     display: 'flex',

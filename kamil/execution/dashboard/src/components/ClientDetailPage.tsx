@@ -251,10 +251,6 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               <MessageSquare size={15} />
               Message
             </button>
-            <button onClick={() => setActiveModal('logMetrics')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-primary)' }}>
-              <Activity size={15} />
-              Log Metrics
-            </button>
             <button onClick={() => setActiveModal('editPlan')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Edit3 size={15} />
               Edit Plan
@@ -266,10 +262,6 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
             <button onClick={() => setActiveModal('assignProgram')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Dumbbell size={15} />
               Program
-            </button>
-            <button onClick={() => setActiveModal('checkIn')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-success)' }}>
-              <ClipboardCheck size={15} />
-              Check In
             </button>
           </div>
         </div>
@@ -765,9 +757,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {activeModal === 'message' && 'Send Message'}
                   {activeModal === 'editPlan' && 'Edit Plan'}
                   {activeModal === 'notes' && 'Coach Notes'}
-                  {activeModal === 'logMetrics' && 'Log Metrics'}
                   {activeModal === 'assignProgram' && 'Assign Program'}
-                  {activeModal === 'checkIn' && 'Weekly Check-In'}
                   {activeModal === 'viewCheckIn' && 'Check-In Details'}
                 </h3>
                 <button onClick={() => setActiveModal(null)} style={styles.closeBtn}>
@@ -890,86 +880,6 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                 </div>
               )}
 
-              {/* Log Metrics Modal */}
-              {activeModal === 'logMetrics' && (
-                <div style={styles.modalBody}>
-                  <div style={styles.metricsGrid}>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Weight (kg)</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={metricsForm.weight}
-                        onChange={(e) => setMetricsForm(prev => ({ ...prev, weight: e.target.value }))}
-                        placeholder={`Current: ${latestWeight}`}
-                        style={styles.modalInput}
-                        autoFocus
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Body Fat (%)</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={metricsForm.bodyFat}
-                        onChange={(e) => setMetricsForm(prev => ({ ...prev, bodyFat: e.target.value }))}
-                        placeholder={`Current: ${latestBF}`}
-                        style={styles.modalInput}
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Bench Press (kg)</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={metricsForm.benchPress}
-                        onChange={(e) => setMetricsForm(prev => ({ ...prev, benchPress: e.target.value }))}
-                        placeholder={`Current: ${client.metrics.benchPress[client.metrics.benchPress.length - 1]}`}
-                        style={styles.modalInput}
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Squat (kg)</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={metricsForm.squat}
-                        onChange={(e) => setMetricsForm(prev => ({ ...prev, squat: e.target.value }))}
-                        placeholder={`Current: ${client.metrics.squat[client.metrics.squat.length - 1]}`}
-                        style={styles.modalInput}
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Deadlift (kg)</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={metricsForm.deadlift}
-                        onChange={(e) => setMetricsForm(prev => ({ ...prev, deadlift: e.target.value }))}
-                        placeholder={`Current: ${client.metrics.deadlift[client.metrics.deadlift.length - 1]}`}
-                        style={styles.modalInput}
-                      />
-                    </div>
-                  </div>
-                  <p style={{ fontSize: '15px', color: 'var(--text-tertiary)', margin: 0 }}>
-                    Leave fields empty to skip — only filled values will be logged.
-                  </p>
-                  <div style={styles.modalActions}>
-                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
-                    <button
-                      onClick={handleLogMetrics}
-                      style={{
-                        ...styles.modalPrimaryBtn,
-                        opacity: Object.values(metricsForm).some(v => v) ? 1 : 0.5,
-                      }}
-                    >
-                      <Activity size={14} />
-                      Log Metrics
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {/* Assign Program Modal */}
               {activeModal === 'assignProgram' && (
                 <div style={styles.modalBody}>
@@ -1012,223 +922,6 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   <div style={styles.modalActions}>
                     <button onClick={() => { setActiveModal(null); flashSaved('Program updated'); }} style={styles.modalPrimaryBtn}>
                       Done
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Check-In Modal */}
-              {activeModal === 'checkIn' && (
-                <div style={{ ...styles.modalBody, maxHeight: '70vh', overflowY: 'auto' }}>
-                  <p style={{ fontSize: '18px', color: 'var(--text-secondary)', margin: 0 }}>
-                    Record weekly check-in for <strong style={{ color: 'var(--text-primary)' }}>{client.name}</strong>
-                  </p>
-
-                  {/* Body Metrics */}
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>BODY METRICS</div>
-                  <div style={styles.metricsGrid}>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Weight (kg)</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={checkInForm.weight}
-                        onChange={(e) => setCheckInForm(prev => ({ ...prev, weight: e.target.value }))}
-                        placeholder={`Current: ${client.metrics.weight[client.metrics.weight.length - 1] || '—'}`}
-                        style={styles.modalInput}
-                        autoFocus
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Body Fat (%)</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={checkInForm.bodyFat}
-                        onChange={(e) => setCheckInForm(prev => ({ ...prev, bodyFat: e.target.value }))}
-                        placeholder={`Current: ${client.metrics.bodyFat[client.metrics.bodyFat.length - 1] || '—'}`}
-                        style={styles.modalInput}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Wellness Scores */}
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>WELLNESS</div>
-                  <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Mood</span>
-                    <div style={styles.moodPicker}>
-                      {[
-                        { val: '1', Icon: Angry, label: 'Terrible', color: 'var(--accent-danger)' },
-                        { val: '2', Icon: Frown, label: 'Bad', color: 'var(--accent-warm)' },
-                        { val: '3', Icon: Meh, label: 'Okay', color: 'var(--text-secondary)' },
-                        { val: '4', Icon: Smile, label: 'Good', color: 'var(--accent-success)' },
-                        { val: '5', Icon: SmilePlus, label: 'Great', color: 'var(--accent-primary)' },
-                      ].map(m => (
-                        <button
-                          key={m.val}
-                          onClick={() => setCheckInForm(prev => ({ ...prev, mood: prev.mood === m.val ? '' : m.val }))}
-                          style={{
-                            ...styles.moodOption,
-                            ...(checkInForm.mood === m.val ? { borderColor: m.color, color: m.color, background: 'rgba(255,255,255,0.04)' } : {}),
-                          }}
-                        >
-                          <m.Icon size={18} />
-                          <span style={{ fontSize: '14px' }}>{m.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={styles.metricsGrid}>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Energy (1-10)</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={checkInForm.energy}
-                        onChange={(e) => setCheckInForm(prev => ({ ...prev, energy: e.target.value }))}
-                        placeholder="e.g. 7"
-                        style={styles.modalInput}
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Stress (1-10)</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={checkInForm.stress}
-                        onChange={(e) => setCheckInForm(prev => ({ ...prev, stress: e.target.value }))}
-                        placeholder="e.g. 4"
-                        style={styles.modalInput}
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Sleep (hours)</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={checkInForm.sleepHours}
-                        onChange={(e) => setCheckInForm(prev => ({ ...prev, sleepHours: e.target.value }))}
-                        placeholder="e.g. 7.5"
-                        style={styles.modalInput}
-                      />
-                    </div>
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Nutrition (1-10)</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={checkInForm.nutritionScore}
-                        onChange={(e) => setCheckInForm(prev => ({ ...prev, nutritionScore: e.target.value }))}
-                        placeholder="e.g. 8"
-                        style={styles.modalInput}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Compliance */}
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COMPLIANCE</div>
-                  <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Adherence (%)</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={checkInForm.adherence}
-                      onChange={(e) => setCheckInForm(prev => ({ ...prev, adherence: e.target.value }))}
-                      placeholder="e.g. 85"
-                      style={styles.modalInput}
-                    />
-                  </div>
-
-                  {/* Qualitative */}
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>CLIENT SELF-REPORT</div>
-                  <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Notes</span>
-                    <textarea
-                      value={checkInForm.notes}
-                      onChange={(e) => setCheckInForm(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="How did the client feel this week?"
-                      style={styles.modalTextarea}
-                      rows={2}
-                    />
-                  </div>
-                  <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Wins this week</span>
-                    <textarea
-                      value={checkInForm.wins}
-                      onChange={(e) => setCheckInForm(prev => ({ ...prev, wins: e.target.value }))}
-                      placeholder="What went well? PRs, consistency, nutrition wins..."
-                      style={styles.modalTextarea}
-                      rows={2}
-                    />
-                  </div>
-                  <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Challenges</span>
-                    <textarea
-                      value={checkInForm.challenges}
-                      onChange={(e) => setCheckInForm(prev => ({ ...prev, challenges: e.target.value }))}
-                      placeholder="What was difficult? Barriers, setbacks..."
-                      style={styles.modalTextarea}
-                      rows={2}
-                    />
-                  </div>
-
-                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: '1px', textTransform: 'uppercase' as const, marginBottom: '-8px' }}>COACH</div>
-                  <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Coach Feedback</span>
-                    <textarea
-                      value={checkInForm.coachFeedback}
-                      onChange={(e) => setCheckInForm(prev => ({ ...prev, coachFeedback: e.target.value }))}
-                      placeholder="Your feedback and recommendations..."
-                      style={styles.modalTextarea}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div style={styles.modalActions}>
-                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
-                    <button
-                      onClick={() => {
-                        const ci: CheckIn = {
-                          id: `ci-${Date.now()}`,
-                          clientId: client.id,
-                          clientName: client.name,
-                          date: new Date().toISOString().split('T')[0],
-                          status: 'completed',
-                          weight: checkInForm.weight ? parseFloat(checkInForm.weight) : null,
-                          bodyFat: checkInForm.bodyFat ? parseFloat(checkInForm.bodyFat) : null,
-                          mood: checkInForm.mood ? (parseInt(checkInForm.mood) as 1 | 2 | 3 | 4 | 5) : null,
-                          energy: checkInForm.energy ? parseInt(checkInForm.energy) : null,
-                          stress: checkInForm.stress ? parseInt(checkInForm.stress) : null,
-                          sleepHours: checkInForm.sleepHours ? parseFloat(checkInForm.sleepHours) : null,
-                          adherence: checkInForm.adherence ? parseInt(checkInForm.adherence) : null,
-                          nutritionScore: checkInForm.nutritionScore ? parseInt(checkInForm.nutritionScore) : null,
-                          notes: checkInForm.notes,
-                          wins: checkInForm.wins,
-                          challenges: checkInForm.challenges,
-                          coachFeedback: checkInForm.coachFeedback,
-                          reviewStatus: 'reviewed',
-                          flagReason: '',
-                        };
-                        onAddCheckIn(ci);
-                        // Also update client metrics if weight/bodyFat provided
-                        if (checkInForm.weight || checkInForm.bodyFat) {
-                          const updates: Partial<Client> = { metrics: { ...client.metrics } };
-                          if (checkInForm.weight) updates.metrics!.weight = [...client.metrics.weight, parseFloat(checkInForm.weight)];
-                          if (checkInForm.bodyFat) updates.metrics!.bodyFat = [...client.metrics.bodyFat, parseFloat(checkInForm.bodyFat)];
-                          onUpdateClient(client.id, updates);
-                        }
-                        setCheckInForm({ weight: '', bodyFat: '', mood: '', sleepHours: '', adherence: '', energy: '', stress: '', nutritionScore: '', notes: '', wins: '', challenges: '', coachFeedback: '' });
-                        setActiveModal(null);
-                        flashSaved('Check-in recorded');
-                      }}
-                      style={styles.modalPrimaryBtn}
-                    >
-                      <ClipboardCheck size={14} />
-                      Save Check-In
                     </button>
                   </div>
                 </div>

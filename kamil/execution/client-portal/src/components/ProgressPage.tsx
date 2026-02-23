@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, Target, Award, Flame } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import GlassCard from './GlassCard';
+import useIsMobile from '../hooks/useIsMobile';
 import type { Client, WorkoutLog } from '../types';
 
 interface ProgressPageProps {
@@ -9,6 +10,7 @@ interface ProgressPageProps {
 }
 
 export default function ProgressPage({ client, workoutLogs }: ProgressPageProps) {
+  const isMobile = useIsMobile();
   const { metrics } = client;
   const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
 
@@ -49,7 +51,7 @@ export default function ProgressPage({ client, workoutLogs }: ProgressPageProps)
   const completionRate = totalScheduled > 0 ? Math.round((totalSessions / totalScheduled) * 100) : 0;
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px 12px 80px' : '24px 24px 80px' }}>
       <h2 style={styles.title}>Your Progress</h2>
 
       {/* Weight Chart */}
@@ -69,7 +71,7 @@ export default function ProgressPage({ client, workoutLogs }: ProgressPageProps)
           <ResponsiveContainer>
             <LineChart data={weightData}>
               <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={35} />
+              <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
               <Tooltip
                 contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
                 formatter={(val: number) => [`${val} kg`, 'Weight']}
@@ -97,7 +99,7 @@ export default function ProgressPage({ client, workoutLogs }: ProgressPageProps)
           <ResponsiveContainer>
             <LineChart data={bodyFatData}>
               <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={35} />
+              <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
               <Tooltip
                 contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
                 formatter={(val: number) => [`${val}%`, 'Body Fat']}
@@ -109,13 +111,13 @@ export default function ProgressPage({ client, workoutLogs }: ProgressPageProps)
       </GlassCard>
 
       {/* Lift PRs */}
-      <div style={styles.prRow}>
+      <div style={{ ...styles.prRow, gap: isMobile ? '8px' : '10px' }}>
         {lifts.map((lift, i) => {
           const current = lift.values[lift.values.length - 1];
           const prev = lift.values[lift.values.length - 2];
           const diff = current - prev;
           return (
-            <GlassCard key={lift.name} delay={0.15 + i * 0.05} style={styles.prCard}>
+            <GlassCard key={lift.name} delay={0.15 + i * 0.05} style={{ ...styles.prCard, padding: isMobile ? '12px 8px' : '16px' }}>
               <div style={styles.prEmoji}>{lift.icon}</div>
               <div style={styles.prName}>{lift.name}</div>
               <div style={styles.prValue}>{current}<span style={styles.prUnit}>{lift.unit}</span></div>

@@ -9,6 +9,7 @@ export interface Client {
   nextCheckIn: string;
   monthlyRate: number;
   progress: number;
+  height?: number;
   metrics: {
     weight: number[];
     bodyFat: number[];

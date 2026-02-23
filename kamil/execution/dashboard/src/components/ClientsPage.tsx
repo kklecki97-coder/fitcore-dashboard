@@ -25,6 +25,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'status' | 'name' | 'newest' | 'plan'>('status');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Edit Plan modal state
@@ -47,6 +48,28 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
     const matchesPlan = filterPlan === 'all' || c.plan === filterPlan;
     const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
     return matchesSearch && matchesPlan && matchesStatus;
+  });
+
+  const statusOrder: Record<string, number> = { active: 0, paused: 1, pending: 2 };
+  const planOrder: Record<string, number> = { Elite: 0, Premium: 1, Basic: 2 };
+
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sortBy) {
+      case 'status': {
+        const s = statusOrder[a.status] - statusOrder[b.status];
+        return s !== 0 ? s : a.name.localeCompare(b.name);
+      }
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'newest':
+        return b.startDate.localeCompare(a.startDate);
+      case 'plan': {
+        const p = planOrder[a.plan] - planOrder[b.plan];
+        return p !== 0 ? p : a.name.localeCompare(b.name);
+      }
+      default:
+        return 0;
+    }
   });
 
   const statusIcon = (status: Client['status']) => {
@@ -119,7 +142,6 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
             </select>
           </div>
           <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
-            <ArrowUpDown size={14} color="var(--text-tertiary)" />
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -129,6 +151,19 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               <option value="active">Active</option>
               <option value="paused">Paused</option>
               <option value="pending">Pending</option>
+            </select>
+          </div>
+          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
+            <ArrowUpDown size={14} color="var(--text-tertiary)" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+              style={styles.select}
+            >
+              <option value="status">Sort: Status</option>
+              <option value="name">Sort: Name (A–Z)</option>
+              <option value="newest">Sort: Newest</option>
+              <option value="plan">Sort: Plan Tier</option>
             </select>
           </div>
         </div>
@@ -165,7 +200,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
 
       {/* Client Cards Grid */}
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-        {filtered.map((client, i) => {
+        {sorted.map((client, i) => {
           const badge = planBadge(client.plan);
           return (
             <GlassCard

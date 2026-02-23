@@ -69,8 +69,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
   },
   themeBtn: {
-    width: '36px',
-    height: '36px',
+    width: '44px',
+    height: '44px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--glass-border)',
     background: 'transparent',

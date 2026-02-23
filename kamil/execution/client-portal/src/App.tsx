@@ -129,7 +129,10 @@ function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            style={styles.content}
+            style={{
+              ...styles.content,
+              paddingBottom: isMobile ? 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))' : '0px',
+            }}
           >
             {renderPage()}
           </motion.div>

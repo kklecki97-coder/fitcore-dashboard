@@ -29,7 +29,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile }: BottomN
               onClick={() => onNavigate(item.page)}
               style={{
                 ...styles.bottomItem,
-                color: active ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
               }}
             >
               <Icon size={20} />
@@ -61,7 +61,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile }: BottomN
             whileTap={{ scale: 0.95 }}
             style={{
               ...styles.sideItem,
-              color: active ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+              color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
               background: active ? 'var(--accent-primary-dim)' : 'transparent',
             }}
             title={item.label}
@@ -88,7 +88,7 @@ const styles: Record<string, React.CSSProperties> = {
     bottom: 0,
     left: 0,
     right: 0,
-    height: 'var(--bottom-nav-height)',
+    height: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-around',
@@ -96,7 +96,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: '1px solid var(--glass-border)',
     backdropFilter: 'blur(20px)',
     zIndex: 50,
-    padding: '0 8px',
+    padding: '0 8px env(safe-area-inset-bottom, 0px)',
   },
   bottomItem: {
     display: 'flex',
@@ -106,12 +106,13 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '8px 12px',
+    padding: '10px 12px',
+    minHeight: '44px',
     fontFamily: 'var(--font-display)',
     transition: 'color 0.15s',
   },
   bottomLabel: {
-    fontSize: '10px',
+    fontSize: '11px',
     fontWeight: 600,
     letterSpacing: '0.3px',
     transition: 'all 0.2s',

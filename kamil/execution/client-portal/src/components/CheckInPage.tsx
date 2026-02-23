@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry } from 'lucide-react';
 import GlassCard from './GlassCard';
+import useIsMobile from '../hooks/useIsMobile';
 import type { CheckIn } from '../types';
 
 interface CheckInPageProps {
@@ -20,6 +21,7 @@ const moodIcons: Record<number, { icon: typeof Smile; color: string; label: stri
 };
 
 export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clientName }: CheckInPageProps) {
+  const isMobile = useIsMobile();
   const [tab, setTab] = useState<'submit' | 'history'>('submit');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -59,7 +61,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   };
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
       {/* Tabs */}
       <div style={styles.tabs}>
         <button
@@ -287,7 +289,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   field: {
     flex: 1,
-    minWidth: '100px',
+    minWidth: '80px',
     marginBottom: '8px',
   },
   label: {

@@ -227,6 +227,8 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-primary)',
     lineHeight: 1.5,
     margin: 0,
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   },
   msgTime: {
     fontSize: '10px',
@@ -238,7 +240,7 @@ const styles: Record<string, React.CSSProperties> = {
   inputWrap: {
     display: 'flex',
     gap: '8px',
-    padding: '12px 20px',
+    padding: '12px 20px calc(12px + env(safe-area-inset-bottom, 0px))',
     borderTop: '1px solid var(--glass-border)',
     background: 'var(--bg-card)',
     flexShrink: 0,

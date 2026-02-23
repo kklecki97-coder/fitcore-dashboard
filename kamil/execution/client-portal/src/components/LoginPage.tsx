@@ -80,7 +80,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 borderColor: remember ? 'var(--accent-primary)' : 'var(--glass-border)',
               }}
             >
-              {remember && <span style={{ fontSize: '10px', color: '#07090e', fontWeight: 800 }}>✓</span>}
+              {remember && <span style={{ fontSize: '12px', color: '#07090e', fontWeight: 800 }}>✓</span>}
             </div>
             <span style={styles.rememberText} onClick={() => setRemember(!remember)}>Remember me</span>
           </div>
@@ -204,10 +204,12 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
+    minHeight: '44px',
+    padding: '8px 0',
   },
   checkbox: {
-    width: '16px',
-    height: '16px',
+    width: '20px',
+    height: '20px',
     borderRadius: '4px',
     border: '1px solid',
     display: 'flex',

@@ -1,5 +1,6 @@
 import { Flame, Calendar, TrendingDown, Dumbbell, MessageSquare, ArrowRight } from 'lucide-react';
 import GlassCard from './GlassCard';
+import useIsMobile from '../hooks/useIsMobile';
 import type { Client, WorkoutProgram, WorkoutLog, CheckIn, ClientPage } from '../types';
 
 interface HomePageProps {
@@ -12,6 +13,7 @@ interface HomePageProps {
 }
 
 export default function HomePage({ client, program, workoutLogs, checkIns, coachName, onNavigate }: HomePageProps) {
+  const isMobile = useIsMobile();
   // Today's workout day — rotate through program days based on completed workouts
   const completedCount = workoutLogs.filter(w => w.completed).length;
   const todayDayIndex = program ? completedCount % program.days.length : 0;
@@ -33,7 +35,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, coach
   const weightChange = weights.length >= 2 ? weights[weights.length - 1] - weights[weights.length - 2] : 0;
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
       {/* Welcome */}
       <div style={styles.welcome}>
         <h1 style={styles.greeting}>Hey {client.name.split(' ')[0]}</h1>

@@ -463,13 +463,13 @@ export default function ProgramBuilderPage({
       {/* ═══ Add/Edit Exercise Modal ═══ */}
       <AnimatePresence>
         {exerciseModal && (
-          <>
-            <motion.div style={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setExerciseModal(null)} />
+          <motion.div style={styles.overlayCenter} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setExerciseModal(null)}>
             <motion.div
-              style={{ ...styles.modal, maxWidth: '520px' }}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              style={{ ...styles.modalCentered, maxWidth: '520px' }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>{exerciseModal.editing ? 'Edit Exercise' : 'Add Exercise'}</h3>
@@ -613,20 +613,20 @@ export default function ProgramBuilderPage({
                 </motion.button>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* ═══ Assign to Clients Modal ═══ */}
       <AnimatePresence>
         {assignModal && (
-          <>
-            <motion.div style={styles.overlay} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAssignModal(false)} />
+          <motion.div style={styles.overlayCenter} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAssignModal(false)}>
             <motion.div
-              style={{ ...styles.modal, maxWidth: '440px' }}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              style={{ ...styles.modalCentered, maxWidth: '440px' }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>Assign Program</h3>
@@ -665,7 +665,7 @@ export default function ProgramBuilderPage({
                 </button>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -740,6 +740,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '20px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   select: {
     padding: '9px 12px',
@@ -1032,18 +1034,44 @@ const styles: Record<string, React.CSSProperties> = {
     backdropFilter: 'blur(4px)',
     zIndex: 100,
   },
+  overlayCenter: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   modal: {
     position: 'fixed',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
     width: '90vw',
+    maxHeight: '85vh',
     background: 'var(--bg-card)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     boxShadow: 'var(--shadow-elevated)',
     zIndex: 101,
     overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  modalCentered: {
+    width: '90vw',
+    maxHeight: '85vh',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-lg)',
+    boxShadow: 'var(--shadow-elevated)',
+    zIndex: 101,
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
   },
   modalHeader: {
     display: 'flex',
@@ -1072,6 +1100,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '14px',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    flex: 1,
   },
   modalActions: {
     display: 'flex',
@@ -1079,6 +1110,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '16px 24px',
     borderTop: '1px solid var(--glass-border)',
+    flexShrink: 0,
   },
   cancelBtnModal: {
     padding: '8px 16px',
@@ -1120,6 +1152,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     outline: 'none',
     resize: 'vertical',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   suggestions: {
     position: 'absolute',

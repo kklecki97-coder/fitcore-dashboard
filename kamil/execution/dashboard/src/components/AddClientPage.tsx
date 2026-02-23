@@ -25,6 +25,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [plan, setPlan] = useState<Client['plan']>('Basic');
+  const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
   const [goals, setGoals] = useState('');
@@ -36,6 +37,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
     if (!name.trim()) errs.name = 'Name is required';
     if (!email.trim()) errs.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Invalid email';
+    if (height && (isNaN(Number(height)) || Number(height) <= 0)) errs.height = 'Enter a valid height';
     if (weight && (isNaN(Number(weight)) || Number(weight) <= 0)) errs.weight = 'Enter a valid weight';
     if (bodyFat && (isNaN(Number(bodyFat)) || Number(bodyFat) < 0 || Number(bodyFat) > 100)) errs.bodyFat = 'Enter a valid body fat %';
     setErrors(errs);
@@ -56,6 +58,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
       email: email.trim().toLowerCase(),
       plan,
       status: 'pending',
+      height: height ? Number(height) : undefined,
       startDate: today,
       nextCheckIn: nextWeek.toISOString().split('T')[0],
       monthlyRate: planRates[plan],
@@ -177,18 +180,32 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
               {errors.weight && <span style={styles.error}>{errors.weight}</span>}
             </div>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.label}>Body Fat %</label>
-              <div style={{ ...styles.inputWrap, borderColor: errors.bodyFat ? 'var(--accent-danger)' : 'var(--glass-border)' }}>
+              <label style={styles.label}>Height (cm)</label>
+              <div style={{ ...styles.inputWrap, borderColor: errors.height ? 'var(--accent-danger)' : 'var(--glass-border)' }}>
                 <input
                   type="number"
-                  placeholder="e.g. 20"
-                  value={bodyFat}
-                  onChange={(e) => setBodyFat(e.target.value)}
+                  placeholder="e.g. 180"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
                   style={styles.input}
                 />
               </div>
-              {errors.bodyFat && <span style={styles.error}>{errors.bodyFat}</span>}
+              {errors.height && <span style={styles.error}>{errors.height}</span>}
             </div>
+          </div>
+
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Body Fat %</label>
+            <div style={{ ...styles.inputWrap, borderColor: errors.bodyFat ? 'var(--accent-danger)' : 'var(--glass-border)', maxWidth: isMobile ? '100%' : '50%' }}>
+              <input
+                type="number"
+                placeholder="e.g. 20"
+                value={bodyFat}
+                onChange={(e) => setBodyFat(e.target.value)}
+                style={styles.input}
+              />
+            </div>
+            {errors.bodyFat && <span style={styles.error}>{errors.bodyFat}</span>}
           </div>
         </GlassCard>
 
