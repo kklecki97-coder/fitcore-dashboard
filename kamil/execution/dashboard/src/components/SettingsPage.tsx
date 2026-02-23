@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, User, Bell, Shield, Palette, X, Save } from 'lucide-react';
+import { Sun, Moon, User, Bell, Shield, Palette, X, Save, Plug, ExternalLink, CheckCircle } from 'lucide-react';
 import GlassCard from './GlassCard';
+import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Theme } from '../types';
+import type { Theme, MessageChannel } from '../types';
 
 interface Notifications {
   messages: boolean;
@@ -36,6 +37,17 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [newPassword, setNewPassword] = useState('');
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
 
+  // Integrations state
+  const [integrations, setIntegrations] = useState<Record<MessageChannel, { connected: boolean; handle: string }>>({
+    telegram: { connected: true, handle: '@fitcore_coach' },
+    whatsapp: { connected: true, handle: '+1 (555) 012-3456' },
+    email: { connected: false, handle: '' },
+    instagram: { connected: false, handle: '' },
+  });
+  const [integrationModal, setIntegrationModal] = useState<MessageChannel | null>(null);
+  const [integrationInput, setIntegrationInput] = useState('');
+  const [connectingChannel, setConnectingChannel] = useState(false);
+
   const themeOptions: { value: Theme; label: string; description: string; icon: typeof Sun }[] = [
     { value: 'dark', label: 'Dark', description: 'Deep black with electric accents', icon: Moon },
     { value: 'light', label: 'Light', description: 'Clean white with teal accents', icon: Sun },
@@ -62,6 +74,55 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
     { key: 'payments' as const, label: 'Payment alerts', desc: 'Notifications for payments received' },
     { key: 'weekly' as const, label: 'Weekly summary', desc: 'Email digest of your weekly performance' },
   ];
+
+  const channelConfig: Record<MessageChannel, { instruction: string; placeholder: string; inputLabel: string; helpUrl: string }> = {
+    telegram: {
+      instruction: 'Create a Telegram Bot via @BotFather, then paste the bot token below. FitCore will listen for client messages through your bot.',
+      placeholder: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz',
+      inputLabel: 'Bot Token',
+      helpUrl: 'https://core.telegram.org/bots#botfather',
+    },
+    whatsapp: {
+      instruction: 'Connect your WhatsApp Business account. Enter your phone number with country code to link it with FitCore.',
+      placeholder: '+1 (555) 012-3456',
+      inputLabel: 'Phone Number',
+      helpUrl: 'https://business.whatsapp.com/',
+    },
+    email: {
+      instruction: 'Connect an email address to send and receive client messages directly from FitCore. We support Gmail, Outlook, and custom SMTP.',
+      placeholder: 'you@example.com',
+      inputLabel: 'Email Address',
+      helpUrl: '',
+    },
+    instagram: {
+      instruction: 'Link your Instagram Business or Creator account to manage DMs from clients inside FitCore.',
+      placeholder: '@your.username',
+      inputLabel: 'Instagram Handle',
+      helpUrl: 'https://business.instagram.com/',
+    },
+  };
+
+  const handleConnect = (channel: MessageChannel) => {
+    if (!integrationInput.trim()) return;
+    setConnectingChannel(true);
+    // Simulate connection delay
+    setTimeout(() => {
+      setIntegrations(prev => ({
+        ...prev,
+        [channel]: { connected: true, handle: integrationInput.trim() },
+      }));
+      setIntegrationInput('');
+      setConnectingChannel(false);
+      setIntegrationModal(null);
+    }, 1200);
+  };
+
+  const handleDisconnect = (channel: MessageChannel) => {
+    setIntegrations(prev => ({
+      ...prev,
+      [channel]: { connected: false, handle: '' },
+    }));
+  };
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
@@ -297,6 +358,83 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             </div>
           </div>
         </GlassCard>
+
+        {/* Integrations */}
+        <GlassCard delay={0.25} style={{ gridColumn: '1 / -1' }}>
+          <div style={styles.sectionHeader}>
+            <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
+              <Plug size={18} color="var(--accent-primary)" />
+            </div>
+            <div>
+              <h3 style={styles.sectionTitle}>Integrations</h3>
+              <p style={styles.sectionSub}>Connect your messaging channels to receive client messages</p>
+            </div>
+          </div>
+          <div style={styles.divider} />
+          {(['telegram', 'whatsapp', 'email', 'instagram'] as MessageChannel[]).map((channel, idx) => {
+            const { connected, handle } = integrations[channel];
+            const isLast = idx === 3;
+            return (
+              <div key={channel} style={{ ...styles.integrationRow, borderBottom: isLast ? 'none' : '1px solid var(--glass-border)' }}>
+                <div style={styles.integrationInfo}>
+                  <div style={{
+                    ...styles.integrationIcon,
+                    background: connected ? `${CHANNEL_COLORS[channel]}15` : 'var(--bg-elevated)',
+                    border: connected ? `1px solid ${CHANNEL_COLORS[channel]}30` : '1px solid var(--glass-border)',
+                  }}>
+                    <ChannelIcon channel={channel} size={18} />
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={styles.settingLabel}>{CHANNEL_LABELS[channel]}</span>
+                      {connected && (
+                        <span style={{
+                          ...styles.statusBadge,
+                          color: 'var(--accent-success)',
+                          background: 'var(--accent-success-dim)',
+                          borderColor: 'var(--accent-success)',
+                          fontSize: '12px',
+                          padding: '2px 8px',
+                        }}>
+                          <CheckCircle size={10} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                          Connected
+                        </span>
+                      )}
+                    </div>
+                    <div style={styles.settingDesc}>
+                      {connected ? handle : 'Not connected — click Connect to set up'}
+                    </div>
+                  </div>
+                </div>
+                <div style={styles.integrationActions}>
+                  {connected ? (
+                    <button
+                      style={styles.disconnectBtn}
+                      onClick={() => handleDisconnect(channel)}
+                    >
+                      Disconnect
+                    </button>
+                  ) : (
+                    <button
+                      style={{
+                        ...styles.connectBtn,
+                        borderColor: CHANNEL_COLORS[channel],
+                        color: CHANNEL_COLORS[channel],
+                      }}
+                      onClick={() => {
+                        setIntegrationInput('');
+                        setIntegrationModal(channel);
+                      }}
+                    >
+                      <Plug size={14} />
+                      Connect
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </GlassCard>
       </div>
 
       {/* Security Modals */}
@@ -399,6 +537,121 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                   </div>
                 </div>
               )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Integration Connect Modal */}
+      <AnimatePresence>
+        {integrationModal && (
+          <>
+            <motion.div
+              style={styles.overlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}
+            />
+            <motion.div
+              style={styles.modal}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            >
+              <div style={styles.modalHeader}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: `${CHANNEL_COLORS[integrationModal]}15`,
+                    border: `1px solid ${CHANNEL_COLORS[integrationModal]}30`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <ChannelIcon channel={integrationModal} size={18} />
+                  </div>
+                  <h3 style={styles.modalTitle}>
+                    Connect {CHANNEL_LABELS[integrationModal]}
+                  </h3>
+                </div>
+                <button style={styles.closeBtn} onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={styles.modalBody}>
+                <p style={{ fontSize: '16px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  {channelConfig[integrationModal].instruction}
+                </p>
+
+                {channelConfig[integrationModal].helpUrl && (
+                  <a
+                    href={channelConfig[integrationModal].helpUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={styles.helpLink}
+                  >
+                    <ExternalLink size={13} />
+                    View setup guide
+                  </a>
+                )}
+
+                <div style={styles.modalField}>
+                  <label style={styles.fieldLabel}>{channelConfig[integrationModal].inputLabel}</label>
+                  <input
+                    type="text"
+                    value={integrationInput}
+                    onChange={(e) => setIntegrationInput(e.target.value)}
+                    placeholder={channelConfig[integrationModal].placeholder}
+                    style={{
+                      ...styles.fieldInput,
+                      borderColor: integrationInput.trim() ? CHANNEL_COLORS[integrationModal] : 'var(--glass-border)',
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleConnect(integrationModal); }}
+                    autoFocus
+                  />
+                </div>
+
+                <div style={styles.modalActions}>
+                  <button
+                    style={styles.cancelBtn}
+                    onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}
+                    disabled={connectingChannel}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    style={{
+                      ...styles.saveBtn,
+                      background: CHANNEL_COLORS[integrationModal],
+                      boxShadow: `0 0 16px ${CHANNEL_COLORS[integrationModal]}40`,
+                      opacity: integrationInput.trim() && !connectingChannel ? 1 : 0.4,
+                      cursor: integrationInput.trim() && !connectingChannel ? 'pointer' : 'not-allowed',
+                    }}
+                    onClick={() => handleConnect(integrationModal)}
+                    disabled={!integrationInput.trim() || connectingChannel}
+                  >
+                    {connectingChannel ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                          style={{ width: '14px', height: '14px', border: '2px solid rgba(7,9,14,0.3)', borderTopColor: '#07090e', borderRadius: '50%' }}
+                        />
+                        Connecting...
+                      </>
+                    ) : (
+                      <>
+                        <Plug size={14} />
+                        Connect {CHANNEL_LABELS[integrationModal]}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </>
         )}
@@ -749,5 +1002,79 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '18px',
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
+  },
+  integrationRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '14px 0',
+    borderBottom: '1px solid var(--glass-border)',
+  },
+  integrationInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+  },
+  integrationIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: 'var(--radius-sm)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  integrationActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+  },
+  statusBadge: {
+    fontSize: '14px',
+    fontWeight: 600,
+    padding: '4px 10px',
+    borderRadius: '20px',
+    border: '1px solid',
+    letterSpacing: '0.3px',
+  },
+  connectBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid',
+    background: 'transparent',
+    fontSize: '15px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'background 0.15s, opacity 0.15s',
+  },
+  disconnectBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--accent-danger)',
+    background: 'var(--accent-danger-dim)',
+    color: 'var(--accent-danger)',
+    fontSize: '15px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'background 0.15s, border-color 0.15s',
+  },
+  helpLink: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'var(--accent-primary)',
+    textDecoration: 'none',
+    opacity: 0.8,
+    transition: 'opacity 0.15s',
   },
 };

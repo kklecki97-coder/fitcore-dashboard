@@ -37,6 +37,7 @@ export interface Message {
   isRead: boolean;
   isFromCoach: boolean;
   channel?: MessageChannel;
+  deliveryStatus?: 'sending' | 'sent' | 'delivered' | 'read';
 }
 
 export interface RevenueData {

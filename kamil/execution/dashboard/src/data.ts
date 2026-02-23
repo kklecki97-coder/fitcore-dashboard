@@ -351,7 +351,7 @@ export const messages: Message[] = [
   {
     id: 'm1a', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'How did the bench session feel today? You were due for a heavy single.',
-    timestamp: '2026-02-20T13:00:00', isRead: true, isFromCoach: true, channel: 'telegram',
+    timestamp: '2026-02-20T13:00:00', isRead: true, isFromCoach: true, channel: 'telegram', deliveryStatus: 'read',
   },
   {
     id: 'm1b', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
@@ -384,7 +384,7 @@ export const messages: Message[] = [
   {
     id: 'm4a', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
     text: "How's the knee feeling with the modified squats?",
-    timestamp: '2026-02-20T09:30:00', isRead: true, isFromCoach: true, channel: 'whatsapp',
+    timestamp: '2026-02-20T09:30:00', isRead: true, isFromCoach: true, channel: 'whatsapp', deliveryStatus: 'read',
   },
   {
     id: 'm4', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
@@ -394,7 +394,7 @@ export const messages: Message[] = [
   {
     id: 'm5', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
     text: "Great to hear! Let's test some deeper range next week if it stays comfortable.",
-    timestamp: '2026-02-20T10:15:00', isRead: true, isFromCoach: true, channel: 'whatsapp',
+    timestamp: '2026-02-20T10:15:00', isRead: true, isFromCoach: true, channel: 'whatsapp', deliveryStatus: 'read',
   },
   {
     id: 'm5a', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
@@ -410,7 +410,7 @@ export const messages: Message[] = [
   {
     id: 'm6a', clientId: 'c5', clientName: 'David Park', clientAvatar: '',
     text: "No worries, life happens. Just don't skip two in a row — keep the momentum going.",
-    timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true, channel: 'email',
+    timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true, channel: 'email', deliveryStatus: 'read',
   },
   // Tom Bradley — weight milestone (via Telegram)
   {
@@ -421,7 +421,7 @@ export const messages: Message[] = [
   {
     id: 'm8', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Incredible progress Tom! That's 9kg down. Let's celebrate that win.",
-    timestamp: '2026-02-19T09:30:00', isRead: true, isFromCoach: true, channel: 'telegram',
+    timestamp: '2026-02-19T09:30:00', isRead: true, isFromCoach: true, channel: 'telegram', deliveryStatus: 'read',
   },
   {
     id: 'm8a', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
@@ -431,7 +431,7 @@ export const messages: Message[] = [
   {
     id: 'm8b', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Next target: 93kg by end of March. We'll bump cardio slightly and keep protein high.",
-    timestamp: '2026-02-19T10:00:00', isRead: true, isFromCoach: true, channel: 'telegram',
+    timestamp: '2026-02-19T10:00:00', isRead: true, isFromCoach: true, channel: 'telegram', deliveryStatus: 'read',
   },
   // Aisha Patel — program request (via Instagram)
   {
@@ -442,7 +442,7 @@ export const messages: Message[] = [
   {
     id: 'm9a', clientId: 'c8', clientName: 'Aisha Patel', clientAvatar: '',
     text: "Absolutely. I'll swap Friday's session to a glute/hamstring focus. Check your program tomorrow.",
-    timestamp: '2026-02-19T16:30:00', isRead: true, isFromCoach: true, channel: 'instagram',
+    timestamp: '2026-02-19T16:30:00', isRead: true, isFromCoach: true, channel: 'instagram', deliveryStatus: 'read',
   },
   // Ryan Kowalski — potential client inquiry (via Email)
   {
@@ -453,7 +453,7 @@ export const messages: Message[] = [
   {
     id: 'm10a', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
     text: "Hey Ryan! Thanks for reaching out. I totally understand the frustration with yo-yo dieting. My approach is sustainable — we build habits, not just meal plans. I offer 3 tiers starting at $99/mo. Want to book a free 15-min discovery call this week?",
-    timestamp: '2026-02-20T10:00:00', isRead: true, isFromCoach: true, channel: 'email',
+    timestamp: '2026-02-20T10:00:00', isRead: true, isFromCoach: true, channel: 'email', deliveryStatus: 'read',
   },
   {
     id: 'm10b', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
@@ -469,7 +469,7 @@ export const messages: Message[] = [
   {
     id: 'm11a', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
     text: "Marcus is a great client — glad he sent you my way! I've coached 3 competitors through their preps. For comp prep I'd recommend the Elite tier ($299/mo) which includes daily check-ins, posing feedback, and peak week protocol. When's your target show date?",
-    timestamp: '2026-02-21T09:00:00', isRead: true, isFromCoach: true, channel: 'email',
+    timestamp: '2026-02-21T09:00:00', isRead: true, isFromCoach: true, channel: 'email', deliveryStatus: 'read',
   },
   {
     id: 'm11b', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
@@ -485,7 +485,7 @@ export const messages: Message[] = [
   {
     id: 'm12a', clientId: 'c11', clientName: 'Jordan Miles', clientAvatar: '',
     text: "Hey Jordan! Thanks for the kind words. Absolutely — I'd love to help you get back at it. With your athletic background we can ramp up fast. DM me your goals and I'll send you a free assessment form.",
-    timestamp: '2026-02-21T11:30:00', isRead: true, isFromCoach: true, channel: 'instagram',
+    timestamp: '2026-02-21T11:30:00', isRead: true, isFromCoach: true, channel: 'instagram', deliveryStatus: 'read',
   },
   {
     id: 'm12b', clientId: 'c11', clientName: 'Jordan Miles', clientAvatar: '',

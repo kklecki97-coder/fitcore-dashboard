@@ -1,59 +1,79 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Send, ArrowLeft, Mail } from 'lucide-react';
+import { Search, Send, ArrowLeft, X, MessageSquare, Check } from 'lucide-react';
 import GlassCard from './GlassCard';
+import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
 import { getInitials, getAvatarColor } from '../data';
 import type { Client, Message, MessageChannel } from '../types';
 
-// ── Inline SVG channel icons ──
-const TelegramIcon = ({ size = 12, color = '#29ABE2' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ flexShrink: 0 }}>
-    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/>
-  </svg>
-);
-
-const WhatsAppIcon = ({ size = 12, color = '#25D366' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={{ flexShrink: 0 }}>
-    <path d="M17.47 14.38c-.29-.15-1.72-.85-1.99-.95-.27-.1-.46-.15-.66.15-.2.29-.76.95-.93 1.14-.17.2-.34.22-.63.07-.29-.15-1.24-.46-2.36-1.46-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.59.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.51-.07-.15-.66-1.58-.9-2.17-.24-.57-.48-.49-.66-.5h-.56c-.2 0-.51.07-.78.37-.27.29-1.02 1-1.02 2.44 0 1.44 1.05 2.83 1.2 3.02.15.2 2.06 3.14 4.98 4.41.7.3 1.24.48 1.66.61.7.22 1.34.19 1.84.12.56-.08 1.72-.7 1.96-1.38.25-.68.25-1.26.17-1.38-.07-.12-.27-.2-.56-.34zM12.05 21.5c-1.8 0-3.56-.49-5.1-1.41l-.36-.22-3.78 1 1.02-3.7-.24-.38A9.43 9.43 0 012.5 12.05c0-5.24 4.27-9.5 9.52-9.5 2.54 0 4.93.99 6.72 2.78a9.46 9.46 0 012.78 6.73c0 5.25-4.27 9.52-9.52 9.52l.05-.08zM12.05.5C5.68.5.5 5.68.5 12.05c0 2.04.53 4.02 1.54 5.77L.5 23.5l5.85-1.53a11.47 11.47 0 005.7 1.53c6.37 0 11.55-5.18 11.55-11.55C23.6 5.58 18.42.5 12.05.5z"/>
-  </svg>
-);
-
-const EmailIcon = ({ size = 12, color = '#EA4335' }: { size?: number; color?: string }) => (
-  <Mail size={size} color={color} style={{ flexShrink: 0 }} />
-);
-
-const InstagramIcon = ({ size = 12, color = '#E1306C' }: { size?: number; color?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-  </svg>
-);
-
-const CHANNEL_COLORS: Record<MessageChannel, string> = {
-  telegram: '#29ABE2',
-  whatsapp: '#25D366',
-  email: '#EA4335',
-  instagram: '#E1306C',
+// ── Delivery status checkmarks ──
+const DeliveryCheck = ({ status, channelColor }: { status?: Message['deliveryStatus']; channelColor?: string }) => {
+  if (!status || status === 'sending') {
+    return <span style={{ display: 'flex', alignItems: 'center', opacity: 0.4 }}><Check size={12} /></span>;
+  }
+  if (status === 'sent') {
+    return <span style={{ display: 'flex', alignItems: 'center', color: 'var(--text-tertiary)' }}><Check size={12} /></span>;
+  }
+  const color = status === 'read' ? (channelColor || 'var(--accent-primary)') : 'var(--text-tertiary)';
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', color, marginLeft: '-4px' }}>
+      <Check size={12} style={{ marginRight: '-6px' }} />
+      <Check size={12} />
+    </span>
+  );
 };
 
-const CHANNEL_LABELS: Record<MessageChannel, string> = {
-  telegram: 'Telegram',
-  whatsapp: 'WhatsApp',
-  email: 'Email',
-  instagram: 'Instagram',
-};
+// ── Typing indicator ──
+const TypingIndicator = () => (
+  <motion.div
+    style={styles.typingBubble}
+    initial={{ opacity: 0, y: 5 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    <div style={styles.typingDots}>
+      {[0, 1, 2].map(i => (
+        <motion.div
+          key={i}
+          style={styles.typingDot}
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+        />
+      ))}
+    </div>
+    <span style={styles.typingText}>typing...</span>
+  </motion.div>
+);
 
-function ChannelIcon({ channel, size = 12 }: { channel: MessageChannel; size?: number }) {
-  if (channel === 'telegram') return <TelegramIcon size={size} />;
-  if (channel === 'whatsapp') return <WhatsAppIcon size={size} />;
-  if (channel === 'email') return <EmailIcon size={size} />;
-  if (channel === 'instagram') return <InstagramIcon size={size} />;
-  return null;
+// ── Message templates ──
+interface MessageTemplate {
+  text: string;
+  category: 'motivation' | 'checkin' | 'reminder' | 'onboarding';
 }
 
+const MESSAGE_TEMPLATES: MessageTemplate[] = [
+  { text: 'Great session today! Keep it up!', category: 'motivation' },
+  { text: "That's a new PR! Celebrate that win.", category: 'motivation' },
+  { text: 'Consistency is paying off. Proud of you!', category: 'motivation' },
+  { text: 'How are you feeling today?', category: 'checkin' },
+  { text: 'How did the session go? Any pain?', category: 'checkin' },
+  { text: "How's nutrition been this week?", category: 'checkin' },
+  { text: "Don't forget to log your meals today", category: 'reminder' },
+  { text: 'Rest day — recovery is part of the process', category: 'reminder' },
+  { text: 'Check-in is due this week. Please submit.', category: 'reminder' },
+  { text: 'Welcome to FitCore! Ready to start?', category: 'onboarding' },
+  { text: "I've set up your first program. Check it out!", category: 'onboarding' },
+];
+
+const TEMPLATE_CATEGORIES: { key: 'all' | MessageTemplate['category']; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'motivation', label: 'Motivation' },
+  { key: 'checkin', label: 'Check-in' },
+  { key: 'reminder', label: 'Reminder' },
+  { key: 'onboarding', label: 'Onboarding' },
+];
+
+// ── Helpers ──
 function getConversationChannel(msgs: Message[]): MessageChannel {
-  // Use the most recent non-coach message's channel, or fallback to last message
   for (let i = msgs.length - 1; i >= 0; i--) {
     if (!msgs[i].isFromCoach && msgs[i].channel) return msgs[i].channel!;
   }
@@ -63,6 +83,40 @@ function getConversationChannel(msgs: Message[]): MessageChannel {
   return 'telegram';
 }
 
+function formatRelativeTime(ts: string): string {
+  const d = new Date(ts);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays === 0) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'short' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatTime(ts: string) {
+  return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function formatDateLabel(ts: string): string {
+  return new Date(ts).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function getSuggestedTemplate(lastMsg: string): MessageTemplate | null {
+  const lower = lastMsg.toLowerCase();
+  if (lower.includes('pr') || lower.includes('record') || lower.includes('personal best')) {
+    return MESSAGE_TEMPLATES.find(t => t.text.includes('PR')) || null;
+  }
+  if (lower.includes('pain') || lower.includes('hurt') || lower.includes('sore')) {
+    return MESSAGE_TEMPLATES.find(t => t.text.includes('pain')) || null;
+  }
+  if (lower.includes('missed') || lower.includes('skip')) {
+    return MESSAGE_TEMPLATES.find(t => t.text.includes('Consistency')) || null;
+  }
+  return null;
+}
+
+// ── Component ──
 interface MessagesPageProps {
   isMobile?: boolean;
   clients: Client[];
@@ -76,9 +130,11 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   const [searchQuery, setSearchQuery] = useState('');
   const [channelFilter, setChannelFilter] = useState<'all' | MessageChannel>('all');
   const [showChat, setShowChat] = useState(false);
+  const [replyChannel, setReplyChannel] = useState<MessageChannel>('telegram');
+  const [templateCategory, setTemplateCategory] = useState<'all' | MessageTemplate['category']>('all');
+  const [isClientTyping, setIsClientTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -87,12 +143,29 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   const activeClient = clients.find(c => c.id === selectedClient);
   const activeChannel = getConversationChannel(activeConversation);
 
-  // Scroll on conversation switch or new message
+  // Sync reply channel when switching conversations
+  useEffect(() => {
+    setReplyChannel(activeChannel);
+  }, [selectedClient, activeChannel]);
+
+  // Auto-scroll on conversation switch or new message
   useEffect(() => {
     scrollToBottom();
   }, [selectedClient, messages]);
 
-  // Group messages by client
+  // Mock typing indicator — show briefly when switching to conversations with unread
+  useEffect(() => {
+    setIsClientTyping(false);
+    const clientMsgs = messages.filter(m => m.clientId === selectedClient);
+    const hasUnread = clientMsgs.some(m => !m.isRead && !m.isFromCoach);
+    if (hasUnread) {
+      const timer = setTimeout(() => setIsClientTyping(true), 500);
+      const hideTimer = setTimeout(() => setIsClientTyping(false), 3500);
+      return () => { clearTimeout(timer); clearTimeout(hideTimer); };
+    }
+  }, [selectedClient, messages]);
+
+  // Group messages by client, sorted by most recent
   const clientIds = [...new Set(messages.map(m => m.clientId))];
   const conversationClients = clientIds.map(id => {
     const client = clients.find(c => c.id === id)!;
@@ -101,16 +174,17 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     const unread = clientMessages.filter(m => !m.isRead && !m.isFromCoach).length;
     const channel = getConversationChannel(clientMessages);
     return { ...client, lastMessage: lastMsg, unreadCount: unread, channel };
-  });
+  }).sort((a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime());
 
   const filteredConversations = conversationClients
     .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .filter(c => channelFilter === 'all' || c.channel === channelFilter);
 
-  const formatTime = (ts: string) => {
-    const d = new Date(ts);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-  };
+  // Channel counts for filter tabs
+  const channelCounts: Record<string, number> = { all: conversationClients.length };
+  for (const conv of conversationClients) {
+    channelCounts[conv.channel] = (channelCounts[conv.channel] || 0) + 1;
+  }
 
   const handleSend = () => {
     if (!newMessage.trim() || !activeClient) return;
@@ -123,7 +197,8 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
       timestamp: new Date().toISOString(),
       isRead: true,
       isFromCoach: true,
-      channel: activeChannel,
+      channel: replyChannel,
+      deliveryStatus: 'sent',
     };
     onSendMessage(msg);
     setNewMessage('');
@@ -142,37 +217,59 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     { key: 'instagram', label: 'Instagram' },
   ];
 
+  // Online status
+  const isRecentlyActive = activeClient?.lastActive?.includes('hour') ||
+    activeClient?.lastActive?.includes('minute') ||
+    activeClient?.lastActive?.includes('just');
+
+  // Template filtering
+  const visibleTemplates = templateCategory === 'all'
+    ? MESSAGE_TEMPLATES
+    : MESSAGE_TEMPLATES.filter(t => t.category === templateCategory);
+
+  // Contextual suggestion
+  const lastClientMsg = [...activeConversation].reverse().find(m => !m.isFromCoach);
+  const suggestedTemplate = lastClientMsg ? getSuggestedTemplate(lastClientMsg.text) : null;
+
+  // Date separators helper
+  let lastDateLabel = '';
+
   return (
     <div style={styles.page}>
-      {/* Conversations List */}
+      {/* ── Conversations List ── */}
       {(!isMobile || !showChat) && (
         <GlassCard delay={0} style={{ ...styles.sidebar, width: isMobile ? '100%' : '340px' }}>
           <div style={styles.sidebarHeader}>
-            <h3 style={styles.sidebarTitle}>Conversations</h3>
+            <h3 style={styles.sidebarTitle}>Inbox</h3>
             <span style={styles.convCount}>{filteredConversations.length}</span>
           </div>
 
           {/* Channel Filter Tabs */}
           <div style={styles.filterRow}>
-            {filterTabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setChannelFilter(tab.key)}
-                style={{
-                  ...styles.filterTab,
-                  background: channelFilter === tab.key ? 'var(--accent-primary-dim)' : 'transparent',
-                  color: channelFilter === tab.key ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                  borderColor: channelFilter === tab.key ? 'rgba(0,229,200,0.15)' : 'transparent',
-                }}
-              >
-                {tab.key !== 'all' && (
-                  <ChannelIcon channel={tab.key} size={11} />
-                )}
-                {tab.label}
-              </button>
-            ))}
+            {filterTabs.map(tab => {
+              const isActive = channelFilter === tab.key;
+              const count = channelCounts[tab.key] || 0;
+              const tabColor = tab.key !== 'all' ? CHANNEL_COLORS[tab.key] : undefined;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setChannelFilter(tab.key)}
+                  style={{
+                    ...styles.filterTab,
+                    background: isActive ? (tabColor ? `${tabColor}15` : 'var(--accent-primary-dim)') : 'transparent',
+                    color: isActive ? (tabColor || 'var(--accent-primary)') : 'var(--text-tertiary)',
+                    borderColor: isActive ? (tabColor ? `${tabColor}30` : 'rgba(0,229,200,0.15)') : 'transparent',
+                  }}
+                >
+                  {tab.key !== 'all' && <ChannelIcon channel={tab.key} size={11} />}
+                  {tab.label}
+                  <span style={{ fontSize: '12px', opacity: 0.6 }}>({count})</span>
+                </button>
+              );
+            })}
           </div>
 
+          {/* Search */}
           <div style={styles.searchBox}>
             <Search size={15} color="var(--text-tertiary)" />
             <input
@@ -182,65 +279,86 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchInput}
             />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} style={styles.searchClearBtn}>
+                <X size={14} />
+              </button>
+            )}
           </div>
 
+          {/* Conversation List */}
           <div style={styles.convList}>
-            {filteredConversations.map((conv, i) => (
-              <motion.button
-                key={conv.id}
-                onClick={() => handleSelectConversation(conv.id)}
-                style={{
-                  ...styles.convItem,
-                  background: selectedClient === conv.id ? 'var(--accent-primary-dim)' : 'transparent',
-                  borderColor: selectedClient === conv.id ? 'rgba(0, 229, 200, 0.15)' : 'transparent',
-                }}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.03 }}
-                whileHover={{ background: selectedClient === conv.id ? 'var(--accent-primary-dim)' : 'rgba(255,255,255,0.03)' }}
-              >
-                <div style={{ position: 'relative' }}>
-                  <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
-                    {getInitials(conv.name)}
-                  </div>
-                  {conv.channel && (
-                    <div style={{
-                      ...styles.channelDot,
-                      background: CHANNEL_COLORS[conv.channel],
-                      boxShadow: `0 0 6px ${CHANNEL_COLORS[conv.channel]}40`,
-                    }}>
-                      <ChannelIcon channel={conv.channel} size={10} />
+            {filteredConversations.length === 0 ? (
+              <div style={styles.emptyState}>
+                <Search size={28} color="var(--text-tertiary)" />
+                <div style={styles.emptyTitle}>No conversations found</div>
+                <div style={styles.emptySub}>Try a different search or channel filter</div>
+              </div>
+            ) : (
+              filteredConversations.map((conv, i) => {
+                const isUnread = conv.unreadCount > 0;
+                const isSelected = selectedClient === conv.id;
+                return (
+                  <motion.button
+                    key={conv.id}
+                    onClick={() => handleSelectConversation(conv.id)}
+                    style={{
+                      ...styles.convItem,
+                      background: isSelected ? 'var(--accent-primary-dim)' : 'transparent',
+                      borderColor: isSelected ? 'rgba(0, 229, 200, 0.15)' : 'transparent',
+                      borderLeft: isUnread && !isSelected ? '2px solid var(--accent-primary)' : '2px solid transparent',
+                    }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    whileHover={{ background: isSelected ? 'var(--accent-primary-dim)' : 'rgba(255,255,255,0.03)' }}
+                  >
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
+                        {getInitials(conv.name)}
+                      </div>
+                      {conv.channel && (
+                        <div style={{
+                          ...styles.channelDot,
+                          background: CHANNEL_COLORS[conv.channel],
+                          boxShadow: `0 0 6px ${CHANNEL_COLORS[conv.channel]}40`,
+                        }}>
+                          <ChannelIcon channel={conv.channel} size={10} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div style={styles.convInfo}>
-                  <div style={styles.convNameRow}>
-                    <span style={styles.convName}>{conv.name}</span>
-                    {conv.channel && (
-                      <span style={{ ...styles.channelBadge, color: CHANNEL_COLORS[conv.channel], background: `${CHANNEL_COLORS[conv.channel]}15` }}>
-                        {CHANNEL_LABELS[conv.channel]}
+                    <div style={styles.convInfo}>
+                      <div style={styles.convNameRow}>
+                        <span style={{ ...styles.convName, fontWeight: isUnread ? 700 : 600 }}>{conv.name}</span>
+                        {conv.channel && (
+                          <span style={{ ...styles.channelBadge, color: CHANNEL_COLORS[conv.channel], background: `${CHANNEL_COLORS[conv.channel]}15` }}>
+                            {CHANNEL_LABELS[conv.channel]}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ ...styles.convPreview, color: isUnread ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: isUnread ? 500 : 400 }}>
+                        {conv.lastMessage.isFromCoach && <span style={{ color: 'var(--accent-primary)' }}>You: </span>}
+                        {conv.lastMessage.text}
+                      </div>
+                    </div>
+                    <div style={styles.convRight}>
+                      <span style={{ ...styles.convTime, color: isUnread ? 'var(--accent-primary)' : 'var(--text-tertiary)' }}>
+                        {formatRelativeTime(conv.lastMessage.timestamp)}
                       </span>
-                    )}
-                  </div>
-                  <div style={styles.convPreview}>
-                    {conv.lastMessage.isFromCoach && <span style={{ color: 'var(--accent-primary)' }}>You: </span>}
-                    {conv.lastMessage.text}
-                  </div>
-                </div>
-                <div style={styles.convRight}>
-                  <span style={styles.convTime}>{formatTime(conv.lastMessage.timestamp)}</span>
-                  {conv.unreadCount > 0 && (
-                    <span style={styles.unreadBadge}>{conv.unreadCount}</span>
-                  )}
-                </div>
-              </motion.button>
-            ))}
+                      {conv.unreadCount > 0 && (
+                        <span style={styles.unreadBadge}>{conv.unreadCount}</span>
+                      )}
+                    </div>
+                  </motion.button>
+                );
+              })
+            )}
           </div>
         </GlassCard>
       )}
 
-      {/* Chat Area */}
-      {(!isMobile || showChat) && (
+      {/* ── Chat Area ── */}
+      {(!isMobile || showChat) && activeClient ? (
       <div style={styles.chatArea}>
         {/* Chat Header */}
         <div style={styles.chatHeader}>
@@ -251,104 +369,175 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
               </button>
             )}
             <div style={{ ...styles.chatAvatar, background: getAvatarColor(selectedClient) }}>
-              {activeClient && getInitials(activeClient.name)}
+              {getInitials(activeClient.name)}
             </div>
             <div>
-              <div style={styles.chatName}>{activeClient?.name}</div>
+              <div style={styles.chatName}>{activeClient.name}</div>
               <div style={styles.chatStatus}>
-                <span style={styles.onlineDot} />
-                {activeClient?.lastActive}
+                <motion.span
+                  style={{
+                    ...styles.onlineDot,
+                    background: isRecentlyActive ? 'var(--accent-success)' : 'var(--text-tertiary)',
+                  }}
+                  animate={isRecentlyActive ? { scale: [1, 1.4, 1], opacity: [1, 0.6, 1] } : {}}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+                {isRecentlyActive ? activeClient.lastActive : `Last seen ${activeClient.lastActive}`}
               </div>
             </div>
           </div>
           <div style={styles.chatHeaderRight}>
-            {activeChannel && (
-              <span style={{
-                ...styles.channelHeaderBadge,
-                color: CHANNEL_COLORS[activeChannel],
-                background: `${CHANNEL_COLORS[activeChannel]}15`,
-                borderColor: `${CHANNEL_COLORS[activeChannel]}30`,
-              }}>
-                <ChannelIcon channel={activeChannel} size={13} />
-                {CHANNEL_LABELS[activeChannel]}
-              </span>
-            )}
-            <span style={{ ...styles.planBadge, color: activeClient?.plan === 'Elite' ? 'var(--accent-warm)' : 'var(--accent-secondary)' }}>
-              {activeClient?.plan}
+            <span style={{ ...styles.planBadge, color: activeClient.plan === 'Elite' ? 'var(--accent-warm)' : 'var(--accent-secondary)' }}>
+              {activeClient.plan}
             </span>
           </div>
         </div>
 
         {/* Messages */}
         <div style={styles.messagesArea}>
-          {activeConversation.map((msg: Message, i: number) => {
-            const msgChannel = msg.channel;
-            return (
-              <motion.div
-                key={msg.id}
-                style={{
-                  ...styles.message,
-                  alignSelf: msg.isFromCoach ? 'flex-end' : 'flex-start',
-                  flexDirection: msg.isFromCoach ? 'row-reverse' : 'row',
-                }}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                {!msg.isFromCoach && (
-                  <div style={{ ...styles.msgAvatar, background: getAvatarColor(msg.clientId) }}>
-                    {getInitials(msg.clientName)}
-                  </div>
-                )}
-                <div style={{
-                  ...styles.msgBubble,
-                  background: msg.isFromCoach ? 'var(--accent-primary-dim)' : 'var(--bg-elevated)',
-                  borderColor: msg.isFromCoach ? 'rgba(0,229,200,0.15)' : 'var(--glass-border)',
-                }}>
-                  <p style={styles.msgText}>{msg.text}</p>
-                  <div style={styles.msgMeta}>
-                    {msgChannel && (
-                      <span style={{ ...styles.msgChannelTag, color: CHANNEL_COLORS[msgChannel] }}>
-                        <ChannelIcon channel={msgChannel} size={10} />
-                      </span>
+          {activeConversation.length === 0 ? (
+            <div style={styles.emptyState}>
+              <Send size={32} color="var(--text-tertiary)" />
+              <div style={styles.emptyTitle}>Start the conversation</div>
+              <div style={styles.emptySub}>Send the first message to {activeClient.name}</div>
+            </div>
+          ) : (
+            <>
+              {activeConversation.map((msg: Message, i: number) => {
+                const msgDate = formatDateLabel(msg.timestamp);
+                const showSeparator = msgDate !== lastDateLabel;
+                lastDateLabel = msgDate;
+                const msgChannel = msg.channel;
+
+                return (
+                  <Fragment key={msg.id}>
+                    {showSeparator && (
+                      <div style={styles.dateSeparator}>
+                        <div style={styles.dateLine} />
+                        <span style={styles.dateLabel}>{msgDate}</span>
+                        <div style={styles.dateLine} />
+                      </div>
                     )}
-                    <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                    <motion.div
+                      style={{
+                        ...styles.message,
+                        alignSelf: msg.isFromCoach ? 'flex-end' : 'flex-start',
+                        flexDirection: msg.isFromCoach ? 'row-reverse' : 'row',
+                      }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                    >
+                      {!msg.isFromCoach && (
+                        <div style={{ ...styles.msgAvatar, background: getAvatarColor(msg.clientId) }}>
+                          {getInitials(msg.clientName)}
+                        </div>
+                      )}
+                      <div style={{
+                        ...styles.msgBubble,
+                        background: msg.isFromCoach ? 'var(--accent-primary-dim)' : 'var(--bg-elevated)',
+                        borderColor: msg.isFromCoach ? 'rgba(0,229,200,0.15)' : 'var(--glass-border)',
+                      }}>
+                        <p style={styles.msgText}>{msg.text}</p>
+                        <div style={styles.msgMeta}>
+                          {msgChannel && (
+                            <span style={{ ...styles.msgChannelTag, color: CHANNEL_COLORS[msgChannel] }}>
+                              <ChannelIcon channel={msgChannel} size={10} />
+                            </span>
+                          )}
+                          <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
+                          {msg.isFromCoach && (
+                            <DeliveryCheck status={msg.deliveryStatus} channelColor={msgChannel ? CHANNEL_COLORS[msgChannel] : undefined} />
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  </Fragment>
+                );
+              })}
+              {isClientTyping && <TypingIndicator />}
+            </>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
         <div style={styles.inputArea}>
-          {/* Reply channel hint */}
-          {activeChannel && (
-            <div style={{
-              ...styles.replyHint,
-              color: CHANNEL_COLORS[activeChannel],
-            }}>
-              <ChannelIcon channel={activeChannel} size={12} />
-              <span>Replying via {CHANNEL_LABELS[activeChannel]}</span>
+          {/* Channel Switcher */}
+          <div style={styles.channelSwitcher}>
+            <div style={styles.channelSwitchRow}>
+              {(['telegram', 'whatsapp', 'email', 'instagram'] as MessageChannel[]).map(ch => {
+                const isActive = replyChannel === ch;
+                return (
+                  <button
+                    key={ch}
+                    onClick={() => setReplyChannel(ch)}
+                    style={{
+                      ...styles.channelSwitchBtn,
+                      background: isActive ? `${CHANNEL_COLORS[ch]}15` : 'transparent',
+                      borderColor: isActive ? `${CHANNEL_COLORS[ch]}40` : 'var(--glass-border)',
+                    }}
+                    title={`Reply via ${CHANNEL_LABELS[ch]}`}
+                  >
+                    <ChannelIcon channel={ch} size={14} />
+                  </button>
+                );
+              })}
             </div>
-          )}
-          <div style={styles.templateRow}>
-            {[
-              'Great session today!',
-              'How are you feeling?',
-              'Don\'t forget to log your meals',
-              'Rest day reminder',
-            ].map((tpl) => (
+            <span style={{ ...styles.replyHint, color: CHANNEL_COLORS[replyChannel] }}>
+              Replying via {CHANNEL_LABELS[replyChannel]}
+            </span>
+          </div>
+
+          {/* Suggested template */}
+          {suggestedTemplate && (
+            <motion.div
+              style={styles.suggestedRow}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <span style={styles.suggestedLabel}>Suggested:</span>
               <button
-                key={tpl}
-                onClick={() => setNewMessage(tpl)}
-                style={styles.templateBtn}
+                onClick={() => setNewMessage(suggestedTemplate.text)}
+                style={styles.suggestedBtn}
               >
-                {tpl}
+                {suggestedTemplate.text}
+              </button>
+            </motion.div>
+          )}
+
+          {/* Template category tabs */}
+          <div style={styles.templateCatRow}>
+            {TEMPLATE_CATEGORIES.map(cat => (
+              <button
+                key={cat.key}
+                onClick={() => setTemplateCategory(cat.key)}
+                style={{
+                  ...styles.templateCatBtn,
+                  color: templateCategory === cat.key ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                  borderBottomColor: templateCategory === cat.key ? 'var(--accent-primary)' : 'transparent',
+                }}
+              >
+                {cat.label}
               </button>
             ))}
           </div>
+
+          {/* Template pills */}
+          <div style={styles.templateRow}>
+            {visibleTemplates.map(tpl => (
+              <motion.button
+                key={tpl.text}
+                onClick={() => setNewMessage(tpl.text)}
+                style={styles.templateBtn}
+                whileTap={{ scale: 0.95 }}
+              >
+                {tpl.text}
+              </motion.button>
+            ))}
+          </div>
+
+          {/* Input */}
           <div style={styles.inputRow}>
             <input
               type="text"
@@ -370,7 +559,22 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
           </div>
         </div>
       </div>
-      )}
+      ) : (!isMobile || showChat) ? (
+        <div style={styles.chatArea}>
+          <div style={styles.emptyState}>
+            <MessageSquare size={48} color="var(--text-tertiary)" />
+            <div style={styles.emptyTitle}>Select a conversation</div>
+            <div style={styles.emptySub}>Choose a client from the left to start messaging</div>
+            <div style={styles.emptyChannelRow}>
+              {(['telegram', 'whatsapp', 'email', 'instagram'] as MessageChannel[]).map(ch => (
+                <span key={ch} style={{ ...styles.emptyChannelIcon, color: CHANNEL_COLORS[ch] }}>
+                  <ChannelIcon channel={ch} size={16} />
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -425,7 +629,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '4px 10px',
     borderRadius: '16px',
     border: '1px solid transparent',
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -453,6 +657,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '18px',
     fontFamily: 'var(--font-display)',
     flex: 1,
+  },
+  searchClearBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    padding: '2px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '4px',
   },
   convList: {
     flex: 1,
@@ -552,6 +767,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // ── Chat Area ──
   chatArea: {
     flex: 1,
     display: 'flex',
@@ -593,6 +809,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)',
   },
   onlineDot: {
+    display: 'inline-block',
     width: '6px',
     height: '6px',
     borderRadius: '50%',
@@ -603,17 +820,6 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '8px',
   },
-  channelHeaderBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px',
-    fontSize: '15px',
-    fontWeight: 600,
-    padding: '4px 10px',
-    borderRadius: '20px',
-    border: '1px solid',
-    letterSpacing: '0.3px',
-  },
   planBadge: {
     fontSize: '15px',
     fontWeight: 600,
@@ -622,13 +828,36 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(255,255,255,0.05)',
     letterSpacing: '0.5px',
   },
+  // ── Messages Area ──
   messagesArea: {
     flex: 1,
     overflowY: 'auto',
     padding: '24px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '12px',
+  },
+  dateSeparator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px 0',
+    alignSelf: 'center',
+    width: '100%',
+  },
+  dateLine: {
+    flex: 1,
+    height: '1px',
+    background: 'var(--glass-border)',
+  },
+  dateLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    whiteSpace: 'nowrap',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+    fontFamily: 'var(--font-mono)',
   },
   message: {
     display: 'flex',
@@ -657,6 +886,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '18px',
     lineHeight: 1.5,
     margin: 0,
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   },
   msgMeta: {
     display: 'flex',
@@ -672,18 +903,134 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     color: 'var(--text-tertiary)',
   },
+  // ── Typing Indicator ──
+  typingBubble: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    borderRadius: '12px',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--glass-border)',
+    alignSelf: 'flex-start',
+    maxWidth: '120px',
+  },
+  typingDots: {
+    display: 'flex',
+    gap: '3px',
+    alignItems: 'center',
+  },
+  typingDot: {
+    width: '5px',
+    height: '5px',
+    borderRadius: '50%',
+    background: 'var(--text-secondary)',
+  },
+  typingText: {
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
+    fontStyle: 'italic',
+  },
+  // ── Input Area ──
   inputArea: {
-    padding: '16px 24px',
+    padding: '12px 24px 16px',
     borderTop: '1px solid var(--glass-border)',
+  },
+  channelSwitcher: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '8px',
+  },
+  channelSwitchRow: {
+    display: 'flex',
+    gap: '4px',
+  },
+  channelSwitchBtn: {
+    width: '32px',
+    height: '28px',
+    borderRadius: '8px',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.15s',
   },
   replyHint: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: 500,
-    marginBottom: '8px',
-    opacity: 0.8,
+  },
+  suggestedRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '6px',
+    padding: '4px 0',
+  },
+  suggestedLabel: {
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
+    fontWeight: 600,
+    flexShrink: 0,
+  },
+  suggestedBtn: {
+    padding: '4px 12px',
+    borderRadius: '20px',
+    border: '1px solid var(--accent-primary)',
+    background: 'var(--accent-primary-dim)',
+    color: 'var(--accent-primary)',
+    fontSize: '14px',
+    fontFamily: 'var(--font-display)',
+    fontWeight: 500,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    maxWidth: '100%',
+  },
+  templateCatRow: {
+    display: 'flex',
+    gap: '2px',
+    marginBottom: '4px',
+    overflowX: 'auto',
+  },
+  templateCatBtn: {
+    padding: '2px 8px',
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    color: 'var(--text-tertiary)',
+    transition: 'all 0.15s',
+    whiteSpace: 'nowrap',
+  },
+  templateRow: {
+    display: 'flex',
+    gap: '6px',
+    overflowX: 'auto',
+    paddingBottom: '8px',
+    flexWrap: 'nowrap',
+  },
+  templateBtn: {
+    padding: '5px 12px',
+    borderRadius: '20px',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text-secondary)',
+    fontSize: '14px',
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'border-color 0.15s, color 0.15s',
+    flexShrink: 0,
   },
   inputRow: {
     display: 'flex',
@@ -728,24 +1075,41 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     borderRadius: '6px',
   },
-  templateRow: {
+  // ── Empty States ──
+  emptyState: {
     display: 'flex',
-    gap: '6px',
-    overflowX: 'auto',
-    paddingBottom: '8px',
-    flexWrap: 'nowrap',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    gap: '10px',
+    padding: '40px',
   },
-  templateBtn: {
-    padding: '5px 12px',
-    borderRadius: '20px',
-    border: '1px solid var(--glass-border)',
-    background: 'rgba(255,255,255,0.03)',
+  emptyTitle: {
+    fontSize: '20px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  emptySub: {
+    fontSize: '16px',
     color: 'var(--text-secondary)',
-    fontSize: '15px',
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    transition: 'border-color 0.15s, color 0.15s',
-    flexShrink: 0,
+    textAlign: 'center',
+    maxWidth: '280px',
+    lineHeight: 1.5,
+  },
+  emptyChannelRow: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '12px',
+  },
+  emptyChannelIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid var(--glass-border)',
   },
 };
