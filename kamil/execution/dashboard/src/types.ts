@@ -19,6 +19,8 @@ export interface Client {
   };
   goals: string[];
   notes: string;
+  notesHistory: { text: string; date: string; isKey?: boolean }[];
+  activityLog: { type: string; description: string; date: string }[];
   lastActive: string;
   streak: number;
 }

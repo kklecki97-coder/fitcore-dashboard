@@ -72,6 +72,8 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
       },
       goals: goals.trim() ? goals.split(',').map(g => g.trim()).filter(Boolean) : [],
       notes: notes.trim(),
+      notesHistory: notes.trim() ? [{ text: notes.trim(), date: today }] : [],
+      activityLog: [{ type: 'plan', description: 'Client created', date: new Date().toISOString() }],
       lastActive: 'Just added',
       streak: 0,
     };

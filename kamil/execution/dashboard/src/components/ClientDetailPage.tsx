@@ -6,12 +6,13 @@ import {
   Edit3, MessageSquare, FileText, X, Send, Save,
   Activity, Dumbbell, Check, ClipboardCheck, Flag,
   Smile, Frown, Meh, SmilePlus, Angry,
-  Moon, Percent,
+  Moon, Percent, Download, Clock, Star,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, Radar,
 } from 'recharts';
+import jsPDF from 'jspdf';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
@@ -55,7 +56,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
   const [messageText, setMessageText] = useState('');
   const [editPlan, setEditPlan] = useState<'Basic' | 'Premium' | 'Elite'>(client?.plan ?? 'Basic');
   const [editStatus, setEditStatus] = useState<'active' | 'paused' | 'pending'>(client?.status ?? 'active');
-  const [editNotes, setEditNotes] = useState(client?.notes ?? '');
+  const [editNotes, setEditNotes] = useState('');
+  const [showNoteInput, setShowNoteInput] = useState(false);
   const [saveFlash, setSaveFlash] = useState('');
   const [metricsForm, setMetricsForm] = useState({
     weight: '',
@@ -126,6 +128,9 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       isFromCoach: true,
     };
     onSendMessage(msg);
+    onUpdateClient(client.id, {
+      activityLog: [{ type: 'message', description: `Message sent to ${client.name}`, date: new Date().toISOString() }, ...(client.activityLog || [])],
+    });
     setMessageText('');
     setActiveModal(null);
     flashSaved('Message sent');
@@ -133,15 +138,40 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
 
   const handleSavePlan = () => {
     const rateMap: Record<string, number> = { Basic: 99, Premium: 199, Elite: 299 };
-    onUpdateClient(client.id, { plan: editPlan, status: editStatus, monthlyRate: rateMap[editPlan] });
+    const changes: string[] = [];
+    if (editPlan !== client.plan) changes.push(`Plan: ${client.plan} → ${editPlan}`);
+    if (editStatus !== client.status) changes.push(`Status: ${client.status} → ${editStatus}`);
+    const desc = changes.length > 0 ? changes.join(', ') : 'Plan saved (no changes)';
+    onUpdateClient(client.id, {
+      plan: editPlan, status: editStatus, monthlyRate: rateMap[editPlan],
+      activityLog: [{ type: 'plan', description: desc, date: new Date().toISOString() }, ...(client.activityLog || [])],
+    });
     setActiveModal(null);
     flashSaved('Plan updated');
   };
 
   const handleSaveNotes = () => {
-    onUpdateClient(client.id, { notes: editNotes });
-    setActiveModal(null);
-    flashSaved('Notes saved');
+    if (!editNotes.trim()) return;
+    const today = new Date().toISOString().split('T')[0];
+    const newHistory = [{ text: editNotes.trim(), date: today }, ...(client.notesHistory || [])];
+    onUpdateClient(client.id, {
+      notes: editNotes.trim(),
+      notesHistory: newHistory,
+      activityLog: [{ type: 'notes', description: 'Notes updated', date: new Date().toISOString() }, ...(client.activityLog || [])],
+    });
+    setEditNotes('');
+    setShowNoteInput(false);
+    flashSaved('Note added');
+  };
+
+  const handleToggleKeyNote = (index: number) => {
+    const history = [...(client.notesHistory || [])];
+    const note = history[index];
+    if (!note) return;
+    const keyCount = history.filter(n => n.isKey).length;
+    if (!note.isKey && keyCount >= 2) return; // max 2 key notes
+    history[index] = { ...note, isKey: !note.isKey };
+    onUpdateClient(client.id, { notesHistory: history });
   };
 
   const handleLogMetrics = () => {
@@ -168,6 +198,184 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         ? program.clientIds.filter(id => id !== client.id)
         : [...program.clientIds, client.id],
     });
+    onUpdateClient(client.id, {
+      activityLog: [{
+        type: 'program',
+        description: isAssigned ? `Program "${program.name}" removed` : `Program "${program.name}" assigned`,
+        date: new Date().toISOString(),
+      }, ...(client.activityLog || [])],
+    });
+  };
+
+  // ── PDF Export ──
+  const handleExportReport = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 20;
+
+    // Header
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FitCore — Client Report', 14, y);
+    y += 10;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120);
+    doc.text(`Generated ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, 14, y);
+    y += 14;
+
+    // Client Info
+    doc.setTextColor(0);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(client.name, 14, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${client.email}  |  ${client.plan} Plan  |  ${client.status}  |  Since ${client.startDate}`, 14, y);
+    y += 10;
+
+    // Metrics
+    doc.setDrawColor(200);
+    doc.line(14, y, pageWidth - 14, y);
+    y += 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Key Metrics', 14, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const latW = client.metrics.weight[client.metrics.weight.length - 1];
+    const latBF = client.metrics.bodyFat[client.metrics.bodyFat.length - 1];
+    const latBench = client.metrics.benchPress[client.metrics.benchPress.length - 1];
+    const latSquat = client.metrics.squat[client.metrics.squat.length - 1];
+    const latDeadlift = client.metrics.deadlift[client.metrics.deadlift.length - 1];
+    const metrics = [
+      `Weight: ${latW ?? '—'} kg`,
+      `Body Fat: ${latBF ?? '—'}%`,
+      `Bench: ${latBench ?? '—'} kg`,
+      `Squat: ${latSquat ?? '—'} kg`,
+      `Deadlift: ${latDeadlift ?? '—'} kg`,
+      `Monthly Rate: $${client.monthlyRate}`,
+      `Progress: ${client.progress}%`,
+      `Streak: ${client.streak} days`,
+    ];
+    metrics.forEach(m => { doc.text(m, 14, y); y += 6; });
+    y += 4;
+
+    // Goals
+    doc.setDrawColor(200);
+    doc.line(14, y, pageWidth - 14, y);
+    y += 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Goals', 14, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    client.goals.forEach(g => { doc.text(`• ${g}`, 14, y); y += 6; });
+    y += 4;
+
+    // Notes
+    doc.line(14, y, pageWidth - 14, y);
+    y += 8;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Coach Notes', 14, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    if (client.notes) {
+      const noteLines = doc.splitTextToSize(client.notes, pageWidth - 28);
+      doc.text(noteLines, 14, y);
+      y += noteLines.length * 5 + 4;
+    } else {
+      doc.text('No notes yet.', 14, y);
+      y += 6;
+    }
+    y += 4;
+
+    // Recent Activity
+    if (client.activityLog && client.activityLog.length > 0) {
+      if (y > 240) { doc.addPage(); y = 20; }
+      doc.line(14, y, pageWidth - 14, y);
+      y += 8;
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Recent Activity', 14, y);
+      y += 8;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      const recentActivity = client.activityLog.slice(0, 10);
+      recentActivity.forEach(a => {
+        if (y > 275) { doc.addPage(); y = 20; }
+        const date = new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        doc.text(`${date}  —  ${a.description}`, 14, y);
+        y += 5;
+      });
+    }
+
+    // Notes History
+    if (client.notesHistory && client.notesHistory.length > 1) {
+      y += 6;
+      if (y > 240) { doc.addPage(); y = 20; }
+      doc.line(14, y, pageWidth - 14, y);
+      y += 8;
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Notes History', 14, y);
+      y += 8;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      client.notesHistory.forEach(nh => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica', 'bold');
+        doc.text(new Date(nh.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 14, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        const lines = doc.splitTextToSize(nh.text, pageWidth - 28);
+        doc.text(lines, 14, y);
+        y += lines.length * 5 + 4;
+      });
+    }
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text('FitCore — Confidential', 14, doc.internal.pageSize.getHeight() - 10);
+      doc.text(`Page ${i} of ${pageCount}`, pageWidth - 40, doc.internal.pageSize.getHeight() - 10);
+    }
+
+    doc.save(`${client.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+    flashSaved('Report exported');
+  };
+
+  // Activity icon helper
+  const activityIcon = (type: string) => {
+    switch (type) {
+      case 'message': return <MessageSquare size={14} color="var(--accent-primary)" />;
+      case 'check-in': return <ClipboardCheck size={14} color="var(--accent-success)" />;
+      case 'notes': return <FileText size={14} color="var(--accent-secondary)" />;
+      case 'program': return <Dumbbell size={14} color="var(--accent-warm)" />;
+      case 'plan': return <Edit3 size={14} color="var(--accent-primary)" />;
+      default: return <Activity size={14} color="var(--text-tertiary)" />;
+    }
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diff = now.getTime() - date.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -202,16 +410,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       <GlassCard delay={0.05}>
         <div style={{ ...styles.profileHeader, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : undefined }}>
           <div style={{ ...styles.profileLeft, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '20px' }}>
-            <div className="avatar-tooltip-wrap" style={{ position: 'relative' }}>
-              <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '48px', height: '48px', fontSize: '25px' } : {}) }}>
-                {getInitials(client.name)}
-              </div>
-              {client.notes && (
-                <div className="avatar-tooltip" style={styles.avatarTooltip}>
-                  <div style={styles.tooltipLabel}>Coach Notes</div>
-                  {client.notes}
-                </div>
-              )}
+            <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '48px', height: '48px', fontSize: '25px' } : {}) }}>
+              {getInitials(client.name)}
             </div>
             <div>
               <h2 style={{ ...styles.profileName, fontSize: isMobile ? '18px' : '22px' }}>{client.name}</h2>
@@ -255,13 +455,17 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               <Edit3 size={15} />
               Edit Plan
             </button>
-            <button onClick={() => setActiveModal('notes')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
+            <button onClick={() => { setShowNoteInput(false); setEditNotes(''); setActiveModal('notes'); }} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <FileText size={15} />
               Notes
             </button>
             <button onClick={() => setActiveModal('assignProgram')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Dumbbell size={15} />
               Program
+            </button>
+            <button onClick={handleExportReport} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-primary)' }}>
+              <Download size={15} />
+              Export
             </button>
           </div>
         </div>
@@ -661,6 +865,41 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         );
       })()}
 
+      {/* Activity Timeline */}
+      {client.activityLog && client.activityLog.length > 0 && (
+        <GlassCard delay={0.28}>
+          <div style={styles.trainingSectionHeader}>
+            <div>
+              <h3 style={styles.chartTitle}>Recent Activity</h3>
+              <p style={styles.trainingSubtitle}>{client.activityLog.length} events</p>
+            </div>
+          </div>
+          <div style={styles.activityTimeline}>
+            {client.activityLog
+              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+              .slice(0, 8)
+              .map((event, idx) => (
+                <motion.div
+                  key={`${event.date}-${idx}`}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.04 }}
+                  style={styles.activityItem}
+                >
+                  <div style={styles.activityIcon}>{activityIcon(event.type)}</div>
+                  <div style={styles.activityContent}>
+                    <span style={styles.activityDesc}>{event.description}</span>
+                    <span style={styles.activityTime}>
+                      <Clock size={11} />
+                      {timeAgo(event.date)}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+          </div>
+        </GlassCard>
+      )}
+
       {/* Bottom Row */}
       <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
         {/* Performance Radar */}
@@ -731,25 +970,22 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       {/* Modals */}
       <AnimatePresence>
         {activeModal && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setActiveModal(null)}
-              style={styles.overlay}
-            />
-
-            {/* Modal Panel */}
+          <motion.div
+            key="overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setActiveModal(null)}
+            style={styles.overlayCenter}
+          >
             <motion.div
               key="modal"
-              initial={{ opacity: 0, y: 40, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.97 }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-              style={{ ...styles.modal, width: isMobile ? 'calc(100% - 32px)' : '480px' }}
+              onClick={(e) => e.stopPropagation()}
+              style={{ ...styles.modalCentered, width: isMobile ? 'calc(100% - 32px)' : '480px' }}
             >
               {/* Modal Header */}
               <div style={styles.modalHeader}>
@@ -860,23 +1096,101 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               {/* Notes Modal */}
               {activeModal === 'notes' && (
                 <div style={styles.modalBody}>
-                  <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Coach Notes for {client.name}</span>
-                    <textarea
-                      value={editNotes}
-                      onChange={(e) => setEditNotes(e.target.value)}
-                      style={styles.modalTextarea}
-                      rows={8}
-                      autoFocus
-                    />
-                  </div>
-                  <div style={styles.modalActions}>
-                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
-                    <button onClick={handleSaveNotes} style={styles.modalPrimaryBtn}>
-                      <Save size={14} />
-                      Save Notes
+                  {/* Add Note toggle */}
+                  {!showNoteInput ? (
+                    <button
+                      onClick={() => setShowNoteInput(true)}
+                      style={styles.addNoteBtn}
+                    >
+                      <Edit3 size={14} />
+                      Add Note
                     </button>
-                  </div>
+                  ) : (
+                    <div style={styles.modalField}>
+                      <textarea
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        style={styles.modalTextarea}
+                        rows={4}
+                        placeholder="Write a new note..."
+                        autoFocus
+                      />
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={() => { setShowNoteInput(false); setEditNotes(''); }}
+                          style={styles.modalCancelBtn}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleSaveNotes}
+                          style={{ ...styles.modalPrimaryBtn, opacity: editNotes.trim() ? 1 : 0.5 }}
+                        >
+                          <Save size={14} />
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes History */}
+                  {client.notesHistory && client.notesHistory.length > 0 ? (
+                    <div style={styles.notesHistorySection}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ ...styles.modalLabel, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          History ({client.notesHistory.length})
+                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                          <Star size={10} style={{ verticalAlign: 'middle', marginRight: '3px' }} />
+                          {client.notesHistory.filter(n => n.isKey).length}/2 key
+                        </span>
+                      </div>
+                      <div style={styles.notesHistoryList}>
+                        {client.notesHistory.map((nh, i) => {
+                          const keyCount = client.notesHistory.filter(n => n.isKey).length;
+                          return (
+                            <div key={i} style={{
+                              ...styles.notesHistoryItem,
+                              ...(nh.isKey ? { borderColor: 'var(--accent-warm)', background: 'rgba(245, 158, 11, 0.04)' } : {}),
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={styles.notesHistoryDate}>
+                                    {new Date(nh.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  </span>
+                                  {nh.isKey && (
+                                    <span style={styles.keyBadge}>
+                                      <Star size={9} /> KEY
+                                    </span>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => handleToggleKeyNote(i)}
+                                  style={{
+                                    ...styles.keyToggleBtn,
+                                    ...(nh.isKey
+                                      ? { color: 'var(--accent-warm)', borderColor: 'var(--accent-warm)' }
+                                      : keyCount >= 2
+                                        ? { opacity: 0.3, cursor: 'not-allowed' }
+                                        : {}
+                                    ),
+                                  }}
+                                  title={nh.isKey ? 'Remove key note' : keyCount >= 2 ? 'Max 2 key notes' : 'Mark as key note'}
+                                >
+                                  <Star size={12} fill={nh.isKey ? 'var(--accent-warm)' : 'none'} />
+                                </button>
+                              </div>
+                              <div style={styles.notesHistoryText}>{nh.text}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: '18px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 0', margin: 0 }}>
+                      No notes yet. Click "Add Note" to get started.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1094,7 +1408,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                 </div>
               )}
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -1331,51 +1645,27 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.6,
     marginTop: '8px',
   },
-  avatarTooltip: {
-    position: 'absolute',
-    left: 'calc(100% + 12px)',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'var(--bg-secondary)',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-sm)',
-    padding: '10px 14px',
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
-    lineHeight: 1.5,
-    width: '240px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-    pointerEvents: 'none',
-    opacity: 0,
-    transition: 'opacity 0.15s',
-    zIndex: 10,
-  },
-  tooltipLabel: {
-    fontSize: '14px',
-    fontWeight: 700,
-    color: 'var(--text-tertiary)',
-    letterSpacing: '0.5px',
-    textTransform: 'uppercase',
-    marginBottom: '4px',
-  },
-  overlay: {
+  overlayCenter: {
     position: 'fixed',
     inset: 0,
     background: 'rgba(0,0,0,0.6)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  modal: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
+  modalCentered: {
     background: 'var(--bg-secondary)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
     zIndex: 101,
-    overflow: 'hidden',
+    maxHeight: '85vh',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
   },
   modalHeader: {
     display: 'flex',
@@ -1820,5 +2110,131 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     color: 'var(--text-primary)',
+  },
+  // Activity Timeline styles
+  activityTimeline: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  activityItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 12px',
+    borderRadius: 'var(--radius-sm)',
+    transition: 'background 0.1s',
+    borderBottom: '1px solid rgba(255,255,255,0.03)',
+  },
+  activityIcon: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    background: 'rgba(255,255,255,0.04)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  activityContent: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+    gap: '8px',
+    minWidth: 0,
+  },
+  activityDesc: {
+    fontSize: '18px',
+    color: 'var(--text-primary)',
+    fontWeight: 500,
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  activityTime: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '15px',
+    color: 'var(--text-tertiary)',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+  },
+  // Notes History styles
+  notesHistorySection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    borderTop: '1px solid var(--glass-border)',
+    paddingTop: '16px',
+  },
+  notesHistoryList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    maxHeight: '200px',
+    overflowY: 'auto',
+  },
+  notesHistoryItem: {
+    padding: '10px 12px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid var(--glass-border)',
+  },
+  notesHistoryDate: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  notesHistoryText: {
+    fontSize: '17px',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.5,
+  },
+  addNoteBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '10px 16px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px dashed var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--accent-primary)',
+    fontSize: '18px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'border-color 0.15s, background 0.15s',
+    width: '100%',
+    justifyContent: 'center',
+  },
+  keyBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.5px',
+    padding: '2px 6px',
+    borderRadius: '10px',
+    color: 'var(--accent-warm)',
+    background: 'var(--accent-warm-dim)',
+  },
+  keyToggleBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '28px',
+    height: '28px',
+    borderRadius: '6px',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    flexShrink: 0,
   },
 };

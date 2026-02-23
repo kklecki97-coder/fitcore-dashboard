@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Plus, Filter, ArrowUpDown,
   Flame, Pause, Sparkles, MoreHorizontal,
-  User, MessageSquare, Edit3, Play, Trash2, X, Save, Dumbbell,
+  User, MessageSquare, Edit3, Play, Trash2, X, Save, Dumbbell, Star,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
@@ -215,12 +215,26 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                     <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
                       {getInitials(client.name)}
                     </div>
-                    {client.notes && (
-                      <div className="avatar-tooltip" style={styles.tooltip}>
-                        <div style={styles.tooltipLabel}>Coach Notes</div>
-                        {client.notes}
-                      </div>
-                    )}
+                    {(() => {
+                      const keyNotes = client.notesHistory?.filter(n => n.isKey) || [];
+                      const displayNotes = keyNotes.length > 0
+                        ? keyNotes
+                        : client.notesHistory?.slice(0, 1) || [];
+                      return displayNotes.length > 0 ? (
+                        <div className="avatar-tooltip" style={styles.tooltip}>
+                          <div style={styles.tooltipLabel}>
+                            {keyNotes.length > 0 ? (
+                              <><Star size={10} style={{ verticalAlign: 'middle', marginRight: '3px' }} />Key Notes</>
+                            ) : 'Latest Note'}
+                          </div>
+                          {displayNotes.map((n, idx) => (
+                            <div key={idx} style={idx > 0 ? { marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--glass-border)' } : undefined}>
+                              {n.text}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                   <div>
                     <div style={styles.clientName}>{client.name}</div>
