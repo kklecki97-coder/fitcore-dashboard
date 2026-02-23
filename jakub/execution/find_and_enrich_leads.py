@@ -78,6 +78,15 @@ CITIES = [
     "Fort Worth", "Fresno", "Mesa", "Long Beach", "Bakersfield",
     "Aurora", "Chandler", "Gilbert", "Irvine", "Plano",
     "Henderson", "Stockton", "Riverside", "Santa Ana", "Anaheim",
+    # More new cities
+    "Reno", "Norfolk", "Newark", "Jersey City", "Buffalo",
+    "Rochester", "Syracuse", "Hartford", "Providence", "New Haven",
+    "Stamford", "Worcester", "Springfield", "Bridgeport", "Knoxville",
+    "Chattanooga", "Madison", "Des Moines", "Little Rock", "Baton Rouge",
+    "Lexington", "Wichita", "Tulsa", "Grand Rapids", "Ann Arbor",
+    "Birmingham", "Montgomery", "Jackson", "Mobile", "Tallahassee",
+    "Wilmington", "Charleston", "Columbia", "Greenville", "Asheville",
+    "Durham", "Greensboro", "Winston-Salem", "Fayetteville", "Roanoke",
     # Already done — keep at bottom for --cities N filtering
     "Los Angeles", "New York", "Chicago", "Houston", "Phoenix",
     "Dallas", "San Francisco", "Miami", "Atlanta", "Seattle",

@@ -4,7 +4,7 @@ generate_dm_drafts.py — Generate personalized Instagram DM drafts for engaged 
 Usage:
     python3 jakub/execution/generate_dm_drafts.py [--limit 20] [--dry-run] [--regenerate]
 
-Fetches leads from Supabase where status=engaged, engaged_at >= 24h ago, dm_draft is NULL,
+Fetches leads from Supabase where status=engaged, engaged before today, dm_draft is NULL,
 generates a personalized DM using OpenAI, and writes it back to Supabase.
 
 Run this once before your daily DM session so drafts are ready in the dashboard.
@@ -250,8 +250,8 @@ async def main_async():
             print("No engaged leads found that need DM drafts.")
             return
 
-        # Filter for 24h+ since engagement
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        # Filter for leads engaged before today (previous day or earlier)
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         eligible = []
         for lead in leads:
             engaged_at = lead.get("engaged_at")
@@ -259,14 +259,14 @@ async def main_async():
                 continue
             try:
                 engaged_time = datetime.fromisoformat(engaged_at.replace("Z", "+00:00"))
-                if engaged_time <= cutoff:
+                if engaged_time < today_start:
                     eligible.append(lead)
             except (ValueError, TypeError):
                 continue
 
         if not eligible:
-            print(f"Found {len(leads)} engaged leads, but none are 24h+ old yet.")
-            print("Leads need to be engaged for at least 24 hours before DMs are generated.")
+            print(f"Found {len(leads)} engaged leads, but all were engaged today.")
+            print("Leads engaged today will be ready for DMs tomorrow.")
             return
 
         print(f"Found {len(eligible)} leads ready for DM drafts")
