@@ -269,6 +269,7 @@ function App() {
             invoices={allInvoices}
             onUpdateInvoice={handleUpdateInvoice}
             onAddInvoice={handleAddInvoice}
+            onViewClient={handleViewClient}
           />
         );
       case 'check-ins':

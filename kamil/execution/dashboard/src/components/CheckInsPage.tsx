@@ -21,7 +21,7 @@ interface CheckInsPageProps {
   onNavigate?: (page: Page) => void; // kept for future use
 }
 
-type FilterTab = 'pending' | 'flagged' | 'reviewed' | 'all';
+type FilterTab = 'pending' | 'flagged' | 'reviewed' | 'missed' | 'all';
 
 // ── Tiny inline sparkline ──
 function Sparkline({ data, color, height = 28, width = 100 }: { data: number[]; color: string; height?: number; width?: number }) {
@@ -108,6 +108,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   const pendingReview = completedCheckIns.filter(ci => ci.reviewStatus === 'pending');
   const flagged = completedCheckIns.filter(ci => ci.reviewStatus === 'flagged');
   const reviewed = completedCheckIns.filter(ci => ci.reviewStatus === 'reviewed');
+  const missedCheckIns = checkIns.filter(ci => ci.status === 'missed');
 
   // Point 1: Days since last check-in for a client
   const getDaysSinceLastCheckIn = (clientId: string): number | null => {
@@ -147,7 +148,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
       case 'pending': list = pendingReview; break;
       case 'flagged': list = flagged; break;
       case 'reviewed': list = reviewed; break;
-      default: list = completedCheckIns;
+      case 'missed': list = missedCheckIns; break;
+      default: list = [...completedCheckIns, ...missedCheckIns];
     }
     if (search) {
       const q = search.toLowerCase();
@@ -230,7 +232,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
     { key: 'pending', label: 'To Review', count: pendingReview.length, color: 'var(--accent-warm)' },
     { key: 'flagged', label: 'Flagged', count: flagged.length, color: 'var(--accent-danger)' },
     { key: 'reviewed', label: 'Done', count: reviewed.length, color: 'var(--accent-success)' },
-    { key: 'all', label: 'All', count: completedCheckIns.length, color: 'var(--text-secondary)' },
+    { key: 'missed', label: 'Missed', count: missedCheckIns.length, color: 'var(--accent-danger)' },
+    { key: 'all', label: 'All', count: completedCheckIns.length + missedCheckIns.length, color: 'var(--text-secondary)' },
   ];
 
   return (
@@ -267,13 +270,37 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
             {dueToday.length > 0 && (
               <div style={styles.upcomingLine}>
                 <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: '#07090e' }}>{dueToday.length} today</span>
-                <span style={styles.upcomingNames}>{dueToday.map(ci => ci.clientName.split(' ')[0]).join(', ')}</span>
+                <span style={styles.upcomingNames}>
+                  {dueToday.map((ci, i) => (
+                    <span key={ci.id}>
+                      {i > 0 && ', '}
+                      <span
+                        onClick={() => onViewClient(ci.clientId)}
+                        style={styles.upcomingNameLink}
+                      >
+                        {ci.clientName.split(' ')[0]}
+                      </span>
+                    </span>
+                  ))}
+                </span>
               </div>
             )}
             {dueTomorrow.length > 0 && (
               <div style={styles.upcomingLine}>
                 <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: '#07090e' }}>{dueTomorrow.length} tomorrow</span>
-                <span style={styles.upcomingNames}>{dueTomorrow.map(ci => ci.clientName.split(' ')[0]).join(', ')}</span>
+                <span style={styles.upcomingNames}>
+                  {dueTomorrow.map((ci, i) => (
+                    <span key={ci.id}>
+                      {i > 0 && ', '}
+                      <span
+                        onClick={() => onViewClient(ci.clientId)}
+                        style={styles.upcomingNameLink}
+                      >
+                        {ci.clientName.split(' ')[0]}
+                      </span>
+                    </span>
+                  ))}
+                </span>
               </div>
             )}
             {dueLater.length > 0 && (
@@ -432,10 +459,19 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
 
                     {/* Right: status + expand */}
                     <div style={styles.queueItemRight}>
-                      <span style={{ ...styles.statusDot, background: status.color }} />
-                      {ci.reviewStatus === 'flagged' && <Flag size={13} color="var(--accent-danger)" />}
-                      {ci.reviewStatus === 'reviewed' && <CheckCircle2 size={13} color="var(--accent-success)" />}
-                      {ci.reviewStatus === 'pending' && <Clock size={13} color="var(--accent-warm)" />}
+                      {ci.status === 'missed' ? (
+                        <>
+                          <span style={{ ...styles.statusDot, background: 'var(--accent-danger)' }} />
+                          <AlertTriangle size={13} color="var(--accent-danger)" />
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ ...styles.statusDot, background: status.color }} />
+                          {ci.reviewStatus === 'flagged' && <Flag size={13} color="var(--accent-danger)" />}
+                          {ci.reviewStatus === 'reviewed' && <CheckCircle2 size={13} color="var(--accent-success)" />}
+                          {ci.reviewStatus === 'pending' && <Clock size={13} color="var(--accent-warm)" />}
+                        </>
+                      )}
                       {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </div>
                   </div>
@@ -451,6 +487,35 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         style={{ overflow: 'hidden' }}
                       >
                         <div style={styles.expandedContent}>
+                          {/* Missed check-in — simplified view */}
+                          {ci.status === 'missed' ? (
+                            <>
+                              <div style={styles.missedBanner}>
+                                <AlertTriangle size={18} color="var(--accent-danger)" />
+                                <div>
+                                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    {ci.clientName} missed their check-in
+                                  </div>
+                                  <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                    Due {new Date(ci.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} — no data submitted
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={styles.actionButtons}>
+                                <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
+                                  View Profile
+                                </button>
+                                <button
+                                  onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })}
+                                  style={styles.actionBtnMessage}
+                                >
+                                  <MessageSquare size={13} />
+                                  Follow Up
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                          <>
                           {/* Side-by-side comparison */}
                           <div style={{ ...styles.comparisonGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             {/* This Week */}
@@ -765,6 +830,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                               </button>
                             </div>
                           )}
+                          </>
+                          )}
                         </div>
                       </motion.div>
                     )}
@@ -779,19 +846,19 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
       {/* Quick Message Modal */}
       <AnimatePresence>
         {messageModal && (
-          <>
-            <motion.div
-              style={styles.overlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => { if (!messageSent) { setMessageModal(null); setMessageDraft(''); } }}
-            />
+          <motion.div
+            style={styles.modalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => { if (!messageSent) { setMessageModal(null); setMessageDraft(''); } }}
+          >
             <motion.div
               style={styles.messageModal}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
             >
               <div style={styles.messageModalHeader}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -873,7 +940,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                 )}
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -1191,6 +1258,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '17px',
     fontWeight: 500,
   },
+  missedBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '16px',
+    borderRadius: 'var(--radius-md)',
+    background: 'rgba(239,68,68,0.06)',
+    border: '1px solid rgba(239,68,68,0.12)',
+  },
   actionBar: {
     display: 'flex',
     flexDirection: 'column',
@@ -1319,6 +1395,11 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
+  upcomingNameLink: {
+    color: 'var(--accent-primary)',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
+  },
   // Point 5: Progress photos
   photosRow: {
     display: 'flex',
@@ -1411,25 +1492,23 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   // Quick message modal
-  overlay: {
+  modalOverlay: {
     position: 'fixed',
     inset: 0,
     background: 'rgba(0,0,0,0.6)',
     backdropFilter: 'blur(4px)',
     zIndex: 200,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   messageModal: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
     width: '440px',
     maxWidth: 'calc(100vw - 32px)',
     background: 'var(--bg-secondary)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     boxShadow: 'var(--shadow-elevated)',
-    zIndex: 201,
     overflow: 'hidden',
   },
   messageModalHeader: {

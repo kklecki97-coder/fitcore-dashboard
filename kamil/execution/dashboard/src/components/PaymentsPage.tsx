@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Search, Filter, Send, X, ChevronDown,
+  Search, Filter, Send, X, ChevronDown, ChevronUp, MessageSquare,
+  TrendingUp, TrendingDown,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
@@ -14,30 +15,52 @@ interface PaymentsPageProps {
   invoices: Invoice[];
   onUpdateInvoice: (id: string, updates: Partial<Invoice>) => void;
   onAddInvoice: (invoice: Invoice) => void;
+  onViewClient: (id: string) => void;
 }
 
 type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
-export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAddInvoice }: PaymentsPageProps) {
+export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [sortBy, setSortBy] = useState<SortKey>('date');
   const [createModal, setCreateModal] = useState(false);
   const [newInvoice, setNewInvoice] = useState({ clientId: '', plan: 'Basic' as 'Basic' | 'Premium' | 'Elite' });
+  const [reminderModal, setReminderModal] = useState<{ clientId: string; clientName: string; amount: number; invoiceId: string } | null>(null);
+  const [reminderDraft, setReminderDraft] = useState('');
+  const [reminderSent, setReminderSent] = useState(false);
+  const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
 
   // ── Summary stats ──
   const activeClients = clients.filter(c => c.status === 'active');
-  const thisMonth = invoices.filter(inv => inv.period === 'Feb 2026');
+  const currentPeriod = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const prevDate = new Date();
+  prevDate.setMonth(prevDate.getMonth() - 1);
+  const previousPeriod = prevDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+  const thisMonth = invoices.filter(inv => inv.period === currentPeriod);
+  const lastMonth = invoices.filter(inv => inv.period === previousPeriod);
+
   const totalRevenue = thisMonth.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
+  const lastMonthRevenue = lastMonth.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
   const pendingAmount = thisMonth.filter(inv => inv.status === 'pending').reduce((s, inv) => s + inv.amount, 0);
+  const lastMonthPending = lastMonth.filter(inv => inv.status === 'pending').reduce((s, inv) => s + inv.amount, 0);
   const overdueAmount = thisMonth.filter(inv => inv.status === 'overdue').reduce((s, inv) => s + inv.amount, 0);
+  const lastMonthOverdue = lastMonth.filter(inv => inv.status === 'overdue').reduce((s, inv) => s + inv.amount, 0);
   const paidCount = thisMonth.filter(inv => inv.status === 'paid').length;
   const totalCount = thisMonth.length;
 
   // ── All-time revenue ──
   const allTimePaid = invoices.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
+
+  // ── Month-over-month delta ──
+  const getRevenueDelta = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+  const revenueDelta = getRevenueDelta(totalRevenue, lastMonthRevenue);
 
   // ── Filter + sort invoices ──
   const filtered = invoices.filter(inv => {
@@ -105,6 +128,12 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-success)' }}>
             {paidCount}/{totalCount} invoices paid
           </div>
+          {lastMonthRevenue > 0 && (
+            <div style={{ ...styles.trendLine, color: revenueDelta >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+              {revenueDelta >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+              {revenueDelta >= 0 ? '+' : ''}{revenueDelta}% vs last month
+            </div>
+          )}
         </GlassCard>
 
         <GlassCard delay={0.05}>
@@ -116,6 +145,12 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-warm)' }}>
             {thisMonth.filter(i => i.status === 'pending').length} invoice{thisMonth.filter(i => i.status === 'pending').length !== 1 ? 's' : ''}
           </div>
+          {lastMonthPending > 0 && pendingAmount !== lastMonthPending && (
+            <div style={{ ...styles.trendLine, color: pendingAmount <= lastMonthPending ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+              {pendingAmount <= lastMonthPending ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
+              {pendingAmount < lastMonthPending ? 'Less' : 'More'} than last month
+            </div>
+          )}
         </GlassCard>
 
         <GlassCard delay={0.1}>
@@ -127,6 +162,12 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-danger)' }}>
             {thisMonth.filter(i => i.status === 'overdue').length} invoice{thisMonth.filter(i => i.status === 'overdue').length !== 1 ? 's' : ''}
           </div>
+          {lastMonthOverdue > 0 && overdueAmount !== lastMonthOverdue && (
+            <div style={{ ...styles.trendLine, color: overdueAmount <= lastMonthOverdue ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+              {overdueAmount <= lastMonthOverdue ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
+              {overdueAmount < lastMonthOverdue ? 'Less' : 'More'} than last month
+            </div>
+          )}
         </GlassCard>
 
         <GlassCard delay={0.15}>
@@ -215,14 +256,21 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           )}
           {filtered.map((inv, i) => {
             const sc = statusColors[inv.status];
+            const isExpanded = !isMobile && expandedClientId === inv.clientId;
+            const clientHistory = invoices
+              .filter(h => h.clientId === inv.clientId && h.id !== inv.id)
+              .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime());
             return (
               <motion.div
                 key={inv.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.02 }}
-                style={styles.tableRow}
               >
+                <div
+                  style={styles.tableRow}
+                  onClick={() => { if (!isMobile) setExpandedClientId(isExpanded ? null : inv.clientId); }}
+                >
                 {isMobile ? (
                   // Mobile card layout
                   <div style={styles.mobileCard}>
@@ -231,7 +279,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                         {getInitials(inv.clientName)}
                       </div>
                       <div style={styles.mobileCardInfo}>
-                        <div style={styles.clientName}>{inv.clientName}</div>
+                        <div style={styles.clientNameLink} onClick={(e) => { e.stopPropagation(); onViewClient(inv.clientId); }}>{inv.clientName}</div>
                         <div style={styles.mobileCardMeta}>{inv.period} &middot; {inv.plan}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
@@ -242,10 +290,21 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                       </div>
                     </div>
                     {inv.status !== 'paid' && (
-                      <button onClick={() => handleMarkPaid(inv.id)} style={styles.markPaidBtn}>
-                        <CheckCircle2 size={13} />
-                        Mark Paid
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {inv.status === 'overdue' && (
+                          <button
+                            onClick={() => setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id })}
+                            style={{ ...styles.markPaidBtn, background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.15)', color: 'var(--accent-danger)', flex: 1 }}
+                          >
+                            <MessageSquare size={13} />
+                            Remind
+                          </button>
+                        )}
+                        <button onClick={() => handleMarkPaid(inv.id)} style={{ ...styles.markPaidBtn, flex: 1 }}>
+                          <CheckCircle2 size={13} />
+                          Mark Paid
+                        </button>
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -255,7 +314,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                       <div style={{ ...styles.avatar, background: getAvatarColor(inv.clientId) }}>
                         {getInitials(inv.clientName)}
                       </div>
-                      <span style={styles.clientName}>{inv.clientName}</span>
+                      <span style={styles.clientNameLink} onClick={(e) => { e.stopPropagation(); onViewClient(inv.clientId); }}>{inv.clientName}</span>
                     </div>
                     <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)' }}>{inv.period}</span>
                     <span style={{ ...styles.td, flex: 1 }}>
@@ -275,20 +334,73 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                         {inv.status}
                       </span>
                     </span>
-                    <span style={{ ...styles.td, flex: 1, textAlign: 'right' }}>
+                    <span style={{ ...styles.td, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                      {inv.status === 'overdue' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id }); }}
+                          style={styles.reminderBtnSmall}
+                        >
+                          <MessageSquare size={12} />
+                          Remind
+                        </button>
+                      )}
                       {inv.status !== 'paid' ? (
-                        <button onClick={() => handleMarkPaid(inv.id)} style={styles.markPaidBtnSmall}>
+                        <button onClick={(e) => { e.stopPropagation(); handleMarkPaid(inv.id); }} style={styles.markPaidBtnSmall}>
                           <CheckCircle2 size={12} />
                           Mark Paid
                         </button>
                       ) : (
-                        <span style={{ fontSize: '15px', color: 'var(--text-tertiary)' }}>
-                          {inv.paidDate && new Date(inv.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        <span style={styles.paidDateLabel}>
+                          <CheckCircle2 size={12} />
+                          Paid {inv.paidDate && new Date(inv.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      )}
+                      {clientHistory.length > 0 && (
+                        <span style={{ color: 'var(--text-tertiary)', marginLeft: '4px', display: 'flex' }}>
+                          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </span>
                       )}
                     </span>
                   </>
                 )}
+                </div>
+
+                {/* Client payment history (expanded) */}
+                <AnimatePresence>
+                  {isExpanded && clientHistory.length > 0 && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={styles.historySection}>
+                        <div style={styles.historyLabel}>Payment History — {inv.clientName}</div>
+                        {clientHistory.map(h => {
+                          const hsc = statusColors[h.status];
+                          return (
+                            <div key={h.id} style={styles.historyRow}>
+                              <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '15px' }}>{h.period}</span>
+                              <span style={{ ...styles.td, flex: 1, fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>${h.amount}</span>
+                              <span style={{ ...styles.td, flex: 1 }}>
+                                <span style={{ ...styles.statusBadge, color: hsc.color, background: hsc.bg, fontSize: '13px', padding: '2px 8px' }}>
+                                  {h.status === 'paid' && <CheckCircle2 size={10} />}
+                                  {h.status === 'pending' && <Clock size={10} />}
+                                  {h.status === 'overdue' && <AlertTriangle size={10} />}
+                                  {h.status}
+                                </span>
+                              </span>
+                              <span style={{ ...styles.td, flex: 1, fontSize: '14px', color: 'var(--text-tertiary)' }}>
+                                {h.paidDate ? `Paid ${new Date(h.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : h.status === 'overdue' ? 'Overdue' : '—'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             );
           })}
@@ -298,22 +410,22 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
       {/* Create Invoice Modal */}
       <AnimatePresence>
         {createModal && (
-          <>
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setCreateModal(false)}
-              style={styles.overlay}
-            />
+          <motion.div
+            key="overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setCreateModal(false)}
+            style={styles.modalOverlay}
+          >
             <motion.div
               key="modal"
-              initial={{ opacity: 0, y: 40, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.97 }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.25 }}
               style={{ ...styles.modal, width: isMobile ? 'calc(100% - 32px)' : '440px' }}
+              onClick={e => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>Create Invoice</h3>
@@ -367,7 +479,92 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                 </div>
               </div>
             </motion.div>
-          </>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Send Reminder Modal */}
+      <AnimatePresence>
+        {reminderModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={styles.modalOverlay}
+            onClick={() => { if (!reminderSent) { setReminderModal(null); setReminderDraft(''); } }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              style={{ ...styles.modal, width: isMobile ? 'calc(100% - 32px)' : '440px' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={styles.modalHeader}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ ...styles.avatar, background: getAvatarColor(reminderModal.clientId) }}>
+                    {getInitials(reminderModal.clientName)}
+                  </div>
+                  <div>
+                    <h3 style={{ ...styles.modalTitle, fontSize: '18px' }}>Remind {reminderModal.clientName.split(' ')[0]}</h3>
+                    <span style={{ fontSize: '13px', color: 'var(--accent-danger)' }}>
+                      ${reminderModal.amount} overdue
+                    </span>
+                  </div>
+                </div>
+                <button
+                  style={styles.closeBtn}
+                  onClick={() => { setReminderModal(null); setReminderDraft(''); setReminderSent(false); }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={styles.modalBody}>
+                {reminderSent ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '20px 0' }}
+                  >
+                    <CheckCircle2 size={32} color="var(--accent-success)" />
+                    <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Reminder Sent!</p>
+                    <p style={{ fontSize: '14px', color: 'var(--text-tertiary)', margin: 0, textAlign: 'center' }}>
+                      Payment reminder sent to {reminderModal.clientName.split(' ')[0]}.
+                    </p>
+                    <button
+                      style={styles.cancelBtn}
+                      onClick={() => { setReminderModal(null); setReminderDraft(''); setReminderSent(false); }}
+                    >
+                      Close
+                    </button>
+                  </motion.div>
+                ) : (
+                  <>
+                    <textarea
+                      value={reminderDraft}
+                      onChange={e => setReminderDraft(e.target.value)}
+                      placeholder={`Hey ${reminderModal.clientName.split(' ')[0]}, just a friendly reminder about your $${reminderModal.amount} payment...`}
+                      style={styles.reminderTextarea}
+                      rows={4}
+                    />
+                    <div style={styles.modalActions}>
+                      <button onClick={() => { setReminderModal(null); setReminderDraft(''); }} style={styles.cancelBtn}>
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => setReminderSent(true)}
+                        style={styles.primaryBtn}
+                      >
+                        <Send size={14} />
+                        Send Reminder
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -404,6 +601,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '17px',
     fontWeight: 500,
     marginTop: '4px',
+  },
+  trendLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '13px',
+    fontWeight: 500,
+    marginTop: '6px',
   },
   toolbar: {
     display: 'flex',
@@ -513,6 +718,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     padding: '8px 16px',
+    gap: '16px',
     borderBottom: '1px solid var(--glass-border)',
     marginBottom: '4px',
   },
@@ -531,8 +737,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     padding: '10px 16px',
+    gap: '16px',
     borderBottom: '1px solid rgba(255,255,255,0.03)',
     transition: 'background 0.1s',
+    cursor: 'pointer',
   },
   td: {
     fontSize: '18px',
@@ -553,6 +761,13 @@ const styles: Record<string, React.CSSProperties> = {
   clientName: {
     fontSize: '18px',
     fontWeight: 600,
+  },
+  clientNameLink: {
+    fontSize: '18px',
+    fontWeight: 600,
+    color: 'var(--accent-primary)',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
   },
   amount: {
     fontSize: '21px',
@@ -586,6 +801,20 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-success-dim)',
     border: '1px solid rgba(34,197,94,0.15)',
     color: 'var(--accent-success)',
+    fontSize: '15px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+  },
+  reminderBtnSmall: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 10px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(239,68,68,0.08)',
+    border: '1px solid rgba(239,68,68,0.15)',
+    color: 'var(--accent-danger)',
     fontSize: '15px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
@@ -633,23 +862,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '18px',
   },
   // Modal
-  overlay: {
+  modalOverlay: {
     position: 'fixed',
     inset: 0,
     background: 'rgba(0,0,0,0.6)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modal: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
     background: 'var(--bg-secondary)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
-    zIndex: 101,
     overflow: 'hidden',
   },
   modalHeader: {
@@ -748,5 +975,48 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     boxShadow: '0 0 16px var(--accent-primary-dim)',
+  },
+  reminderTextarea: {
+    width: '100%',
+    padding: '10px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text-primary)',
+    fontSize: '16px',
+    fontFamily: 'var(--font-display)',
+    resize: 'vertical' as const,
+    outline: 'none',
+    boxSizing: 'border-box' as const,
+  },
+  paidDateLabel: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'var(--accent-success)',
+  },
+  historySection: {
+    padding: '8px 16px 12px 52px',
+    borderBottom: '1px solid var(--glass-border)',
+    background: 'rgba(0,229,200,0.02)',
+    borderLeft: '3px solid var(--accent-primary)',
+    marginLeft: '16px',
+  },
+  historyLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase' as const,
+    marginBottom: '8px',
+  },
+  historyRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '6px 0',
+    borderBottom: '1px solid rgba(255,255,255,0.02)',
   },
 };
