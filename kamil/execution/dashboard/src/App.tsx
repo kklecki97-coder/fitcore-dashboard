@@ -43,6 +43,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('overview');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
+  const [previousPage, setPreviousPage] = useState<Page>('clients');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
   const [theme, setTheme] = useState<Theme>(() => {
@@ -98,13 +99,29 @@ function App() {
     if (isMobile) setSidebarOpen(false);
   };
 
+  const PAGE_LABELS: Record<Page, string> = {
+    'overview': 'Overview',
+    'clients': 'Clients',
+    'client-detail': 'Clients',
+    'add-client': 'Clients',
+    'messages': 'Messages',
+    'analytics': 'Analytics',
+    'schedule': 'Schedule',
+    'settings': 'Settings',
+    'programs': 'Programs',
+    'program-builder': 'Programs',
+    'payments': 'Payments',
+    'check-ins': 'Check-Ins',
+  };
+
   const handleViewClient = (id: string) => {
+    setPreviousPage(currentPage);
     setSelectedClientId(id);
     setCurrentPage('client-detail');
   };
 
   const handleBackFromClient = () => {
-    setCurrentPage('clients');
+    setCurrentPage(previousPage);
     setSelectedClientId('');
   };
 
@@ -185,12 +202,13 @@ function App() {
   };
 
   const handleViewProgram = (id: string) => {
+    setPreviousPage(currentPage);
     setSelectedProgramId(id);
     setCurrentPage('program-builder');
   };
 
   const handleBackFromProgram = () => {
-    setCurrentPage('programs');
+    setCurrentPage(previousPage);
     setSelectedProgramId('');
   };
 
@@ -221,6 +239,7 @@ function App() {
             workoutLogs={workoutLogs}
             checkIns={allCheckIns}
             onBack={handleBackFromClient}
+            backLabel={`Back to ${PAGE_LABELS[previousPage]}`}
             onUpdateClient={handleUpdateClient}
             onSendMessage={handleSendMessage}
             onUpdateProgram={handleUpdateProgram}
@@ -256,10 +275,11 @@ function App() {
               } else {
                 handleAddProgram(program);
               }
-              setCurrentPage('programs');
+              setCurrentPage(previousPage);
               setSelectedProgramId('');
             }}
             onBack={handleBackFromProgram}
+            backLabel={`Back to ${PAGE_LABELS[previousPage]}`}
           />
         );
       case 'payments':

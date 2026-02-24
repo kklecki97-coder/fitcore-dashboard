@@ -386,7 +386,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             <div style={styles.field}>
               <label style={styles.fieldLabel}>Two-Factor Authentication</label>
               <div style={styles.fieldRow}>
-                <div style={{ ...styles.fieldValue, color: twoFactorEnabled ? 'var(--accent-success)' : 'var(--text-secondary)' }}>
+                <div style={{ ...styles.fieldValue, color: twoFactorEnabled ? 'var(--accent-success)' : 'var(--text-secondary)', fontSize: '16px' }}>
                   {twoFactorEnabled ? 'Enabled' : 'Disabled'}
                 </div>
                 <button style={styles.editBtn} onClick={() => setSecurityModal('2fa')}>Manage</button>

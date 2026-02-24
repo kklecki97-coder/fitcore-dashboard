@@ -15,6 +15,7 @@ interface ProgramBuilderPageProps {
   exerciseLibrary: string[];
   onSave: (program: WorkoutProgram) => void;
   onBack: () => void;
+  backLabel?: string;
 }
 
 const emptyExercise = (): Exercise => ({
@@ -30,7 +31,7 @@ const emptyExercise = (): Exercise => ({
 });
 
 export default function ProgramBuilderPage({
-  program, clients, exerciseLibrary, onSave, onBack,
+  program, clients, exerciseLibrary, onSave, onBack, backLabel = 'Back to Programs',
 }: ProgramBuilderPageProps) {
   const isMobile = useIsMobile();
 
@@ -213,7 +214,7 @@ export default function ProgramBuilderPage({
       {/* Back Bar */}
       <div style={styles.topBar}>
         <motion.button onClick={onBack} style={styles.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-          <ArrowLeft size={16} /> Back to Programs
+          <ArrowLeft size={16} /> {backLabel}
         </motion.button>
       </div>
 

@@ -25,6 +25,7 @@ interface ClientDetailPageProps {
   workoutLogs: WorkoutLog[];
   checkIns: CheckIn[];
   onBack: () => void;
+  backLabel?: string;
   onUpdateClient: (id: string, updates: Partial<Client>) => void;
   onSendMessage: (msg: Message) => void;
   onUpdateProgram: (programId: string, updates: Partial<WorkoutProgram>) => void;
@@ -32,7 +33,7 @@ interface ClientDetailPageProps {
   onAddCheckIn: (checkIn: CheckIn) => void;
 }
 
-export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, backLabel = 'Back to Clients', onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const client = clients.find(c => c.id === clientId);
 
@@ -389,7 +390,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       >
         <button onClick={onBack} style={styles.backBtn}>
           <ArrowLeft size={18} />
-          Back to Clients
+          {backLabel}
         </button>
       </motion.div>
 
