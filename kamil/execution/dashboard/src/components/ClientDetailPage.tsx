@@ -32,14 +32,14 @@ interface ClientDetailPageProps {
   onAddCheckIn: (checkIn: CheckIn) => void;
 }
 
-export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const client = clients.find(c => c.id === clientId);
 
   // All hooks must be called before any early return
   const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | 'logMetrics' | 'assignProgram' | 'checkIn' | 'viewCheckIn' | null>(null);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
-  const [checkInForm, setCheckInForm] = useState({
+  const [_checkInForm, _setCheckInForm] = useState({
     weight: '',
     bodyFat: '',
     mood: '' as string,
@@ -174,7 +174,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     onUpdateClient(client.id, { notesHistory: history });
   };
 
-  const handleLogMetrics = () => {
+  // @ts-ignore - kept for future use
+  const _handleLogMetrics = () => {
     const updates: Partial<Client> = {
       metrics: { ...client.metrics },
     };

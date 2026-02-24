@@ -67,7 +67,7 @@ function formatTimeAgo(timestamp: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export default function Header({ currentPage, isMobile, onMenuToggle, notifications = [], onMarkRead, onMarkAllRead, onNotificationClick }: HeaderProps) {
+export default function Header({ currentPage, isMobile, onMenuToggle, notifications = [], onMarkRead: _onMarkRead, onMarkAllRead, onNotificationClick }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
