@@ -120,11 +120,28 @@ export interface CheckIn {
   wins: string;                // 3-5 wins this week
   challenges: string;          // challenges faced
   coachFeedback: string;
+  // ── Progress photos ──
+  photos: { url: string; label: 'front' | 'side' | 'back' }[];
   // ── Review workflow ──
   reviewStatus: 'pending' | 'reviewed' | 'flagged'; // coach review state
   flagReason: string;          // why flagged (needs program change, call, etc.)
+  // ── Follow-up notes (post-review) ──
+  followUpNotes: { text: string; date: string }[];
 }
 
 export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';
 
 export type Theme = 'dark' | 'light';
+
+export type NotificationType = 'message' | 'checkin' | 'payment' | 'program' | 'client';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  description: string;
+  timestamp: string;
+  isRead: boolean;
+  clientId?: string;
+  targetPage?: Page;
+}

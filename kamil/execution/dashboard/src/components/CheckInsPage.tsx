@@ -5,18 +5,20 @@ import {
   AlertTriangle, CheckCircle2, Clock, Flag,
   TrendingUp, TrendingDown, Moon,
   Smile, Frown, Meh, SmilePlus, Angry,
-  Award, Target,
+  Award, Target, MessageSquare, Camera, Plus, X, Send,
+  Image as ImageIcon,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, CheckIn } from '../types';
+import type { Client, CheckIn, Page } from '../types';
 
 interface CheckInsPageProps {
   clients: Client[];
   checkIns: CheckIn[];
   onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
   onViewClient: (id: string) => void;
+  onNavigate?: (page: Page) => void; // kept for future use
 }
 
 type FilterTab = 'pending' | 'flagged' | 'reviewed' | 'all';
@@ -88,13 +90,17 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
   );
 }
 
-export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient }: CheckInsPageProps) {
+export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onNavigate: _onNavigate }: CheckInsPageProps) {
   const isMobile = useIsMobile();
   const [filter, setFilter] = useState<FilterTab>('pending');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>({});
   const [flagDrafts, setFlagDrafts] = useState<Record<string, string>>({});
+  const [followUpDrafts, setFollowUpDrafts] = useState<Record<string, string>>({});
+  const [messageModal, setMessageModal] = useState<{ clientId: string; clientName: string } | null>(null);
+  const [messageDraft, setMessageDraft] = useState('');
+  const [messageSent, setMessageSent] = useState(false);
 
   // ── Computed data ──
   const completedCheckIns = checkIns.filter(ci => ci.status === 'completed');
@@ -102,6 +108,37 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   const pendingReview = completedCheckIns.filter(ci => ci.reviewStatus === 'pending');
   const flagged = completedCheckIns.filter(ci => ci.reviewStatus === 'flagged');
   const reviewed = completedCheckIns.filter(ci => ci.reviewStatus === 'reviewed');
+
+  // Point 1: Days since last check-in for a client
+  const getDaysSinceLastCheckIn = (clientId: string): number | null => {
+    const clientCompleted = completedCheckIns
+      .filter(ci => ci.clientId === clientId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    if (clientCompleted.length === 0) return null;
+    const lastDate = new Date(clientCompleted[0].date);
+    const now = new Date();
+    return Math.floor((now.getTime() - lastDate.getTime()) / 86400000);
+  };
+
+  // Point 3: Upcoming check-ins with client names and due dates
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfterTomorrow = new Date(today);
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+  const dueToday = scheduledCheckIns.filter(ci => {
+    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  });
+  const dueTomorrow = scheduledCheckIns.filter(ci => {
+    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
+    return d.getTime() === tomorrow.getTime();
+  });
+  const dueLater = scheduledCheckIns.filter(ci => {
+    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
+    return d.getTime() >= dayAfterTomorrow.getTime();
+  });
 
   // Filter the list
   const filtered = (() => {
@@ -180,6 +217,15 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
     setFlagDrafts(prev => { const n = { ...prev }; delete n[id]; return n; });
   };
 
+  // Point 6: Add follow-up note to a reviewed check-in
+  const handleAddFollowUp = (ci: CheckIn) => {
+    const text = followUpDrafts[ci.id]?.trim();
+    if (!text) return;
+    const newNote = { text, date: new Date().toISOString().split('T')[0] };
+    onUpdateCheckIn(ci.id, { followUpNotes: [...(ci.followUpNotes || []), newNote] });
+    setFollowUpDrafts(prev => { const n = { ...prev }; delete n[ci.id]; return n; });
+  };
+
   const tabs: { key: FilterTab; label: string; count: number; color: string }[] = [
     { key: 'pending', label: 'To Review', count: pendingReview.length, color: 'var(--accent-warm)' },
     { key: 'flagged', label: 'Flagged', count: flagged.length, color: 'var(--accent-danger)' },
@@ -217,7 +263,26 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
         <GlassCard delay={0.15}>
           <div style={styles.summaryLabel}>Upcoming</div>
           <div style={styles.summaryValue}>{scheduledCheckIns.length}</div>
-          <div style={styles.summaryHint}>scheduled this week</div>
+          <div style={styles.upcomingDetails}>
+            {dueToday.length > 0 && (
+              <div style={styles.upcomingLine}>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: '#07090e' }}>{dueToday.length} today</span>
+                <span style={styles.upcomingNames}>{dueToday.map(ci => ci.clientName.split(' ')[0]).join(', ')}</span>
+              </div>
+            )}
+            {dueTomorrow.length > 0 && (
+              <div style={styles.upcomingLine}>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: '#07090e' }}>{dueTomorrow.length} tomorrow</span>
+                <span style={styles.upcomingNames}>{dueTomorrow.map(ci => ci.clientName.split(' ')[0]).join(', ')}</span>
+              </div>
+            )}
+            {dueLater.length > 0 && (
+              <div style={styles.upcomingLine}>
+                <span style={{ ...styles.upcomingBadge, background: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>{dueLater.length} later</span>
+              </div>
+            )}
+            {scheduledCheckIns.length === 0 && <span style={styles.summaryHint}>none scheduled</span>}
+          </div>
         </GlassCard>
       </div>
 
@@ -302,7 +367,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                     onClick={() => setExpandedId(isExpanded ? null : ci.id)}
                     style={styles.queueItemHeader}
                   >
-                    {/* Left: avatar + name + date */}
+                    {/* Left: avatar + name + date + days since */}
                     <div style={styles.queueItemLeft}>
                       <div style={{ ...styles.avatar, background: getAvatarColor(ci.clientId) }}>
                         {getInitials(ci.clientName)}
@@ -312,6 +377,25 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         <div style={styles.queueDate}>
                           {new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           {client && <span style={{ marginLeft: '8px', color: 'var(--text-tertiary)' }}>{client.plan}</span>}
+                          {(() => {
+                            const days = getDaysSinceLastCheckIn(ci.clientId);
+                            if (days === null) return null;
+                            const isLate = days > 10;
+                            const isWarning = days >= 7 && days <= 10;
+                            return (
+                              <span style={{
+                                marginLeft: '8px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: '8px',
+                                background: isLate ? 'rgba(239,68,68,0.12)' : isWarning ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.06)',
+                                color: isLate ? 'var(--accent-danger)' : isWarning ? 'var(--accent-warm)' : 'var(--text-tertiary)',
+                              }}>
+                                {days === 0 ? 'Today' : days === 1 ? '1d ago' : `${days}d ago`}
+                              </span>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -511,11 +595,79 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             )}
                           </div>
 
+                          {/* Point 5: Progress Photos */}
+                          {ci.photos && ci.photos.length > 0 && (
+                            <div>
+                              <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)' }}>
+                                <Camera size={11} /> Progress Photos
+                              </span>
+                              <div style={styles.photosRow}>
+                                {ci.photos.map((photo, pi) => (
+                                  <div key={pi} style={styles.photoCard}>
+                                    <div style={styles.photoPlaceholder}>
+                                      <ImageIcon size={24} color="var(--text-tertiary)" style={{ opacity: 0.4 }} />
+                                    </div>
+                                    <span style={styles.photoLabel}>{photo.label}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {ci.photos && ci.photos.length === 0 && ci.status === 'completed' && (
+                            <div style={styles.noPhotoBanner}>
+                              <Camera size={14} color="var(--text-tertiary)" />
+                              <span>No progress photos submitted this week</span>
+                            </div>
+                          )}
+
                           {/* Previous coach feedback (if exists) */}
                           {ci.coachFeedback && ci.reviewStatus === 'reviewed' && (
                             <div style={styles.existingFeedback}>
                               <span style={{ ...styles.noteLabel, color: 'var(--accent-primary)' }}>Your Feedback</span>
                               <p style={styles.noteText}>{ci.coachFeedback}</p>
+                            </div>
+                          )}
+
+                          {/* Point 6: Follow-up notes (for reviewed/flagged) */}
+                          {ci.followUpNotes && ci.followUpNotes.length > 0 && (
+                            <div>
+                              <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)' }}>
+                                <ClipboardCheck size={11} /> Follow-Up Notes
+                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                                {ci.followUpNotes.map((fn, fi) => (
+                                  <div key={fi} style={styles.followUpNote}>
+                                    <span style={styles.followUpDate}>
+                                      {new Date(fn.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                    <span style={styles.followUpText}>{fn.text}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Point 6: Add follow-up note (for reviewed check-ins) */}
+                          {ci.reviewStatus === 'reviewed' && (
+                            <div style={styles.followUpInput}>
+                              <input
+                                value={followUpDrafts[ci.id] || ''}
+                                onChange={e => setFollowUpDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                placeholder="Add a follow-up note..."
+                                style={styles.followUpField}
+                                onKeyDown={e => { if (e.key === 'Enter') handleAddFollowUp(ci); }}
+                              />
+                              <button
+                                onClick={() => handleAddFollowUp(ci)}
+                                style={{
+                                  ...styles.followUpBtn,
+                                  opacity: followUpDrafts[ci.id]?.trim() ? 1 : 0.4,
+                                }}
+                                disabled={!followUpDrafts[ci.id]?.trim()}
+                              >
+                                <Plus size={13} />
+                                Add Note
+                              </button>
                             </div>
                           )}
 
@@ -527,8 +679,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Action bar */}
-                          {ci.reviewStatus !== 'reviewed' && (
+                          {/* Action bar — pending check-ins */}
+                          {ci.reviewStatus === 'pending' && (
                             <div style={styles.actionBar}>
                               <textarea
                                 value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
@@ -537,30 +689,36 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 style={styles.feedbackInput}
                                 rows={2}
                               />
-                              <div style={styles.actionButtons}>
+                              {/* Point 4: Flag input now full width above buttons */}
+                              <div style={styles.flagRow}>
+                                <Flag size={13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                <input
+                                  value={flagDrafts[ci.id] || ''}
+                                  onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                  placeholder="Flag reason (e.g. needs program change, schedule a call...)"
+                                  style={styles.flagInput}
+                                />
                                 <button
-                                  onClick={() => onViewClient(ci.clientId)}
-                                  style={styles.actionBtnSecondary}
+                                  onClick={() => handleFlag(ci.id)}
+                                  style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5 }}
+                                  disabled={!flagDrafts[ci.id]?.trim()}
                                 >
+                                  Flag
+                                </button>
+                              </div>
+                              <div style={styles.actionButtons}>
+                                <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
                                   View Profile
                                 </button>
-                                {ci.reviewStatus !== 'flagged' && (
-                                  <div style={styles.flagGroup}>
-                                    <input
-                                      value={flagDrafts[ci.id] || ''}
-                                      onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                      placeholder="Flag reason..."
-                                      style={styles.flagInput}
-                                    />
-                                    <button
-                                      onClick={() => handleFlag(ci.id)}
-                                      style={styles.actionBtnDanger}
-                                    >
-                                      <Flag size={13} />
-                                      Flag
-                                    </button>
-                                  </div>
-                                )}
+                                {/* Point 2: Send Message shortcut */}
+                                <button
+                                  onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })}
+                                  style={styles.actionBtnMessage}
+                                >
+                                  <MessageSquare size={13} />
+                                  Send Message
+                                </button>
+                                <div style={{ flex: 1 }} />
                                 <button
                                   onClick={() => handleMarkReviewed(ci.id)}
                                   style={styles.actionBtnPrimary}
@@ -572,20 +730,38 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Already reviewed — option to unflag */}
+                          {/* Action bar — flagged check-ins */}
                           {ci.reviewStatus === 'flagged' && (
-                            <div style={styles.actionButtons}>
-                              <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>
+                            <div style={styles.actionBar}>
                               <textarea
                                 value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
                                 onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
                                 placeholder="Add feedback and resolve..."
-                                style={{ ...styles.feedbackInput, flex: 1 }}
-                                rows={1}
+                                style={styles.feedbackInput}
+                                rows={2}
                               />
-                              <button onClick={() => handleMarkReviewed(ci.id)} style={styles.actionBtnPrimary}>
-                                <CheckCircle2 size={13} />
-                                Resolve & Review
+                              <div style={styles.actionButtons}>
+                                <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>
+                                <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
+                                  <MessageSquare size={13} />
+                                  Send Message
+                                </button>
+                                <div style={{ flex: 1 }} />
+                                <button onClick={() => handleMarkReviewed(ci.id)} style={styles.actionBtnPrimary}>
+                                  <CheckCircle2 size={13} />
+                                  Resolve & Review
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Reviewed — just view + message shortcuts */}
+                          {ci.reviewStatus === 'reviewed' && (
+                            <div style={styles.actionButtons}>
+                              <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>
+                              <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
+                                <MessageSquare size={13} />
+                                Message
                               </button>
                             </div>
                           )}
@@ -599,6 +775,107 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
           </AnimatePresence>
         </div>
       </GlassCard>
+
+      {/* Quick Message Modal */}
+      <AnimatePresence>
+        {messageModal && (
+          <>
+            <motion.div
+              style={styles.overlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { if (!messageSent) { setMessageModal(null); setMessageDraft(''); } }}
+            />
+            <motion.div
+              style={styles.messageModal}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            >
+              <div style={styles.messageModalHeader}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ ...styles.avatar, background: getAvatarColor(messageModal.clientId), width: '32px', height: '32px', fontSize: '14px' }}>
+                    {getInitials(messageModal.clientName)}
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                      Message {messageModal.clientName.split(' ')[0]}
+                    </h3>
+                    <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>Quick message from Check-Ins</span>
+                  </div>
+                </div>
+                <button
+                  style={styles.messageCloseBtn}
+                  onClick={() => { setMessageModal(null); setMessageDraft(''); setMessageSent(false); }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div style={styles.messageModalBody}>
+                {messageSent ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    style={styles.messageSentState}
+                  >
+                    <CheckCircle2 size={32} color="var(--accent-success)" />
+                    <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Message Sent!</p>
+                    <p style={{ fontSize: '14px', color: 'var(--text-tertiary)', margin: 0 }}>
+                      Your message to {messageModal.clientName.split(' ')[0]} has been sent.
+                    </p>
+                    <button
+                      style={styles.actionBtnSecondary}
+                      onClick={() => { setMessageModal(null); setMessageDraft(''); setMessageSent(false); }}
+                    >
+                      Close
+                    </button>
+                  </motion.div>
+                ) : (
+                  <>
+                    <textarea
+                      value={messageDraft}
+                      onChange={e => setMessageDraft(e.target.value)}
+                      placeholder={`Hey ${messageModal.clientName.split(' ')[0]}, ...`}
+                      style={styles.messageTextarea}
+                      rows={4}
+                      autoFocus
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <button
+                        style={styles.actionBtnSecondary}
+                        onClick={() => { setMessageModal(null); setMessageDraft(''); }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        style={{
+                          ...styles.messageSendBtn,
+                          opacity: messageDraft.trim() ? 1 : 0.4,
+                          cursor: messageDraft.trim() ? 'pointer' : 'not-allowed',
+                        }}
+                        disabled={!messageDraft.trim()}
+                        onClick={() => {
+                          setMessageSent(true);
+                          setMessageDraft('');
+                          setTimeout(() => {
+                            setMessageModal(null);
+                            setMessageSent(false);
+                          }, 1800);
+                        }}
+                      >
+                        <Send size={14} />
+                        Send Message
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -979,20 +1256,240 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
-  flagGroup: {
+  // Point 4: Full-width flag row
+  flagRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '4px',
+    gap: '8px',
+    padding: '8px 12px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(239,68,68,0.04)',
+    border: '1px solid rgba(239,68,68,0.1)',
   },
   flagInput: {
-    padding: '8px 10px',
+    flex: 1,
+    padding: '6px 10px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid rgba(239,68,68,0.15)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '17px',
+    fontSize: '15px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
-    width: '160px',
+  },
+  // Point 2: Send Message button
+  actionBtnMessage: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(0,229,200,0.2)',
+    background: 'rgba(0,229,200,0.06)',
+    color: 'var(--accent-primary)',
+    fontSize: '15px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+  },
+  // Point 3: Upcoming card details
+  upcomingDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    marginTop: '6px',
+  },
+  upcomingLine: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  upcomingBadge: {
+    fontSize: '12px',
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: '8px',
+    flexShrink: 0,
+  },
+  upcomingNames: {
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  // Point 5: Progress photos
+  photosRow: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '8px',
+    flexWrap: 'wrap',
+  },
+  photoCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  photoPlaceholder: {
+    width: '80px',
+    height: '100px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px dashed rgba(255,255,255,0.12)',
+    background: 'rgba(255,255,255,0.02)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'capitalize',
+  },
+  noPhotoBanner: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 14px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px dashed rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.01)',
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+  },
+  // Point 6: Follow-up notes
+  followUpNote: {
+    display: 'flex',
+    gap: '10px',
+    padding: '8px 10px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid rgba(255,255,255,0.04)',
+  },
+  followUpDate: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    flexShrink: 0,
+    minWidth: '50px',
+  },
+  followUpText: {
+    fontSize: '15px',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.4,
+  },
+  followUpInput: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  followUpField: {
+    flex: 1,
+    padding: '8px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-elevated)',
+    color: 'var(--text-primary)',
+    fontSize: '15px',
+    fontFamily: 'var(--font-display)',
+    outline: 'none',
+  },
+  followUpBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '8px 14px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--accent-secondary)',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+  },
+  // Quick message modal
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 200,
+  },
+  messageModal: {
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '440px',
+    maxWidth: 'calc(100vw - 32px)',
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-lg)',
+    boxShadow: 'var(--shadow-elevated)',
+    zIndex: 201,
+    overflow: 'hidden',
+  },
+  messageModalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '16px 20px',
+    borderBottom: '1px solid var(--glass-border)',
+  },
+  messageCloseBtn: {
+    width: '32px',
+    height: '32px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-elevated)',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageModalBody: {
+    padding: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+  },
+  messageTextarea: {
+    width: '100%',
+    padding: '12px 14px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-elevated)',
+    color: 'var(--text-primary)',
+    fontSize: '15px',
+    fontFamily: 'var(--font-display)',
+    resize: 'vertical',
+    outline: 'none',
+    lineHeight: 1.5,
+  },
+  messageSendBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '10px 20px',
+    borderRadius: 'var(--radius-sm)',
+    border: 'none',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    fontSize: '15px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
+  },
+  messageSentState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '20px 0',
   },
 };

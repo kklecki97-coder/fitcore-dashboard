@@ -17,7 +17,7 @@ import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
 import useIsMobile from './hooks/useIsMobile';
 import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs, invoices as initialInvoices, checkIns as initialCheckIns } from './data';
-import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn } from './types';
+import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification } from './types';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -70,6 +70,21 @@ function App() {
     checkins: true,
     payments: true,
     weekly: false,
+  });
+
+  // App notifications (bell icon)
+  const [appNotifications, setAppNotifications] = useState<AppNotification[]>(() => {
+    const now = Date.now();
+    return [
+      { id: 'n1', type: 'message', title: 'New message from Marcus Johnson', description: 'Hey coach, I hit a new PR on bench today! 225lbs!', timestamp: new Date(now - 5 * 60000).toISOString(), isRead: false, clientId: 'c1', targetPage: 'messages' as const },
+      { id: 'n2', type: 'checkin', title: 'Sarah Chen submitted a check-in', description: 'Weekly check-in completed — all metrics updated', timestamp: new Date(now - 35 * 60000).toISOString(), isRead: false, clientId: 'c2', targetPage: 'check-ins' as const },
+      { id: 'n3', type: 'payment', title: 'Payment received — $150', description: 'David Park paid invoice #INV-2024-012', timestamp: new Date(now - 2 * 3600000).toISOString(), isRead: false, clientId: 'c3', targetPage: 'payments' as const },
+      { id: 'n4', type: 'program', title: "Alex Rivera's program starts tomorrow", description: 'Hypertrophy Phase 2 — 4 days/week begins Monday', timestamp: new Date(now - 4 * 3600000).toISOString(), isRead: false, clientId: 'c4', targetPage: 'programs' as const },
+      { id: 'n5', type: 'message', title: 'New message from Emma Wilson', description: "Can we reschedule Thursday's session?", timestamp: new Date(now - 8 * 3600000).toISOString(), isRead: true, clientId: 'c5', targetPage: 'messages' as const },
+      { id: 'n6', type: 'checkin', title: 'Lisa Thompson missed check-in', description: 'Weekly check-in was due yesterday — no submission', timestamp: new Date(now - 24 * 3600000).toISOString(), isRead: true, clientId: 'c6', targetPage: 'check-ins' as const },
+      { id: 'n7', type: 'payment', title: 'Payment overdue — $200', description: 'Mike Chen invoice #INV-2024-009 is 5 days overdue', timestamp: new Date(now - 48 * 3600000).toISOString(), isRead: true, clientId: 'c7', targetPage: 'payments' as const },
+      { id: 'n8', type: 'client', title: 'Welcome to FitCore!', description: 'Your dashboard is set up and ready to go', timestamp: new Date(now - 72 * 3600000).toISOString(), isRead: true, targetPage: 'overview' as const },
+    ];
   });
 
   useEffect(() => {
@@ -263,6 +278,7 @@ function App() {
             checkIns={allCheckIns}
             onUpdateCheckIn={handleUpdateCheckIn}
             onViewClient={handleViewClient}
+            onNavigate={handleNavigate}
           />
         );
       case 'schedule':
@@ -321,6 +337,13 @@ function App() {
           currentPage={currentPage}
           isMobile={isMobile}
           onMenuToggle={() => setSidebarOpen(o => !o)}
+          notifications={appNotifications}
+          onMarkRead={(id) => setAppNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))}
+          onMarkAllRead={() => setAppNotifications(prev => prev.map(n => ({ ...n, isRead: true })))}
+          onNotificationClick={(notif) => {
+            setAppNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+            if (notif.targetPage) handleNavigate(notif.targetPage);
+          }}
         />
         <AnimatePresence mode="wait">
           <motion.div

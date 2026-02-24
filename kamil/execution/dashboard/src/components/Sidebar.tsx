@@ -68,7 +68,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
                   transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 />
               )}
-              <Icon size={18} style={{ opacity: isActive ? 1 : 0.5 }} />
+              <Icon size={22} style={{ opacity: isActive ? 1 : 0.5 }} />
               <span style={{ opacity: isActive ? 1 : 0.6 }}>{item.label}</span>
             </motion.button>
           );
@@ -94,7 +94,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
               transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             />
           )}
-          <Settings size={18} style={{ opacity: currentPage === 'settings' ? 1 : 0.5 }} />
+          <Settings size={22} style={{ opacity: currentPage === 'settings' ? 1 : 0.5 }} />
           <span style={{ opacity: currentPage === 'settings' ? 1 : 0.6 }}>Settings</span>
         </motion.button>
         <button
@@ -105,7 +105,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
           }}
           style={styles.navItem}
         >
-          <LogOut size={18} style={{ opacity: 0.5 }} />
+          <LogOut size={22} style={{ opacity: 0.5 }} />
           <span style={{ opacity: 0.6 }}>Log Out</span>
         </button>
 
@@ -188,7 +188,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'transparent',
     color: 'var(--text-primary)',
-    fontSize: '20px',
+    fontSize: '16px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
