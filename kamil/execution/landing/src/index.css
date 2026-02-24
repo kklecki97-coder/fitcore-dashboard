@@ -60,7 +60,10 @@
 
 html {
   scroll-behavior: smooth;
-  font-size: 125%;
+}
+
+#root {
+  zoom: 1.25;
 }
 
 html, body, #root {

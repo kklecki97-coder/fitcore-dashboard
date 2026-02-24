@@ -372,7 +372,7 @@ export default function App() {
         <section style={{
           minHeight: '100vh', display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-          padding: '120px 24px 80px', position: 'relative', zIndex: 1,
+          padding: '60px 24px 80px', position: 'relative', zIndex: 1,
           maxWidth: 1200, margin: '0 auto',
         }}>
           <motion.div
@@ -979,7 +979,7 @@ export default function App() {
                 </a>
               </div>
               <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 20 }}>
-                Or email us directly: <a href="mailto:Fitcorehq@gmail.com" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>Fitcorehq@gmail.com</a>
+                Or email us directly: <a href="mailto:contact@fitcore.tech" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>contact@fitcore.tech</a>
               </p>
             </div>
           </GlassCard>
@@ -1005,7 +1005,7 @@ export default function App() {
                 Fit<span style={{ color: 'var(--accent-primary)' }}>Core</span>
               </span>
             </div>
-            <a href="mailto:Fitcorehq@gmail.com" style={{
+            <a href="mailto:contact@fitcore.tech" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
               fontWeight: 500, transition: 'color 0.2s',
@@ -1013,7 +1013,7 @@ export default function App() {
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
             >
-              <Mail size={14} /> Fitcorehq@gmail.com
+              <Mail size={14} /> contact@fitcore.tech
             </a>
           </div>
           <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
