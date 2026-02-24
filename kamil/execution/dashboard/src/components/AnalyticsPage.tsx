@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import {
-  DollarSign, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
+  DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
   CreditCard, Target, Award, Dumbbell, ClipboardCheck, Activity,
 } from 'lucide-react';
 import {

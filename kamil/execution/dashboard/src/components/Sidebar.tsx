@@ -8,7 +8,6 @@ import {
   CalendarDays,
   Settings,
   LogOut,
-  Zap,
   CreditCard,
   ClipboardCheck,
 } from 'lucide-react';
