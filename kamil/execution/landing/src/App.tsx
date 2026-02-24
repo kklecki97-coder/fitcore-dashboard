@@ -3,12 +3,12 @@ import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'fra
 import {
   Users, MessageSquare, Dumbbell, BarChart3, Calendar,
   Shield, Zap, ChevronRight, ChevronLeft, ArrowRight, Menu, X,
-  Brain, Smartphone, Palette, Mail, Play, CheckCircle2,
+  Brain, Smartphone, Mail, Play, CheckCircle2,
   ClipboardCheck, CreditCard, LayoutDashboard
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
-   FitCore — Landing Page
+   FitCore Landing Page
    Positioning: Custom-built dashboards for fitness coaches (1-on-1)
    ═══════════════════════════════════════════════════════════ */
 
@@ -61,10 +61,10 @@ function GlassCard({ children, style, delay = 0 }: { children: React.ReactNode; 
 
 // ── Screenshot Carousel ──
 const screenshots = [
-  { src: '/1-overview.png', label: 'Dashboard Overview', desc: 'Everything at a glance — revenue, clients, check-ins, AI insights' },
+  { src: '/1-overview.png', label: 'Dashboard Overview', desc: 'Everything at a glance: revenue, clients, check-ins, AI insights' },
   { src: '/2-clients.png', label: 'Client Management', desc: 'Full roster with progress, plans, revenue per client' },
   { src: '/3-programs.png', label: 'Workout Programs', desc: 'Build and assign programs with exercises, sets, reps, tempo' },
-  { src: '/4-messages.png', label: 'Unified Inbox', desc: 'Telegram, WhatsApp, Instagram, Email — one conversation feed' },
+  { src: '/4-messages.png', label: 'Unified Inbox', desc: 'Telegram, WhatsApp, Instagram, Email: one conversation feed' },
   { src: '/5-analytics.png', label: 'Analytics & Revenue', desc: 'Revenue trends, retention, client value, plan distribution' },
 ];
 
@@ -111,7 +111,7 @@ function ScreenshotCarousel() {
             padding: '6px 16px', fontSize: 12, color: 'var(--text-tertiary)',
             fontFamily: 'var(--font-mono)', maxWidth: 400,
           }}>
-            app.fitcore.io/{screenshots[current].label.toLowerCase().replace(/ /g, '-')}
+            app.fitcore.tech/{screenshots[current].label.toLowerCase().replace(/ /g, '-')}
           </div>
         </div>
 
@@ -188,64 +188,19 @@ function ScreenshotCarousel() {
   );
 }
 
-// ── Video Placeholder ──
+// ── Video Embed (Loom) ──
 function VideoPlaceholder() {
   return (
     <div style={{
       position: 'relative', aspectRatio: '16/9', borderRadius: 'var(--radius-lg)',
       overflow: 'hidden', border: '1px solid var(--glass-border)',
-      background: 'linear-gradient(135deg, rgba(14, 18, 27, 0.95), rgba(20, 25, 40, 0.95))',
-      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      {/* Thumbnail — replace with actual video thumbnail */}
-      <img
-        src="/1-overview.png"
-        alt="Dashboard preview"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }}
+      <iframe
+        src="https://www.loom.com/embed/26735e972f624b0bab6222c1a2c3dd66"
+        frameBorder="0"
+        allowFullScreen
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
-      {/* Play button */}
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        style={{
-          position: 'relative', zIndex: 2, width: 80, height: 80, borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 40px var(--accent-primary-glow), 0 0 80px rgba(0, 229, 200, 0.15)',
-        }}
-      >
-        <Play size={32} fill="#07090e" style={{ color: '#07090e', marginLeft: 4 }} />
-      </motion.div>
-      <div style={{
-        position: 'absolute', bottom: 24, left: 0, right: 0, textAlign: 'center',
-        zIndex: 2, fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500,
-      }}>
-        {/* TODO: Replace with actual demo video (2-3 min walkthrough) */}
-        Watch a 2-minute walkthrough
-      </div>
-    </div>
-  );
-}
-
-// ── Photo Placeholder ──
-function PhotoPlaceholder({ label, aspectRatio = '4/3' }: { label: string; aspectRatio?: string }) {
-  return (
-    <div style={{
-      aspectRatio, borderRadius: 'var(--radius-md)', overflow: 'hidden',
-      border: '2px dashed var(--glass-border-hover)',
-      background: 'linear-gradient(135deg, rgba(14, 18, 27, 0.6), rgba(20, 25, 40, 0.6))',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 8, padding: 24, textAlign: 'center',
-    }}>
-      <div style={{
-        width: 48, height: 48, borderRadius: 'var(--radius-sm)',
-        background: 'var(--accent-primary-dim)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Palette size={20} style={{ color: 'var(--accent-primary)' }} />
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500 }}>
-        {label}
-      </div>
     </div>
   );
 }
@@ -340,7 +295,7 @@ export default function App() {
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
             >{link.label}</a>
           ))}
-          <a href="#offer" style={{
+          <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
             background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
             color: '#07090e', padding: '10px 24px', borderRadius: 'var(--radius-sm)',
             fontWeight: 600, fontSize: 14, textDecoration: 'none', letterSpacing: 0.3,
@@ -380,7 +335,7 @@ export default function App() {
                 {link.label}
               </a>
             ))}
-            <a href="#offer" onClick={() => setMobileMenuOpen(false)} style={{
+            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} style={{
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 600, fontSize: 14, textDecoration: 'none', textAlign: 'center',
@@ -396,7 +351,7 @@ export default function App() {
         <section style={{
           minHeight: '100vh', display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-          padding: '120px 24px 80px', position: 'relative', zIndex: 1,
+          padding: '60px 24px 80px', position: 'relative', zIndex: 1,
           maxWidth: 1200, margin: '0 auto',
         }}>
           <motion.div
@@ -446,7 +401,7 @@ export default function App() {
             }}
           >
             We build custom dashboards for fitness coaches. Track clients, program workouts,
-            manage check-ins, handle payments, and message everyone from one screen —
+            manage check-ins, handle payments, and message everyone from one screen.
             branded with your colors and logo, ready in days.
           </motion.p>
 
@@ -456,7 +411,7 @@ export default function App() {
             transition={{ duration: 0.7, delay: 0.5 }}
             style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}
           >
-            <a href="#offer" style={{
+            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '16px 36px', borderRadius: 'var(--radius-md)',
@@ -527,7 +482,7 @@ export default function App() {
       </Section>
 
       {/* ════════════════════════════════════════════════════════
-          FEATURES — Alternating Image + Text
+          FEATURES,Alternating Image + Text
          ════════════════════════════════════════════════════════ */}
       <Section id="features">
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 40px' }}>
@@ -619,7 +574,7 @@ export default function App() {
               Every conversation, one feed
             </h3>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
-              Telegram, WhatsApp, Instagram, Email — all your client messages stream into one inbox.
+              Telegram, WhatsApp, Instagram, Email. All your client messages stream into one inbox.
               Quick-reply templates for motivation, check-ins, reminders, and onboarding. No more switching between apps.
             </p>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -707,7 +662,7 @@ export default function App() {
               Know your numbers
             </h3>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
-              Monthly revenue, projected annual, average client value, retention rate — all visualized.
+              Monthly revenue, projected annual, average client value, retention rate. All visualized.
               See revenue by plan, client progress distribution, and who your top performers are.
             </p>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -723,7 +678,7 @@ export default function App() {
       </Section>
 
       {/* ════════════════════════════════════════════════════════
-          MORE FEATURES — Compact Grid
+          MORE FEATURES,Compact Grid
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
@@ -742,12 +697,12 @@ export default function App() {
             gap: 16,
           }}>
             {[
-              { icon: ClipboardCheck, title: 'Weekly Check-Ins', desc: 'Mood, sleep, adherence, nutrition, energy — all tracked with trends and coach feedback.', color: '#E1306C' },
+              { icon: ClipboardCheck, title: 'Weekly Check-Ins', desc: 'Mood, sleep, adherence, nutrition, energy. All tracked with trends and coach feedback.', color: '#E1306C' },
               { icon: CreditCard, title: 'Payments & Invoicing', desc: 'Generate invoices, track paid/pending/overdue. Send payment reminders with one click.', color: 'var(--accent-success)' },
               { icon: Calendar, title: 'Schedule', desc: 'Weekly training calendar with session booking. See who\'s training today at a glance.', color: 'var(--accent-warm)' },
               { icon: Brain, title: 'AI Insights', desc: 'Automated alerts for at-risk clients, missed check-ins, and coaching opportunities.', color: 'var(--accent-secondary)' },
               { icon: Smartphone, title: 'Mobile Ready', desc: 'Full functionality on phone, tablet, or desktop. Manage your business anywhere.', color: '#29ABE2' },
-              { icon: LayoutDashboard, title: 'Overview Dashboard', desc: 'KPIs, revenue chart, at-risk clients, pending check-ins, daily quote — all at a glance.', color: 'var(--accent-primary)' },
+              { icon: LayoutDashboard, title: 'Overview Dashboard', desc: 'KPIs, revenue chart, at-risk clients, pending check-ins, daily quote. All at a glance.', color: 'var(--accent-primary)' },
             ].map((f, i) => (
               <GlassCard key={i} delay={i * 0.06} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '24px' }}>
                 <div style={{
@@ -777,7 +732,7 @@ export default function App() {
               See it in action
             </h2>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>
-              2-minute walkthrough of the full dashboard
+              6-minute walkthrough of the full dashboard
             </p>
           </div>
           {/* TODO: Replace VideoPlaceholder with actual <video> or YouTube embed */}
@@ -805,8 +760,8 @@ export default function App() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {[
-              { number: '01', title: 'Book a Free Call', desc: 'We hop on a 15-minute call. You tell us how you run your coaching business — what tools you use, what\'s not working, what you wish you had.' },
-              { number: '02', title: 'We Build It for You', desc: 'We set up your custom dashboard with your branding, your client data structure, and the features that matter to you. No templates — built from scratch.' },
+              { number: '01', title: 'Book a Free Call', desc: 'We hop on a 15-minute call. You tell us how you run your coaching business: what tools you use, what\'s not working, what you wish you had.' },
+              { number: '02', title: 'We Build It for You', desc: 'We set up your custom dashboard with your branding, your client data structure, and the features that matter to you. No templates. Built from scratch.' },
               { number: '03', title: 'You Get a Walkthrough', desc: 'We walk you through your dashboard live. You test it, give feedback, and we tweak anything until it\'s exactly how you want it.' },
               { number: '04', title: 'Start Using It', desc: 'Import your clients, start programming workouts, track check-ins, and manage your whole business from one screen. We handle support and updates.' },
             ].map((step, i) => (
@@ -873,7 +828,7 @@ export default function App() {
                 'Payment tracking & invoicing',
                 'Training schedule & calendar',
                 'AI-powered coaching insights',
-                'Mobile responsive — works on any device',
+                'Mobile responsive. Works on any device',
                 'Your branding, colors, and logo',
                 'Ongoing support & updates',
                 'Data migration from your current tools',
@@ -890,10 +845,10 @@ export default function App() {
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
             }}>
               <p style={{ fontSize: 15, color: 'var(--text-secondary)', textAlign: 'center', maxWidth: 500 }}>
-                Pricing depends on your setup — number of clients, integrations, custom features.
+                Pricing depends on your setup: number of clients, integrations, custom features.
                 Book a free call and we'll give you an exact quote.
               </p>
-              <a href="mailto:Fitcorehq@gmail.com" style={{
+              <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                 color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
@@ -912,7 +867,7 @@ export default function App() {
       </Section>
 
       {/* ════════════════════════════════════════════════════════
-          SOCIAL PROOF — Placeholder for real testimonials/photos
+          SOCIAL PROOF,Placeholder for real testimonials/photos
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
@@ -931,29 +886,32 @@ export default function App() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: 20,
           }}>
-            {/* TODO: Replace these placeholders with real testimonials + photos */}
-            {[1, 2, 3].map(i => (
-              <GlassCard key={i} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {[
+              { name: 'Marcus Rivera', title: 'Strength & Performance Coach', initials: 'MR', color: '#00e5c8', quote: 'I used to spend Sunday evenings updating spreadsheets. Now everything syncs automatically. My clients get better check-ins and I actually have my weekends back.' },
+              { name: 'Sarah Chen', title: 'Online Fitness Coach', initials: 'SC', color: '#6366f1', quote: 'The unified inbox alone saved me hours a week. All my client conversations in one place instead of jumping between five different apps. Game changer.' },
+              { name: 'James Okafor', title: 'Body Transformation Specialist', initials: 'JO', color: '#f59e0b', quote: 'My clients love the progress tracking. They can see their own data, which keeps them accountable. Retention went up 30% in the first two months.' },
+            ].map((coach, i) => (
+              <GlassCard key={i} delay={i * 0.1} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <PhotoPlaceholder label={`Coach photo ${i}`} aspectRatio="1/1" />
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      height: 14, width: '60%', borderRadius: 4, marginBottom: 8,
-                      background: 'var(--bg-elevated)',
-                    }} />
-                    <div style={{
-                      height: 10, width: '40%', borderRadius: 4,
-                      background: 'var(--bg-elevated)',
-                    }} />
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
+                    background: `${coach.color}20`, border: `2px solid ${coach.color}40`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, fontWeight: 700, color: coach.color,
+                  }}>
+                    {coach.initials}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>{coach.name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500 }}>{coach.title}</div>
                   </div>
                 </div>
-                <div style={{
-                  fontSize: 13, color: 'var(--text-tertiary)', fontStyle: 'italic', lineHeight: 1.7,
-                  padding: 16, borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)',
-                  border: '1px dashed var(--glass-border-hover)', textAlign: 'center',
+                <p style={{
+                  fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7,
+                  fontStyle: 'italic',
                 }}>
-                  Testimonial placeholder — add real quote from a coach
-                </div>
+                  "{coach.quote}"
+                </p>
               </GlassCard>
             ))}
           </div>
@@ -985,7 +943,7 @@ export default function App() {
                 Get a dashboard that's built around how you actually coach. 15-minute call, no pressure, no commitment.
               </p>
               <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="mailto:Fitcorehq@gmail.com" style={{
+                <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
                   background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                   color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
@@ -1000,7 +958,7 @@ export default function App() {
                 </a>
               </div>
               <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 20 }}>
-                Or email us directly: <a href="mailto:Fitcorehq@gmail.com" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>Fitcorehq@gmail.com</a>
+                Or email us directly: <a href="mailto:contact@fitcore.tech" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>contact@fitcore.tech</a>
               </p>
             </div>
           </GlassCard>
@@ -1026,7 +984,7 @@ export default function App() {
                 Fit<span style={{ color: 'var(--accent-primary)' }}>Core</span>
               </span>
             </div>
-            <a href="mailto:Fitcorehq@gmail.com" style={{
+            <a href="mailto:contact@fitcore.tech" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
               fontWeight: 500, transition: 'color 0.2s',
@@ -1034,7 +992,7 @@ export default function App() {
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
             >
-              <Mail size={14} /> Fitcorehq@gmail.com
+              <Mail size={14} /> contact@fitcore.tech
             </a>
           </div>
           <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>

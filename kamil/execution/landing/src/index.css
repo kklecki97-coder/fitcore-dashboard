@@ -62,6 +62,10 @@ html {
   scroll-behavior: smooth;
 }
 
+#root {
+  zoom: 1.25;
+}
+
 html, body, #root {
   width: 100%;
 }

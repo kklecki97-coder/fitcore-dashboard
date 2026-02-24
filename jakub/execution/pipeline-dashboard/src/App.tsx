@@ -3,7 +3,7 @@ import {
   Search, Users, MessageCircle, Phone, CheckCircle, XCircle,
   RefreshCw, Instagram, ExternalLink, ChevronDown, ChevronUp,
   Target, TrendingUp, ArrowRight, ListChecks, Copy, Send,
-  Heart, MessageSquare, UserPlus, Check, Play, Pause
+  Heart, MessageSquare, UserPlus, Check, Play, Pause, Lock
 } from 'lucide-react'
 
 // ─── Supabase Config ───
@@ -11,8 +11,7 @@ const SUPABASE_URL = 'https://vjimeeiovrqjitoxmzeb.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_51_z3oNgQx0IYRwmJhutDQ_YNoq1_G0'
 
 // ─── Constants ───
-const DAILY_ENGAGE_LIMIT = 40
-const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000
+const DAILY_ENGAGE_LIMIT = 20
 
 // ─── Types ───
 interface Lead {
@@ -1424,13 +1423,191 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
   )
 }
 
+// ─── PIN Gate ───
+
+const CORRECT_PIN = '2635'
+
+function PinGate({ onUnlock }: { onUnlock: () => void }) {
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState(false)
+  const [shake, setShake] = useState(false)
+
+  const handleSubmit = () => {
+    if (pin === CORRECT_PIN) {
+      sessionStorage.setItem('pipeline_unlocked', '1')
+      onUnlock()
+    } else {
+      setError(true)
+      setShake(true)
+      setTimeout(() => setShake(false), 500)
+      setPin('')
+    }
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <div style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '48px 40px',
+        backdropFilter: 'blur(20px)',
+        boxShadow: 'var(--shadow-card)',
+        textAlign: 'center',
+        width: 340,
+        animation: shake ? 'shake 0.4s ease' : undefined,
+      }}>
+        <div style={{
+          background: 'var(--accent-primary-dim)',
+          borderRadius: 'var(--radius-md)',
+          width: 56,
+          height: 56,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 20px',
+        }}>
+          <Lock size={24} color="var(--accent-primary)" />
+        </div>
+
+        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Outreach Pipeline</div>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 28 }}>Enter PIN to continue</div>
+
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 24 }}>
+          {[0, 1, 2, 3].map(i => (
+            <div
+              key={i}
+              style={{
+                width: 48,
+                height: 56,
+                background: 'var(--bg-elevated)',
+                border: `1px solid ${error ? 'var(--accent-danger)' : pin.length === i ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 24,
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                transition: 'border-color 0.2s',
+              }}
+            >
+              {pin[i] ? '\u2022' : ''}
+            </div>
+          ))}
+        </div>
+
+        <input
+          type="tel"
+          maxLength={4}
+          value={pin}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, '').slice(0, 4)
+            setPin(val)
+            setError(false)
+          }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && pin.length === 4) handleSubmit() }}
+          autoFocus
+          style={{
+            position: 'absolute',
+            opacity: 0,
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* Numpad */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, maxWidth: 240, margin: '0 auto' }}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, null, 0, 'del'].map((key, i) => {
+            if (key === null) return <div key={i} />
+            return (
+              <button
+                key={i}
+                onClick={() => {
+                  if (key === 'del') {
+                    setPin(p => p.slice(0, -1))
+                    setError(false)
+                  } else {
+                    const next = pin + key
+                    if (next.length <= 4) {
+                      setPin(next)
+                      setError(false)
+                      if (next.length === 4) {
+                        setTimeout(() => {
+                          if (next === CORRECT_PIN) {
+                            sessionStorage.setItem('pipeline_unlocked', '1')
+                            onUnlock()
+                          } else {
+                            setError(true)
+                            setShake(true)
+                            setTimeout(() => setShake(false), 500)
+                            setPin('')
+                          }
+                        }, 150)
+                      }
+                    }
+                  }
+                }}
+                style={{
+                  height: 52,
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text-primary)',
+                  fontSize: key === 'del' ? 14 : 20,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-card-hover)'
+                  e.currentTarget.style.borderColor = 'var(--glass-border-hover)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-elevated)'
+                  e.currentTarget.style.borderColor = 'var(--glass-border)'
+                }}
+              >
+                {key === 'del' ? '\u2190' : key}
+              </button>
+            )
+          })}
+        </div>
+
+        {error && (
+          <div style={{ color: 'var(--accent-danger)', fontSize: 13, marginTop: 16, fontWeight: 500 }}>
+            Wrong PIN. Try again.
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-10px); }
+          40% { transform: translateX(10px); }
+          60% { transform: translateX(-6px); }
+          80% { transform: translateX(6px); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 // ─── Main App ───
 
-export default function App() {
+function Dashboard() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>('tasks')
+  const [engageBatchIds, setEngageBatchIds] = useState<number[] | null>(null)
   const [filterStage, setFilterStage] = useState<PipelineStage | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'score' | 'followers' | 'recent'>('score')
@@ -1453,6 +1630,16 @@ export default function App() {
     fetchLeads()
   }, [fetchLeads])
 
+  // Snapshot the engage batch once on first load — no auto-refilling
+  useEffect(() => {
+    if (engageBatchIds !== null || leads.length === 0) return
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    const alreadyEngagedToday = leads.filter(l => l.engaged_at && new Date(l.engaged_at).getTime() >= todayStart.getTime()).length
+    const slots = Math.max(0, DAILY_ENGAGE_LIMIT - alreadyEngagedToday)
+    const ids = leads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, slots).map(l => l.id)
+    setEngageBatchIds(ids)
+  }, [leads, engageBatchIds])
+
   const handleStatusChange = async (id: number, newStatus: PipelineStage) => {
     const updates: Record<string, string | null> = { status: newStatus }
     const now = new Date().toISOString()
@@ -1466,6 +1653,7 @@ export default function App() {
         body: JSON.stringify(updates),
       })
       setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } as Lead : l))
+      fetchLeads()
     } catch (err) {
       console.error('Failed to update status:', err)
     }
@@ -1554,23 +1742,22 @@ export default function App() {
     return days
   }, [leads])
 
-  // Today's engage batch: top N "new" leads by score, capped by daily limit
-  const remainingEngageSlots = Math.max(0, DAILY_ENGAGE_LIMIT - todayEngaged)
+  // Today's engage batch: snapshotted on load, shrinks as leads are marked dead/engaged
   const engageBatch = useMemo(() =>
-    leads
-      .filter(l => l.status === 'new')
-      .sort((a, b) => (b.score || 0) - (a.score || 0))
-      .slice(0, remainingEngageSlots),
-    [leads, remainingEngageSlots]
+    engageBatchIds === null
+      ? []
+      : leads.filter(l => engageBatchIds.includes(l.id) && l.status === 'new'),
+    [leads, engageBatchIds]
   )
 
   // DM-ready batch: leads with status=engaged (no wait time for demo)
   const dmBatch = useMemo(() => {
+    const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
     return leads
       .filter(l => {
         if (l.status !== 'engaged') return false
         if (!l.engaged_at) return false
-        return true
+        return new Date(l.engaged_at).getTime() < todayMidnight.getTime()
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [leads])
@@ -1940,4 +2127,14 @@ export default function App() {
       `}</style>
     </div>
   )
+}
+
+export default function App() {
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('pipeline_unlocked') === '1')
+
+  if (!unlocked) {
+    return <PinGate onUnlock={() => setUnlocked(true)} />
+  }
+
+  return <Dashboard />
 }
