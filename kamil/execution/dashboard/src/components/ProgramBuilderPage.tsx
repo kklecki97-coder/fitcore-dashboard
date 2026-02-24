@@ -210,13 +210,10 @@ export default function ProgramBuilderPage({
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      {/* Back + Save Bar */}
+      {/* Back Bar */}
       <div style={styles.topBar}>
         <motion.button onClick={onBack} style={styles.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
           <ArrowLeft size={16} /> Back to Programs
-        </motion.button>
-        <motion.button onClick={handleSave} style={styles.saveBtn} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-          <Save size={15} /> Save Program
         </motion.button>
       </div>
 
@@ -698,21 +695,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
-  },
-  saveBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '9px 18px',
-    borderRadius: 'var(--radius-sm)',
-    background: 'var(--accent-primary)',
-    border: 'none',
-    color: 'var(--text-on-accent)',
-    fontSize: '18px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    boxShadow: '0 0 12px var(--accent-primary-dim)',
   },
   metaCard: {
     display: 'flex',

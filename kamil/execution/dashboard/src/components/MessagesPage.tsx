@@ -240,7 +240,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
       {(!isMobile || !showChat) && (
         <GlassCard delay={0} style={{ ...styles.sidebar, width: isMobile ? '100%' : '340px' }}>
           <div style={styles.sidebarHeader}>
-            <h3 style={styles.sidebarTitle}>Inbox</h3>
+            <h3 style={styles.sidebarTitle}>Conversations</h3>
             <span style={styles.convCount}>{filteredConversations.length}</span>
           </div>
 
@@ -608,11 +608,11 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '12px',
   },
   sidebarTitle: {
-    fontSize: '22px',
+    fontSize: '16px',
     fontWeight: 600,
   },
   convCount: {
-    fontSize: '17px',
+    fontSize: '12px',
     color: 'var(--text-secondary)',
     background: 'var(--bg-subtle-hover)',
     padding: '2px 8px',
@@ -629,7 +629,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '4px 10px',
     borderRadius: '16px',
     border: '1px solid transparent',
-    fontSize: '14px',
+    fontSize: '12px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -654,7 +654,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '18px',
+    fontSize: '13px',
     fontFamily: 'var(--font-display)',
     flex: 1,
   },
@@ -680,8 +680,8 @@ const styles: Record<string, React.CSSProperties> = {
   convItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    padding: '12px',
+    gap: '10px',
+    padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid transparent',
     cursor: 'pointer',
@@ -692,13 +692,13 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'background 0.15s',
   },
   convAvatar: {
-    width: '40px',
-    height: '40px',
+    width: '36px',
+    height: '36px',
     borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 700,
     color: 'var(--text-on-accent)',
     flexShrink: 0,
@@ -707,8 +707,8 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     bottom: '-2px',
     right: '-2px',
-    width: '18px',
-    height: '18px',
+    width: '16px',
+    height: '16px',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
@@ -725,19 +725,19 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
   },
   convName: {
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
   },
   channelBadge: {
-    fontSize: '13px',
+    fontSize: '10px',
     fontWeight: 700,
-    padding: '1px 6px',
+    padding: '1px 5px',
     borderRadius: '8px',
     letterSpacing: '0.3px',
     textTransform: 'uppercase' as const,
   },
   convPreview: {
-    fontSize: '17px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -752,13 +752,13 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   convTime: {
-    fontSize: '15px',
+    fontSize: '12px',
     color: 'var(--text-tertiary)',
   },
   unreadBadge: {
     background: 'var(--accent-primary)',
     color: 'var(--text-on-accent)',
-    fontSize: '14px',
+    fontSize: '11px',
     fontWeight: 700,
     width: '18px',
     height: '18px',
