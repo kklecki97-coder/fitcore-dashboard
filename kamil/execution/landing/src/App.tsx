@@ -188,40 +188,19 @@ function ScreenshotCarousel() {
   );
 }
 
-// ── Video Placeholder ──
+// ── Video Embed (Loom) ──
 function VideoPlaceholder() {
   return (
     <div style={{
       position: 'relative', aspectRatio: '16/9', borderRadius: 'var(--radius-lg)',
       overflow: 'hidden', border: '1px solid var(--glass-border)',
-      background: 'linear-gradient(135deg, rgba(14, 18, 27, 0.95), rgba(20, 25, 40, 0.95))',
-      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
-      {/* Thumbnail,replace with actual video thumbnail */}
-      <img
-        src="/1-overview.png"
-        alt="Dashboard preview"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }}
+      <iframe
+        src="https://www.loom.com/embed/26735e972f624b0bab6222c1a2c3dd66"
+        frameBorder="0"
+        allowFullScreen
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
-      {/* Play button */}
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        style={{
-          position: 'relative', zIndex: 2, width: 80, height: 80, borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 40px var(--accent-primary-glow), 0 0 80px rgba(0, 229, 200, 0.15)',
-        }}
-      >
-        <Play size={32} fill="#07090e" style={{ color: '#07090e', marginLeft: 4 }} />
-      </motion.div>
-      <div style={{
-        position: 'absolute', bottom: 24, left: 0, right: 0, textAlign: 'center',
-        zIndex: 2, fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500,
-      }}>
-        {/* TODO: Replace with actual demo video (2-3 min walkthrough) */}
-        Watch a 2-minute walkthrough
-      </div>
     </div>
   );
 }
