@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2, Circle, Clock, Plus,
   ChevronLeft, ChevronRight, Dumbbell, X,
-  XCircle, Timer,
+  XCircle,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { scheduleToday, getInitials, getAvatarColor } from '../data';
@@ -26,12 +26,6 @@ function getWeekStart(date: Date): Date {
 function formatFullDate(date: Date): string {
   const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
   return `${dayName}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-}
-
-/** Convert "HH:MM" to minutes since midnight */
-function timeToMinutes(t: string): number {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
 }
 
 interface SchedulePageProps {
@@ -63,13 +57,6 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
   const [addAtTime, setAddAtTime] = useState<string | null>(null);
   const [newSession, setNewSession] = useState({ client: '', type: '', time: '09:00', duration: 60 });
 
-  // Live clock for the "now" indicator — updates every minute
-  const [now, setNow] = useState(new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(id);
-  }, []);
-
   const todayKey = today.toISOString().split('T')[0];
 
   // Compute selected date
@@ -93,9 +80,6 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
   const weekTotal = weekSessions.length;
   const weekCompleted = weekSessions.filter(s => s.status === 'completed').length;
   const weekUpcoming = weekSessions.filter(s => s.status === 'upcoming').length;
-
-  // "Now" indicator — determine where the current time falls relative to sessions
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   const prevWeek = () => {
     const d = new Date(weekStart);
@@ -141,15 +125,6 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
     onSessionsChange({ ...sessionsByDate, [dateKey]: updated });
   };
 
-  const formatDuration = (mins: number) => {
-    if (mins >= 60) {
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      return m > 0 ? `${h}h ${m}m` : `${h}h`;
-    }
-    return `${mins}m`;
-  };
-
   const formatTimeLabel = (slot: string) => {
     const [hStr, mStr] = slot.split(':');
     const h = parseInt(hStr);
@@ -157,14 +132,6 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
     if (h > 12) return `${h - 12}:${m} PM`;
     if (h === 12) return `12:${m} PM`;
     return `${h}:${m} AM`;
-  };
-
-  const nowTimeLabel = () => {
-    const h = now.getHours();
-    const m = now.getMinutes();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hr = h > 12 ? h - 12 : h === 0 ? 12 : h;
-    return `${hr}:${m.toString().padStart(2, '0')} ${ampm}`;
   };
 
   // Get session card background based on status
@@ -194,17 +161,6 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
       background: 'var(--bg-elevated)',
     };
   };
-
-  // Determine where the "now" indicator should appear (between which sessions)
-  const getNowInsertIndex = (): number => {
-    if (!isSelectedToday) return -1;
-    for (let i = 0; i < displaySessions.length; i++) {
-      const sessionMin = timeToMinutes(displaySessions[i].time);
-      if (nowMinutes < sessionMin) return i;
-    }
-    return displaySessions.length; // after all sessions
-  };
-  const nowInsertIndex = getNowInsertIndex();
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
@@ -274,122 +230,141 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
             </button>
           </div>
 
-          {displaySessions.length === 0 ? (
-            <div style={styles.emptyDay}>
-              <p style={styles.emptyText}>No sessions scheduled</p>
-              <button style={styles.addSessionBtn} onClick={() => setShowAddModal(true)}>
-                <Plus size={14} />
-                Add Session
-              </button>
-            </div>
-          ) : (
-            <div style={styles.timeline}>
-              {displaySessions.map((session, i) => {
-                const cardStyle = getSessionCardStyle(session.status);
-                const showNowBefore = nowInsertIndex === i;
-                const showNowAfter = i === displaySessions.length - 1 && nowInsertIndex === displaySessions.length;
+          {/* Vertical Time Grid */}
+          {(() => {
+            // Build hourly slots from 6 AM to 7 PM
+            const hours: number[] = [];
+            for (let h = 6; h <= 19; h++) hours.push(h);
 
-                return (
-                  <div key={`session-${session.time}-${i}`}>
-                    {/* NOW indicator — between sessions */}
-                    {showNowBefore && (
-                      <div style={styles.nowIndicator}>
-                        <div style={styles.nowDot} />
-                        <div style={styles.nowLine} />
-                        <div style={styles.nowLabel}>{nowTimeLabel()}</div>
+            // Map sessions to their hour
+            const sessionsByHour: Record<number, typeof displaySessions> = {};
+            displaySessions.forEach(s => {
+              const h = parseInt(s.time.split(':')[0]);
+              if (!sessionsByHour[h]) sessionsByHour[h] = [];
+              sessionsByHour[h].push(s);
+            });
+
+            return (
+              <div style={styles.timeGrid}>
+                {hours.map((hour, hi) => {
+                  const hourSessions = sessionsByHour[hour] || [];
+                  const hasSession = hourSessions.length > 0;
+                  const label = hour === 0 ? '12 AM'
+                    : hour < 12 ? `${hour} AM`
+                    : hour === 12 ? '12 PM'
+                    : `${hour - 12} PM`;
+                  const isLast = hi === hours.length - 1;
+
+                  // Dot color for this hour slot
+                  const getDotColor = () => {
+                    if (!hasSession) return 'var(--text-tertiary)';
+                    const s = hourSessions[0];
+                    if (s.status === 'completed') return 'var(--accent-success)';
+                    if (s.status === 'current') return 'var(--accent-primary)';
+                    return 'var(--text-tertiary)';
+                  };
+                  const dotColor = getDotColor();
+                  const dotGlow = hasSession && (hourSessions[0].status === 'completed' || hourSessions[0].status === 'current');
+
+                  return (
+                    <div key={hour} style={styles.timeRow}>
+                      {/* Time label */}
+                      <div style={styles.timeLabel}>{label}</div>
+
+                      {/* Track: dot + line */}
+                      <div style={styles.trackColumn}>
+                        <div style={{
+                          ...styles.trackDot,
+                          width: hasSession ? '10px' : '6px',
+                          height: hasSession ? '10px' : '6px',
+                          background: dotColor,
+                          boxShadow: dotGlow ? `0 0 8px ${dotColor}` : 'none',
+                        }} />
+                        {!isLast && <div style={styles.trackLine} />}
                       </div>
-                    )}
 
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.08 + i * 0.04 }}
-                    >
-                      <div style={cardStyle}>
-                        <div style={styles.sessionTop}>
-                          <div style={styles.sessionInfo}>
-                            <div style={{
-                              ...styles.sessionAvatar,
-                              background: getAvatarColor(
-                                clients.find(c => c.name === session.client)?.id || 'c1'
-                              ),
-                            }}>
-                              {getInitials(session.client)}
-                            </div>
-                            <div>
-                              <div
-                                style={styles.sessionClientLink}
-                                onClick={() => {
-                                  const c = clients.find(cl => cl.name === session.client);
-                                  if (c) onViewClient(c.id);
-                                }}
-                              >
-                                {session.client}
+                      {/* Session card or empty space */}
+                      <div style={styles.timeSlotContent}>
+                        {hourSessions.map((session, si) => {
+                          const cardStyle = getSessionCardStyle(session.status);
+                          return (
+                            <motion.div
+                              key={`${hour}-${si}`}
+                              initial={{ opacity: 0, x: -12 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.06 + hi * 0.03 }}
+                            >
+                              <div style={cardStyle}>
+                                <div style={styles.sessionTop}>
+                                  <div style={styles.sessionInfo}>
+                                    <div style={{
+                                      ...styles.sessionAvatar,
+                                      background: getAvatarColor(
+                                        clients.find(c => c.name === session.client)?.id || 'c1'
+                                      ),
+                                    }}>
+                                      {getInitials(session.client)}
+                                    </div>
+                                    <div>
+                                      <div
+                                        style={styles.sessionClientLink}
+                                        onClick={() => {
+                                          const c = clients.find(cl => cl.name === session.client);
+                                          if (c) onViewClient(c.id);
+                                        }}
+                                      >
+                                        {session.client}
+                                      </div>
+                                      <div style={styles.sessionMeta}>
+                                        <span style={styles.sessionType}>
+                                          <Dumbbell size={12} />
+                                          {session.type}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div style={styles.sessionActions}>
+                                    {session.status === 'completed' && <CheckCircle2 size={18} color="var(--accent-success)" />}
+                                    {session.status === 'current' && (
+                                      <span style={styles.liveBadge}>
+                                        <span style={styles.livePulse} />
+                                        IN SESSION
+                                      </span>
+                                    )}
+                                    {(session.status === 'upcoming' || session.status === 'current') && (
+                                      <>
+                                        <button
+                                          style={styles.sessionActionBtn}
+                                          onClick={() => handleMarkCompleted(selectedKey, session.time)}
+                                          title="Mark completed"
+                                        >
+                                          <CheckCircle2 size={15} color="var(--accent-success)" />
+                                        </button>
+                                        <button
+                                          style={styles.sessionActionBtn}
+                                          onClick={() => handleCancelSession(selectedKey, session.time)}
+                                          title="Cancel session"
+                                        >
+                                          <XCircle size={15} color="var(--accent-danger)" />
+                                        </button>
+                                      </>
+                                    )}
+                                    {session.status === 'upcoming' && !isMobile && (
+                                      <Circle size={16} color="var(--text-tertiary)" />
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div style={styles.sessionMeta}>
-                                <span style={styles.sessionType}>
-                                  <Dumbbell size={12} />
-                                  {session.type}
-                                </span>
-                                <span style={styles.sessionTime}>
-                                  {formatTimeLabel(session.time)}
-                                </span>
-                                {session.duration && (
-                                  <span style={styles.sessionDuration}>
-                                    <Timer size={11} />
-                                    {formatDuration(session.duration)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div style={styles.sessionActions}>
-                            {session.status === 'completed' && <CheckCircle2 size={18} color="var(--accent-success)" />}
-                            {session.status === 'current' && (
-                              <span style={styles.liveBadge}>
-                                <span style={styles.livePulse} />
-                                IN SESSION
-                              </span>
-                            )}
-                            {(session.status === 'upcoming' || session.status === 'current') && (
-                              <>
-                                <button
-                                  style={styles.sessionActionBtn}
-                                  onClick={() => handleMarkCompleted(selectedKey, session.time)}
-                                  title="Mark completed"
-                                >
-                                  <CheckCircle2 size={15} color="var(--accent-success)" />
-                                </button>
-                                <button
-                                  style={styles.sessionActionBtn}
-                                  onClick={() => handleCancelSession(selectedKey, session.time)}
-                                  title="Cancel session"
-                                >
-                                  <XCircle size={15} color="var(--accent-danger)" />
-                                </button>
-                              </>
-                            )}
-                            {session.status === 'upcoming' && !isMobile && (
-                              <Circle size={16} color="var(--text-tertiary)" />
-                            )}
-                          </div>
-                        </div>
+                            </motion.div>
+                          );
+                        })}
                       </div>
-                    </motion.div>
-
-                    {/* NOW indicator — after the last session */}
-                    {showNowAfter && (
-                      <div style={styles.nowIndicator}>
-                        <div style={styles.nowDot} />
-                        <div style={styles.nowLine} />
-                        <div style={styles.nowLabel}>{nowTimeLabel()}</div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </GlassCard>
 
         {/* Sidebar Stats */}
@@ -421,7 +396,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                 </div>
               </div>
               <div style={styles.summaryItem}>
-                <div style={{ ...styles.summaryIcon, background: 'rgba(255,255,255,0.05)' }}>
+                <div style={{ ...styles.summaryIcon, background: 'var(--bg-subtle-hover)' }}>
                   <Circle size={16} color="var(--text-tertiary)" />
                 </div>
                 <div>
@@ -465,33 +440,44 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
           <GlassCard delay={0.22}>
             <h3 style={styles.sectionTitle}>Upcoming Check-ins</h3>
             <div style={styles.checkinList}>
-              {clients
-                .filter(c => c.nextCheckIn !== '—')
-                .sort((a, b) => a.nextCheckIn.localeCompare(b.nextCheckIn))
-                .slice(0, 5)
-                .map((client, i) => (
-                  <motion.div
-                    key={client.id}
-                    style={styles.checkinItem}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.25 + i * 0.04 }}
-                    onClick={() => onViewClient(client.id)}
-                  >
-                    <div style={{ ...styles.checkinAvatar, background: getAvatarColor(client.id) }}>
-                      {getInitials(client.name)}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={styles.checkinNameLink}>{client.name}</div>
-                      <div style={styles.checkinDate}>{client.nextCheckIn}</div>
-                    </div>
-                    <div style={styles.checkinDays}>
-                      {Math.max(0, Math.ceil((new Date(client.nextCheckIn).getTime() - Date.now()) / 86400000))}d
-                    </div>
-                  </motion.div>
-                ))}
+              {(() => {
+                const nowMs = Date.now();
+                const fiveDaysMs = 5 * 86400000;
+                return clients
+                  .filter(c => {
+                    if (!c.nextCheckIn || c.nextCheckIn === '—') return false;
+                    const diff = new Date(c.nextCheckIn).getTime() - nowMs;
+                    return diff > 0 && diff <= fiveDaysMs;
+                  })
+                  .sort((a, b) => a.nextCheckIn.localeCompare(b.nextCheckIn))
+                  .map((client, i) => {
+                    const daysLeft = Math.ceil((new Date(client.nextCheckIn).getTime() - nowMs) / 86400000);
+                    return (
+                      <motion.div
+                        key={client.id}
+                        style={styles.checkinItem}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 + i * 0.04 }}
+                        onClick={() => onViewClient(client.id)}
+                      >
+                        <div style={{ ...styles.checkinAvatar, background: getAvatarColor(client.id) }}>
+                          {getInitials(client.name)}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={styles.checkinNameLink}>{client.name}</div>
+                          <div style={styles.checkinDate}>{new Date(client.nextCheckIn + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                        </div>
+                        <div style={styles.checkinDays}>
+                          {daysLeft === 1 ? 'Tomorrow' : `${daysLeft}d`}
+                        </div>
+                      </motion.div>
+                    );
+                  });
+              })()}
             </div>
           </GlassCard>
+
         </div>
       </div>
 
@@ -692,7 +678,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '11px',
     fontWeight: 700,
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     borderRadius: '10px',
     padding: '0 5px',
     minWidth: '16px',
@@ -740,37 +726,55 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
-  timeline: {
+  // ── Vertical Time Grid ──
+  timeGrid: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
   },
-  // ── Now indicator ──
-  nowIndicator: {
+  timeRow: {
     display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '6px 0',
+    alignItems: 'flex-start',
+    minHeight: '56px',
   },
-  nowLabel: {
-    fontSize: '12px',
-    fontWeight: 700,
-    color: '#ef4444',
+  timeLabel: {
+    width: '60px',
+    flexShrink: 0,
+    fontSize: '13px',
+    fontWeight: 500,
+    color: 'var(--text-tertiary)',
     fontFamily: 'var(--font-mono)',
-    whiteSpace: 'nowrap',
+    paddingTop: '2px',
+    textAlign: 'right',
+    paddingRight: '14px',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
   },
-  nowDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: '#ef4444',
-    boxShadow: '0 0 8px rgba(239,68,68,0.6)',
+  trackColumn: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '20px',
     flexShrink: 0,
   },
-  nowLine: {
+  trackDot: {
+    borderRadius: '50%',
+    flexShrink: 0,
+    marginTop: '5px',
+  },
+  trackLine: {
+    width: '1px',
     flex: 1,
-    height: '2px',
-    background: 'linear-gradient(to right, #ef4444, transparent)',
+    minHeight: '40px',
+    background: 'var(--bg-subtle-hover)',
+    marginTop: '4px',
+  },
+  timeSlotContent: {
+    flex: 1,
+    paddingLeft: '14px',
+    paddingBottom: '8px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
   },
   // ── Session cards ──
   sessionCard: {
@@ -803,7 +807,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '15px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
   },
   sessionClientLink: {
     fontSize: '18px',
@@ -891,7 +895,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
     padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
+    background: 'var(--bg-subtle)',
   },
   summaryIcon: {
     width: '36px',
@@ -940,7 +944,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     height: '6px',
     borderRadius: '3px',
-    background: 'rgba(255,255,255,0.06)',
+    background: 'var(--bg-subtle-hover)',
     overflow: 'hidden',
   },
   weekProgressFill: {
@@ -981,7 +985,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '14px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
   },
   checkinNameLink: {
     fontSize: '18px',
@@ -1013,7 +1017,7 @@ const styles: Record<string, React.CSSProperties> = {
   modalOverlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.6)',
+    background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
     display: 'flex',
@@ -1098,7 +1102,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     border: 'none',
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',

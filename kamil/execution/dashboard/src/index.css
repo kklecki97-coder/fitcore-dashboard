@@ -49,6 +49,16 @@
   --radius-lg: 16px;
   --radius-xl: 20px;
 
+  /* ── Subtle Backgrounds & Borders (theme-aware) ── */
+  --bg-subtle: rgba(255, 255, 255, 0.03);
+  --bg-subtle-hover: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-subtle-strong: rgba(255, 255, 255, 0.08);
+  --border-dashed: rgba(255, 255, 255, 0.12);
+  --text-on-accent: #07090e;
+  --overlay-bg: rgba(0, 0, 0, 0.6);
+  --score-bar-track: rgba(255, 255, 255, 0.06);
+
   /* ── Shadows ── */
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--glass-border);
   --shadow-glow: 0 0 40px var(--accent-primary-dim);
@@ -57,34 +67,59 @@
 
 /* ── Light Theme Override ── */
 [data-theme="light"] {
-  --bg-primary: #f5f6f8;
+  /* ── Core surfaces ── */
+  --bg-primary: #f0f2f5;
   --bg-secondary: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --bg-card-hover: rgba(245, 247, 250, 0.95);
-  --bg-elevated: rgba(240, 242, 246, 0.85);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f7f8fa;
+  --bg-elevated: #f3f4f7;
 
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-border-hover: rgba(0, 0, 0, 0.14);
+  /* ── Borders: solid hex for real separation ── */
+  --glass-border: #e0e3ea;
+  --glass-border-hover: #c8cdd6;
+  --glass-blur: 0px;
 
-  --accent-primary: #0bbfa0;
-  --accent-primary-dim: rgba(11, 191, 160, 0.12);
-  --accent-primary-glow: rgba(11, 191, 160, 0.25);
+  /* ── Accents: slightly deeper for legibility on white ── */
+  --accent-primary: #099e84;
+  --accent-primary-dim: rgba(9, 158, 132, 0.10);
+  --accent-primary-glow: rgba(9, 158, 132, 0.18);
+  --accent-secondary: #5558e6;
+  --accent-secondary-dim: rgba(85, 88, 230, 0.10);
+  --accent-warm: #c2700a;
+  --accent-warm-dim: rgba(194, 112, 10, 0.10);
+  --accent-danger: #dc2626;
+  --accent-danger-dim: rgba(220, 38, 38, 0.08);
+  --accent-success: #16a34a;
+  --accent-success-dim: rgba(22, 163, 74, 0.08);
 
-  --text-primary: #1a1d24;
-  --text-secondary: #5f6780;
-  --text-tertiary: #9ba3b8;
+  /* ── Text: higher contrast ── */
+  --text-primary: #111318;
+  --text-secondary: #454d60;
+  --text-tertiary: #7c8496;
 
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--glass-border);
-  --shadow-glow: 0 0 30px var(--accent-primary-dim);
-  --shadow-elevated: 0 4px 20px rgba(0, 0, 0, 0.08);
+  /* ── Subtle fills: solid colors instead of transparent ── */
+  --bg-subtle: #f5f6f9;
+  --bg-subtle-hover: #eceef2;
+  --border-subtle: #e4e7ed;
+  --border-subtle-strong: #d5d9e2;
+  --border-dashed: #bfc4cf;
+  --text-on-accent: #ffffff;
+  --overlay-bg: rgba(17, 19, 24, 0.48);
+  --score-bar-track: #e4e7ed;
+
+  /* ── Shadows: subtle lift for cards ── */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px #e0e3ea;
+  --shadow-glow: none;
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.10), 0 0 0 1px #e0e3ea;
 }
 
+/* ── Light: disable dark-mode grain & glow ── */
 [data-theme="light"] body::before {
   opacity: 0;
 }
 
 [data-theme="light"] body::after {
-  background: radial-gradient(circle, rgba(11, 191, 160, 0.06) 0%, transparent 70%);
+  display: none;
 }
 
 * {
@@ -134,7 +169,16 @@ select option {
 }
 
 [data-theme="light"] .dropdown-menu button:hover {
-  background: rgba(0, 0, 0, 0.04);
+  background: #f0f2f5;
+}
+
+/* ── Light: scrollbar ── */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c8cdd6;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #a8aeb8;
 }
 
 /* ── Scrollbar ── */
@@ -215,7 +259,7 @@ body::after {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--overlay-bg);
     backdrop-filter: blur(4px);
     z-index: 40;
     animation: fade-in 0.2s ease;

@@ -359,7 +359,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '10px',
     padding: '10px 14px',
     borderRadius: 'var(--radius-md)',
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
     transition: 'border-color 0.2s',
   },
@@ -374,7 +374,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
   },
   textarea: {
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-md)',
     padding: '10px 14px',
@@ -412,7 +412,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
   },
   planActive: {
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
   },
   metricRow: {
     display: 'flex',
@@ -472,7 +472,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-md)',
     background: 'var(--accent-primary)',
     border: 'none',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',

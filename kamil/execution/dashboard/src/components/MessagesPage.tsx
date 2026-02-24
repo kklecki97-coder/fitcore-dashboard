@@ -311,7 +311,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    whileHover={{ background: isSelected ? 'var(--accent-primary-dim)' : 'rgba(255,255,255,0.03)' }}
+                    whileHover={{ background: isSelected ? 'var(--accent-primary-dim)' : 'var(--bg-subtle)' }}
                   >
                     <div style={{ position: 'relative' }}>
                       <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
@@ -614,7 +614,7 @@ const styles: Record<string, React.CSSProperties> = {
   convCount: {
     fontSize: '17px',
     color: 'var(--text-secondary)',
-    background: 'rgba(255,255,255,0.05)',
+    background: 'var(--bg-subtle-hover)',
     padding: '2px 8px',
     borderRadius: '10px',
   },
@@ -646,7 +646,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '8px 12px',
     margin: '0 16px 12px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
   },
   searchInput: {
@@ -700,7 +700,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '18px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     flexShrink: 0,
   },
   channelDot: {
@@ -757,7 +757,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   unreadBadge: {
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '14px',
     fontWeight: 700,
     width: '18px',
@@ -795,7 +795,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '20px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
   },
   chatName: {
     fontSize: '21px',
@@ -825,7 +825,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
-    background: 'rgba(255,255,255,0.05)',
+    background: 'var(--bg-subtle-hover)',
     letterSpacing: '0.5px',
   },
   // ── Messages Area ──
@@ -873,7 +873,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '15px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     flexShrink: 0,
     marginTop: '4px',
   },
@@ -1023,7 +1023,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '5px 12px',
     borderRadius: '20px',
     border: '1px solid var(--glass-border)',
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--bg-subtle)',
     color: 'var(--text-secondary)',
     fontSize: '14px',
     fontFamily: 'var(--font-display)',
@@ -1056,7 +1056,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '10px',
     background: 'var(--accent-primary)',
     border: 'none',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -1109,7 +1109,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '36px',
     height: '36px',
     borderRadius: '10px',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
   },
 };

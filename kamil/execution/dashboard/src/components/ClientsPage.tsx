@@ -84,7 +84,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
     const colors: Record<string, { color: string; bg: string }> = {
       Elite: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
       Premium: { color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
-      Basic: { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)' },
+      Basic: { color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
     };
     return colors[plan];
   };
@@ -397,7 +397,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                           onClick={() => setEditModal({ ...editModal, plan: p })}
                           style={{
                             ...styles.modalPlanOption,
-                            ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'rgba(255,255,255,0.04)' } : {}),
+                            ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'var(--bg-subtle)' } : {}),
                           }}
                         >
                           <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
@@ -420,7 +420,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                           onClick={() => setEditModal({ ...editModal, status: s })}
                           style={{
                             ...styles.modalPlanOption,
-                            ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'rgba(255,255,255,0.04)' } : {}),
+                            ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'var(--bg-subtle)' } : {}),
                           }}
                         >
                           {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -556,7 +556,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-md)',
     background: 'var(--accent-primary)',
     border: 'none',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
@@ -601,7 +601,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '20px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
   },
   clientName: {
     fontSize: '21px',
@@ -660,7 +660,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     height: '4px',
     borderRadius: '2px',
-    background: 'rgba(255,255,255,0.06)',
+    background: 'var(--bg-subtle-hover)',
     overflow: 'hidden',
     marginBottom: '12px',
   },
@@ -685,7 +685,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     padding: '4px',
     minWidth: '160px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    boxShadow: 'var(--shadow-elevated)',
     zIndex: 10,
   },
   menuItem: {
@@ -725,7 +725,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
     width: '220px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    boxShadow: 'var(--shadow-elevated)',
     pointerEvents: 'none',
     opacity: 0,
     transition: 'opacity 0.15s',
@@ -742,7 +742,7 @@ const styles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.6)',
+    background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
   },
@@ -757,7 +757,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '420px',
     maxWidth: '90vw',
     zIndex: 101,
-    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    boxShadow: 'var(--shadow-elevated)',
     overflow: 'hidden',
   },
   modalHeader: {
@@ -839,7 +839,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     background: 'var(--accent-primary)',
     border: 'none',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',

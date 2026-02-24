@@ -175,8 +175,8 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   ];
 
   const tooltipStyle = {
-    background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
+    borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
     fontSize: '18px',
   };
 
@@ -433,7 +433,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                 <span style={{
                   fontSize: '15px', fontWeight: 600, padding: '2px 8px', borderRadius: '12px',
                   color: client.plan === 'Elite' ? 'var(--accent-warm)' : client.plan === 'Premium' ? 'var(--accent-secondary)' : 'var(--text-secondary)',
-                  background: client.plan === 'Elite' ? 'var(--accent-warm-dim)' : client.plan === 'Premium' ? 'var(--accent-secondary-dim)' : 'rgba(255,255,255,0.05)',
+                  background: client.plan === 'Elite' ? 'var(--accent-warm-dim)' : client.plan === 'Premium' ? 'var(--accent-secondary-dim)' : 'var(--bg-subtle-hover)',
                 }}>
                   {client.plan}
                 </span>
@@ -604,7 +604,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '12px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     flexShrink: 0,
   },
   clientNameLink: {

@@ -105,7 +105,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
   const planColors: Record<string, { color: string; bg: string }> = {
     Elite: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
     Premium: { color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
-    Basic: { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)' },
+    Basic: { color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
   };
 
   const assignedPrograms = programs.filter(p => p.clientIds.includes(client.id));
@@ -534,8 +534,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{
-                    background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
+                    borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
                     fontSize: '18px', fontFamily: 'Outfit',
                   }}
                 />
@@ -555,8 +555,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} />
                 <Tooltip
                   contentStyle={{
-                    background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
+                    borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
                     fontSize: '18px', fontFamily: 'Outfit',
                   }}
                 />
@@ -654,7 +654,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
                   const isFuture = new Date(calYear, calMonth, day) > today;
 
-                  let cellBg = 'rgba(255,255,255,0.02)';
+                  let cellBg = 'var(--bg-subtle)';
                   let dotColor = '';
                   let label = '';
                   if (entries && !isFuture) {
@@ -908,7 +908,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
           <div style={{ height: 260, marginTop: '8px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
-                <PolarGrid stroke="rgba(255,255,255,0.06)" />
+                <PolarGrid stroke="var(--border-subtle-strong)" />
                 <PolarAngleAxis dataKey="metric" tick={{ fontSize: 15, fill: '#8b92a5' }} />
                 <Radar
                   dataKey="value"
@@ -956,7 +956,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
                 <Tooltip
                   contentStyle={{
-                    background: '#151a28', border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
                     borderRadius: '10px', fontSize: '18px',
                   }}
                 />
@@ -1050,7 +1050,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                             onClick={() => setEditPlan(p)}
                             style={{
                               ...styles.modalPlanOption,
-                              ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'rgba(255,255,255,0.04)' } : {}),
+                              ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'var(--bg-subtle)' } : {}),
                             }}
                           >
                             <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
@@ -1073,7 +1073,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                             onClick={() => setEditStatus(s)}
                             style={{
                               ...styles.modalStatusOption,
-                              ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'rgba(255,255,255,0.04)' } : {}),
+                              ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'var(--bg-subtle)' } : {}),
                             }}
                           >
                             {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1308,7 +1308,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {selectedCheckIn.notes && (
                     <div style={styles.modalField}>
                       <span style={styles.modalLabel}>Client Notes</span>
-                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)' }}>
+                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
                         {selectedCheckIn.notes}
                       </p>
                     </div>
@@ -1471,7 +1471,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '31px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
   },
   profileName: {
     fontSize: '31px',
@@ -1511,7 +1511,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
     fontSize: '17px',
     color: 'var(--text-secondary)',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
     padding: '3px 10px',
     borderRadius: '20px',
   },
@@ -1578,7 +1578,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     height: '6px',
     borderRadius: '3px',
-    background: 'rgba(255,255,255,0.06)',
+    background: 'var(--bg-subtle-hover)',
     overflow: 'hidden',
     marginTop: '8px',
   },
@@ -1631,7 +1631,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '20px',
     padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
   },
   divider: {
@@ -1648,7 +1648,7 @@ const styles: Record<string, React.CSSProperties> = {
   overlayCenter: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.6)',
+    background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
     display: 'flex',
@@ -1659,7 +1659,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-secondary)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
-    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+    boxShadow: 'var(--shadow-elevated)',
     zIndex: 101,
     maxHeight: '85vh',
     overflowX: 'hidden',
@@ -1713,7 +1713,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '4px 12px 4px 4px',
     borderRadius: '20px',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
     fontSize: '18px',
     fontWeight: 500,
@@ -1728,10 +1728,10 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '13px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
   },
   modalTextarea: {
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-md)',
     padding: '12px 14px',
@@ -1768,7 +1768,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     background: 'var(--accent-primary)',
     border: 'none',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
@@ -1950,7 +1950,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '9px 12px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--glass-border)',
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--bg-subtle)',
     color: 'var(--text-primary)',
     fontSize: '20px',
     fontFamily: 'var(--font-display)',
@@ -2012,7 +2012,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     flexShrink: 0,
   },
   // Check-in styles
@@ -2025,7 +2025,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '16px',
     padding: '10px 12px',
-    borderBottom: '1px solid rgba(255,255,255,0.03)',
+    borderBottom: '1px solid var(--border-subtle)',
     borderRadius: 'var(--radius-sm)',
     transition: 'background 0.1s',
   },
@@ -2053,7 +2053,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     padding: '2px 8px',
     borderRadius: '10px',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
     color: 'var(--text-secondary)',
     whiteSpace: 'nowrap',
   },
@@ -2095,7 +2095,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
     padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
   },
   checkInDetailLabel: {
@@ -2124,13 +2124,13 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
     transition: 'background 0.1s',
-    borderBottom: '1px solid rgba(255,255,255,0.03)',
+    borderBottom: '1px solid var(--border-subtle)',
   },
   activityIcon: {
     width: '32px',
     height: '32px',
     borderRadius: '8px',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2179,7 +2179,7 @@ const styles: Record<string, React.CSSProperties> = {
   notesHistoryItem: {
     padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
+    background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
   },
   notesHistoryDate: {

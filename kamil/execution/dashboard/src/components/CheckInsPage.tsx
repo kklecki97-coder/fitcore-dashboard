@@ -82,7 +82,7 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
   const pct = (value / max) * 100;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)' }}>
+      <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: 'var(--score-bar-track)' }}>
         <div style={{ width: `${pct}%`, height: '100%', borderRadius: '2px', background: color, transition: 'width 0.3s' }} />
       </div>
       <span style={{ fontSize: '15px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
@@ -269,7 +269,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
           <div style={styles.upcomingDetails}>
             {dueToday.length > 0 && (
               <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: '#07090e' }}>{dueToday.length} today</span>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: 'var(--text-on-accent)' }}>{dueToday.length} today</span>
                 <span style={styles.upcomingNames}>
                   {dueToday.map((ci, i) => (
                     <span key={ci.id}>
@@ -287,7 +287,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
             )}
             {dueTomorrow.length > 0 && (
               <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: '#07090e' }}>{dueTomorrow.length} tomorrow</span>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: 'var(--text-on-accent)' }}>{dueTomorrow.length} tomorrow</span>
                 <span style={styles.upcomingNames}>
                   {dueTomorrow.map((ci, i) => (
                     <span key={ci.id}>
@@ -305,7 +305,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
             )}
             {dueLater.length > 0 && (
               <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>{dueLater.length} later</span>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--bg-subtle-hover)', color: 'var(--text-secondary)' }}>{dueLater.length} later</span>
               </div>
             )}
             {scheduledCheckIns.length === 0 && <span style={styles.summaryHint}>none scheduled</span>}
@@ -333,7 +333,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
               >
                 {tab.label}
                 {tab.count > 0 && (
-                  <span style={{ ...styles.tabBadge, background: filter === tab.key ? tab.color : 'rgba(255,255,255,0.1)', color: filter === tab.key ? '#fff' : 'var(--text-tertiary)' }}>
+                  <span style={{ ...styles.tabBadge, background: filter === tab.key ? tab.color : 'var(--bg-subtle-hover)', color: filter === tab.key ? '#fff' : 'var(--text-tertiary)' }}>
                     {tab.count}
                   </span>
                 )}
@@ -416,7 +416,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 fontWeight: 700,
                                 padding: '1px 6px',
                                 borderRadius: '8px',
-                                background: isLate ? 'rgba(239,68,68,0.12)' : isWarning ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.06)',
+                                background: isLate ? 'var(--accent-danger-dim)' : isWarning ? 'var(--accent-warm-dim)' : 'var(--bg-subtle-hover)',
                                 color: isLate ? 'var(--accent-danger)' : isWarning ? 'var(--accent-warm)' : 'var(--text-tertiary)',
                               }}>
                                 {days === 0 ? 'Today' : days === 1 ? '1d ago' : `${days}d ago`}
@@ -1060,8 +1060,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   queueItem: {
     borderRadius: 'var(--radius-sm)',
-    border: '1px solid rgba(255,255,255,0.03)',
-    background: 'rgba(255,255,255,0.01)',
+    border: '1px solid var(--border-subtle)',
+    background: 'var(--bg-subtle)',
     overflow: 'hidden',
   },
   queueItemHeader: {
@@ -1113,7 +1113,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
     padding: '3px 8px',
     borderRadius: '8px',
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
     fontSize: '17px',
   },
   metricChipValue: {
@@ -1139,7 +1139,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
-    borderTop: '1px solid rgba(255,255,255,0.04)',
+    borderTop: '1px solid var(--border-subtle)',
     paddingTop: '16px',
   },
   comparisonGrid: {
@@ -1168,10 +1168,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '2px',
-    padding: '8px 10px',
+    padding: '10px 12px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.04)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-subtle-strong)',
   },
   metricCellLabel: {
     fontSize: '14px',
@@ -1201,10 +1201,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    padding: '6px 10px',
+    padding: '8px 12px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.04)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--border-subtle-strong)',
   },
   trendLabel: {
     fontSize: '15px',
@@ -1238,8 +1238,8 @@ const styles: Record<string, React.CSSProperties> = {
     margin: 0,
     padding: '8px 10px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
+    border: '1px solid var(--border-subtle)',
   },
   existingFeedback: {
     display: 'flex',
@@ -1298,7 +1298,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     border: 'none',
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '17px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
@@ -1417,8 +1417,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: '80px',
     height: '100px',
     borderRadius: 'var(--radius-sm)',
-    border: '1px dashed rgba(255,255,255,0.12)',
-    background: 'rgba(255,255,255,0.02)',
+    border: '1px dashed var(--border-dashed)',
+    background: 'var(--bg-subtle)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1435,8 +1435,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '10px 14px',
     borderRadius: 'var(--radius-sm)',
-    border: '1px dashed rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.01)',
+    border: '1px dashed var(--border-dashed)',
+    background: 'var(--bg-subtle)',
     fontSize: '14px',
     color: 'var(--text-tertiary)',
   },
@@ -1446,8 +1446,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '10px',
     padding: '8px 10px',
     borderRadius: 'var(--radius-sm)',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.04)',
+    background: 'var(--bg-subtle)',
+    border: '1px solid var(--border-subtle)',
   },
   followUpDate: {
     fontSize: '13px',
@@ -1495,7 +1495,7 @@ const styles: Record<string, React.CSSProperties> = {
   modalOverlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.6)',
+    background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
     zIndex: 200,
     display: 'flex',
@@ -1557,7 +1557,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     border: 'none',
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '15px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',

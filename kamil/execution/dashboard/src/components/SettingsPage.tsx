@@ -1004,7 +1004,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                          style={{ width: '14px', height: '14px', border: '2px solid rgba(7,9,14,0.3)', borderTopColor: '#07090e', borderRadius: '50%' }}
+                          style={{ width: '14px', height: '14px', border: '2px solid rgba(7,9,14,0.3)', borderTopColor: 'var(--text-on-accent)', borderRadius: '50%' }}
                         />
                         Connecting...
                       </>
@@ -1153,7 +1153,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '22px',
     borderRadius: '50%',
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1259,7 +1259,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     border: 'none',
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
@@ -1294,7 +1294,7 @@ const styles: Record<string, React.CSSProperties> = {
   modalOverlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.6)',
+    background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
     display: 'flex',
@@ -1599,7 +1599,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '22px',
     borderRadius: '50%',
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

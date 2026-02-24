@@ -218,7 +218,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '11px 14px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid var(--glass-border)',
-    background: 'rgba(255,255,255,0.03)',
+    background: 'var(--bg-subtle)',
     color: 'var(--text-primary)',
     fontSize: '20px',
     fontFamily: 'var(--font-display)',
@@ -244,7 +244,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     border: 'none',
     background: 'var(--accent-primary)',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '20px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
@@ -274,7 +274,7 @@ const styles: Record<string, React.CSSProperties> = {
   checkmark: {
     fontSize: '15px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     lineHeight: 1,
   },
   rememberText: {

@@ -297,10 +297,10 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
               />
               <Tooltip
                 contentStyle={{
-                  background: '#151a28',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-subtle-strong)',
                   borderRadius: '10px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                  boxShadow: 'var(--shadow-elevated)',
                   fontSize: '18px',
                   fontFamily: 'Outfit',
                 }}
@@ -315,7 +315,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                 strokeWidth={2.5}
                 fill="url(#revenueGrad)"
                 dot={{ fill: '#00e5c8', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, strokeWidth: 2, stroke: '#07090e' }}
+                activeDot={{ r: 6, strokeWidth: 2, stroke: 'var(--text-on-accent)' }}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -624,7 +624,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '15px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     flexShrink: 0,
   },
   progressContainer: {
@@ -637,7 +637,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     height: '4px',
     borderRadius: '2px',
-    background: 'rgba(255,255,255,0.06)',
+    background: 'var(--bg-subtle-hover)',
     overflow: 'hidden',
   },
   progressFill: {

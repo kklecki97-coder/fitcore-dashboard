@@ -15,7 +15,7 @@ export default function GlassCard({ children, style, hover = false, onClick, del
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
-      whileHover={hover ? { y: -2, borderColor: 'rgba(255,255,255,0.12)' } : undefined}
+      whileHover={hover ? { y: -2, borderColor: 'var(--glass-border-hover)' } : undefined}
       onClick={onClick}
       style={{
         background: 'var(--bg-card)',

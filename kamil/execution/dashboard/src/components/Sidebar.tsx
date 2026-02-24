@@ -36,7 +36,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
   return (
     <aside style={styles.sidebar}>
       {/* Logo */}
-      <div style={styles.logoSection}>
+      <div style={styles.logoSection} onClick={() => onNavigate('overview')}>
         <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 38, height: 38, borderRadius: '50%' }} />
         <div>
           <div style={styles.logoText}>FitCore</div>
@@ -142,6 +142,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
     padding: '0 8px',
     marginBottom: '32px',
+    cursor: 'pointer',
   },
   logoIcon: {
     width: '38px',

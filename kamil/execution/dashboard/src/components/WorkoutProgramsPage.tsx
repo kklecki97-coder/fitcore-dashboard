@@ -114,7 +114,7 @@ export default function WorkoutProgramsPage({
           { label: 'Active', value: activeCount, color: 'var(--accent-success)', bg: 'var(--accent-success-dim)' },
           { label: 'Draft', value: draftCount, color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
           { label: 'Templates', value: templateCount, color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
-          { label: 'Total', value: programs.length, color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.05)' },
+          { label: 'Total', value: programs.length, color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
         ].map(stat => (
           <div key={stat.label} style={{ ...styles.statChip, background: stat.bg, color: stat.color }}>
             <span style={styles.statValue}>{stat.value}</span>
@@ -170,11 +170,11 @@ export default function WorkoutProgramsPage({
                   <span style={{
                     ...styles.badge,
                     color: program.status === 'active' ? 'var(--accent-success)' : program.status === 'draft' ? 'var(--accent-secondary)' : 'var(--text-tertiary)',
-                    background: program.status === 'active' ? 'var(--accent-success-dim)' : program.status === 'draft' ? 'var(--accent-secondary-dim)' : 'rgba(255,255,255,0.05)',
+                    background: program.status === 'active' ? 'var(--accent-success-dim)' : program.status === 'draft' ? 'var(--accent-secondary-dim)' : 'var(--bg-subtle-hover)',
                   }}>
                     {program.status}
                   </span>
-                  <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)' }}>
+                  <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
                     <Clock size={11} /> {program.durationWeeks}w
                   </span>
                   {program.isTemplate && (
@@ -331,7 +331,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     background: 'var(--accent-primary)',
     border: 'none',
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
     fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
@@ -460,7 +460,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     fontSize: '13px',
     fontWeight: 700,
-    color: '#07090e',
+    color: 'var(--text-on-accent)',
   },
   moreClients: {
     fontSize: '15px',
@@ -502,7 +502,7 @@ const styles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.6)',
+    background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
   },
