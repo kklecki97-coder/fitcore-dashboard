@@ -1607,6 +1607,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>('tasks')
+  const [engageBatchIds, setEngageBatchIds] = useState<number[] | null>(null)
   const [filterStage, setFilterStage] = useState<PipelineStage | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'score' | 'followers' | 'recent'>('score')
@@ -1629,6 +1630,16 @@ function Dashboard() {
     fetchLeads()
   }, [fetchLeads])
 
+  // Snapshot the engage batch once on first load — no auto-refilling
+  useEffect(() => {
+    if (engageBatchIds !== null || leads.length === 0) return
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    const alreadyEngagedToday = leads.filter(l => l.engaged_at && new Date(l.engaged_at).getTime() >= todayStart.getTime()).length
+    const slots = Math.max(0, DAILY_ENGAGE_LIMIT - alreadyEngagedToday)
+    const ids = leads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, slots).map(l => l.id)
+    setEngageBatchIds(ids)
+  }, [leads, engageBatchIds])
+
   const handleStatusChange = async (id: number, newStatus: PipelineStage) => {
     const updates: Record<string, string | null> = { status: newStatus }
     const now = new Date().toISOString()
@@ -1642,6 +1653,7 @@ function Dashboard() {
         body: JSON.stringify(updates),
       })
       setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } as Lead : l))
+      fetchLeads()
     } catch (err) {
       console.error('Failed to update status:', err)
     }
@@ -1730,23 +1742,22 @@ function Dashboard() {
     return days
   }, [leads])
 
-  // Today's engage batch: top N "new" leads by score, capped by daily limit
-  const remainingEngageSlots = Math.max(0, DAILY_ENGAGE_LIMIT - todayEngaged)
+  // Today's engage batch: snapshotted on load, shrinks as leads are marked dead/engaged
   const engageBatch = useMemo(() =>
-    leads
-      .filter(l => l.status === 'new')
-      .sort((a, b) => (b.score || 0) - (a.score || 0))
-      .slice(0, remainingEngageSlots),
-    [leads, remainingEngageSlots]
+    engageBatchIds === null
+      ? []
+      : leads.filter(l => engageBatchIds.includes(l.id) && l.status === 'new'),
+    [leads, engageBatchIds]
   )
 
   // DM-ready batch: leads with status=engaged (no wait time for demo)
   const dmBatch = useMemo(() => {
+    const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
     return leads
       .filter(l => {
         if (l.status !== 'engaged') return false
         if (!l.engaged_at) return false
-        return true
+        return new Date(l.engaged_at).getTime() < todayMidnight.getTime()
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [leads])
