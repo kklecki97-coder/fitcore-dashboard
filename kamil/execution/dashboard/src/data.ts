@@ -641,12 +641,12 @@ export const workoutLogs: WorkoutLog[] = [
 ];
 
 export const scheduleToday = [
-  { time: '07:00', client: 'Jake Morrison', type: 'Squat Day', status: 'completed' as const },
-  { time: '09:00', client: 'Marcus Chen', type: 'Upper Body', status: 'completed' as const },
-  { time: '11:00', client: 'Sarah Williams', type: 'Lower Body', status: 'completed' as const },
-  { time: '14:00', client: 'Tom Bradley', type: 'Full Body', status: 'current' as const },
-  { time: '16:00', client: 'David Park', type: 'Push Day', status: 'upcoming' as const },
-  { time: '18:00', client: 'Aisha Patel', type: 'Upper Body', status: 'upcoming' as const },
+  { time: '07:00', client: 'Jake Morrison', type: 'Squat Day', status: 'completed' as const, duration: 60 },
+  { time: '09:00', client: 'Marcus Chen', type: 'Upper Body', status: 'completed' as const, duration: 45 },
+  { time: '11:00', client: 'Sarah Williams', type: 'Lower Body', status: 'completed' as const, duration: 60 },
+  { time: '14:00', client: 'Tom Bradley', type: 'Full Body', status: 'current' as const, duration: 90 },
+  { time: '16:00', client: 'David Park', type: 'Push Day', status: 'upcoming' as const, duration: 60 },
+  { time: '18:00', client: 'Aisha Patel', type: 'Upper Body', status: 'upcoming' as const, duration: 45 },
 ];
 
 export const exerciseLibrary: string[] = [

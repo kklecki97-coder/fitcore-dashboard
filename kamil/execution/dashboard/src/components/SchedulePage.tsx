@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2, Circle, Clock, Plus,
   ChevronLeft, ChevronRight, Dumbbell, X,
+  XCircle, Timer,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { scheduleToday, getInitials, getAvatarColor } from '../data';
@@ -16,7 +17,7 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
@@ -27,16 +28,29 @@ function formatFullDate(date: Date): string {
   return `${dayName}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
+/** Convert "HH:MM" to minutes since midnight */
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
 interface SchedulePageProps {
   clients: Client[];
   programs: WorkoutProgram[];
   sessionsByDate: Record<string, typeof scheduleToday>;
   onSessionsChange: (sessions: Record<string, typeof scheduleToday>) => void;
+  onViewClient: (id: string) => void;
 }
 
-export default function SchedulePage({ clients, programs, sessionsByDate, onSessionsChange }: SchedulePageProps) {
+export default function SchedulePage({ clients, programs, sessionsByDate, onSessionsChange, onViewClient }: SchedulePageProps) {
   const isMobile = useIsMobile();
-  const hours = Array.from({ length: 14 }, (_, i) => i + 6); // 6 AM to 7 PM
+
+  // All half-hour slots for the add-session modal picker
+  const allTimeSlots: string[] = [];
+  for (let h = 6; h <= 19; h++) {
+    allTimeSlots.push(`${h.toString().padStart(2, '0')}:00`);
+    allTimeSlots.push(`${h.toString().padStart(2, '0')}:30`);
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -46,7 +60,15 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
     return Math.min(Math.max(diff, 0), 6);
   });
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newSession, setNewSession] = useState({ client: '', type: '', time: '09:00' });
+  const [addAtTime, setAddAtTime] = useState<string | null>(null);
+  const [newSession, setNewSession] = useState({ client: '', type: '', time: '09:00', duration: 60 });
+
+  // Live clock for the "now" indicator — updates every minute
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   const todayKey = today.toISOString().split('T')[0];
 
@@ -59,6 +81,21 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
   // Sessions to show for selected day
   const displaySessions = sessionsByDate[selectedKey] || [];
+
+  // ── Week summary ──
+  const weekDays: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    weekDays.push(d.toISOString().split('T')[0]);
+  }
+  const weekSessions = weekDays.flatMap(key => sessionsByDate[key] || []);
+  const weekTotal = weekSessions.length;
+  const weekCompleted = weekSessions.filter(s => s.status === 'completed').length;
+  const weekUpcoming = weekSessions.filter(s => s.status === 'upcoming').length;
+
+  // "Now" indicator — determine where the current time falls relative to sessions
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
   const prevWeek = () => {
     const d = new Date(weekStart);
@@ -82,11 +119,92 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
       client: newSession.client,
       type: newSession.type,
       status: 'upcoming' as const,
+      duration: newSession.duration,
     }].sort((a, b) => a.time.localeCompare(b.time));
     onSessionsChange({ ...sessionsByDate, [selectedKey]: updated });
-    setNewSession({ client: '', type: '', time: '09:00' });
+    setNewSession({ client: '', type: '', time: '09:00', duration: 60 });
     setShowAddModal(false);
+    setAddAtTime(null);
   };
+
+  const handleMarkCompleted = (dateKey: string, time: string) => {
+    const sessions = sessionsByDate[dateKey] || [];
+    const updated = sessions.map(s =>
+      s.time === time ? { ...s, status: 'completed' as const } : s
+    );
+    onSessionsChange({ ...sessionsByDate, [dateKey]: updated });
+  };
+
+  const handleCancelSession = (dateKey: string, time: string) => {
+    const sessions = sessionsByDate[dateKey] || [];
+    const updated = sessions.filter(s => s.time !== time);
+    onSessionsChange({ ...sessionsByDate, [dateKey]: updated });
+  };
+
+  const formatDuration = (mins: number) => {
+    if (mins >= 60) {
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+    return `${mins}m`;
+  };
+
+  const formatTimeLabel = (slot: string) => {
+    const [hStr, mStr] = slot.split(':');
+    const h = parseInt(hStr);
+    const m = mStr;
+    if (h > 12) return `${h - 12}:${m} PM`;
+    if (h === 12) return `12:${m} PM`;
+    return `${h}:${m} AM`;
+  };
+
+  const nowTimeLabel = () => {
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hr = h > 12 ? h - 12 : h === 0 ? 12 : h;
+    return `${hr}:${m.toString().padStart(2, '0')} ${ampm}`;
+  };
+
+  // Get session card background based on status
+  const getSessionCardStyle = (status: string): React.CSSProperties => {
+    const base: React.CSSProperties = { ...styles.sessionCard };
+
+    if (status === 'completed') {
+      return {
+        ...base,
+        borderLeftColor: 'var(--accent-success)',
+        background: 'linear-gradient(135deg, rgba(34,197,94,0.06) 0%, var(--bg-elevated) 100%)',
+        opacity: 0.7,
+      };
+    }
+    if (status === 'current') {
+      return {
+        ...base,
+        borderLeftColor: 'var(--accent-primary)',
+        background: 'linear-gradient(135deg, rgba(0,229,200,0.08) 0%, var(--bg-elevated) 100%)',
+        boxShadow: '0 0 20px rgba(0,229,200,0.1), inset 0 0 20px rgba(0,229,200,0.03)',
+      };
+    }
+    // upcoming
+    return {
+      ...base,
+      borderLeftColor: 'var(--text-tertiary)',
+      background: 'var(--bg-elevated)',
+    };
+  };
+
+  // Determine where the "now" indicator should appear (between which sessions)
+  const getNowInsertIndex = (): number => {
+    if (!isSelectedToday) return -1;
+    for (let i = 0; i < displaySessions.length; i++) {
+      const sessionMin = timeToMinutes(displaySessions[i].time);
+      if (nowMinutes < sessionMin) return i;
+    }
+    return displaySessions.length; // after all sessions
+  };
+  const nowInsertIndex = getNowInsertIndex();
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
@@ -101,6 +219,8 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
               const dayDate = new Date(weekStart);
               dayDate.setDate(dayDate.getDate() + i);
               const date = dayDate.getDate();
+              const dayKey = dayDate.toISOString().split('T')[0];
+              const daySessionCount = (sessionsByDate[dayKey] || []).length;
               const isSelected = i === selectedDayIndex;
               const isToday = dayDate.getTime() === today.getTime();
               return (
@@ -124,6 +244,9 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                   }}>
                     {date}
                   </span>
+                  {daySessionCount > 0 && (
+                    <span style={styles.daySessionCount}>{daySessionCount}</span>
+                  )}
                   {isToday && <span style={styles.todayDot} />}
                 </motion.button>
               );
@@ -151,35 +274,38 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
             </button>
           </div>
 
-          <div style={styles.timeline}>
-            {hours.map((hour) => {
-              const timeStr = `${hour.toString().padStart(2, '0')}:00`;
-              const session = displaySessions.find(s => s.time === timeStr);
+          {displaySessions.length === 0 ? (
+            <div style={styles.emptyDay}>
+              <p style={styles.emptyText}>No sessions scheduled</p>
+              <button style={styles.addSessionBtn} onClick={() => setShowAddModal(true)}>
+                <Plus size={14} />
+                Add Session
+              </button>
+            </div>
+          ) : (
+            <div style={styles.timeline}>
+              {displaySessions.map((session, i) => {
+                const cardStyle = getSessionCardStyle(session.status);
+                const showNowBefore = nowInsertIndex === i;
+                const showNowAfter = i === displaySessions.length - 1 && nowInsertIndex === displaySessions.length;
 
-              return (
-                <div key={hour} style={styles.timeRow}>
-                  <div style={{ ...styles.timeLabel, width: isMobile ? '48px' : '60px' }}>
-                    <span style={styles.timeLabelText}>
-                      {hour > 12 ? `${hour - 12} PM` : hour === 12 ? '12 PM' : `${hour} AM`}
-                    </span>
-                  </div>
-                  <div style={styles.timeLine}>
-                    <div style={getTimeLineDotStyle(!!session, session?.status)} />
-                    <div style={styles.timeLineBar} />
-                  </div>
-                  <div style={styles.timeSlot}>
-                    {session ? (
-                      <motion.div
-                        style={{
-                          ...styles.sessionCard,
-                          borderLeftColor: session.status === 'completed' ? 'var(--accent-success)' :
-                                          session.status === 'current' ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                          opacity: session.status === 'completed' ? 0.6 : 1,
-                        }}
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: session.status === 'completed' ? 0.6 : 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
+                return (
+                  <div key={`session-${session.time}-${i}`}>
+                    {/* NOW indicator — between sessions */}
+                    {showNowBefore && (
+                      <div style={styles.nowIndicator}>
+                        <div style={styles.nowDot} />
+                        <div style={styles.nowLine} />
+                        <div style={styles.nowLabel}>{nowTimeLabel()}</div>
+                      </div>
+                    )}
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.08 + i * 0.04 }}
+                    >
+                      <div style={cardStyle}>
                         <div style={styles.sessionTop}>
                           <div style={styles.sessionInfo}>
                             <div style={{
@@ -191,43 +317,84 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                               {getInitials(session.client)}
                             </div>
                             <div>
-                              <div style={styles.sessionClient}>{session.client}</div>
-                              <div style={styles.sessionType}>
-                                <Dumbbell size={12} />
-                                {session.type}
+                              <div
+                                style={styles.sessionClientLink}
+                                onClick={() => {
+                                  const c = clients.find(cl => cl.name === session.client);
+                                  if (c) onViewClient(c.id);
+                                }}
+                              >
+                                {session.client}
+                              </div>
+                              <div style={styles.sessionMeta}>
+                                <span style={styles.sessionType}>
+                                  <Dumbbell size={12} />
+                                  {session.type}
+                                </span>
+                                <span style={styles.sessionTime}>
+                                  {formatTimeLabel(session.time)}
+                                </span>
+                                {session.duration && (
+                                  <span style={styles.sessionDuration}>
+                                    <Timer size={11} />
+                                    {formatDuration(session.duration)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
-                          {session.status === 'completed' && <CheckCircle2 size={18} color="var(--accent-success)" />}
-                          {session.status === 'current' && (
-                            <span style={styles.liveBadge}>
-                              <span style={styles.livePulse} />
-                              IN SESSION
-                            </span>
-                          )}
-                          {session.status === 'upcoming' && <Circle size={18} color="var(--text-tertiary)" />}
+                          <div style={styles.sessionActions}>
+                            {session.status === 'completed' && <CheckCircle2 size={18} color="var(--accent-success)" />}
+                            {session.status === 'current' && (
+                              <span style={styles.liveBadge}>
+                                <span style={styles.livePulse} />
+                                IN SESSION
+                              </span>
+                            )}
+                            {(session.status === 'upcoming' || session.status === 'current') && (
+                              <>
+                                <button
+                                  style={styles.sessionActionBtn}
+                                  onClick={() => handleMarkCompleted(selectedKey, session.time)}
+                                  title="Mark completed"
+                                >
+                                  <CheckCircle2 size={15} color="var(--accent-success)" />
+                                </button>
+                                <button
+                                  style={styles.sessionActionBtn}
+                                  onClick={() => handleCancelSession(selectedKey, session.time)}
+                                  title="Cancel session"
+                                >
+                                  <XCircle size={15} color="var(--accent-danger)" />
+                                </button>
+                              </>
+                            )}
+                            {session.status === 'upcoming' && !isMobile && (
+                              <Circle size={16} color="var(--text-tertiary)" />
+                            )}
+                          </div>
                         </div>
-                      </motion.div>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      </div>
+                    </motion.div>
 
-          {displaySessions.length === 0 && (
-            <div style={styles.emptyDay}>
-              <p style={styles.emptyText}>No sessions scheduled</p>
-              <button style={styles.addSessionBtn} onClick={() => setShowAddModal(true)}>
-                <Plus size={14} />
-                Add Session
-              </button>
+                    {/* NOW indicator — after the last session */}
+                    {showNowAfter && (
+                      <div style={styles.nowIndicator}>
+                        <div style={styles.nowDot} />
+                        <div style={styles.nowLine} />
+                        <div style={styles.nowLabel}>{nowTimeLabel()}</div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </GlassCard>
 
         {/* Sidebar Stats */}
         <div style={styles.sideColumn}>
+          {/* Day Summary */}
           <GlassCard delay={0.15}>
             <h3 style={styles.sectionTitle}>Day Summary</h3>
             <div style={styles.summaryStats}>
@@ -267,7 +434,35 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
             </div>
           </GlassCard>
 
-          <GlassCard delay={0.2}>
+          {/* Week Summary */}
+          <GlassCard delay={0.18}>
+            <h3 style={styles.sectionTitle}>Week Overview</h3>
+            <div style={styles.weekSummary}>
+              <div style={styles.weekStatRow}>
+                <span style={styles.weekStatLabel}>Total Sessions</span>
+                <span style={styles.weekStatValue}>{weekTotal}</span>
+              </div>
+              <div style={styles.weekStatRow}>
+                <span style={styles.weekStatLabel}>Completed</span>
+                <span style={{ ...styles.weekStatValue, color: 'var(--accent-success)' }}>{weekCompleted}</span>
+              </div>
+              <div style={styles.weekStatRow}>
+                <span style={styles.weekStatLabel}>Remaining</span>
+                <span style={{ ...styles.weekStatValue, color: 'var(--accent-primary)' }}>{weekUpcoming}</span>
+              </div>
+              {weekTotal > 0 && (
+                <div style={styles.weekProgress}>
+                  <div style={styles.weekProgressBar}>
+                    <div style={{ ...styles.weekProgressFill, width: `${Math.round((weekCompleted / weekTotal) * 100)}%` }} />
+                  </div>
+                  <span style={styles.weekProgressLabel}>{Math.round((weekCompleted / weekTotal) * 100)}%</span>
+                </div>
+              )}
+            </div>
+          </GlassCard>
+
+          {/* Upcoming Check-ins */}
+          <GlassCard delay={0.22}>
             <h3 style={styles.sectionTitle}>Upcoming Check-ins</h3>
             <div style={styles.checkinList}>
               {clients
@@ -281,12 +476,13 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.25 + i * 0.04 }}
+                    onClick={() => onViewClient(client.id)}
                   >
                     <div style={{ ...styles.checkinAvatar, background: getAvatarColor(client.id) }}>
                       {getInitials(client.name)}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={styles.checkinName}>{client.name}</div>
+                      <div style={styles.checkinNameLink}>{client.name}</div>
                       <div style={styles.checkinDate}>{client.nextCheckIn}</div>
                     </div>
                     <div style={styles.checkinDays}>
@@ -302,23 +498,25 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
       {/* Add Session Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <>
+          <motion.div
+            style={styles.modalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => { setShowAddModal(false); setAddAtTime(null); }}
+          >
             <motion.div
-              style={styles.overlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowAddModal(false)}
-            />
-            <motion.div
-              style={styles.modal}
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              style={{ ...styles.modal, width: isMobile ? 'calc(100% - 32px)' : '400px' }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Add Session</h3>
-                <button style={styles.closeBtn} onClick={() => setShowAddModal(false)}>
+                <h3 style={styles.modalTitle}>
+                  {addAtTime ? `Add Session at ${formatTimeLabel(addAtTime)}` : 'Add Session'}
+                </h3>
+                <button style={styles.closeBtn} onClick={() => { setShowAddModal(false); setAddAtTime(null); }}>
                   <X size={18} />
                 </button>
               </div>
@@ -376,24 +574,39 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                   </select>
                 </div>
 
-                <div style={styles.modalField}>
-                  <label style={styles.modalLabel}>Time</label>
-                  <select
-                    value={newSession.time}
-                    onChange={(e) => setNewSession(prev => ({ ...prev, time: e.target.value }))}
-                    style={styles.modalSelect}
-                  >
-                    {hours.map(h => {
-                      const val = `${h.toString().padStart(2, '0')}:00`;
-                      const label = h > 12 ? `${h - 12}:00 PM` : h === 12 ? '12:00 PM' : `${h}:00 AM`;
-                      return <option key={h} value={val}>{label}</option>;
-                    })}
-                  </select>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ ...styles.modalField, flex: 1 }}>
+                    <label style={styles.modalLabel}>Time</label>
+                    <select
+                      value={newSession.time}
+                      onChange={(e) => setNewSession(prev => ({ ...prev, time: e.target.value }))}
+                      style={styles.modalSelect}
+                    >
+                      {allTimeSlots.map(slot => (
+                        <option key={slot} value={slot}>{formatTimeLabel(slot)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ ...styles.modalField, flex: 1 }}>
+                    <label style={styles.modalLabel}>Duration</label>
+                    <select
+                      value={newSession.duration}
+                      onChange={(e) => setNewSession(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                      style={styles.modalSelect}
+                    >
+                      <option value={30}>30 min</option>
+                      <option value={45}>45 min</option>
+                      <option value={60}>1 hour</option>
+                      <option value={75}>1h 15m</option>
+                      <option value={90}>1h 30m</option>
+                      <option value={120}>2 hours</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
               <div style={styles.modalActions}>
-                <button style={styles.modalCancelBtn} onClick={() => setShowAddModal(false)}>
+                <button style={styles.modalCancelBtn} onClick={() => { setShowAddModal(false); setAddAtTime(null); }}>
                   Cancel
                 </button>
                 <button
@@ -407,25 +620,11 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                 </button>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-}
-
-function getTimeLineDotStyle(hasSession: boolean, status?: string): React.CSSProperties {
-  return {
-    width: hasSession ? '10px' : '6px',
-    height: hasSession ? '10px' : '6px',
-    borderRadius: '50%',
-    background: hasSession
-      ? (status === 'completed' ? 'var(--accent-success)' : status === 'current' ? 'var(--accent-primary)' : 'var(--text-tertiary)')
-      : 'rgba(255,255,255,0.08)',
-    boxShadow: status === 'current' ? '0 0 12px var(--accent-primary)' : 'none',
-    flexShrink: 0,
-    marginTop: '6px',
-  };
 }
 
 const styles: Record<string, React.CSSProperties> = {
@@ -489,6 +688,17 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '25px',
     fontWeight: 700,
   },
+  daySessionCount: {
+    fontSize: '11px',
+    fontWeight: 700,
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    borderRadius: '10px',
+    padding: '0 5px',
+    minWidth: '16px',
+    textAlign: 'center',
+    lineHeight: '16px',
+  },
   todayDot: {
     width: '4px',
     height: '4px',
@@ -533,40 +743,36 @@ const styles: Record<string, React.CSSProperties> = {
   timeline: {
     display: 'flex',
     flexDirection: 'column',
+    gap: '10px',
   },
-  timeRow: {
+  // ── Now indicator ──
+  nowIndicator: {
     display: 'flex',
-    alignItems: 'flex-start',
-    minHeight: '52px',
-  },
-  timeLabel: {
-    width: '60px',
-    flexShrink: 0,
-    paddingTop: '2px',
-  },
-  timeLabelText: {
-    fontSize: '17px',
-    color: 'var(--text-tertiary)',
-    fontFamily: 'var(--font-mono)',
-  },
-  timeLine: {
-    display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
-    width: '20px',
+    gap: '6px',
+    padding: '6px 0',
+  },
+  nowLabel: {
+    fontSize: '12px',
+    fontWeight: 700,
+    color: '#ef4444',
+    fontFamily: 'var(--font-mono)',
+    whiteSpace: 'nowrap',
+  },
+  nowDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: '#ef4444',
+    boxShadow: '0 0 8px rgba(239,68,68,0.6)',
     flexShrink: 0,
   },
-  timeLineBar: {
-    width: '1px',
+  nowLine: {
     flex: 1,
-    minHeight: '30px',
-    background: 'rgba(255,255,255,0.06)',
+    height: '2px',
+    background: 'linear-gradient(to right, #ef4444, transparent)',
   },
-  timeSlot: {
-    flex: 1,
-    paddingLeft: '12px',
-    paddingBottom: '4px',
-  },
+  // ── Session cards ──
   sessionCard: {
     padding: '12px 16px',
     borderRadius: 'var(--radius-sm)',
@@ -574,6 +780,9 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     borderLeftWidth: '3px',
     borderLeftStyle: 'solid',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
   sessionTop: {
     display: 'flex',
@@ -596,9 +805,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: '#07090e',
   },
-  sessionClient: {
+  sessionClientLink: {
     fontSize: '18px',
     fontWeight: 600,
+    color: 'var(--accent-primary)',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
+  },
+  sessionMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginTop: '2px',
   },
   sessionType: {
     display: 'flex',
@@ -606,7 +824,35 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
     fontSize: '17px',
     color: 'var(--text-secondary)',
-    marginTop: '2px',
+  },
+  sessionTime: {
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-mono)',
+  },
+  sessionDuration: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-mono)',
+  },
+  sessionActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  sessionActionBtn: {
+    background: 'transparent',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '6px',
+    padding: '4px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background 0.15s',
   },
   liveBadge: {
     display: 'flex',
@@ -663,6 +909,54 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '17px',
     color: 'var(--text-secondary)',
   },
+  weekSummary: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    marginTop: '16px',
+  },
+  weekStatRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 0',
+  },
+  weekStatLabel: {
+    fontSize: '17px',
+    color: 'var(--text-secondary)',
+  },
+  weekStatValue: {
+    fontSize: '21px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+  },
+  weekProgress: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginTop: '4px',
+  },
+  weekProgressBar: {
+    flex: 1,
+    height: '6px',
+    borderRadius: '3px',
+    background: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  weekProgressFill: {
+    height: '100%',
+    borderRadius: '3px',
+    background: 'var(--accent-primary)',
+    transition: 'width 0.4s ease',
+  },
+  weekProgressLabel: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: 'var(--accent-primary)',
+    fontFamily: 'var(--font-mono)',
+    minWidth: '36px',
+    textAlign: 'right',
+  },
   checkinList: {
     display: 'flex',
     flexDirection: 'column',
@@ -675,6 +969,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '10px',
     padding: '8px 10px',
     borderRadius: 'var(--radius-sm)',
+    cursor: 'pointer',
+    transition: 'background 0.15s',
   },
   checkinAvatar: {
     width: '30px',
@@ -687,9 +983,11 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     color: '#07090e',
   },
-  checkinName: {
+  checkinNameLink: {
     fontSize: '18px',
     fontWeight: 500,
+    color: 'var(--accent-primary)',
+    cursor: 'pointer',
   },
   checkinDate: {
     fontSize: '15px',
@@ -712,25 +1010,22 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '20px',
     color: 'var(--text-tertiary)',
   },
-  overlay: {
+  modalOverlay: {
     position: 'fixed',
     inset: 0,
     background: 'rgba(0,0,0,0.6)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modal: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
     background: 'var(--bg-secondary)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     padding: '24px',
-    width: '400px',
     maxWidth: '90vw',
-    zIndex: 101,
     boxShadow: 'var(--shadow-elevated)',
   },
   modalHeader: {

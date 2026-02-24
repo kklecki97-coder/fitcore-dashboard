@@ -283,7 +283,7 @@ function App() {
           />
         );
       case 'schedule':
-        return <SchedulePage clients={allClients} programs={allPrograms} sessionsByDate={sessionsByDate} onSessionsChange={setSessionsByDate} />;
+        return <SchedulePage clients={allClients} programs={allPrograms} sessionsByDate={sessionsByDate} onSessionsChange={setSessionsByDate} onViewClient={handleViewClient} />;
       case 'settings':
         return (
           <SettingsPage
