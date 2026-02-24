@@ -781,8 +781,8 @@ export default function App() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {[
-              { number: '01', title: 'Book a Free Call', desc: 'We hop on a 15-minute call. You tell us how you run your coaching business,what tools you use, what\'s not working, what you wish you had.' },
-              { number: '02', title: 'We Build It for You', desc: 'We set up your custom dashboard with your branding, your client data structure, and the features that matter to you. No templates,built from scratch.' },
+              { number: '01', title: 'Book a Free Call', desc: 'We hop on a 15-minute call. You tell us how you run your coaching business: what tools you use, what\'s not working, what you wish you had.' },
+              { number: '02', title: 'We Build It for You', desc: 'We set up your custom dashboard with your branding, your client data structure, and the features that matter to you. No templates. Built from scratch.' },
               { number: '03', title: 'You Get a Walkthrough', desc: 'We walk you through your dashboard live. You test it, give feedback, and we tweak anything until it\'s exactly how you want it.' },
               { number: '04', title: 'Start Using It', desc: 'Import your clients, start programming workouts, track check-ins, and manage your whole business from one screen. We handle support and updates.' },
             ].map((step, i) => (
@@ -849,7 +849,7 @@ export default function App() {
                 'Payment tracking & invoicing',
                 'Training schedule & calendar',
                 'AI-powered coaching insights',
-                'Mobile responsive,works on any device',
+                'Mobile responsive. Works on any device',
                 'Your branding, colors, and logo',
                 'Ongoing support & updates',
                 'Data migration from your current tools',
@@ -866,7 +866,7 @@ export default function App() {
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
             }}>
               <p style={{ fontSize: 15, color: 'var(--text-secondary)', textAlign: 'center', maxWidth: 500 }}>
-                Pricing depends on your setup,number of clients, integrations, custom features.
+                Pricing depends on your setup: number of clients, integrations, custom features.
                 Book a free call and we'll give you an exact quote.
               </p>
               <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
