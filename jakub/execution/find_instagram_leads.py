@@ -360,7 +360,6 @@ def filter_profiles(profiles, min_followers=1000, max_followers=50000):
             "is_business_account": p.get("isBusinessAccount", False),
             "business_category": p.get("businessCategoryName", ""),
             "is_verified": p.get("verified", False),
-            "profile_pic_url": p.get("profilePicUrlHD") or p.get("profilePicUrl", ""),
             "scraped_at": datetime.now(timezone.utc).isoformat(),
         }
 

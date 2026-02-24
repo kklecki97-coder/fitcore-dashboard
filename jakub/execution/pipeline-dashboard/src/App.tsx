@@ -11,7 +11,7 @@ const SUPABASE_URL = 'https://vjimeeiovrqjitoxmzeb.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_51_z3oNgQx0IYRwmJhutDQ_YNoq1_G0'
 
 // ─── Constants ───
-const DAILY_ENGAGE_LIMIT = 20
+const DAILY_ENGAGE_LIMIT = 40
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000
 
 // ─── Types ───
@@ -1564,16 +1564,13 @@ export default function App() {
     [leads, remainingEngageSlots]
   )
 
-  // DM-ready batch: leads with status=engaged AND engaged on a previous day (not today)
+  // DM-ready batch: leads with status=engaged (no wait time for demo)
   const dmBatch = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const todayStartMs = today.getTime()
     return leads
       .filter(l => {
         if (l.status !== 'engaged') return false
         if (!l.engaged_at) return false
-        return new Date(l.engaged_at).getTime() < todayStartMs
+        return true
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [leads])
