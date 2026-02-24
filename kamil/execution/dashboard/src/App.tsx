@@ -231,7 +231,7 @@ function App() {
       case 'messages':
         return <MessagesPage isMobile={isMobile} clients={allClients} messages={allMessages} onSendMessage={handleSendMessage} />;
       case 'analytics':
-        return <AnalyticsPage clients={allClients} />;
+        return <AnalyticsPage clients={allClients} invoices={allInvoices} workoutLogs={workoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} />;
       case 'programs':
         return (
           <WorkoutProgramsPage
