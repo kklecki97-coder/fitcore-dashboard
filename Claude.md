@@ -103,6 +103,39 @@ Jakub's internal tool for managing daily Instagram outreach. React + TypeScript 
 - **DM generation script:** `jakub/execution/generate_dm_drafts.py` — generates AI DM drafts and stores them in Supabase
 - **Directive:** `jakub/directives/instagram_dm_outreach.md`
 
+## Deployment (Vercel)
+
+**Deploys are manual only.** Pushing to GitHub does NOT auto-deploy. You must trigger a deploy explicitly.
+
+**Live URLs:**
+- **fitcore.tech** → Landing page (`kamil/execution/landing/`)
+- **app.fitcore.tech** → Dashboard (`kamil/execution/dashboard/`)
+
+**How to deploy:**
+
+Option 1 — Script:
+```bash
+./shared/deploy.sh dashboard   # Deploy dashboard only
+./shared/deploy.sh landing     # Deploy landing page only
+./shared/deploy.sh both        # Deploy both
+```
+
+Option 2 — Direct curl (if script doesn't work):
+```bash
+# Dashboard → app.fitcore.tech
+curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_jZJeht6JKlqGLVDJADp2NzZ4zOM4/QZtTnlqMWJ"
+
+# Landing → fitcore.tech
+curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_Dlf42hGmT1GjUyETDiW2wzpVi5pM/IxIr1xhCsN"
+```
+
+**Important:**
+- Always push your changes to GitHub FIRST, then trigger the deploy
+- Vercel pulls from `main` branch of `jakub-mika-test/Fitness-Project`
+- Dashboard root directory: `kamil/execution/dashboard`
+- Landing root directory: `kamil/execution/landing`
+- The `build` command must pass (`npm run build`) or the deploy fails
+
 ## Summary
 
 Two independent workstreams, one shared repo. Jakub finds the clients, Kamil builds the product. The 3-layer architecture (directives → orchestration → execution) applies within each workstream. Stay in your lane, self-anneal, and ship.
