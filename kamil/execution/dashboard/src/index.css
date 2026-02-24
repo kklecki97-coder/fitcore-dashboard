@@ -199,6 +199,11 @@ select option {
   background: var(--text-secondary);
 }
 
+/* ── Horizontal scrollbar: slim ── */
+::-webkit-scrollbar:horizontal {
+  height: 3px;
+}
+
 /* ── Background grain texture ── */
 body::before {
   content: '';

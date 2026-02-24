@@ -245,7 +245,10 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
           </div>
 
           {/* Channel Filter Tabs */}
-          <div style={styles.filterRow}>
+          <div
+            style={styles.filterRow}
+            onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); }}
+          >
             {filterTabs.map(tab => {
               const isActive = channelFilter === tab.key;
               const count = channelCounts[tab.key] || 0;
@@ -331,8 +334,8 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                       <div style={styles.convNameRow}>
                         <span style={{ ...styles.convName, fontWeight: isUnread ? 700 : 600 }}>{conv.name}</span>
                         {conv.channel && (
-                          <span style={{ ...styles.channelBadge, color: CHANNEL_COLORS[conv.channel], background: `${CHANNEL_COLORS[conv.channel]}15` }}>
-                            {CHANNEL_LABELS[conv.channel]}
+                          <span style={{ ...styles.channelBadge, color: CHANNEL_COLORS[conv.channel] }}>
+                            <ChannelIcon channel={conv.channel} size={12} />
                           </span>
                         )}
                       </div>
@@ -681,7 +684,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    padding: '10px 12px',
+    padding: '14px 12px',
     borderRadius: 'var(--radius-sm)',
     border: '1px solid transparent',
     cursor: 'pointer',
@@ -729,12 +732,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
   },
   channelBadge: {
-    fontSize: '10px',
-    fontWeight: 700,
-    padding: '1px 5px',
-    borderRadius: '8px',
-    letterSpacing: '0.3px',
-    textTransform: 'uppercase' as const,
+    display: 'flex',
+    alignItems: 'center',
   },
   convPreview: {
     fontSize: '13px',
@@ -742,7 +741,7 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    marginTop: '2px',
+    marginTop: '6px',
   },
   convRight: {
     display: 'flex',
