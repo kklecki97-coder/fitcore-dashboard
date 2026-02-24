@@ -43,6 +43,10 @@ html, body, #root {
   width: 100%;
 }
 
+#root {
+  zoom: 1.25;
+}
+
 body {
   font-family: var(--font-display);
   background: var(--bg-primary);
