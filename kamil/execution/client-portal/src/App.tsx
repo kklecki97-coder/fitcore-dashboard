@@ -65,6 +65,7 @@ function App() {
             program={myProgram}
             workoutLogs={myWorkoutLogs}
             checkIns={checkIns}
+            messages={messages}
             coachName={coachName}
             onNavigate={setCurrentPage}
           />
