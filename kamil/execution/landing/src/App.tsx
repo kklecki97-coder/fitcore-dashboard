@@ -732,7 +732,7 @@ export default function App() {
               See it in action
             </h2>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>
-              2-minute walkthrough of the full dashboard
+              6-minute walkthrough of the full dashboard
             </p>
           </div>
           {/* TODO: Replace VideoPlaceholder with actual <video> or YouTube embed */}
