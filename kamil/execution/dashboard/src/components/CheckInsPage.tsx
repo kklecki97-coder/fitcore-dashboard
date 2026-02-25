@@ -182,12 +182,12 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
     if (ci.mood && ci.mood <= 2) score += 30;
     if (ci.energy && ci.energy <= 3) score += 20;
     if (ci.stress && ci.stress >= 7) score += 25;
-    if (ci.adherence && ci.adherence < 60) score += 30;
+    if (ci.steps != null && ci.steps < 5000) score += 30;
     if (ci.sleepHours && ci.sleepHours < 6) score += 15;
     // Check for declining trends
     const prev = getPrevious(ci);
     if (prev) {
-      if (prev.adherence && ci.adherence && ci.adherence < prev.adherence - 10) score += 20;
+      if (prev.steps && ci.steps && ci.steps < prev.steps - 2000) score += 20;
       if (prev.mood && ci.mood && ci.mood < prev.mood) score += 10;
     }
     return score;
@@ -255,13 +255,13 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
           <div style={styles.summaryHint}>need intervention</div>
         </GlassCard>
         <GlassCard delay={0.1}>
-          <div style={styles.summaryLabel}>Avg Adherence</div>
+          <div style={styles.summaryLabel}>Avg Steps</div>
           <div style={styles.summaryValue}>
             {completedCheckIns.length > 0
-              ? Math.round(completedCheckIns.filter(ci => ci.adherence != null).reduce((s, ci) => s + (ci.adherence || 0), 0) / completedCheckIns.filter(ci => ci.adherence != null).length)
-              : 0}%
+              ? Math.round(completedCheckIns.filter(ci => ci.steps != null).reduce((s, ci) => s + (ci.steps || 0), 0) / completedCheckIns.filter(ci => ci.steps != null).length).toLocaleString()
+              : 0}
           </div>
-          <div style={styles.summaryHint}>across all clients</div>
+          <div style={styles.summaryHint}>daily avg across clients</div>
         </GlassCard>
         <GlassCard delay={0.15}>
           <div style={styles.summaryLabel}>Upcoming</div>
@@ -436,10 +436,10 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             {prev?.weight && <DeltaBadge current={ci.weight} previous={prev.weight} unit="kg" inverse />}
                           </div>
                         )}
-                        {ci.adherence != null && (
+                        {ci.steps != null && (
                           <div style={styles.metricChip}>
-                            <span style={{ ...styles.metricChipValue, color: ci.adherence >= 80 ? 'var(--accent-success)' : ci.adherence >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
-                              {ci.adherence}%
+                            <span style={{ ...styles.metricChipValue, color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
+                              {ci.steps.toLocaleString()}
                             </span>
                           </div>
                         )}
@@ -536,11 +536,11 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                     {prev?.bodyFat != null && <DeltaBadge current={ci.bodyFat} previous={prev.bodyFat} unit="%" inverse />}
                                   </div>
                                 )}
-                                {ci.adherence != null && (
+                                {ci.steps != null && (
                                   <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Adherence</span>
-                                    <span style={{ ...styles.metricCellValue, color: ci.adherence >= 80 ? 'var(--accent-success)' : ci.adherence >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.adherence}%</span>
-                                    {prev?.adherence != null && <DeltaBadge current={ci.adherence} previous={prev.adherence} unit="%" />}
+                                    <span style={styles.metricCellLabel}>Steps</span>
+                                    <span style={{ ...styles.metricCellValue, color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.steps.toLocaleString()}</span>
+                                    {prev?.steps != null && <DeltaBadge current={ci.steps} previous={prev.steps} unit="" />}
                                   </div>
                                 )}
                                 {ci.sleepHours != null && (
@@ -595,11 +595,11 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   );
                                 })()}
                                 {(() => {
-                                  const adherenceTrend = getTrend(ci.clientId, 'adherence');
-                                  return adherenceTrend.length >= 2 && (
+                                  const stepsTrend = getTrend(ci.clientId, 'steps');
+                                  return stepsTrend.length >= 2 && (
                                     <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Adherence</span>
-                                      <Sparkline data={adherenceTrend} color="var(--accent-success)" />
+                                      <span style={styles.trendLabel}>Steps</span>
+                                      <Sparkline data={stepsTrend} color="var(--accent-success)" />
                                     </div>
                                   );
                                 })()}
@@ -669,9 +669,13 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                               <div style={styles.photosRow}>
                                 {ci.photos.map((photo, pi) => (
                                   <div key={pi} style={styles.photoCard}>
-                                    <div style={styles.photoPlaceholder}>
-                                      <ImageIcon size={24} color="var(--text-tertiary)" style={{ opacity: 0.4 }} />
-                                    </div>
+                                    {photo.url ? (
+                                      <img src={photo.url} alt={photo.label} style={styles.photoImage} />
+                                    ) : (
+                                      <div style={styles.photoPlaceholder}>
+                                        <ImageIcon size={24} color="var(--text-tertiary)" style={{ opacity: 0.4 }} />
+                                      </div>
+                                    )}
                                     <span style={styles.photoLabel}>{photo.label}</span>
                                   </div>
                                 ))}
@@ -1422,6 +1426,13 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  photoImage: {
+    width: '80px',
+    height: '100px',
+    borderRadius: 'var(--radius-sm)',
+    objectFit: 'cover' as const,
+    border: '1px solid var(--glass-border)',
   },
   photoLabel: {
     fontSize: '12px',

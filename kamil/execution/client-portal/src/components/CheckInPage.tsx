@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry, Minus, Plus } from 'lucide-react';
+import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry, Minus, Plus, Camera, X, Image as ImageIcon } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import type { CheckIn } from '../types';
@@ -110,12 +110,47 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   const isMobile = useIsMobile();
   const [tab, setTab] = useState<'submit' | 'history'>('submit');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selfReportOpen, setSelfReportOpen] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
     weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '',
-    adherence: '', nutritionScore: '', notes: '', wins: '', challenges: '',
+    steps: '', nutritionScore: '', notes: '', wins: '', challenges: '',
   });
+  const [photos, setPhotos] = useState<{ url: string; label: string }[]>([]);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const fixedSlots: { label: string; key: string; displayLabel: string }[] = [
+    { label: 'Front', key: 'front', displayLabel: 'Front' },
+    { label: 'Side', key: 'side', displayLabel: 'Side' },
+    { label: 'Back', key: 'back', displayLabel: 'Back' },
+  ];
+
+  // Dynamic "Other" slots — one empty slot always shows at the end (max 5 extras)
+  const otherPhotos = photos.filter(p => p.label.startsWith('Other'));
+  const maxOtherSlots = 5;
+  const otherSlotCount = Math.min(otherPhotos.length + 1, maxOtherSlots);
+  const otherSlots: { label: string; key: string; displayLabel: string }[] = Array.from({ length: otherSlotCount }, (_, i) => ({
+    label: `Other ${i + 1}`,
+    key: `other-${i + 1}`,
+    displayLabel: 'Other',
+  }));
+
+  const photoSlots = [...fixedSlots, ...otherSlots];
+
+  const handlePhotoUpload = (key: string, label: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotos(prev => {
+        const filtered = prev.filter(p => p.label !== label);
+        return [...filtered, { url: reader.result as string, label }];
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const completed = checkIns.filter(ci => ci.status === 'completed').sort((a, b) => b.date.localeCompare(a.date));
 
@@ -132,17 +167,19 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
       energy: form.energy ? parseInt(form.energy) : null,
       stress: form.stress ? parseInt(form.stress) : null,
       sleepHours: form.sleepHours ? parseFloat(form.sleepHours) : null,
-      adherence: form.adherence ? parseInt(form.adherence) : null,
+      steps: form.steps ? parseInt(form.steps) : null,
       nutritionScore: form.nutritionScore ? parseInt(form.nutritionScore) : null,
       notes: form.notes,
       wins: form.wins,
       challenges: form.challenges,
       coachFeedback: '',
+      photos,
       reviewStatus: 'pending',
       flagReason: '',
     };
     onSubmitCheckIn(ci);
-    setForm({ weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '', adherence: '', nutritionScore: '', notes: '', wins: '', challenges: '' });
+    setForm({ weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '', steps: '', nutritionScore: '', notes: '', wins: '', challenges: '' });
+    setPhotos([]);
     setTab('history');
   };
 
@@ -228,8 +265,8 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
             <div style={styles.sectionTitle}>Compliance</div>
             <div style={styles.fieldRow}>
               <div style={styles.field}>
-                <label style={styles.label}>Adherence (%)</label>
-                <NumberStepper value={form.adherence} onChange={v => setForm({ ...form, adherence: v })} min={0} max={100} step={5} placeholder="90" />
+                <label style={styles.label}>Steps (daily avg)</label>
+                <NumberStepper value={form.steps} onChange={v => setForm({ ...form, steps: v })} min={0} max={50000} step={500} placeholder="8000" />
               </div>
               <div style={styles.field}>
                 <label style={styles.label}>Nutrition (1-10)</label>
@@ -240,18 +277,71 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
 
           {/* Self-Report */}
           <GlassCard delay={0.2}>
-            <div style={styles.sectionTitle}>Self-Report</div>
-            <div style={styles.field}>
-              <label style={styles.label}>Notes</label>
-              <textarea style={styles.textarea} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="How was your week overall?" rows={3} />
+            <div
+              style={styles.sectionToggle}
+              onClick={() => setSelfReportOpen(prev => !prev)}
+            >
+              <div style={{ ...styles.sectionTitle, marginBottom: 0 }}>Self-Report</div>
+              <div style={styles.sectionToggleRight}>
+                <span style={styles.optionalBadge}>Optional</span>
+                {selfReportOpen ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
+              </div>
             </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Wins this week</label>
-              <textarea style={styles.textarea} value={form.wins} onChange={e => setForm({ ...form, wins: e.target.value })} placeholder="What went well?" rows={2} />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label}>Challenges</label>
-              <textarea style={styles.textarea} value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} placeholder="What was difficult?" rows={2} />
+            {selfReportOpen && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ marginTop: '12px' }}>
+                <div style={styles.field}>
+                  <label style={styles.label}>Notes</label>
+                  <textarea style={styles.textarea} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="How was your week overall?" rows={2} />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Wins this week</label>
+                  <textarea style={styles.textarea} value={form.wins} onChange={e => setForm({ ...form, wins: e.target.value })} placeholder="What went well?" rows={2} />
+                </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Challenges</label>
+                  <textarea style={styles.textarea} value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} placeholder="What was difficult?" rows={2} />
+                </div>
+              </motion.div>
+            )}
+          </GlassCard>
+
+          {/* Progress Photos */}
+          <GlassCard delay={0.25}>
+            <div style={styles.sectionTitle}>Progress Photos</div>
+            <div style={styles.photoSlots}>
+              {photoSlots.map(slot => {
+                const existing = photos.find(p => p.label === slot.label);
+                return (
+                  <div key={slot.key} style={styles.photoSlot}>
+                    <input
+                      ref={el => { fileInputRefs.current[slot.key] = el; }}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={e => handlePhotoUpload(slot.key, slot.label, e)}
+                    />
+                    {existing ? (
+                      <div style={styles.photoPreview}>
+                        <img src={existing.url} alt={slot.label} style={styles.photoImg} />
+                        <button
+                          style={styles.photoRemoveBtn}
+                          onClick={() => setPhotos(prev => prev.filter(p => p.label !== slot.label))}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        style={styles.photoUploadBox}
+                        onClick={() => fileInputRefs.current[slot.key]?.click()}
+                      >
+                        <Camera size={20} color="var(--text-tertiary)" />
+                      </div>
+                    )}
+                    <div style={styles.photoSlotLabel}>{slot.displayLabel}</div>
+                  </div>
+                );
+              })}
             </div>
           </GlassCard>
 
@@ -280,8 +370,13 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                       <div style={styles.historyDate}>{ci.date}</div>
                       <div style={styles.historyChips}>
                         {ci.weight && <span style={styles.chip}>{ci.weight}kg</span>}
-                        {ci.adherence != null && <span style={styles.chip}>{ci.adherence}%</span>}
+                        {ci.steps != null && <span style={styles.chip}>{ci.steps.toLocaleString()} steps</span>}
                         {MoodIcon && <MoodIcon size={14} color={mood?.color} />}
+                        {ci.photos?.length > 0 && (
+                          <span style={{ ...styles.chip, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <ImageIcon size={10} /> {ci.photos.length}
+                          </span>
+                        )}
                       </div>
                     </div>
                     {isExpanded ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
@@ -302,6 +397,19 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                       {ci.notes && <div style={styles.detailText}><strong>Notes:</strong> {ci.notes}</div>}
                       {ci.wins && <div style={{ ...styles.detailText, color: 'var(--accent-success)' }}><strong>Wins:</strong> {ci.wins}</div>}
                       {ci.challenges && <div style={{ ...styles.detailText, color: 'var(--accent-warm)' }}><strong>Challenges:</strong> {ci.challenges}</div>}
+                      {ci.photos?.length > 0 && (
+                        <div>
+                          <div style={styles.detailLabel}>Progress Photos</div>
+                          <div style={styles.historyPhotos}>
+                            {ci.photos.map((photo, pi) => (
+                              <div key={pi} style={styles.historyPhotoCard}>
+                                <img src={photo.url} alt={photo.label} style={styles.historyPhotoImg} />
+                                <span style={styles.historyPhotoLabel}>{photo.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {ci.coachFeedback && (
                         <div style={styles.feedbackBox}>
                           <div style={styles.feedbackLabel}>Coach Feedback</div>
@@ -366,6 +474,29 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
     marginBottom: '12px',
+  },
+  sectionToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    cursor: 'pointer',
+    marginBottom: '0',
+  },
+  sectionToggleRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  optionalBadge: {
+    fontSize: '10px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '10px',
+    padding: '2px 8px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px',
   },
   fieldRow: {
     display: 'flex',
@@ -540,5 +671,93 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)',
     fontSize: '14px',
     padding: '20px',
+  },
+
+  // ── Photo Upload ──
+  photoSlots: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+  },
+  photoSlot: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  photoUploadBox: {
+    width: '72px',
+    height: '72px',
+    border: '2px dashed var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'border-color 0.15s, background 0.15s',
+    background: 'rgba(255,255,255,0.02)',
+  },
+  photoPreview: {
+    width: '72px',
+    height: '72px',
+    borderRadius: 'var(--radius-sm)',
+    overflow: 'hidden',
+    position: 'relative',
+    border: '1px solid var(--glass-border)',
+  },
+  photoImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  photoRemoveBtn: {
+    position: 'absolute',
+    top: '4px',
+    right: '4px',
+    width: '22px',
+    height: '22px',
+    borderRadius: '50%',
+    border: 'none',
+    background: 'rgba(0,0,0,0.7)',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
+  photoSlotLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px',
+  },
+
+  // ── History Photos ──
+  historyPhotos: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '6px',
+  },
+  historyPhotoCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  historyPhotoImg: {
+    width: '72px',
+    height: '96px',
+    objectFit: 'cover',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+  },
+  historyPhotoLabel: {
+    fontSize: '9px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px',
   },
 };

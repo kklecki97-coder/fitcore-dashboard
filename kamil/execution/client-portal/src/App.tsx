@@ -107,6 +107,7 @@ function App() {
           <ProgressPage
             client={clientUser}
             workoutLogs={myWorkoutLogs}
+            checkIns={checkIns}
           />
         );
       case 'messages':

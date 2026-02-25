@@ -88,12 +88,13 @@ export interface CheckIn {
   energy: number | null;
   stress: number | null;
   sleepHours: number | null;
-  adherence: number | null;
+  steps: number | null;
   nutritionScore: number | null;
   notes: string;
   wins: string;
   challenges: string;
   coachFeedback: string;
+  photos: { url: string; label: string }[];
   reviewStatus: 'pending' | 'reviewed' | 'flagged';
   flagReason: string;
 }

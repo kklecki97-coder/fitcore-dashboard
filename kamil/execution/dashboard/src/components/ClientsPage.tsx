@@ -623,6 +623,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '8px',
     marginBottom: '16px',
+    flexWrap: 'wrap',
   },
   planBadge: {
     fontSize: '15px',
@@ -857,8 +858,5 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--accent-primary)',
     background: 'var(--accent-primary-dim)',
     whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    maxWidth: '120px',
   },
 };

@@ -113,7 +113,7 @@ export interface CheckIn {
   stress: number | null;       // 1-10
   sleepHours: number | null;
   // ── Compliance ──
-  adherence: number | null;    // 0-100 percentage
+  steps: number | null;        // daily average steps
   nutritionScore: number | null; // 1-10 (how well they stuck to macros/plan)
   // ── Qualitative ──
   notes: string;               // client self-report
@@ -121,7 +121,7 @@ export interface CheckIn {
   challenges: string;          // challenges faced
   coachFeedback: string;
   // ── Progress photos ──
-  photos: { url: string; label: 'front' | 'side' | 'back' }[];
+  photos: { url: string; label: string }[];
   // ── Review workflow ──
   reviewStatus: 'pending' | 'reviewed' | 'flagged'; // coach review state
   flagReason: string;          // why flagged (needs program change, call, etc.)

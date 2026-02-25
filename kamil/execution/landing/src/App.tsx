@@ -697,7 +697,7 @@ export default function App() {
             gap: 16,
           }}>
             {[
-              { icon: ClipboardCheck, title: 'Weekly Check-Ins', desc: 'Mood, sleep, adherence, nutrition, energy. All tracked with trends and coach feedback.', color: '#E1306C' },
+              { icon: ClipboardCheck, title: 'Weekly Check-Ins', desc: 'Mood, sleep, steps, nutrition, energy. All tracked with trends and coach feedback.', color: '#E1306C' },
               { icon: CreditCard, title: 'Payments & Invoicing', desc: 'Generate invoices, track paid/pending/overdue. Send payment reminders with one click.', color: 'var(--accent-success)' },
               { icon: Calendar, title: 'Schedule', desc: 'Weekly training calendar with session booking. See who\'s training today at a glance.', color: 'var(--accent-warm)' },
               { icon: Brain, title: 'AI Insights', desc: 'Automated alerts for at-risk clients, missed check-ins, and coaching opportunities.', color: 'var(--accent-secondary)' },

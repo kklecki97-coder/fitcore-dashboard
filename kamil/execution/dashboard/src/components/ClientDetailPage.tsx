@@ -6,7 +6,7 @@ import {
   Edit3, MessageSquare, FileText, X, Send, Save,
   Activity, Dumbbell, Check, ClipboardCheck, Flag,
   Smile, Frown, Meh, SmilePlus, Angry,
-  Moon, Percent, Download, Clock, Star,
+  Moon, Download, Clock, Star,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -45,7 +45,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     bodyFat: '',
     mood: '' as string,
     sleepHours: '',
-    adherence: '',
+    steps: '',
     energy: '',
     stress: '',
     nutritionScore: '',
@@ -740,8 +740,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         const avgMood = completed.length > 0
           ? (completed.reduce((s, ci) => s + (ci.mood || 0), 0) / completed.filter(ci => ci.mood).length).toFixed(1)
           : '—';
-        const avgAdherence = completed.length > 0
-          ? Math.round(completed.reduce((s, ci) => s + (ci.adherence || 0), 0) / completed.filter(ci => ci.adherence).length)
+        const avgSteps = completed.length > 0
+          ? Math.round(completed.reduce((s, ci) => s + (ci.steps || 0), 0) / completed.filter(ci => ci.steps).length)
           : 0;
 
         const moodIcons: Record<number, { icon: typeof Smile; color: string }> = {
@@ -777,10 +777,10 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   <span style={styles.trainingStatLabel}>avg mood</span>
                 </div>
                 <div style={styles.trainingStat}>
-                  <span style={{ ...styles.trainingStatValue, color: avgAdherence >= 80 ? 'var(--accent-success)' : avgAdherence >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
-                    {avgAdherence}%
+                  <span style={{ ...styles.trainingStatValue, color: avgSteps >= 8000 ? 'var(--accent-success)' : avgSteps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
+                    {avgSteps.toLocaleString()}
                   </span>
-                  <span style={styles.trainingStatLabel}>adherence</span>
+                  <span style={styles.trainingStatLabel}>avg steps</span>
                 </div>
               </div>
             </div>
@@ -831,12 +831,12 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                             <Moon size={10} /> {ci.sleepHours}h
                           </span>
                         )}
-                        {ci.adherence !== null && (
+                        {ci.steps !== null && (
                           <span style={{
                             ...styles.checkInChip,
-                            color: ci.adherence >= 80 ? 'var(--accent-success)' : ci.adherence >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                            color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)',
                           }}>
-                            <Percent size={10} /> {ci.adherence}
+                            {ci.steps.toLocaleString()} steps
                           </span>
                         )}
                         {ci.energy !== null && ci.energy !== undefined && (
@@ -1291,11 +1291,11 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                         <span style={styles.checkInDetailValue}>{selectedCheckIn.sleepHours}h</span>
                       </div>
                     )}
-                    {selectedCheckIn.adherence !== null && (
+                    {selectedCheckIn.steps !== null && (
                       <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Adherence</span>
-                        <span style={{ ...styles.checkInDetailValue, color: (selectedCheckIn.adherence || 0) >= 80 ? 'var(--accent-success)' : (selectedCheckIn.adherence || 0) >= 60 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
-                          {selectedCheckIn.adherence}%
+                        <span style={styles.checkInDetailLabel}>Steps</span>
+                        <span style={{ ...styles.checkInDetailValue, color: (selectedCheckIn.steps || 0) >= 8000 ? 'var(--accent-success)' : (selectedCheckIn.steps || 0) >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
+                          {(selectedCheckIn.steps || 0).toLocaleString()}
                         </span>
                       </div>
                     )}
