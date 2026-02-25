@@ -1,4 +1,4 @@
-import { Flame, Calendar, TrendingDown, Dumbbell, MessageSquare, ArrowRight, Send, ClipboardCheck, Target, CheckCircle2, XCircle, Minus } from 'lucide-react';
+import { Flame, Calendar, TrendingDown, Dumbbell, MessageSquare, ArrowRight, Send, ClipboardCheck, Target } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage } from '../types';
@@ -48,15 +48,32 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   monday.setDate(today.getDate() + mondayOffset);
   monday.setHours(0, 0, 0, 0);
 
+  // Build a schedule preview: for today & future, show the next workout name
+  const todayStr = today.toISOString().split('T')[0];
+  let upcomingDayIdx = todayDayIndex;
+
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     const dateStr = d.toISOString().split('T')[0];
     const log = workoutLogs.find(w => w.date === dateStr);
-    const isToday = dateStr === today.toISOString().split('T')[0];
+    const isToday = dateStr === todayStr;
     const isPast = d < today && !isToday;
     const isFuture = d > today;
-    return { day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i], date: d.getDate(), dateStr, log, isToday, isPast, isFuture };
+
+    // Show scheduled workout name for today and future days
+    let scheduledName = '';
+    if ((isToday || isFuture) && program && program.days.length > 0 && !log) {
+      scheduledName = program.days[upcomingDayIdx % program.days.length].name
+        .replace('Upper Body ', 'Upper ')
+        .replace('Lower Body ', 'Lower ');
+      upcomingDayIdx++;
+    } else if (log) {
+      // If there's already a log for today, advance the index
+      if (isToday || isFuture) upcomingDayIdx++;
+    }
+
+    return { day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i], date: d.getDate(), dateStr, log, isToday, isPast, isFuture, scheduledName };
   });
 
   // ── Goal progress (parse from goal strings) ──
@@ -86,46 +103,12 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
     return { goal, progress: Math.round(client.progress * 0.7), label: 'In progress' };
   });
 
-  // ── Recent activity feed ──
-  const activities: { icon: 'workout' | 'checkin' | 'message'; text: string; time: string; date: Date }[] = [];
-
-  // Add recent workouts
-  workoutLogs.slice(0, 5).forEach(w => {
-    activities.push({
-      icon: 'workout',
-      text: `${w.completed ? 'Completed' : 'Missed'} ${w.type}`,
-      time: formatRelative(new Date(w.date + 'T12:00:00')),
-      date: new Date(w.date + 'T12:00:00'),
-    });
-  });
-
-  // Add recent check-ins
-  checkIns.filter(ci => ci.status === 'completed').slice(0, 3).forEach(ci => {
-    activities.push({
-      icon: 'checkin',
-      text: `Submitted weekly check-in`,
-      time: formatRelative(new Date(ci.date + 'T12:00:00')),
-      date: new Date(ci.date + 'T12:00:00'),
-    });
-  });
-
-  // Add recent coach messages
-  const coachMessages = messages.filter(m => m.isFromCoach).slice(-3);
-  coachMessages.forEach(m => {
-    activities.push({
-      icon: 'message',
-      text: `${coachName}: "${m.text.length > 50 ? m.text.slice(0, 50) + '…' : m.text}"`,
-      time: formatRelative(new Date(m.timestamp)),
-      date: new Date(m.timestamp),
-    });
-  });
-
-  // Sort by date desc, take latest 4
-  activities.sort((a, b) => b.date.getTime() - a.date.getTime());
-  const recentActivities = activities.slice(0, 4);
-
   // ── Last coach message ──
   const lastCoachMsg = messages.filter(m => m.isFromCoach).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+
+  // ── Quick action badges ──
+  const checkInDueNow = daysUntilCheckIn !== null && daysUntilCheckIn <= 1;
+  const unreadMessages = messages.filter(m => m.isFromCoach && !m.isRead).length;
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
@@ -135,26 +118,35 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         <p style={styles.motivational}>Keep pushing — consistency beats perfection.</p>
       </div>
 
-      {/* ── Quick Actions ── */}
-      <div style={styles.quickActions}>
-        <button style={styles.quickBtn} onClick={() => onNavigate('program')}>
-          <div style={{ ...styles.quickIcon, background: 'var(--accent-warm-dim)', color: 'var(--accent-warm)' }}>
-            <Dumbbell size={16} />
+      {/* ── Stats Row ── */}
+      <div style={styles.statsRow}>
+        <GlassCard delay={0.05} style={styles.statCard}>
+          <div style={styles.statIcon}><TrendingDown size={16} color="var(--accent-success)" /></div>
+          <div style={styles.statValue}>{weights[weights.length - 1]} <span style={styles.statUnit}>kg</span></div>
+          <div style={{
+            ...styles.statLabel,
+            color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
+          }}>
+            {weightChange <= 0 ? '↓' : '↑'} {Math.abs(weightChange).toFixed(1)}kg
           </div>
-          <span style={styles.quickLabel}>Log Workout</span>
-        </button>
-        <button style={styles.quickBtn} onClick={() => onNavigate('check-in')}>
-          <div style={{ ...styles.quickIcon, background: 'var(--accent-secondary-dim)', color: 'var(--accent-secondary)' }}>
-            <ClipboardCheck size={16} />
+        </GlassCard>
+
+        <GlassCard delay={0.08} style={styles.statCard}>
+          <div style={styles.statIcon}><Flame size={16} color="var(--accent-warm)" /></div>
+          <div style={styles.statValue}>{client.streak}</div>
+          <div style={styles.statLabel}>day streak</div>
+        </GlassCard>
+
+        <GlassCard delay={0.1} style={styles.statCard}>
+          <div style={styles.statIcon}>
+            <div style={{
+              width: '16px', height: '16px', borderRadius: '50%',
+              background: `conic-gradient(var(--accent-primary) ${client.progress * 3.6}deg, var(--glass-border) 0deg)`,
+            }} />
           </div>
-          <span style={styles.quickLabel}>Check-In</span>
-        </button>
-        <button style={styles.quickBtn} onClick={() => onNavigate('messages')}>
-          <div style={{ ...styles.quickIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
-            <Send size={16} />
-          </div>
-          <span style={styles.quickLabel}>Message</span>
-        </button>
+          <div style={styles.statValue}>{client.progress}<span style={styles.statUnit}>%</span></div>
+          <div style={styles.statLabel}>progress</div>
+        </GlassCard>
       </div>
 
       {/* ── Today's Workout ── */}
@@ -181,99 +173,89 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         )}
       </GlassCard>
 
+      {/* ── Quick Actions ── */}
+      <div style={styles.quickActions}>
+        <button style={styles.quickBtn} onClick={() => onNavigate('program')}>
+          <div style={{ ...styles.quickIcon, background: 'var(--accent-warm-dim)', color: 'var(--accent-warm)' }}>
+            <Dumbbell size={18} />
+          </div>
+          <span style={styles.quickLabel}>Log Workout</span>
+        </button>
+        <button style={styles.quickBtn} onClick={() => onNavigate('check-in')}>
+          <div style={{ ...styles.quickIconWrap }}>
+            <div style={{ ...styles.quickIcon, background: 'var(--accent-secondary-dim)', color: 'var(--accent-secondary)' }}>
+              <ClipboardCheck size={18} />
+            </div>
+            {checkInDueNow && <div style={styles.quickBadge} />}
+          </div>
+          <span style={styles.quickLabel}>Check-In</span>
+        </button>
+        <button style={styles.quickBtn} onClick={() => onNavigate('messages')}>
+          <div style={{ ...styles.quickIconWrap }}>
+            <div style={{ ...styles.quickIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
+              <Send size={18} />
+            </div>
+            {unreadMessages > 0 && <div style={styles.quickBadge} />}
+          </div>
+          <span style={styles.quickLabel}>Message</span>
+        </button>
+      </div>
+
       {/* ── Weekly Training Calendar ── */}
       <GlassCard delay={0.1}>
-        <div style={{ ...styles.cardTitle, marginBottom: '12px' }}>This Week</div>
         <div style={styles.weekRow}>
-          {weekDays.map(wd => (
-            <div key={wd.dateStr} style={{
-              ...styles.weekDay,
-              ...(wd.isToday ? styles.weekDayToday : {}),
-            }}>
-              <div style={styles.weekDayLabel}>{wd.day}</div>
-              <div style={{
-                ...styles.weekDayCircle,
-                ...(wd.log?.completed ? styles.weekDayCompleted : {}),
-                ...(wd.log && !wd.log.completed ? styles.weekDayMissed : {}),
-                ...(wd.isToday && !wd.log ? styles.weekDayTodayCircle : {}),
+          {weekDays.map(wd => {
+            const completed = wd.log?.completed;
+            const missed = wd.log && !wd.log.completed;
+            const workoutLabel = wd.scheduledName || (wd.log ? wd.log.type.replace('Upper Body ', 'Upper ').replace('Lower Body ', 'Lower ') : '');
+
+            return (
+              <div key={wd.dateStr} style={{
+                ...styles.weekDay,
+                ...(wd.isToday ? styles.weekDayToday : {}),
+                ...(completed ? styles.weekDayDone : {}),
+                ...(missed ? styles.weekDayFail : {}),
+                opacity: wd.isPast && !wd.log ? 0.4 : 1,
               }}>
-                {wd.log?.completed ? <CheckCircle2 size={14} /> :
-                 wd.log && !wd.log.completed ? <XCircle size={14} /> :
-                 wd.isFuture ? <Minus size={10} color="var(--text-tertiary)" /> :
-                 wd.isToday ? <div style={styles.todayDot} /> :
-                 <Minus size={10} color="var(--text-tertiary)" />}
+                {/* Status bar top edge */}
+                <div style={{
+                  ...styles.weekStatusBar,
+                  background: completed ? 'var(--accent-success)' :
+                              missed ? 'var(--accent-danger)' :
+                              wd.isToday ? 'var(--accent-primary)' : 'transparent',
+                }} />
+
+                <div style={styles.weekDayLabel}>{wd.day}</div>
+
+                <div style={{
+                  ...styles.weekDayNum,
+                  color: wd.isToday ? 'var(--accent-primary)' :
+                         completed ? 'var(--accent-success)' :
+                         missed ? 'var(--accent-danger)' :
+                         'var(--text-secondary)',
+                }}>
+                  {wd.date}
+                </div>
+
+                {/* Workout name tag */}
+                {workoutLabel && (
+                  <div style={{
+                    ...styles.weekWorkoutTag,
+                    color: completed ? 'var(--accent-success)' :
+                           wd.isToday ? 'var(--accent-primary)' :
+                           'var(--text-tertiary)',
+                  }}>
+                    {workoutLabel}
+                  </div>
+                )}
               </div>
-              <div style={styles.weekDayDate}>{wd.date}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </GlassCard>
 
-      {/* ── Stats Row ── */}
-      <div style={styles.statsRow}>
-        <GlassCard delay={0.15} style={styles.statCard}>
-          <div style={styles.statIcon}><TrendingDown size={16} color="var(--accent-success)" /></div>
-          <div style={styles.statValue}>{weights[weights.length - 1]} <span style={styles.statUnit}>kg</span></div>
-          <div style={{
-            ...styles.statLabel,
-            color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
-          }}>
-            {weightChange <= 0 ? '↓' : '↑'} {Math.abs(weightChange).toFixed(1)}kg
-          </div>
-        </GlassCard>
-
-        <GlassCard delay={0.2} style={styles.statCard}>
-          <div style={styles.statIcon}><Flame size={16} color="var(--accent-warm)" /></div>
-          <div style={styles.statValue}>{client.streak}</div>
-          <div style={styles.statLabel}>day streak</div>
-        </GlassCard>
-
-        <GlassCard delay={0.25} style={styles.statCard}>
-          <div style={styles.statIcon}>
-            <div style={{
-              width: '16px', height: '16px', borderRadius: '50%',
-              background: `conic-gradient(var(--accent-primary) ${client.progress * 3.6}deg, var(--glass-border) 0deg)`,
-            }} />
-          </div>
-          <div style={styles.statValue}>{client.progress}<span style={styles.statUnit}>%</span></div>
-          <div style={styles.statLabel}>progress</div>
-        </GlassCard>
-      </div>
-
-      {/* ── Next Check-In (prominent with progress ring) ── */}
-      {nextCheckIn && (
-        <GlassCard delay={0.3} hover onClick={() => onNavigate('check-in')}>
-          <div style={styles.checkInRow}>
-            <div style={styles.checkInRing}>
-              <svg width="48" height="48" viewBox="0 0 48 48">
-                <circle cx="24" cy="24" r="20" fill="none" stroke="var(--glass-border)" strokeWidth="3" />
-                <circle cx="24" cy="24" r="20" fill="none" stroke="var(--accent-secondary)" strokeWidth="3"
-                  strokeDasharray={`${checkInProgress * 125.6} 125.6`}
-                  strokeLinecap="round"
-                  transform="rotate(-90 24 24)"
-                />
-              </svg>
-              <div style={styles.checkInRingIcon}>
-                <Calendar size={16} color="var(--accent-secondary)" />
-              </div>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={styles.cardTitle}>Next Check-In</div>
-              <div style={styles.checkInDue}>
-                {daysUntilCheckIn !== null && daysUntilCheckIn <= 0
-                  ? 'Due today — submit now!'
-                  : daysUntilCheckIn === 1
-                    ? 'Due tomorrow'
-                    : `Due in ${daysUntilCheckIn} days`}
-              </div>
-            </div>
-            <ArrowRight size={16} color="var(--text-tertiary)" />
-          </div>
-        </GlassCard>
-      )}
-
       {/* ── Goal Progress ── */}
-      <GlassCard delay={0.35}>
+      <GlassCard delay={0.2}>
         <div style={{ ...styles.cardHeader, marginBottom: '16px' }}>
           <div style={{ ...styles.cardIcon, background: 'var(--accent-success-dim, rgba(34,197,94,0.1))', color: 'var(--accent-success)' }}>
             <Target size={18} />
@@ -300,68 +282,75 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         </div>
       </GlassCard>
 
-      {/* ── Coach Message Preview ── */}
-      {lastCoachMsg && (
-        <GlassCard delay={0.4} hover onClick={() => onNavigate('messages')}>
-          <div style={styles.cardHeader}>
+      {/* ── Next Check-In (prominent with progress ring) ── */}
+      {nextCheckIn && (
+        <GlassCard delay={0.3} hover onClick={() => onNavigate('check-in')}>
+          <div style={styles.checkInRow}>
+            <div style={styles.checkInRing}>
+              <svg width="54" height="54" viewBox="0 0 54 54">
+                <circle cx="27" cy="27" r="22" fill="none" stroke="var(--glass-border)" strokeWidth="3" />
+                <circle cx="27" cy="27" r="22" fill="none" stroke="var(--accent-secondary)" strokeWidth="3"
+                  strokeDasharray={`${checkInProgress * 138.2} 138.2`}
+                  strokeLinecap="round"
+                  transform="rotate(-90 27 27)"
+                />
+              </svg>
+              <div style={styles.checkInRingIcon}>
+                <Calendar size={18} color="var(--accent-secondary)" />
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={styles.cardTitle}>Next Check-In</div>
+              <div style={styles.checkInDue}>
+                {daysUntilCheckIn !== null && daysUntilCheckIn <= 0
+                  ? 'Due today — submit now!'
+                  : daysUntilCheckIn === 1
+                    ? 'Due tomorrow'
+                    : `Due in ${daysUntilCheckIn} days`}
+              </div>
+            </div>
+            <ArrowRight size={16} color="var(--text-tertiary)" />
+          </div>
+        </GlassCard>
+      )}
+
+      {/* ── From Your Coach (merged message + feedback) ── */}
+      {(lastCoachMsg || latestReviewed) && (
+        <GlassCard delay={0.4}>
+          <div style={{ ...styles.cardHeader, marginBottom: '14px' }}>
             <div style={{ ...styles.cardIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
               <MessageSquare size={18} />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={styles.cardTitle}>{coachName}</div>
-              <div style={styles.cardSub}>{formatRelative(new Date(lastCoachMsg.timestamp))}</div>
-            </div>
-            <ArrowRight size={16} color="var(--text-tertiary)" />
+            <div style={styles.cardTitle}>From {coachName}</div>
           </div>
-          <p style={styles.coachMsgText}>
-            {lastCoachMsg.text.length > 120 ? lastCoachMsg.text.slice(0, 120) + '…' : lastCoachMsg.text}
-          </p>
-        </GlassCard>
-      )}
 
-      {/* ── Recent Activity Feed ── */}
-      <GlassCard delay={0.45}>
-        <div style={{ ...styles.cardTitle, marginBottom: '12px' }}>Recent Activity</div>
-        <div style={styles.activityList}>
-          {recentActivities.map((a, i) => (
-            <div key={i} style={styles.activityItem}>
-              <div style={{
-                ...styles.activityIcon,
-                background: a.icon === 'workout' ? 'var(--accent-warm-dim)' : a.icon === 'checkin' ? 'var(--accent-secondary-dim)' : 'var(--accent-primary-dim)',
-                color: a.icon === 'workout' ? 'var(--accent-warm)' : a.icon === 'checkin' ? 'var(--accent-secondary)' : 'var(--accent-primary)',
-              }}>
-                {a.icon === 'workout' ? <Dumbbell size={12} /> : a.icon === 'checkin' ? <ClipboardCheck size={12} /> : <MessageSquare size={12} />}
-              </div>
-              <div style={styles.activityText}>{a.text}</div>
-              <div style={styles.activityTime}>{a.time}</div>
+          {/* Latest message */}
+          {lastCoachMsg && (
+            <div style={styles.coachSection} onClick={() => onNavigate('messages')}>
+              <div style={styles.coachSectionLabel}>Latest Message</div>
+              <p style={styles.coachMsgText}>
+                {lastCoachMsg.text.length > 120 ? lastCoachMsg.text.slice(0, 120) + '…' : lastCoachMsg.text}
+              </p>
+              <div style={styles.coachSectionTime}>{formatRelative(new Date(lastCoachMsg.timestamp))}</div>
             </div>
-          ))}
-        </div>
-      </GlassCard>
+          )}
 
-      {/* ── Coach Feedback (latest reviewed check-in) ── */}
-      {latestReviewed && (
-        <GlassCard delay={0.5} hover onClick={() => onNavigate('check-in')}>
-          <div style={styles.cardHeader}>
-            <div style={{ ...styles.cardIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
-              <ClipboardCheck size={18} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={styles.cardTitle}>Latest Feedback</div>
-              <div style={styles.cardSub}>
+          {/* Check-in feedback */}
+          {latestReviewed && (
+            <div style={{ ...styles.coachSection, ...(lastCoachMsg ? { marginTop: '14px', borderTop: '1px solid var(--glass-border)', paddingTop: '14px' } : {}) }} onClick={() => onNavigate('check-in')}>
+              <div style={styles.coachSectionLabel}>Check-In Feedback</div>
+              <p style={styles.feedbackText}>{latestReviewed.coachFeedback}</p>
+              <div style={styles.coachSectionTime}>
                 {new Date(latestReviewed.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </div>
             </div>
-            <ArrowRight size={16} color="var(--text-tertiary)" />
-          </div>
-          <p style={styles.feedbackText}>{latestReviewed.coachFeedback}</p>
+          )}
         </GlassCard>
       )}
+
     </div>
   );
 }
-
-// ── Helpers ──
 
 function formatRelative(date: Date): string {
   const now = new Date();
@@ -384,19 +373,19 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '24px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '18px',
     overflowY: 'auto',
     height: '100%',
   },
   welcome: { marginBottom: '4px' },
   greeting: {
-    fontSize: '28px',
+    fontSize: '32px',
     fontWeight: 700,
     letterSpacing: '-0.5px',
     color: 'var(--text-primary)',
   },
   motivational: {
-    fontSize: '14px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
     marginTop: '4px',
   },
@@ -411,8 +400,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '8px',
-    padding: '14px 8px',
+    gap: '10px',
+    padding: '16px 8px',
     borderRadius: 'var(--radius-md)',
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-card)',
@@ -422,15 +411,29 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-primary)',
   },
   quickIcon: {
-    width: '36px',
-    height: '36px',
+    width: '40px',
+    height: '40px',
     borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  quickIconWrap: {
+    position: 'relative',
+    display: 'inline-flex',
+  },
+  quickBadge: {
+    position: 'absolute',
+    top: '-2px',
+    right: '-2px',
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+    background: 'var(--accent-danger)',
+    border: '2px solid var(--bg-card)',
+  },
   quickLabel: {
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
   },
@@ -455,19 +458,19 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   cardTitle: {
-    fontSize: '14px',
+    fontSize: '16px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
   cardSub: {
-    fontSize: '12px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
     marginTop: '1px',
   },
   workoutMeta: {
     display: 'flex',
     gap: '16px',
-    fontSize: '13px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
     marginBottom: '16px',
   },
@@ -478,7 +481,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-md)',
     background: 'var(--accent-primary)',
     color: '#07090e',
-    fontSize: '14px',
+    fontSize: '15px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     display: 'flex',
@@ -489,7 +492,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 0 16px var(--accent-primary-dim)',
   },
   restText: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
     fontStyle: 'italic',
   },
@@ -498,61 +501,67 @@ const styles: Record<string, React.CSSProperties> = {
   weekRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '4px',
+    gap: '6px',
     textAlign: 'center',
+    alignItems: 'center',
   },
   weekDay: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '4px',
-    padding: '6px 2px',
-    borderRadius: 'var(--radius-sm)',
+    justifyContent: 'center',
+    gap: '2px',
+    padding: '0 2px 8px',
+    borderRadius: '8px',
+    background: 'var(--bg-subtle)',
+    border: '1px solid transparent',
+    position: 'relative',
+    overflow: 'hidden',
+    transition: 'all 0.2s',
   },
   weekDayToday: {
-    background: 'rgba(0,229,200,0.06)',
-    border: '1px solid rgba(0,229,200,0.15)',
-    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(0,229,200,0.08)',
+    border: '1px solid rgba(0,229,200,0.25)',
+    boxShadow: '0 0 12px rgba(0,229,200,0.1)',
+  },
+  weekDayDone: {
+    background: 'rgba(34,197,94,0.06)',
+    border: '1px solid rgba(34,197,94,0.12)',
+  },
+  weekDayFail: {
+    background: 'rgba(239,68,68,0.05)',
+    border: '1px solid rgba(239,68,68,0.1)',
+  },
+  weekStatusBar: {
+    width: '100%',
+    height: '2px',
+    borderRadius: '0 0 2px 2px',
+    marginBottom: '4px',
   },
   weekDayLabel: {
     fontSize: '10px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    letterSpacing: '0.3px',
   },
-  weekDayCircle: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'var(--bg-subtle)',
-    color: 'var(--text-tertiary)',
-  },
-  weekDayCompleted: {
-    background: 'rgba(34,197,94,0.15)',
-    color: 'var(--accent-success)',
-  },
-  weekDayMissed: {
-    background: 'rgba(239,68,68,0.1)',
-    color: 'var(--accent-danger)',
-  },
-  weekDayTodayCircle: {
-    background: 'rgba(0,229,200,0.15)',
-    color: 'var(--accent-primary)',
-  },
-  todayDot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    background: 'var(--accent-primary)',
-  },
-  weekDayDate: {
-    fontSize: '11px',
+  weekDayNum: {
+    fontSize: '16px',
+    fontWeight: 700,
     fontFamily: 'var(--font-mono)',
-    color: 'var(--text-secondary)',
+    lineHeight: 1,
+  },
+  weekWorkoutTag: {
+    fontSize: '9px',
+    fontWeight: 600,
+    textAlign: 'center',
+    lineHeight: 1.2,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    letterSpacing: '0.2px',
+    textTransform: 'uppercase',
   },
 
   // ── Stats Row ──
@@ -562,7 +571,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
   },
   statCard: {
-    padding: '16px',
+    padding: '18px',
     textAlign: 'center',
   },
   statIcon: {
@@ -571,18 +580,18 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '8px',
   },
   statValue: {
-    fontSize: '24px',
+    fontSize: '28px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
     color: 'var(--text-primary)',
   },
   statUnit: {
-    fontSize: '14px',
+    fontSize: '15px',
     fontWeight: 400,
     color: 'var(--text-secondary)',
   },
   statLabel: {
-    fontSize: '11px',
+    fontSize: '12px',
     color: 'var(--text-secondary)',
     fontWeight: 500,
     marginTop: '2px',
@@ -596,8 +605,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   checkInRing: {
     position: 'relative',
-    width: '48px',
-    height: '48px',
+    width: '54px',
+    height: '54px',
     flexShrink: 0,
   },
   checkInRingIcon: {
@@ -608,7 +617,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   checkInDue: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: 'var(--accent-secondary)',
     fontWeight: 500,
     marginTop: '2px',
@@ -618,7 +627,7 @@ const styles: Record<string, React.CSSProperties> = {
   goalsList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '14px',
+    gap: '16px',
   },
   goalItem: {},
   goalTop: {
@@ -628,18 +637,18 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '6px',
   },
   goalName: {
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: 500,
     color: 'var(--text-primary)',
   },
   goalPct: {
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: 600,
     fontFamily: 'var(--font-mono)',
     color: 'var(--text-secondary)',
   },
   goalBarBg: {
-    height: '4px',
+    height: '5px',
     borderRadius: '2px',
     background: 'var(--glass-border)',
     overflow: 'hidden',
@@ -650,59 +659,40 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'width 0.6s ease',
   },
   goalLabel: {
-    fontSize: '11px',
+    fontSize: '12px',
     color: 'var(--text-tertiary)',
     marginTop: '4px',
   },
 
-  // ── Coach Message Preview ──
+  // ── From Your Coach ──
+  coachSection: {
+    cursor: 'pointer',
+  },
+  coachSectionLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginBottom: '6px',
+  },
   coachMsgText: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
     lineHeight: 1.6,
     borderLeft: '2px solid var(--accent-primary)',
     paddingLeft: '12px',
-    marginTop: '4px',
   },
-
-  // ── Activity Feed ──
-  activityList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  activityItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  activityIcon: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  activityText: {
-    fontSize: '13px',
-    color: 'var(--text-primary)',
-    flex: 1,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  activityTime: {
+  coachSectionTime: {
     fontSize: '11px',
     color: 'var(--text-tertiary)',
     fontFamily: 'var(--font-mono)',
-    flexShrink: 0,
+    marginTop: '6px',
   },
 
   // ── Feedback ──
   feedbackText: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
     lineHeight: 1.6,
     borderLeft: '2px solid var(--accent-primary)',
