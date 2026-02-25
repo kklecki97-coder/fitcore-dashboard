@@ -139,7 +139,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
 
   const photoSlots = [...fixedSlots, ...otherSlots];
 
-  const handlePhotoUpload = (key: string, label: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (_key: string, label: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -688,12 +688,11 @@ const styles: Record<string, React.CSSProperties> = {
 
   // ── Photo Upload ──
   photoSlots: {
-    display: 'flex',
-    flexWrap: 'wrap',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))',
     gap: '12px',
   },
   photoSlot: {
-    flex: 1,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -750,6 +749,7 @@ const styles: Record<string, React.CSSProperties> = {
   // ── History Photos ──
   historyPhotos: {
     display: 'flex',
+    flexWrap: 'wrap',
     gap: '8px',
     marginTop: '6px',
   },

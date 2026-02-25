@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Send, CheckCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Message } from '../types';
 
 interface MessagesPageProps {
@@ -13,13 +13,14 @@ interface MessagesPageProps {
 
 export default function MessagesPage({ messages, onSendMessage, coachName, clientId, clientName }: MessagesPageProps) {
   const [newMessage, setNewMessage] = useState('');
+  const [isCoachTyping, setIsCoachTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const sorted = [...messages].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+  }, [messages.length, isCoachTyping]);
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
@@ -36,6 +37,9 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
     };
     onSendMessage(msg);
     setNewMessage('');
+    // Simulate coach typing indicator briefly
+    setTimeout(() => setIsCoachTyping(true), 1200);
+    setTimeout(() => setIsCoachTyping(false), 3500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -115,12 +119,39 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
                   borderColor: msg.isFromCoach ? 'var(--glass-border)' : 'rgba(0,229,200,0.2)',
                 }}>
                   <p style={styles.msgText}>{msg.text}</p>
-                  <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
+                  <div style={styles.msgMeta}>
+                    <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
+                    {!msg.isFromCoach && msg.isRead && (
+                      <CheckCheck size={13} color="var(--accent-primary)" style={{ marginLeft: '4px', flexShrink: 0 }} />
+                    )}
+                  </div>
                 </div>
               </motion.div>
             ))}
           </div>
         ))}
+        {/* Typing indicator */}
+        <AnimatePresence>
+          {isCoachTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              style={{ ...styles.msgRow, justifyContent: 'flex-start' }}
+            >
+              <div style={{ ...styles.msgBubble, background: 'var(--bg-elevated)', borderColor: 'var(--glass-border)', padding: '12px 18px' }}>
+                <div style={styles.typingDots}>
+                  {[0, 1, 2].map(i => (
+                    <span key={i} style={{
+                      ...styles.typingDot,
+                      animationDelay: `${i * 0.15}s`,
+                    }} />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
 
@@ -230,12 +261,29 @@ const styles: Record<string, React.CSSProperties> = {
     wordBreak: 'break-word',
     overflowWrap: 'break-word',
   },
+  msgMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: '4px',
+    gap: '2px',
+  },
   msgTime: {
     fontSize: '10px',
     color: 'var(--text-tertiary)',
-    marginTop: '4px',
-    display: 'block',
-    textAlign: 'right',
+  },
+  typingDots: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    height: '16px',
+  },
+  typingDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    background: 'var(--text-tertiary)',
+    animation: 'typingBounce 0.6s ease-in-out infinite alternate',
   },
   inputWrap: {
     display: 'flex',

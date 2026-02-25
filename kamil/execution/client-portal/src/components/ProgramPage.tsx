@@ -13,7 +13,7 @@ interface ProgramPageProps {
   workoutLogs: WorkoutLog[];
 }
 
-export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs }: ProgramPageProps) {
+export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs: _workoutLogs }: ProgramPageProps) {
   const isMobile = useIsMobile();
 
   // ── Compute today's workout day index (based on day-of-week, not completion count) ──
@@ -153,7 +153,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
 
       {/* Exercise List */}
       <div style={styles.exerciseList}>
-        {day.exercises.map((exercise, ei) => {
+        {day.exercises.map((exercise, _ei) => {
           const isExpanded = expandedExercise === exercise.id;
           const allSetsComplete = Array.from({ length: exercise.sets }, (_, i) =>
             getSetCompleted(exercise.id, i + 1)

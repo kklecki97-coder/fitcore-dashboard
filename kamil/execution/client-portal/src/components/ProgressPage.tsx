@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Target, Award, Flame, Dumbbell, BarChart3 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -14,6 +14,13 @@ interface ProgressPageProps {
 
 export default function ProgressPage({ client, workoutLogs, checkIns }: ProgressPageProps) {
   const isMobile = useIsMobile();
+  const [chartsReady, setChartsReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setChartsReady(true), 400);
+    return () => clearTimeout(timer);
+  }, []);
+
   const { metrics } = client;
   const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
   const weights = metrics.weight;
@@ -82,33 +89,75 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference - (completionRate / 100) * ringCircumference;
 
-  // ── Goal progress (parse from goal strings) ──
+  // ── Goal progress (data-driven from metrics + check-ins) ──
+  const parseTarget = (text: string): number | null => {
+    const match = text.match(/(\d+(?:\.\d+)?)\s*kg/i) || text.match(/(\d+(?:\.\d+)?)/);
+    return match ? parseFloat(match[1]) : null;
+  };
+
   const goalProgress = client.goals.map(goal => {
-    if (goal.toLowerCase().includes('80kg') || goal.toLowerCase().includes('weight')) {
+    const g = goal.toLowerCase();
+
+    // Weight / body composition goals (contains "kg" or "weight" and references a target)
+    if ((g.includes('weight') || g.includes('drop') || g.includes('cut') || g.includes('lean')) && !g.includes('bench') && !g.includes('squat') && !g.includes('dead')) {
+      const target = parseTarget(goal) ?? 80;
       const start = weights[0];
       const current = weights[weights.length - 1];
-      const target = 80;
+      if (start === target) return { goal, progress: 100, label: `${current}kg → ${target}kg` };
       const pct = Math.min(100, Math.round(((start - current) / (start - target)) * 100));
       return { goal, progress: Math.max(0, pct), label: `${current}kg → ${target}kg` };
     }
-    if (goal.toLowerCase().includes('bench') && goal.toLowerCase().includes('100')) {
-      const presses = metrics.benchPress;
-      const current = presses[presses.length - 1];
-      const target = 100;
+
+    // Bench press goal
+    if (g.includes('bench')) {
+      const target = parseTarget(goal) ?? 100;
+      const current = metrics.benchPress[metrics.benchPress.length - 1];
       const pct = Math.min(100, Math.round((current / target) * 100));
       return { goal, progress: Math.max(0, pct), label: `${current}kg / ${target}kg` };
     }
-    if (goal.toLowerCase().includes('sleep')) {
+
+    // Squat goal
+    if (g.includes('squat')) {
+      const target = parseTarget(goal) ?? 140;
+      const current = metrics.squat[metrics.squat.length - 1];
+      const pct = Math.min(100, Math.round((current / target) * 100));
+      return { goal, progress: Math.max(0, pct), label: `${current}kg / ${target}kg` };
+    }
+
+    // Deadlift goal
+    if (g.includes('deadlift') || g.includes('dead lift')) {
+      const target = parseTarget(goal) ?? 180;
+      const current = metrics.deadlift[metrics.deadlift.length - 1];
+      const pct = Math.min(100, Math.round((current / target) * 100));
+      return { goal, progress: Math.max(0, pct), label: `${current}kg / ${target}kg` };
+    }
+
+    // Sleep goal
+    if (g.includes('sleep')) {
+      const targetMatch = goal.match(/(\d+(?:\.\d+)?)\s*(?:\+|\s*hour|h)/i);
+      const target = targetMatch ? parseFloat(targetMatch[1]) : 7;
       const latestCI = checkIns.filter(ci => ci.sleepHours !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
       const current = latestCI?.sleepHours ?? 0;
-      const target = 7;
       const pct = Math.min(100, Math.round((current / target) * 100));
       return { goal, progress: Math.max(0, pct), label: `${current}h / ${target}h` };
     }
-    if (goal.toLowerCase().includes('5k') || goal.toLowerCase().includes('run')) {
-      const pct = 65;
-      return { goal, progress: pct, label: '~27 min / 25 min' };
+
+    // Steps goal
+    if (g.includes('step')) {
+      const target = parseTarget(goal) ?? 10000;
+      const latestCI = checkIns.filter(ci => ci.steps !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
+      const current = latestCI?.steps ?? 0;
+      const pct = Math.min(100, Math.round((current / target) * 100));
+      return { goal, progress: Math.max(0, pct), label: `${current.toLocaleString()} / ${target.toLocaleString()} steps` };
     }
+
+    // Cardio / running goal — derive from overall training consistency as proxy
+    if (g.includes('5k') || g.includes('run') || g.includes('cardio')) {
+      const pct = Math.min(100, Math.round(completionRate * 0.72));
+      return { goal, progress: Math.max(0, pct), label: 'Based on training consistency' };
+    }
+
+    // Fallback — use overall client progress
     return { goal, progress: Math.round(client.progress * 0.7), label: 'In progress' };
   });
 
@@ -184,7 +233,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
             </div>
           )}
         </div>
-        {weightData.length >= 2 ? (
+        {!chartsReady ? (
+          <div style={styles.skeleton} />
+        ) : weightData.length >= 2 ? (
           <div style={{ width: '100%', height: 180 }}>
             <ResponsiveContainer>
               <LineChart data={weightData}>
@@ -192,7 +243,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                 <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
-                  formatter={(val: number) => [`${val} kg`, 'Weight']}
+                  formatter={(val) => [`${val} kg`, 'Weight']}
                 />
                 <Line type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2} dot={{ fill: 'var(--accent-primary)', r: 3 }} />
               </LineChart>
@@ -221,7 +272,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
             </div>
           )}
         </div>
-        {bodyFatData.length >= 2 ? (
+        {!chartsReady ? (
+          <div style={styles.skeleton} />
+        ) : bodyFatData.length >= 2 ? (
           <div style={{ width: '100%', height: 180 }}>
             <ResponsiveContainer>
               <LineChart data={bodyFatData}>
@@ -229,7 +282,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                 <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
-                  formatter={(val: number) => [`${val}%`, 'Body Fat']}
+                  formatter={(val) => [`${val}%`, 'Body Fat']}
                 />
                 <Line type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2} dot={{ fill: 'var(--accent-secondary)', r: 3 }} />
               </LineChart>
@@ -615,6 +668,14 @@ const styles: Record<string, React.CSSProperties> = {
   },
   legendItem: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--text-tertiary)' },
   legendDot: { width: '8px', height: '8px', borderRadius: '2px', display: 'inline-block' },
+  skeleton: {
+    width: '100%',
+    height: '180px',
+    borderRadius: '8px',
+    background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)',
+    backgroundSize: '200% 100%',
+    animation: 'shimmer 1.5s infinite ease-in-out',
+  },
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
