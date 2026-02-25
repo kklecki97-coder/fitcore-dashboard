@@ -44,6 +44,8 @@ interface Lead {
   scraped_at: string | null
   created_at: string | null
   account: string | null
+  engaged_by: string | null
+  dmed_by: string | null
 }
 
 type PipelineStage = 'new' | 'engaged' | 'dmed' | 'replied' | 'call_booked' | 'closed' | 'dead'
@@ -1665,8 +1667,10 @@ function Dashboard() {
     localStorage.setItem('pipeline_account', a)
   }
 
-  // Filter leads by selected account
-  const leads = useMemo(() => allLeads.filter(l => l.account === account), [allLeads, account])
+  // Leads that belong to this account: either new (shared pool) or worked by this account
+  const leads = useMemo(() => allLeads.filter(l =>
+    l.status === 'new' || l.engaged_by === account || l.dmed_by === account
+  ), [allLeads, account])
 
   const fetchLeads = useCallback(async () => {
     setLoading(true)
@@ -1686,22 +1690,45 @@ function Dashboard() {
     fetchLeads()
   }, [fetchLeads])
 
-  // Snapshot the engage batch once per account on first load — no auto-refilling
+  // Snapshot engage batches for BOTH accounts at once from the shared new pool — interleaved by score
   useEffect(() => {
-    if (engageBatchIds[account] !== null || leads.length === 0) return
+    if (engageBatchIds.jakub !== null || allLeads.length === 0) return
+
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
-    const alreadyEngagedToday = leads.filter(l => l.engaged_at && new Date(l.engaged_at).getTime() >= todayStart.getTime()).length
-    const slots = Math.max(0, DAILY_ENGAGE_LIMIT - alreadyEngagedToday)
-    const ids = leads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, slots).map(l => l.id)
-    setEngageBatchIds(prev => ({ ...prev, [account]: ids }))
-  }, [leads, engageBatchIds, account])
+    const ts = todayStart.getTime()
+
+    // Count how many each account already engaged today
+    const jakubEngagedToday = allLeads.filter(l => l.engaged_by === 'jakub' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
+    const fitcoreEngagedToday = allLeads.filter(l => l.engaged_by === 'fitcore' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
+
+    const jakubSlots = Math.max(0, DAILY_ENGAGE_LIMIT - jakubEngagedToday)
+    const fitcoreSlots = Math.max(0, DAILY_ENGAGE_LIMIT - fitcoreEngagedToday)
+
+    // Get all new leads sorted by score, interleave between accounts
+    const newLeads = allLeads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0))
+
+    const jakubIds: number[] = []
+    const fitcoreIds: number[] = []
+
+    for (const lead of newLeads) {
+      if (jakubIds.length < jakubSlots && jakubIds.length <= fitcoreIds.length) {
+        jakubIds.push(lead.id)
+      } else if (fitcoreIds.length < fitcoreSlots) {
+        fitcoreIds.push(lead.id)
+      } else if (jakubIds.length < jakubSlots) {
+        jakubIds.push(lead.id)
+      }
+    }
+
+    setEngageBatchIds({ jakub: jakubIds, fitcore: fitcoreIds })
+  }, [allLeads, engageBatchIds.jakub])
 
   const handleStatusChange = async (id: number, newStatus: PipelineStage) => {
     const updates: Record<string, string | null> = { status: newStatus }
     const now = new Date().toISOString()
 
-    if (newStatus === 'engaged') updates.engaged_at = now
-    if (newStatus === 'dmed') updates.dmed_at = now
+    if (newStatus === 'engaged') { updates.engaged_at = now; updates.engaged_by = account }
+    if (newStatus === 'dmed') { updates.dmed_at = now; updates.dmed_by = account }
 
     try {
       await supabaseFetch(`instagram_leads?id=eq.${id}`, {
@@ -1715,11 +1742,13 @@ function Dashboard() {
     }
   }
 
-  // Batch update helper
+  // Batch update helper — now includes engaged_by/dmed_by
   const batchUpdateStatus = async (ids: number[], newStatus: PipelineStage, timestampField?: string) => {
     const now = new Date().toISOString()
     const updates: Record<string, string> = { status: newStatus }
     if (timestampField) updates[timestampField] = now
+    if (newStatus === 'engaged') updates.engaged_by = account
+    if (newStatus === 'dmed') updates.dmed_by = account
 
     try {
       const idList = ids.join(',')
@@ -1735,15 +1764,20 @@ function Dashboard() {
     }
   }
 
-  // ─── Computed data ───
+  // ─── Computed data (filtered to current account's work) ───
+  // For pipeline counts, only show leads this account worked on (not the shared new pool)
+  const accountLeads = useMemo(() => allLeads.filter(l =>
+    l.engaged_by === account || l.dmed_by === account || l.status === 'new'
+  ), [allLeads, account])
+
   const counts: Record<string, number> = {}
   for (const stage of STAGES) counts[stage.key] = 0
-  for (const lead of leads) {
+  for (const lead of accountLeads) {
     const s = lead.status || 'new'
     counts[s] = (counts[s] || 0) + 1
   }
 
-  // Count how many were engaged/dmed today (for sidebar progress + daily cap)
+  // Count how many this account engaged/dmed today
   const todayStart = useMemo(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
@@ -1751,22 +1785,22 @@ function Dashboard() {
   }, [])
 
   const todayEngaged = useMemo(() =>
-    leads.filter(l => {
-      if (!l.engaged_at) return false
+    allLeads.filter(l => {
+      if (l.engaged_by !== account || !l.engaged_at) return false
       return new Date(l.engaged_at).getTime() >= todayStart
     }).length,
-    [leads, todayStart]
+    [allLeads, account, todayStart]
   )
 
   const todayDmed = useMemo(() =>
-    leads.filter(l => {
-      if (!l.dmed_at) return false
+    allLeads.filter(l => {
+      if (l.dmed_by !== account || !l.dmed_at) return false
       return new Date(l.dmed_at).getTime() >= todayStart
     }).length,
-    [leads, todayStart]
+    [allLeads, account, todayStart]
   )
 
-  // Daily activity data for chart (last 90 days — chart filters internally)
+  // Daily activity data for chart — filtered by account
   const dailyActivity = useMemo(() => {
     const days: { date: string; label: string; engaged: number; dmed: number }[] = []
     for (let i = 89; i >= 0; i--) {
@@ -1776,14 +1810,14 @@ function Dashboard() {
       const dayStart = d.getTime()
       const dayEnd = dayStart + 24 * 60 * 60 * 1000
 
-      const engaged = leads.filter(l => {
-        if (!l.engaged_at) return false
+      const engaged = allLeads.filter(l => {
+        if (l.engaged_by !== account || !l.engaged_at) return false
         const t = new Date(l.engaged_at).getTime()
         return t >= dayStart && t < dayEnd
       }).length
 
-      const dmed = leads.filter(l => {
-        if (!l.dmed_at) return false
+      const dmed = allLeads.filter(l => {
+        if (l.dmed_by !== account || !l.dmed_at) return false
         const t = new Date(l.dmed_at).getTime()
         return t >= dayStart && t < dayEnd
       }).length
@@ -1796,30 +1830,31 @@ function Dashboard() {
       })
     }
     return days
-  }, [leads])
+  }, [allLeads, account])
 
-  // Today's engage batch: snapshotted on load, shrinks as leads are marked dead/engaged
+  // Today's engage batch: from interleaved snapshot, only show this account's portion
   const engageBatch = useMemo(() => {
     const ids = engageBatchIds[account]
     return ids === null
       ? []
-      : leads.filter(l => ids.includes(l.id) && l.status === 'new')
-  }, [leads, engageBatchIds, account])
+      : allLeads.filter(l => ids.includes(l.id) && l.status === 'new')
+  }, [allLeads, engageBatchIds, account])
 
-  // DM-ready batch: leads with status=engaged (no wait time for demo)
+  // DM-ready batch: leads engaged BY THIS ACCOUNT, waiting for DM
   const dmBatch = useMemo(() => {
     const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
-    return leads
+    return allLeads
       .filter(l => {
         if (l.status !== 'engaged') return false
+        if (l.engaged_by !== account) return false
         if (!l.engaged_at) return false
         return new Date(l.engaged_at).getTime() < todayMidnight.getTime()
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
-  }, [leads])
+  }, [allLeads, account])
 
-  // Pipeline view filters
-  const filtered = leads
+  // Pipeline view filters — show leads this account worked + new leads
+  const filtered = accountLeads
     .filter(l => filterStage === 'all' || l.status === filterStage)
     .filter(l => {
       if (!searchQuery) return true
@@ -1836,10 +1871,10 @@ function Dashboard() {
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
     })
 
-  const usLeads = leads.filter(l => l.likely_us).length
-  const activeLeads = leads.filter(l => !['dead', 'closed'].includes(l.status)).length
-  const conversionRate = leads.length > 0
-    ? ((counts['closed'] || 0) / leads.length * 100).toFixed(1)
+  const usLeads = accountLeads.filter(l => l.likely_us).length
+  const activeLeads = accountLeads.filter(l => !['dead', 'closed'].includes(l.status)).length
+  const conversionRate = accountLeads.length > 0
+    ? ((counts['closed'] || 0) / accountLeads.length * 100).toFixed(1)
     : '0.0'
 
   return (
