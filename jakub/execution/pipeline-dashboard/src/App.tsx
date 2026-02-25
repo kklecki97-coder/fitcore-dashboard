@@ -1662,9 +1662,19 @@ function Dashboard() {
   const [sortBy, setSortBy] = useState<'score' | 'followers' | 'recent'>('score')
   const [account, setAccount] = useState<Account>(() => (localStorage.getItem('pipeline_account') as Account) || 'jakub')
 
+  const [confirmSwitch, setConfirmSwitch] = useState<Account | null>(null)
+
   const handleAccountChange = (a: Account) => {
-    setAccount(a)
-    localStorage.setItem('pipeline_account', a)
+    if (a === account) return
+    setConfirmSwitch(a)
+  }
+
+  const confirmAccountSwitch = () => {
+    if (confirmSwitch) {
+      setAccount(confirmSwitch)
+      localStorage.setItem('pipeline_account', confirmSwitch)
+      setConfirmSwitch(null)
+    }
   }
 
   // Leads that belong to this account: either new (shared pool) or worked by this account
@@ -2200,6 +2210,80 @@ function Dashboard() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Account switch confirmation modal */}
+      {confirmSwitch && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000,
+        }}
+          onClick={() => setConfirmSwitch(null)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '32px',
+              width: 380,
+              boxShadow: 'var(--shadow-card)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <Instagram size={20} color={ACCOUNTS.find(a => a.key === confirmSwitch)?.color} />
+              <div style={{ fontSize: 18, fontWeight: 700 }}>Switch Account</div>
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.6 }}>
+              Switch to <span style={{
+                fontWeight: 700,
+                color: ACCOUNTS.find(a => a.key === confirmSwitch)?.color,
+              }}>{ACCOUNTS.find(a => a.key === confirmSwitch)?.label}</span>?
+              <br />
+              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                This changes which account's tasks and stats you see.
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmSwitch(null)}
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 20px',
+                  fontSize: 13,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAccountSwitch}
+                style={{
+                  background: ACCOUNTS.find(a => a.key === confirmSwitch)?.color + '20',
+                  color: ACCOUNTS.find(a => a.key === confirmSwitch)?.color,
+                  border: `1px solid ${ACCOUNTS.find(a => a.key === confirmSwitch)?.color}50`,
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 20px',
+                  fontSize: 13,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Switch to {ACCOUNTS.find(a => a.key === confirmSwitch)?.label}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
