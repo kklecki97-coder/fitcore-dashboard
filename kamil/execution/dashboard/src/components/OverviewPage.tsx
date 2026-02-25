@@ -74,9 +74,12 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
 
   // Daily quote — rotate by day of year
   const dailyQuote = useMemo(() => {
-    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
     return QUOTES[dayOfYear % QUOTES.length];
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [new Date().toDateString()]);
 
   // AI Summary — smart aggregation from real data
   const insights = useMemo(() => {

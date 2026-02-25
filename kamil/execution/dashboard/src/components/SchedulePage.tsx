@@ -441,7 +441,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
             <h3 style={styles.sectionTitle}>Upcoming Check-ins</h3>
             <div style={styles.checkinList}>
               {(() => {
-                const nowMs = Date.now();
+                const nowMs = new Date().getTime();
                 const fiveDaysMs = 5 * 86400000;
                 return clients
                   .filter(c => {

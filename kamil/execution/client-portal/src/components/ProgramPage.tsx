@@ -16,9 +16,13 @@ interface ProgramPageProps {
 export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs }: ProgramPageProps) {
   const isMobile = useIsMobile();
 
-  // ── Compute today's workout day index ──
-  const completedWorkouts = workoutLogs.filter(w => w.completed).length;
-  const todayDayIndex = program ? completedWorkouts % program.days.length : 0;
+  // ── Compute today's workout day index (based on day-of-week, not completion count) ──
+  const todayDayIndex = (() => {
+    if (!program || program.days.length === 0) return 0;
+    const dayOfWeek = new Date().getDay(); // 0=Sun,1=Mon...6=Sat
+    const mondayBased = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon...6=Sun
+    return mondayBased % program.days.length;
+  })();
 
   const [selectedDay, setSelectedDay] = useState(todayDayIndex);
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
@@ -228,13 +232,15 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                                 if (completed) {
                                   onRemoveLog(exercise.id, setNum, todayStr);
                                 } else {
+                                  const logId = `sl-${exercise.id}-${setNum}-${Date.now()}`;
+                                  const parsedReps = parseInt(exercise.reps.split('-')[0]) || 10;
                                   onLogSet({
-                                    id: `sl-${exercise.id}-${setNum}-${Date.now()}`,
+                                    id: logId,
                                     date: todayStr,
                                     exerciseId: exercise.id,
                                     exerciseName: exercise.name,
                                     setNumber: setNum,
-                                    reps: parseInt(exercise.reps) || 10,
+                                    reps: parsedReps,
                                     weight: exercise.weight,
                                     completed: true,
                                     rpe: null,

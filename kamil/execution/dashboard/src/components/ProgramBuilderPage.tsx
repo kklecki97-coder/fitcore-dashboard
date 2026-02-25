@@ -98,8 +98,9 @@ const pbStepperStyles: Record<string, React.CSSProperties> = {
   },
 };
 
+let _idCounter = 0;
 const emptyExercise = (): Exercise => ({
-  id: `e${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+  id: `e${++_idCounter}-${Math.random().toString(36).slice(2, 6)}`,
   name: '',
   sets: 3,
   reps: '10',
@@ -118,7 +119,7 @@ export default function ProgramBuilderPage({
   const [draft, setDraft] = useState<WorkoutProgram>(() => {
     if (program) return structuredClone(program);
     return {
-      id: `wp${Date.now()}`,
+      id: `wp${++_idCounter}`,
       name: '',
       status: 'draft' as const,
       durationWeeks: 4,

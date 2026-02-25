@@ -1,4 +1,6 @@
-import { TrendingUp, TrendingDown, Target, Award, Flame } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, TrendingDown, Target, Award, Flame, Dumbbell } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -26,31 +28,59 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     { name: 'Deadlift', values: metrics.deadlift, unit: 'kg', icon: '💪' },
   ];
 
-  // Training heatmap (last 8 weeks)
+  // Calendar palette — cyan-green & soft coral (on-brand, not generic traffic lights)
+  const calDone = '#20dba4';
+  const calMiss = '#e8637a';
+
+  // Training calendar (last 4 weeks / this month)
   const today = new Date();
-  const eightWeeksAgo = new Date(today);
-  eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
+  const todayStr = today.toISOString().split('T')[0];
+  const logByDate = new Map(workoutLogs.map(w => [w.date, w]));
 
-  const logDates = new Set(workoutLogs.filter(w => w.completed).map(w => w.date));
-  const missedDates = new Set(workoutLogs.filter(w => !w.completed).map(w => w.date));
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - 28);
+  startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7)); // Start on Monday
 
-  const heatmapWeeks: { date: Date; dateStr: string }[][] = [];
-  const startDate = new Date(eightWeeksAgo);
-  startDate.setDate(startDate.getDate() - startDate.getDay() + 1); // Start on Monday
+  interface CalDay {
+    date: Date;
+    dateStr: string;
+    log: WorkoutLog | undefined;
+    isCompleted: boolean;
+    isMissed: boolean;
+    isFuture: boolean;
+    isToday: boolean;
+  }
 
-  for (let w = 0; w < 8; w++) {
-    const week: { date: Date; dateStr: string }[] = [];
+  const calWeeks: CalDay[][] = [];
+  for (let w = 0; w < 4; w++) {
+    const week: CalDay[] = [];
     for (let d = 0; d < 7; d++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + w * 7 + d);
-      week.push({ date, dateStr: date.toISOString().split('T')[0] });
+      const dateStr = date.toISOString().split('T')[0];
+      const log = logByDate.get(dateStr);
+      week.push({
+        date,
+        dateStr,
+        log,
+        isCompleted: log?.completed === true,
+        isMissed: log?.completed === false,
+        isFuture: dateStr > todayStr,
+        isToday: dateStr === todayStr,
+      });
     }
-    heatmapWeeks.push(week);
+    calWeeks.push(week);
   }
+
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const selectedLog = selectedDay ? logByDate.get(selectedDay) : undefined;
 
   const totalSessions = workoutLogs.filter(w => w.completed).length;
   const totalScheduled = workoutLogs.length;
   const completionRate = totalScheduled > 0 ? Math.round((totalSessions / totalScheduled) * 100) : 0;
+  const ringRadius = 18;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference - (completionRate / 100) * ringCircumference;
 
   // ── Goal progress (parse from goal strings) ──
   const goalProgress = client.goals.map(goal => {
@@ -201,61 +231,155 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           <Flame size={18} color="var(--accent-warm)" />
           <span style={styles.sectionTitle}>Training Consistency</span>
         </div>
-        <div style={styles.consistencyStats}>
-          <div style={styles.consistencyStat}>
-            <span style={styles.consistencyValue}>{totalSessions}</span>
-            <span style={styles.consistencyLabel}>sessions</span>
+
+        {/* Stats row — 3 mini cards */}
+        <div style={styles.statsRow}>
+          <div style={styles.statCard}>
+            <Dumbbell size={16} color="var(--accent-primary)" />
+            <span style={styles.statValue}>{totalSessions}</span>
+            <span style={styles.statLabel}>sessions</span>
           </div>
-          <div style={styles.consistencyStat}>
-            <span style={styles.consistencyValue}>{completionRate}%</span>
-            <span style={styles.consistencyLabel}>completion</span>
+          <div style={styles.statCard}>
+            <svg width="44" height="44" viewBox="0 0 44 44" style={{ marginTop: '-2px', marginBottom: '-2px' }}>
+              <circle cx="22" cy="22" r={ringRadius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+              <circle
+                cx="22" cy="22" r={ringRadius}
+                fill="none"
+                stroke={completionRate >= 80 ? calDone : completionRate >= 50 ? 'var(--accent-warm)' : calMiss}
+                strokeWidth="3" strokeLinecap="round"
+                strokeDasharray={ringCircumference}
+                strokeDashoffset={ringOffset}
+                transform="rotate(-90 22 22)"
+              />
+              <text x="22" y="23" textAnchor="middle" dominantBaseline="middle"
+                fill="var(--text-primary)" fontSize="11" fontWeight="700" fontFamily="var(--font-mono)">
+                {completionRate}
+              </text>
+            </svg>
+            <span style={styles.statLabel}>completion %</span>
           </div>
-          <div style={styles.consistencyStat}>
-            <span style={styles.consistencyValue}>{client.streak}</span>
-            <span style={styles.consistencyLabel}>day streak</span>
+          <div style={styles.statCard}>
+            <Flame size={16} color="var(--accent-warm)" />
+            <span style={styles.statValue}>{client.streak}</span>
+            <span style={styles.statLabel}>day streak</span>
           </div>
         </div>
 
-        {/* Heatmap */}
-        <div style={styles.heatmap}>
-          <div style={styles.heatmapDayLabels}>
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-              <span key={i} style={styles.heatmapDayLabel}>{d}</span>
-            ))}
-          </div>
-          <div style={styles.heatmapGrid}>
-            {heatmapWeeks.map((week, wi) => (
-              <div key={wi} style={styles.heatmapWeek}>
-                {week.map((day) => {
-                  const isFuture = day.date > today;
-                  const isCompleted = logDates.has(day.dateStr);
-                  const isMissed = missedDates.has(day.dateStr);
-                  return (
-                    <div
-                      key={day.dateStr}
-                      title={day.dateStr}
-                      style={{
-                        ...styles.heatmapCell,
-                        background: isFuture
-                          ? 'transparent'
-                          : isCompleted
-                          ? 'var(--accent-primary-glow)'
-                          : isMissed
-                          ? 'var(--accent-danger-dim)'
-                          : 'rgba(255,255,255,0.04)',
-                        border: isFuture ? '1px solid rgba(255,255,255,0.02)' : 'none',
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+        {/* Calendar — day header */}
+        <div style={styles.calGrid}>
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+            <div key={i} style={styles.calDayHeader}>{d}</div>
+          ))}
         </div>
-        <div style={styles.heatmapLegend}>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'var(--accent-primary-glow)' }} /> Trained</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'var(--accent-danger-dim)' }} /> Missed</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'rgba(255,255,255,0.04)' }} /> Rest</span>
+
+        {/* Calendar — 4 week rows */}
+        {calWeeks.map((week, wi) => (
+          <div key={wi} style={styles.calGrid}>
+            {week.map(day => {
+                const shortType = day.log?.type
+                  .replace('Upper Body ', 'Upper ')
+                  .replace('Lower Body ', 'Lower ') ?? '';
+                return (
+                  <div
+                    key={day.dateStr}
+                    onClick={() => day.log && setSelectedDay(prev => prev === day.dateStr ? null : day.dateStr)}
+                    style={{
+                      ...styles.calCell,
+                      cursor: day.log ? 'pointer' : 'default',
+                      ...(day.isToday ? {
+                        background: 'rgba(0,229,200,0.08)',
+                        border: '1px solid rgba(0,229,200,0.25)',
+                        boxShadow: '0 0 8px rgba(0,229,200,0.1)',
+                      } : day.isCompleted ? {
+                        background: `${calDone}0F`,
+                        border: `1px solid ${calDone}1F`,
+                      } : day.isMissed ? {
+                        background: `${calMiss}0D`,
+                        border: `1px solid ${calMiss}1A`,
+                      } : day.isFuture ? {
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.02)',
+                        opacity: 0.4,
+                      } : {
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid transparent',
+                      }),
+                      ...(selectedDay === day.dateStr ? {
+                        boxShadow: '0 0 0 1.5px var(--accent-primary)',
+                      } : {}),
+                    }}
+                  >
+                    {/* Status bar */}
+                    <div style={{
+                      ...styles.calStatusBar,
+                      background: day.isCompleted ? calDone
+                        : day.isMissed ? calMiss
+                        : day.isToday ? 'var(--accent-primary)'
+                        : 'transparent',
+                    }} />
+                    <div style={{
+                      ...styles.calDateNum,
+                      color: day.isToday ? 'var(--accent-primary)'
+                        : day.isCompleted ? calDone
+                        : day.isMissed ? calMiss
+                        : 'var(--text-secondary)',
+                    }}>
+                      {day.date.getDate()}
+                    </div>
+                    {day.log && (
+                      <div style={{
+                        ...styles.calWorkoutTag,
+                        color: day.isCompleted ? calDone : calMiss,
+                      }}>
+                        {shortType}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        ))}
+
+        {/* Detail panel */}
+        <AnimatePresence>
+          {selectedDay && selectedLog && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <div style={styles.dayDetail}>
+                <div style={{
+                  ...styles.dayDetailBar,
+                  background: selectedLog.completed ? calDone : calMiss,
+                }} />
+                <div style={{ flex: 1 }}>
+                  <div style={styles.dayDetailDate}>
+                    {new Date(selectedDay + 'T12:00:00').toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  </div>
+                  <div style={styles.dayDetailType}>{selectedLog.type}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={styles.dayDetailDuration}>{selectedLog.duration} min</div>
+                  <div style={{
+                    ...styles.dayDetailStatus,
+                    color: selectedLog.completed ? calDone : calMiss,
+                  }}>
+                    {selectedLog.completed ? 'Completed' : 'Missed'}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Legend */}
+        <div style={styles.calLegend}>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calDone }} /> Completed</span>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calMiss }} /> Missed</span>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'var(--accent-primary)' }} /> Today</span>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'rgba(255,255,255,0.03)' }} /> Rest</span>
         </div>
       </GlassCard>
 
@@ -340,17 +464,130 @@ const styles: Record<string, React.CSSProperties> = {
   goalProgressBarBg: { height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
   goalProgressBarFill: { height: '100%', borderRadius: '3px', transition: 'width 0.8s ease' },
   goalProgressLabel: { fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' },
-  consistencyStats: { display: 'flex', justifyContent: 'space-around', marginBottom: '16px' },
-  consistencyStat: { textAlign: 'center' },
-  consistencyValue: { display: 'block', fontSize: '22px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
-  consistencyLabel: { fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 500 },
-  heatmap: { marginBottom: '8px' },
-  heatmapDayLabels: { display: 'flex', gap: '4px', marginBottom: '4px', paddingLeft: '0' },
-  heatmapDayLabel: { width: '14px', height: '14px', fontSize: '9px', color: 'var(--text-tertiary)', textAlign: 'center', fontWeight: 600 },
-  heatmapGrid: { display: 'flex', flexDirection: 'column', gap: '3px' },
-  heatmapWeek: { display: 'flex', gap: '4px' },
-  heatmapCell: { width: '14px', height: '14px', borderRadius: '3px' },
-  heatmapLegend: { display: 'flex', gap: '14px', marginTop: '8px' },
+  statsRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '8px',
+    marginBottom: '16px',
+  },
+  statCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '12px 6px',
+    borderRadius: '10px',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid var(--glass-border)',
+  },
+  statValue: {
+    fontSize: '20px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--text-primary)',
+    lineHeight: 1,
+  },
+  statLabel: {
+    fontSize: '10px',
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px',
+  },
+  calGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '4px',
+    marginBottom: '4px',
+  },
+  calDayHeader: {
+    fontSize: '10px',
+    fontWeight: 700,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    padding: '4px 0',
+  },
+  calCell: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    minHeight: '50px',
+    borderRadius: '8px',
+    padding: '0 2px 5px',
+    position: 'relative',
+    overflow: 'hidden',
+    transition: 'all 0.15s ease',
+  },
+  calStatusBar: {
+    width: '100%',
+    height: '2.5px',
+    borderRadius: '0 0 1px 1px',
+    marginBottom: '4px',
+    flexShrink: 0,
+  },
+  calDateNum: {
+    fontSize: '13px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    lineHeight: 1,
+  },
+  calWorkoutTag: {
+    fontSize: '8px',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.2px',
+    maxWidth: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    marginTop: '3px',
+    lineHeight: 1.2,
+  },
+  dayDetail: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    background: 'rgba(255,255,255,0.03)',
+    borderRadius: '8px',
+    padding: '10px 14px',
+    marginTop: '10px',
+  },
+  dayDetailBar: {
+    width: '3px',
+    height: '32px',
+    borderRadius: '2px',
+    flexShrink: 0,
+  },
+  dayDetailDate: {
+    fontSize: '11px',
+    color: 'var(--text-secondary)',
+  },
+  dayDetailType: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+    marginTop: '2px',
+  },
+  dayDetailDuration: {
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--text-primary)',
+  },
+  dayDetailStatus: {
+    fontSize: '11px',
+    fontWeight: 600,
+    marginTop: '2px',
+  },
+  calLegend: {
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: '12px',
+  },
   legendItem: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--text-tertiary)' },
   legendDot: { width: '8px', height: '8px', borderRadius: '2px', display: 'inline-block' },
   awardCard: { display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' },

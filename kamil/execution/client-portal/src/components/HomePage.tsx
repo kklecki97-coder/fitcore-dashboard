@@ -16,9 +16,14 @@ interface HomePageProps {
 export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate }: HomePageProps) {
   const isMobile = useIsMobile();
 
-  // ── Today's workout day ──
-  const completedCount = workoutLogs.filter(w => w.completed).length;
-  const todayDayIndex = program ? completedCount % program.days.length : 0;
+  // ── Today's workout day (based on day-of-week, not completion count) ──
+  const todayDayIndex = (() => {
+    if (!program || program.days.length === 0) return 0;
+    const dayOfWeek = new Date().getDay(); // 0=Sun,1=Mon...6=Sat
+    // Map Mon–Sat to program days, Sunday = rest
+    const mondayBased = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon...6=Sun
+    return mondayBased % program.days.length;
+  })();
   const todayWorkout = program?.days[todayDayIndex];
 
   // ── Next check-in ──
