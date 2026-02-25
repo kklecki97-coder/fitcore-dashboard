@@ -13,6 +13,12 @@ const SUPABASE_KEY = 'sb_publishable_51_z3oNgQx0IYRwmJhutDQ_YNoq1_G0'
 // ─── Constants ───
 const DAILY_ENGAGE_LIMIT = 20
 
+type Account = 'jakub' | 'fitcore'
+const ACCOUNTS: { key: Account; label: string; color: string }[] = [
+  { key: 'jakub', label: 'Jakub', color: '#6366f1' },
+  { key: 'fitcore', label: 'FitCore', color: '#f59e0b' },
+]
+
 // ─── Types ───
 interface Lead {
   id: number
@@ -37,6 +43,9 @@ interface Lead {
   dm_draft: string | null
   scraped_at: string | null
   created_at: string | null
+  account: string | null
+  engaged_by: string | null
+  dmed_by: string | null
 }
 
 type PipelineStage = 'new' | 'engaged' | 'dmed' | 'replied' | 'call_booked' | 'closed' | 'dead'
@@ -1008,7 +1017,7 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
       window.open(`https://instagram.com/${leads[idx].instagram_handle}`, '_blank')
       idx++
       setOpenedCount(idx)
-    }, 20000)
+    }, 30000)
 
     setOpenTimerRef(timer)
   }
@@ -1060,7 +1069,7 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
           >
             {openingAll
               ? <><Pause size={14} /> Opening {openedCount}/{leads.length}...</>
-              : <><Play size={14} /> Open All (20s apart)</>}
+              : <><Play size={14} /> Open All (30s apart)</>}
           </button>
           <button
             onClick={handleMarkAll}
@@ -1423,6 +1432,46 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
   )
 }
 
+// ─── Account Switcher ───
+
+function AccountSwitcher({ account, onChange }: {
+  account: Account
+  onChange: (a: Account) => void
+}) {
+  return (
+    <div style={{
+      display: 'flex',
+      background: 'var(--bg-elevated)',
+      borderRadius: 'var(--radius-md)',
+      padding: 3,
+      border: '1px solid var(--glass-border)',
+    }}>
+      {ACCOUNTS.map(a => (
+        <button
+          key={a.key}
+          onClick={() => onChange(a.key)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: account === a.key ? a.color + '18' : 'transparent',
+            color: account === a.key ? a.color : 'var(--text-secondary)',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            padding: '8px 16px',
+            fontSize: 13,
+            fontFamily: 'var(--font-display)',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <Instagram size={14} />
+          {a.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ─── PIN Gate ───
 
 const CORRECT_PIN = '2635'
@@ -1603,24 +1652,45 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
 // ─── Main App ───
 
 function Dashboard() {
-  const [leads, setLeads] = useState<Lead[]>([])
+  const [allLeads, setAllLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>('tasks')
-  const [engageBatchIds, setEngageBatchIds] = useState<number[] | null>(null)
+  const [engageBatchIds, setEngageBatchIds] = useState<Record<Account, number[] | null>>({ jakub: null, fitcore: null })
   const [filterStage, setFilterStage] = useState<PipelineStage | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'score' | 'followers' | 'recent'>('score')
+  const [account, setAccount] = useState<Account>(() => (localStorage.getItem('pipeline_account') as Account) || 'jakub')
+
+  const [confirmSwitch, setConfirmSwitch] = useState<Account | null>(null)
+
+  const handleAccountChange = (a: Account) => {
+    if (a === account) return
+    setConfirmSwitch(a)
+  }
+
+  const confirmAccountSwitch = () => {
+    if (confirmSwitch) {
+      setAccount(confirmSwitch)
+      localStorage.setItem('pipeline_account', confirmSwitch)
+      setConfirmSwitch(null)
+    }
+  }
+
+  // Leads that belong to this account: either new (shared pool) or worked by this account
+  const leads = useMemo(() => allLeads.filter(l =>
+    l.status === 'new' || l.engaged_by === account || l.dmed_by === account
+  ), [allLeads, account])
 
   const fetchLeads = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await supabaseFetch('instagram_leads?select=*&order=score.desc&limit=1000')
-      setLeads(data || [])
+      const data = await supabaseFetch('instagram_leads?select=*&order=score.desc&limit=2000')
+      setAllLeads(data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load leads')
-      setLeads([])
+      setAllLeads([])
     } finally {
       setLoading(false)
     }
@@ -1630,40 +1700,65 @@ function Dashboard() {
     fetchLeads()
   }, [fetchLeads])
 
-  // Snapshot the engage batch once on first load — no auto-refilling
+  // Snapshot engage batches for BOTH accounts at once from the shared new pool — interleaved by score
   useEffect(() => {
-    if (engageBatchIds !== null || leads.length === 0) return
+    if (engageBatchIds.jakub !== null || allLeads.length === 0) return
+
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
-    const alreadyEngagedToday = leads.filter(l => l.engaged_at && new Date(l.engaged_at).getTime() >= todayStart.getTime()).length
-    const slots = Math.max(0, DAILY_ENGAGE_LIMIT - alreadyEngagedToday)
-    const ids = leads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, slots).map(l => l.id)
-    setEngageBatchIds(ids)
-  }, [leads, engageBatchIds])
+    const ts = todayStart.getTime()
+
+    // Count how many each account already engaged today
+    const jakubEngagedToday = allLeads.filter(l => l.engaged_by === 'jakub' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
+    const fitcoreEngagedToday = allLeads.filter(l => l.engaged_by === 'fitcore' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
+
+    const jakubSlots = Math.max(0, DAILY_ENGAGE_LIMIT - jakubEngagedToday)
+    const fitcoreSlots = Math.max(0, DAILY_ENGAGE_LIMIT - fitcoreEngagedToday)
+
+    // Get all new leads sorted by score, interleave between accounts
+    const newLeads = allLeads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0))
+
+    const jakubIds: number[] = []
+    const fitcoreIds: number[] = []
+
+    for (const lead of newLeads) {
+      if (jakubIds.length < jakubSlots && jakubIds.length <= fitcoreIds.length) {
+        jakubIds.push(lead.id)
+      } else if (fitcoreIds.length < fitcoreSlots) {
+        fitcoreIds.push(lead.id)
+      } else if (jakubIds.length < jakubSlots) {
+        jakubIds.push(lead.id)
+      }
+    }
+
+    setEngageBatchIds({ jakub: jakubIds, fitcore: fitcoreIds })
+  }, [allLeads, engageBatchIds.jakub])
 
   const handleStatusChange = async (id: number, newStatus: PipelineStage) => {
     const updates: Record<string, string | null> = { status: newStatus }
     const now = new Date().toISOString()
 
-    if (newStatus === 'engaged') updates.engaged_at = now
-    if (newStatus === 'dmed') updates.dmed_at = now
+    if (newStatus === 'engaged') { updates.engaged_at = now; updates.engaged_by = account }
+    if (newStatus === 'dmed') { updates.dmed_at = now; updates.dmed_by = account }
 
     try {
       await supabaseFetch(`instagram_leads?id=eq.${id}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
       })
-      setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } as Lead : l))
+      setAllLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } as Lead : l))
       fetchLeads()
     } catch (err) {
       console.error('Failed to update status:', err)
     }
   }
 
-  // Batch update helper
+  // Batch update helper — now includes engaged_by/dmed_by
   const batchUpdateStatus = async (ids: number[], newStatus: PipelineStage, timestampField?: string) => {
     const now = new Date().toISOString()
     const updates: Record<string, string> = { status: newStatus }
     if (timestampField) updates[timestampField] = now
+    if (newStatus === 'engaged') updates.engaged_by = account
+    if (newStatus === 'dmed') updates.dmed_by = account
 
     try {
       const idList = ids.join(',')
@@ -1671,7 +1766,7 @@ function Dashboard() {
         method: 'PATCH',
         body: JSON.stringify(updates),
       })
-      setLeads(prev => prev.map(l =>
+      setAllLeads(prev => prev.map(l =>
         ids.includes(l.id) ? { ...l, ...updates } as Lead : l
       ))
     } catch (err) {
@@ -1679,15 +1774,20 @@ function Dashboard() {
     }
   }
 
-  // ─── Computed data ───
+  // ─── Computed data (filtered to current account's work) ───
+  // For pipeline counts, only show leads this account worked on (not the shared new pool)
+  const accountLeads = useMemo(() => allLeads.filter(l =>
+    l.engaged_by === account || l.dmed_by === account || l.status === 'new'
+  ), [allLeads, account])
+
   const counts: Record<string, number> = {}
   for (const stage of STAGES) counts[stage.key] = 0
-  for (const lead of leads) {
+  for (const lead of accountLeads) {
     const s = lead.status || 'new'
     counts[s] = (counts[s] || 0) + 1
   }
 
-  // Count how many were engaged/dmed today (for sidebar progress + daily cap)
+  // Count how many this account engaged/dmed today
   const todayStart = useMemo(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)
@@ -1695,22 +1795,22 @@ function Dashboard() {
   }, [])
 
   const todayEngaged = useMemo(() =>
-    leads.filter(l => {
-      if (!l.engaged_at) return false
+    allLeads.filter(l => {
+      if (l.engaged_by !== account || !l.engaged_at) return false
       return new Date(l.engaged_at).getTime() >= todayStart
     }).length,
-    [leads, todayStart]
+    [allLeads, account, todayStart]
   )
 
   const todayDmed = useMemo(() =>
-    leads.filter(l => {
-      if (!l.dmed_at) return false
+    allLeads.filter(l => {
+      if (l.dmed_by !== account || !l.dmed_at) return false
       return new Date(l.dmed_at).getTime() >= todayStart
     }).length,
-    [leads, todayStart]
+    [allLeads, account, todayStart]
   )
 
-  // Daily activity data for chart (last 90 days — chart filters internally)
+  // Daily activity data for chart — filtered by account
   const dailyActivity = useMemo(() => {
     const days: { date: string; label: string; engaged: number; dmed: number }[] = []
     for (let i = 89; i >= 0; i--) {
@@ -1720,14 +1820,14 @@ function Dashboard() {
       const dayStart = d.getTime()
       const dayEnd = dayStart + 24 * 60 * 60 * 1000
 
-      const engaged = leads.filter(l => {
-        if (!l.engaged_at) return false
+      const engaged = allLeads.filter(l => {
+        if (l.engaged_by !== account || !l.engaged_at) return false
         const t = new Date(l.engaged_at).getTime()
         return t >= dayStart && t < dayEnd
       }).length
 
-      const dmed = leads.filter(l => {
-        if (!l.dmed_at) return false
+      const dmed = allLeads.filter(l => {
+        if (l.dmed_by !== account || !l.dmed_at) return false
         const t = new Date(l.dmed_at).getTime()
         return t >= dayStart && t < dayEnd
       }).length
@@ -1740,30 +1840,31 @@ function Dashboard() {
       })
     }
     return days
-  }, [leads])
+  }, [allLeads, account])
 
-  // Today's engage batch: snapshotted on load, shrinks as leads are marked dead/engaged
-  const engageBatch = useMemo(() =>
-    engageBatchIds === null
+  // Today's engage batch: from interleaved snapshot, only show this account's portion
+  const engageBatch = useMemo(() => {
+    const ids = engageBatchIds[account]
+    return ids === null
       ? []
-      : leads.filter(l => engageBatchIds.includes(l.id) && l.status === 'new'),
-    [leads, engageBatchIds]
-  )
+      : allLeads.filter(l => ids.includes(l.id) && l.status === 'new')
+  }, [allLeads, engageBatchIds, account])
 
-  // DM-ready batch: leads with status=engaged (no wait time for demo)
+  // DM-ready batch: leads engaged BY THIS ACCOUNT, waiting for DM
   const dmBatch = useMemo(() => {
     const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
-    return leads
+    return allLeads
       .filter(l => {
         if (l.status !== 'engaged') return false
+        if (l.engaged_by !== account) return false
         if (!l.engaged_at) return false
         return new Date(l.engaged_at).getTime() < todayMidnight.getTime()
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
-  }, [leads])
+  }, [allLeads, account])
 
-  // Pipeline view filters
-  const filtered = leads
+  // Pipeline view filters — show leads this account worked + new leads
+  const filtered = accountLeads
     .filter(l => filterStage === 'all' || l.status === filterStage)
     .filter(l => {
       if (!searchQuery) return true
@@ -1780,10 +1881,10 @@ function Dashboard() {
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
     })
 
-  const usLeads = leads.filter(l => l.likely_us).length
-  const activeLeads = leads.filter(l => !['dead', 'closed'].includes(l.status)).length
-  const conversionRate = leads.length > 0
-    ? ((counts['closed'] || 0) / leads.length * 100).toFixed(1)
+  const usLeads = accountLeads.filter(l => l.likely_us).length
+  const activeLeads = accountLeads.filter(l => !['dead', 'closed'].includes(l.status)).length
+  const conversionRate = accountLeads.length > 0
+    ? ((counts['closed'] || 0) / accountLeads.length * 100).toFixed(1)
     : '0.0'
 
   return (
@@ -1808,6 +1909,9 @@ function Dashboard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Account switcher */}
+          <AccountSwitcher account={account} onChange={handleAccountChange} />
+
           {/* View toggle */}
           <div style={{
             display: 'flex',
@@ -1893,7 +1997,7 @@ function Dashboard() {
       )}
 
       {/* Loading */}
-      {loading && leads.length === 0 ? (
+      {loading && allLeads.length === 0 ? (
         <div style={{ padding: '40px' }}>
           <GlassCard>
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)' }}>
@@ -2106,6 +2210,80 @@ function Dashboard() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Account switch confirmation modal */}
+      {confirmSwitch && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000,
+        }}
+          onClick={() => setConfirmSwitch(null)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '32px',
+              width: 380,
+              boxShadow: 'var(--shadow-card)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <Instagram size={20} color={ACCOUNTS.find(a => a.key === confirmSwitch)?.color} />
+              <div style={{ fontSize: 18, fontWeight: 700 }}>Switch Account</div>
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.6 }}>
+              Switch to <span style={{
+                fontWeight: 700,
+                color: ACCOUNTS.find(a => a.key === confirmSwitch)?.color,
+              }}>{ACCOUNTS.find(a => a.key === confirmSwitch)?.label}</span>?
+              <br />
+              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                This changes which account's tasks and stats you see.
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setConfirmSwitch(null)}
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 20px',
+                  fontSize: 13,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAccountSwitch}
+                style={{
+                  background: ACCOUNTS.find(a => a.key === confirmSwitch)?.color + '20',
+                  color: ACCOUNTS.find(a => a.key === confirmSwitch)?.color,
+                  border: `1px solid ${ACCOUNTS.find(a => a.key === confirmSwitch)?.color}50`,
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 20px',
+                  fontSize: 13,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Switch to {ACCOUNTS.find(a => a.key === confirmSwitch)?.label}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
