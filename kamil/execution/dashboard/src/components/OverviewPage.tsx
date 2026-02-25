@@ -344,6 +344,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                 tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'Outfit' }}
               />
               <YAxis
+                domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}

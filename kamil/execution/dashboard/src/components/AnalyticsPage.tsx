@@ -292,7 +292,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
+                <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, 'Revenue']} />
                 <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
               </AreaChart>
@@ -367,7 +367,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis domain={[70, 105]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
+                <YAxis domain={[(min: number) => Math.floor(min - 5), (max: number) => Math.ceil(max + 5)]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`${value}%`, 'Retention']} />
                 <Area type="monotone" dataKey="rate" stroke="#00e5c8" strokeWidth={2} fill="url(#retentionGrad)" dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} />
               </AreaChart>

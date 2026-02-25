@@ -536,7 +536,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weightData}>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} />
                 <Tooltip
                   contentStyle={{
                     background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
@@ -557,7 +557,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={liftData}>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={[(min: number) => Math.floor(min - 5), (max: number) => Math.ceil(max + 5)]} />
                 <Tooltip
                   contentStyle={{
                     background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
@@ -990,7 +990,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={bfData}>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={['auto', 'auto']} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} />
                 <Tooltip
                   contentStyle={{
                     background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',

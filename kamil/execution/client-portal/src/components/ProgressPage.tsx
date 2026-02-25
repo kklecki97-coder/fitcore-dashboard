@@ -168,35 +168,116 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     <div style={{ ...styles.page, padding: isMobile ? '16px 12px 80px' : '24px 24px 80px' }}>
       <h2 style={styles.title}>Your Progress</h2>
 
-      {/* Goals — top priority */}
-      <GlassCard delay={0.05}>
-        <div style={styles.sectionHeader}>
-          <Target size={18} color="var(--accent-primary)" />
-          <span style={styles.sectionTitle}>Goals</span>
-          <span style={styles.goalCount}>{goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}</span>
-        </div>
-        <div style={styles.goalProgressList}>
-          {goalProgress.map((g, i) => (
-            <div key={i} style={styles.goalProgressItem}>
-              <div style={styles.goalProgressTop}>
-                <div style={styles.goalProgressName}>{g.goal}</div>
-                <div style={{
-                  ...styles.goalProgressPct,
-                  color: g.progress >= 90 ? 'var(--accent-success)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-                }}>{g.progress}%</div>
+      {/* Top row: Goals + Weight + Body Fat — horizontal on desktop, stacked on mobile */}
+      <div style={{ ...styles.topRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '10px' }}>
+        {/* Goals */}
+        <GlassCard delay={0.05} style={styles.topCard}>
+          <div style={styles.sectionHeader}>
+            <Target size={16} color="var(--accent-primary)" />
+            <span style={styles.sectionTitle}>Goals</span>
+            <span style={styles.goalCount}>{goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}</span>
+          </div>
+          <div style={styles.goalProgressList}>
+            {goalProgress.map((g, i) => (
+              <div key={i} style={styles.goalProgressItem}>
+                <div style={styles.goalProgressTop}>
+                  <div style={styles.goalProgressName}>{g.goal}</div>
+                  <div style={{
+                    ...styles.goalProgressPct,
+                    color: g.progress >= 90 ? 'var(--accent-success)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
+                  }}>{g.progress}%</div>
+                </div>
+                <div style={styles.goalProgressBarBg}>
+                  <div style={{
+                    ...styles.goalProgressBarFill,
+                    width: `${g.progress}%`,
+                    background: g.progress >= 90 ? 'var(--accent-success)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
+                  }} />
+                </div>
+                <div style={styles.goalProgressLabel}>{g.label}</div>
               </div>
-              <div style={styles.goalProgressBarBg}>
-                <div style={{
-                  ...styles.goalProgressBarFill,
-                  width: `${g.progress}%`,
-                  background: g.progress >= 90 ? 'var(--accent-success)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-                }} />
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Weight Chart */}
+        <GlassCard delay={0.1} style={styles.topCard}>
+          <div style={styles.chartHeaderCompact}>
+            <div style={styles.chartTitle}>Weight</div>
+            {weightData.length >= 2 && (
+              <div style={{
+                ...styles.trendBadge,
+                background: 'var(--accent-success-dim)',
+                color: 'var(--accent-success)',
+              }}>
+                <TrendingDown size={12} />
+                {(metrics.weight[0] - metrics.weight[metrics.weight.length - 1]).toFixed(1)}kg
               </div>
-              <div style={styles.goalProgressLabel}>{g.label}</div>
+            )}
+          </div>
+          {!chartsReady ? (
+            <div style={{ ...styles.skeleton, flex: 1, minHeight: isMobile ? '180px' : '80px' }} />
+          ) : weightData.length >= 2 ? (
+            <div style={styles.chartWrap}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={weightData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} width={isMobile ? 36 : 32} />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary)' }}
+                    formatter={(val) => [`${val} kg`, 'Weight']}
+                  />
+                  <Line type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2} dot={{ fill: 'var(--accent-primary)', r: 2.5 }} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-          ))}
-        </div>
-      </GlassCard>
+          ) : (
+            <div style={{ ...styles.emptyState, flex: 1, padding: '16px 12px' }}>
+              <BarChart3 size={24} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
+              <span style={styles.emptyStateText}>Weigh in at your next check-in</span>
+            </div>
+          )}
+        </GlassCard>
+
+        {/* Body Fat Chart */}
+        <GlassCard delay={0.15} style={styles.topCard}>
+          <div style={styles.chartHeaderCompact}>
+            <div style={styles.chartTitle}>Body Fat %</div>
+            {bodyFatData.length >= 2 && (
+              <div style={{
+                ...styles.trendBadge,
+                background: 'var(--accent-success-dim)',
+                color: 'var(--accent-success)',
+              }}>
+                <TrendingDown size={12} />
+                {(metrics.bodyFat[0] - metrics.bodyFat[metrics.bodyFat.length - 1]).toFixed(1)}%
+              </div>
+            )}
+          </div>
+          {!chartsReady ? (
+            <div style={{ ...styles.skeleton, flex: 1, minHeight: isMobile ? '180px' : '80px' }} />
+          ) : bodyFatData.length >= 2 ? (
+            <div style={styles.chartWrap}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={bodyFatData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                  <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} width={isMobile ? 36 : 32} />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary)' }}
+                    formatter={(val) => [`${val}%`, 'Body Fat']}
+                  />
+                  <Line type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2} dot={{ fill: 'var(--accent-secondary)', r: 2.5 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{ ...styles.emptyState, flex: 1, padding: '16px 12px' }}>
+              <BarChart3 size={24} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
+              <span style={styles.emptyStateText}>Body fat data appears after check-ins</span>
+            </div>
+          )}
+        </GlassCard>
+      </div>
 
       {/* Lift PRs */}
       <div style={{ ...styles.prRow, gap: isMobile ? '8px' : '10px' }}>
@@ -205,7 +286,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           const prev = lift.values[lift.values.length - 2];
           const diff = current - prev;
           return (
-            <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={{ ...styles.prCard, padding: isMobile ? '12px 8px' : '16px' }}>
+            <GlassCard key={lift.name} delay={0.2 + i * 0.05} style={{ ...styles.prCard, padding: isMobile ? '12px 8px' : '16px' }}>
               <div style={styles.prEmoji}>{lift.icon}</div>
               <div style={styles.prName}>{lift.name}</div>
               <div style={styles.prValue}>{current}<span style={styles.prUnit}>{lift.unit}</span></div>
@@ -220,84 +301,6 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           );
         })}
       </div>
-
-      {/* Weight Chart */}
-      <GlassCard delay={0.2}>
-        <div style={styles.chartHeader}>
-          <div style={styles.chartTitle}>Weight</div>
-          {weightData.length >= 2 && (
-            <div style={{
-              ...styles.trendBadge,
-              background: 'var(--accent-success-dim)',
-              color: 'var(--accent-success)',
-            }}>
-              <TrendingDown size={12} />
-              {(metrics.weight[0] - metrics.weight[metrics.weight.length - 1]).toFixed(1)}kg
-            </div>
-          )}
-        </div>
-        {!chartsReady ? (
-          <div style={styles.skeleton} />
-        ) : weightData.length >= 2 ? (
-          <div style={{ width: '100%', height: 180 }}>
-            <ResponsiveContainer>
-              <LineChart data={weightData}>
-                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
-                  formatter={(val) => [`${val} kg`, 'Weight']}
-                />
-                <Line type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2} dot={{ fill: 'var(--accent-primary)', r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <div style={styles.emptyState}>
-            <BarChart3 size={28} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-            <span style={styles.emptyStateText}>Weigh in at your next check-in to start tracking</span>
-          </div>
-        )}
-      </GlassCard>
-
-      {/* Body Fat Chart */}
-      <GlassCard delay={0.25}>
-        <div style={styles.chartHeader}>
-          <div style={styles.chartTitle}>Body Fat %</div>
-          {bodyFatData.length >= 2 && (
-            <div style={{
-              ...styles.trendBadge,
-              background: 'var(--accent-success-dim)',
-              color: 'var(--accent-success)',
-            }}>
-              <TrendingDown size={12} />
-              {(metrics.bodyFat[0] - metrics.bodyFat[metrics.bodyFat.length - 1]).toFixed(1)}%
-            </div>
-          )}
-        </div>
-        {!chartsReady ? (
-          <div style={styles.skeleton} />
-        ) : bodyFatData.length >= 2 ? (
-          <div style={{ width: '100%', height: 180 }}>
-            <ResponsiveContainer>
-              <LineChart data={bodyFatData}>
-                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
-                  formatter={(val) => [`${val}%`, 'Body Fat']}
-                />
-                <Line type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2} dot={{ fill: 'var(--accent-secondary)', r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <div style={styles.emptyState}>
-            <BarChart3 size={28} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-            <span style={styles.emptyStateText}>Body fat data will appear after your first check-ins</span>
-          </div>
-        )}
-      </GlassCard>
 
       {/* Training Consistency */}
       <GlassCard delay={0.35}>
@@ -491,11 +494,35 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.5px',
     color: 'var(--text-primary)',
   },
+  topRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '10px',
+  },
+  topCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: 0,
+    overflow: 'hidden',
+  },
+  chartWrap: {
+    width: '100%',
+    flex: 1,
+    minWidth: 0,
+    minHeight: 0,
+  },
   chartHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: '16px',
+  },
+  chartHeaderCompact: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '8px',
+    flexShrink: 0,
   },
   chartTitle: {
     fontSize: '14px',
