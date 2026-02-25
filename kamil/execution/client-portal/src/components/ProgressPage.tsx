@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, Target, Award, Flame, Dumbbell } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, Award, Flame, Dumbbell, BarChart3 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import GlassCard from './GlassCard';
@@ -173,56 +173,74 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
       <GlassCard delay={0.2}>
         <div style={styles.chartHeader}>
           <div style={styles.chartTitle}>Weight</div>
-          <div style={{
-            ...styles.trendBadge,
-            background: 'var(--accent-success-dim)',
-            color: 'var(--accent-success)',
-          }}>
-            <TrendingDown size={12} />
-            {(metrics.weight[0] - metrics.weight[metrics.weight.length - 1]).toFixed(1)}kg
+          {weightData.length >= 2 && (
+            <div style={{
+              ...styles.trendBadge,
+              background: 'var(--accent-success-dim)',
+              color: 'var(--accent-success)',
+            }}>
+              <TrendingDown size={12} />
+              {(metrics.weight[0] - metrics.weight[metrics.weight.length - 1]).toFixed(1)}kg
+            </div>
+          )}
+        </div>
+        {weightData.length >= 2 ? (
+          <div style={{ width: '100%', height: 180 }}>
+            <ResponsiveContainer>
+              <LineChart data={weightData}>
+                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
+                  formatter={(val: number) => [`${val} kg`, 'Weight']}
+                />
+                <Line type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2} dot={{ fill: 'var(--accent-primary)', r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        </div>
-        <div style={{ width: '100%', height: 180 }}>
-          <ResponsiveContainer>
-            <LineChart data={weightData}>
-              <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
-              <Tooltip
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
-                formatter={(val: number) => [`${val} kg`, 'Weight']}
-              />
-              <Line type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2} dot={{ fill: 'var(--accent-primary)', r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        ) : (
+          <div style={styles.emptyState}>
+            <BarChart3 size={28} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
+            <span style={styles.emptyStateText}>Weigh in at your next check-in to start tracking</span>
+          </div>
+        )}
       </GlassCard>
 
       {/* Body Fat Chart */}
       <GlassCard delay={0.25}>
         <div style={styles.chartHeader}>
           <div style={styles.chartTitle}>Body Fat %</div>
-          <div style={{
-            ...styles.trendBadge,
-            background: 'var(--accent-success-dim)',
-            color: 'var(--accent-success)',
-          }}>
-            <TrendingDown size={12} />
-            {(metrics.bodyFat[0] - metrics.bodyFat[metrics.bodyFat.length - 1]).toFixed(1)}%
+          {bodyFatData.length >= 2 && (
+            <div style={{
+              ...styles.trendBadge,
+              background: 'var(--accent-success-dim)',
+              color: 'var(--accent-success)',
+            }}>
+              <TrendingDown size={12} />
+              {(metrics.bodyFat[0] - metrics.bodyFat[metrics.bodyFat.length - 1]).toFixed(1)}%
+            </div>
+          )}
+        </div>
+        {bodyFatData.length >= 2 ? (
+          <div style={{ width: '100%', height: 180 }}>
+            <ResponsiveContainer>
+              <LineChart data={bodyFatData}>
+                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
+                  formatter={(val: number) => [`${val}%`, 'Body Fat']}
+                />
+                <Line type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2} dot={{ fill: 'var(--accent-secondary)', r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        </div>
-        <div style={{ width: '100%', height: 180 }}>
-          <ResponsiveContainer>
-            <LineChart data={bodyFatData}>
-              <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis domain={['auto', 'auto']} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={isMobile ? 30 : 35} />
-              <Tooltip
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
-                formatter={(val: number) => [`${val}%`, 'Body Fat']}
-              />
-              <Line type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2} dot={{ fill: 'var(--accent-secondary)', r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        ) : (
+          <div style={styles.emptyState}>
+            <BarChart3 size={28} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
+            <span style={styles.emptyStateText}>Body fat data will appear after your first check-ins</span>
+          </div>
+        )}
       </GlassCard>
 
       {/* Training Consistency */}
@@ -232,6 +250,12 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           <span style={styles.sectionTitle}>Training Consistency</span>
         </div>
 
+        {workoutLogs.length === 0 ? (
+          <div style={styles.emptyState}>
+            <Dumbbell size={28} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
+            <span style={styles.emptyStateText}>Complete your first workout to start tracking consistency</span>
+          </div>
+        ) : <>
         {/* Stats row — 3 mini cards */}
         <div style={styles.statsRow}>
           <div style={styles.statCard}>
@@ -381,6 +405,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'var(--accent-primary)' }} /> Today</span>
           <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'rgba(255,255,255,0.03)' }} /> Rest</span>
         </div>
+        </>}
       </GlassCard>
 
       {/* Award */}
@@ -590,6 +615,20 @@ const styles: Record<string, React.CSSProperties> = {
   },
   legendItem: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--text-tertiary)' },
   legendDot: { width: '8px', height: '8px', borderRadius: '2px', display: 'inline-block' },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    padding: '32px 16px',
+  },
+  emptyStateText: {
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
+    textAlign: 'center',
+    lineHeight: 1.5,
+  },
   awardCard: { display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' },
   awardTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
   awardSub: { fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' },

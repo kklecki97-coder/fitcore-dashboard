@@ -111,6 +111,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   const [tab, setTab] = useState<'submit' | 'history'>('submit');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selfReportOpen, setSelfReportOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [form, setForm] = useState({
@@ -155,6 +156,9 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   const completed = checkIns.filter(ci => ci.status === 'completed').sort((a, b) => b.date.localeCompare(a.date));
 
   const handleSubmit = () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const ci: CheckIn = {
       id: `ci-new-${Date.now()}`,
       clientId,
@@ -181,6 +185,8 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
     setForm({ weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '', steps: '', nutritionScore: '', notes: '', wins: '', challenges: '' });
     setPhotos([]);
     setTab('history');
+
+    setTimeout(() => setIsSubmitting(false), 1500);
   };
 
   return (
@@ -345,8 +351,15 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
             </div>
           </GlassCard>
 
-          <button style={styles.submitBtn} onClick={handleSubmit}>
-            <Send size={16} /> Submit Check-In
+          <button
+            style={{
+              ...styles.submitBtn,
+              ...(isSubmitting ? { opacity: 0.6, cursor: 'not-allowed' } : {}),
+            }}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <Send size={16} /> {isSubmitting ? 'Submitting...' : 'Submit Check-In'}
           </button>
         </div>
       ) : (

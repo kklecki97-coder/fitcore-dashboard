@@ -1,4 +1,4 @@
-import { Home, Dumbbell, ClipboardCheck, TrendingUp, MessageSquare } from 'lucide-react';
+import { Home, Dumbbell, ClipboardCheck, TrendingUp, MessageSquare, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { ClientPage } from '../types';
 
@@ -6,6 +6,7 @@ interface BottomNavProps {
   currentPage: ClientPage;
   onNavigate: (page: ClientPage) => void;
   isMobile: boolean;
+  onLogout?: () => void;
 }
 
 const navItems: { icon: typeof Home; label: string; page: ClientPage }[] = [
@@ -16,7 +17,7 @@ const navItems: { icon: typeof Home; label: string; page: ClientPage }[] = [
   { icon: MessageSquare, label: 'Messages', page: 'messages' },
 ];
 
-export default function BottomNav({ currentPage, onNavigate, isMobile }: BottomNavProps) {
+export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout }: BottomNavProps) {
   if (isMobile) {
     return (
       <nav style={styles.bottomBar}>
@@ -50,33 +51,50 @@ export default function BottomNav({ currentPage, onNavigate, isMobile }: BottomN
   // Desktop: slim left sidebar
   return (
     <nav style={styles.sideNav}>
-      {navItems.map((item) => {
-        const active = currentPage === item.page;
-        const Icon = item.icon;
-        return (
-          <motion.button
-            key={item.page}
-            onClick={() => onNavigate(item.page)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            style={{
-              ...styles.sideItem,
-              color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              background: active ? 'var(--accent-primary-dim)' : 'transparent',
-            }}
-            title={item.label}
-          >
-            {active && (
-              <motion.div
-                layoutId="nav-indicator"
-                style={styles.activeBar}
-                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              />
-            )}
-            <Icon size={20} />
-          </motion.button>
-        );
-      })}
+      <div style={styles.sideNavItems}>
+        {navItems.map((item) => {
+          const active = currentPage === item.page;
+          const Icon = item.icon;
+          return (
+            <motion.button
+              key={item.page}
+              onClick={() => onNavigate(item.page)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                ...styles.sideItem,
+                color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                background: active ? 'var(--accent-primary-dim)' : 'transparent',
+              }}
+              title={item.label}
+            >
+              {active && (
+                <motion.div
+                  layoutId="nav-indicator"
+                  style={styles.activeBar}
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+              <Icon size={20} />
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {onLogout && (
+        <motion.button
+          onClick={onLogout}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          style={{
+            ...styles.sideItem,
+            color: 'var(--text-tertiary)',
+          }}
+          title="Log out"
+        >
+          <LogOut size={18} />
+        </motion.button>
+      )}
     </nav>
   );
 }
@@ -127,10 +145,17 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '8px',
+    justifyContent: 'space-between',
     paddingTop: '16px',
+    paddingBottom: '16px',
     background: 'var(--bg-secondary)',
     borderRight: '1px solid var(--glass-border)',
+  },
+  sideNavItems: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
   },
   sideItem: {
     position: 'relative',

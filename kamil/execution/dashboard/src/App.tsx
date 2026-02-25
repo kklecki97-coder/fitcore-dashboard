@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import ErrorBoundary from './components/ErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -59,8 +60,47 @@ function App() {
   const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>(initialCheckIns);
 
   const todayKey = new Date().toISOString().split('T')[0];
-  const [sessionsByDate, setSessionsByDate] = useState<Record<string, typeof scheduleToday>>({
-    [todayKey]: scheduleToday,
+  const [sessionsByDate, setSessionsByDate] = useState<Record<string, typeof scheduleToday>>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tKey = today.toISOString().split('T')[0];
+
+    // Get Monday of current week
+    const dow = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - dow + (dow === 0 ? -6 : 1));
+
+    const clientPool = [
+      { client: 'Marcus Chen', type: 'Upper Body' },
+      { client: 'Sarah Williams', type: 'Lower Body' },
+      { client: 'Jake Morrison', type: 'Squat Day' },
+      { client: 'Tom Bradley', type: 'Full Body' },
+      { client: 'David Park', type: 'Push Day' },
+      { client: 'Aisha Patel', type: 'Pull Day' },
+    ];
+    const times = ['07:00', '09:00', '11:00', '14:00', '16:00'];
+
+    const weekSessions: Record<string, typeof scheduleToday> = {
+      [tKey]: scheduleToday,
+    };
+
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const key = d.toISOString().split('T')[0];
+      if (key === tKey) continue;
+
+      const isPast = d < today;
+      weekSessions[key] = times.slice(0, 3 + (i % 3)).map((time, j) => ({
+        time,
+        client: clientPool[(i + j) % clientPool.length].client,
+        type: clientPool[(i + j) % clientPool.length].type,
+        status: (isPast ? 'completed' : 'upcoming') as 'completed' | 'upcoming' | 'current',
+        duration: [45, 60, 60, 90, 45][j % 5],
+      }));
+    }
+
+    return weekSessions;
   });
 
   // Settings state
@@ -87,6 +127,71 @@ function App() {
       { id: 'n8', type: 'client', title: 'Welcome to FitCore!', description: 'Your dashboard is set up and ready to go', timestamp: new Date(now - 72 * 3600000).toISOString(), isRead: true, targetPage: 'overview' as const },
     ];
   });
+
+  // Track data counts to detect new items for notifications
+  const prevMessageCount = useRef(allMessages.length);
+  const prevCheckInCount = useRef(allCheckIns.length);
+  const prevInvoiceCount = useRef(allInvoices.length);
+
+  useEffect(() => {
+    const newNotifs: AppNotification[] = [];
+
+    if (allMessages.length > prevMessageCount.current) {
+      const newMsgs = allMessages.slice(prevMessageCount.current).filter(m => !m.isFromCoach);
+      newMsgs.forEach(msg => {
+        const client = allClients.find(c => c.id === msg.clientId);
+        newNotifs.push({
+          id: `notif-msg-${msg.id}`,
+          type: 'message',
+          title: `New message from ${client?.name || 'Client'}`,
+          description: msg.text.slice(0, 80) + (msg.text.length > 80 ? '...' : ''),
+          timestamp: msg.timestamp,
+          isRead: false,
+          clientId: msg.clientId,
+          targetPage: 'messages',
+        });
+      });
+    }
+    prevMessageCount.current = allMessages.length;
+
+    if (allCheckIns.length > prevCheckInCount.current) {
+      const newCIs = allCheckIns.slice(prevCheckInCount.current);
+      newCIs.forEach(ci => {
+        newNotifs.push({
+          id: `notif-ci-${ci.id}`,
+          type: 'checkin',
+          title: `${ci.clientName} submitted a check-in`,
+          description: `Check-in for ${ci.date}`,
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          clientId: ci.clientId,
+          targetPage: 'check-ins',
+        });
+      });
+    }
+    prevCheckInCount.current = allCheckIns.length;
+
+    if (allInvoices.length > prevInvoiceCount.current) {
+      const newInvs = allInvoices.slice(prevInvoiceCount.current);
+      newInvs.forEach(inv => {
+        newNotifs.push({
+          id: `notif-inv-${inv.id}`,
+          type: 'payment',
+          title: `New invoice — $${inv.amount}`,
+          description: `${inv.clientName} — ${inv.period}`,
+          timestamp: new Date().toISOString(),
+          isRead: false,
+          clientId: inv.clientId,
+          targetPage: 'payments',
+        });
+      });
+    }
+    prevInvoiceCount.current = allInvoices.length;
+
+    if (newNotifs.length > 0) {
+      setAppNotifications(prev => [...newNotifs, ...prev]);
+    }
+  }, [allMessages, allCheckIns, allInvoices, allClients]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -326,6 +431,7 @@ function App() {
   }
 
   return (
+    <ErrorBoundary>
     <div style={styles.app}>
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
@@ -380,6 +486,7 @@ function App() {
         </AnimatePresence>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
 

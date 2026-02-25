@@ -199,6 +199,24 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
       </div>
 
       {/* Client Cards Grid */}
+      {sorted.length === 0 ? (
+        <div style={styles.emptyState}>
+          <User size={48} color="var(--text-tertiary)" />
+          <div style={styles.emptyTitle}>
+            {allClients.length === 0 ? 'No clients yet' : 'No clients match your filters'}
+          </div>
+          <div style={styles.emptySub}>
+            {allClients.length === 0
+              ? 'Add your first client to get started.'
+              : 'Try adjusting your search or filters.'}
+          </div>
+          {allClients.length === 0 && (
+            <button onClick={onAddClient} style={{ ...styles.addBtn, marginTop: '16px' }}>
+              <Plus size={16} /> Add Client
+            </button>
+          )}
+        </div>
+      ) : (
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))' }}>
         {sorted.map((client, i) => {
           const badge = planBadge(client.plan);
@@ -357,6 +375,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
           );
         })}
       </div>
+      )}
 
       {/* Edit Plan Modal */}
       <AnimatePresence>
@@ -858,5 +877,26 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--accent-primary)',
     background: 'var(--accent-primary-dim)',
     whiteSpace: 'nowrap',
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '80px 40px',
+    gap: '10px',
+  },
+  emptyTitle: {
+    fontSize: '20px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+    fontFamily: 'var(--font-display)',
+  },
+  emptySub: {
+    fontSize: '14px',
+    color: 'var(--text-secondary)',
+    textAlign: 'center',
+    maxWidth: '280px',
+    lineHeight: 1.5,
   },
 };

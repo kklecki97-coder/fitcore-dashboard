@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import LoginPage from './components/LoginPage';
@@ -25,6 +26,12 @@ function App() {
       sessionStorage.setItem('fitcore-client-auth', 'true');
     }
     setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('fitcore-client-auth');
+    sessionStorage.removeItem('fitcore-client-auth');
+    setIsLoggedIn(false);
   };
 
   const [currentPage, setCurrentPage] = useState<ClientPage>('home');
@@ -130,10 +137,11 @@ function App() {
   }
 
   return (
+    <ErrorBoundary>
     <div style={styles.app}>
       {/* Desktop side nav */}
       {!isMobile && (
-        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={false} />
+        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={false} onLogout={handleLogout} />
       )}
 
       <div style={styles.main}>
@@ -158,9 +166,10 @@ function App() {
 
       {/* Mobile bottom nav */}
       {isMobile && (
-        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={true} />
+        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={true} onLogout={handleLogout} />
       )}
     </div>
+    </ErrorBoundary>
   );
 }
 
