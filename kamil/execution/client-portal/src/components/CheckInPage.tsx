@@ -139,9 +139,16 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
 
   const photoSlots = [...fixedSlots, ...otherSlots];
 
+  const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10 MB
+
   const handlePhotoUpload = (_key: string, label: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_PHOTO_SIZE) {
+      alert('Photo must be under 10 MB');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       setPhotos(prev => {
@@ -149,14 +156,20 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
         return [...filtered, { url: reader.result as string, label }];
       });
     };
+    reader.onerror = () => {
+      alert('Failed to read photo. Please try again.');
+    };
     reader.readAsDataURL(file);
     e.target.value = '';
   };
 
   const completed = checkIns.filter(ci => ci.status === 'completed').sort((a, b) => b.date.localeCompare(a.date));
 
+  const hasAnyData = form.weight || form.bodyFat || form.mood || form.energy || form.stress
+    || form.sleepHours || form.steps || form.nutritionScore || form.notes || form.wins || form.challenges || photos.length > 0;
+
   const handleSubmit = () => {
-    if (isSubmitting) return;
+    if (isSubmitting || !hasAnyData) return;
     setIsSubmitting(true);
 
     const ci: CheckIn = {
@@ -168,11 +181,11 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
       weight: form.weight ? parseFloat(form.weight) : null,
       bodyFat: form.bodyFat ? parseFloat(form.bodyFat) : null,
       mood: (form.mood || null) as CheckIn['mood'],
-      energy: form.energy ? parseInt(form.energy) : null,
-      stress: form.stress ? parseInt(form.stress) : null,
+      energy: form.energy ? parseInt(form.energy, 10) : null,
+      stress: form.stress ? parseInt(form.stress, 10) : null,
       sleepHours: form.sleepHours ? parseFloat(form.sleepHours) : null,
-      steps: form.steps ? parseInt(form.steps) : null,
-      nutritionScore: form.nutritionScore ? parseInt(form.nutritionScore) : null,
+      steps: form.steps ? parseInt(form.steps, 10) : null,
+      nutritionScore: form.nutritionScore ? parseInt(form.nutritionScore, 10) : null,
       notes: form.notes,
       wins: form.wins,
       challenges: form.challenges,
@@ -354,12 +367,12 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
           <button
             style={{
               ...styles.submitBtn,
-              ...(isSubmitting ? { opacity: 0.6, cursor: 'not-allowed' } : {}),
+              ...(isSubmitting || !hasAnyData ? { opacity: 0.6, cursor: 'not-allowed' } : {}),
             }}
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !hasAnyData}
           >
-            <Send size={16} /> {isSubmitting ? 'Submitting...' : 'Submit Check-In'}
+            <Send size={16} /> {isSubmitting ? 'Submitting...' : !hasAnyData ? 'Fill in at least one field' : 'Submit Check-In'}
           </button>
         </div>
       ) : (

@@ -79,11 +79,17 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     periodClients[inv.period].add(inv.clientId);
   });
   // Merge invoice-derived data with revenueData (keep revenueData months for chart continuity)
-  const revenueChartData = revenueData.map(rd => ({
-    month: rd.month,
-    revenue: periodRevenue[`${rd.month} 2026`] ?? periodRevenue[`${rd.month} 2025`] ?? rd.revenue,
-    clients: periodClients[`${rd.month} 2026`]?.size ?? periodClients[`${rd.month} 2025`]?.size ?? rd.clients,
-  }));
+  const currentYear = new Date().getFullYear();
+  const revenueChartData = revenueData.map(rd => {
+    // Try current year first, then previous year, then fallback to mock data
+    const revKey = `${rd.month} ${currentYear}`;
+    const prevKey = `${rd.month} ${currentYear - 1}`;
+    return {
+      month: rd.month,
+      revenue: periodRevenue[revKey] ?? periodRevenue[prevKey] ?? rd.revenue,
+      clients: periodClients[revKey]?.size ?? periodClients[prevKey]?.size ?? rd.clients,
+    };
+  });
 
   // ── Plan distribution ──
   const planDistribution = [

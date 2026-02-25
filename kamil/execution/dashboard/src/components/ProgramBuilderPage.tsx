@@ -117,7 +117,7 @@ export default function ProgramBuilderPage({
   const isMobile = useIsMobile();
 
   const [draft, setDraft] = useState<WorkoutProgram>(() => {
-    if (program) return structuredClone(program);
+    if (program) return JSON.parse(JSON.stringify(program));
     return {
       id: `wp${++_idCounter}`,
       name: '',
@@ -183,7 +183,7 @@ export default function ProgramBuilderPage({
   const duplicateDay = (index: number) => {
     const source = draft.days[index];
     const newDay: WorkoutDay = {
-      ...structuredClone(source),
+      ...JSON.parse(JSON.stringify(source)),
       id: `wd${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: `${source.name} (Copy)`,
       exercises: source.exercises.map(e => ({
@@ -231,7 +231,7 @@ export default function ProgramBuilderPage({
     const ex = { ...exerciseForm, name: exerciseForm.name.trim() };
 
     setDraft(prev => {
-      const newDraft = structuredClone(prev);
+      const newDraft = JSON.parse(JSON.stringify(prev));
       const day = newDraft.days[activeDayIndex];
       if (exerciseModal?.editing && exerciseModal.index >= 0) {
         day.exercises[exerciseModal.index] = ex;
@@ -245,7 +245,7 @@ export default function ProgramBuilderPage({
 
   const removeExercise = (index: number) => {
     setDraft(prev => {
-      const newDraft = structuredClone(prev);
+      const newDraft = JSON.parse(JSON.stringify(prev));
       newDraft.days[activeDayIndex].exercises.splice(index, 1);
       return newDraft;
     });
@@ -254,7 +254,7 @@ export default function ProgramBuilderPage({
   const moveExercise = (index: number, direction: 'up' | 'down') => {
     const target = direction === 'up' ? index - 1 : index + 1;
     setDraft(prev => {
-      const newDraft = structuredClone(prev);
+      const newDraft = JSON.parse(JSON.stringify(prev));
       const exercises = newDraft.days[activeDayIndex].exercises;
       if (target < 0 || target >= exercises.length) return prev;
       [exercises[index], exercises[target]] = [exercises[target], exercises[index]];

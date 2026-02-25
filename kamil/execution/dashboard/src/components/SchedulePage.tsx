@@ -127,7 +127,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
   const formatTimeLabel = (slot: string) => {
     const [hStr, mStr] = slot.split(':');
-    const h = parseInt(hStr);
+    const h = parseInt(hStr, 10);
     const m = mStr;
     if (h > 12) return `${h - 12}:${m} PM`;
     if (h === 12) return `12:${m} PM`;
@@ -239,7 +239,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
             // Map sessions to their hour
             const sessionsByHour: Record<number, typeof displaySessions> = {};
             displaySessions.forEach(s => {
-              const h = parseInt(s.time.split(':')[0]);
+              const h = parseInt(s.time.split(':')[0], 10);
               if (!sessionsByHour[h]) sessionsByHour[h] = [];
               sessionsByHour[h].push(s);
             });
@@ -577,7 +577,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                     <label style={styles.modalLabel}>Duration</label>
                     <select
                       value={newSession.duration}
-                      onChange={(e) => setNewSession(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                      onChange={(e) => setNewSession(prev => ({ ...prev, duration: parseInt(e.target.value, 10) }))}
                       style={styles.modalSelect}
                     >
                       <option value={30}>30 min</option>

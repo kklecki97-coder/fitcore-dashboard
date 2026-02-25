@@ -22,7 +22,10 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   }, []);
 
   const { metrics } = client;
-  const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+  // Dynamic month labels based on client start date
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const startMonth = new Date(client.startDate).getMonth();
+  const months = metrics.weight.map((_, i) => monthNames[(startMonth + i) % 12]);
   const weights = metrics.weight;
 
   const weightData = metrics.weight.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));

@@ -32,6 +32,11 @@ function App() {
     } else {
       sessionStorage.setItem('fitcore-auth', 'true');
     }
+    // Reset notification refs so stale counts from a previous session
+    // don't generate false notifications on re-login
+    prevMessageCount.current = allMessages.length;
+    prevCheckInCount.current = allCheckIns.length;
+    prevInvoiceCount.current = allInvoices.length;
     setIsLoggedIn(true);
   };
 

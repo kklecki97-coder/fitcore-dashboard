@@ -35,10 +35,12 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
 
   // ── Summary stats ──
   const activeClients = clients.filter(c => c.status === 'active');
-  const currentPeriod = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const formatPeriod = (d: Date) => `${monthShort[d.getMonth()]} ${d.getFullYear()}`;
+  const currentPeriod = formatPeriod(new Date());
   const prevDate = new Date();
   prevDate.setMonth(prevDate.getMonth() - 1);
-  const previousPeriod = prevDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const previousPeriod = formatPeriod(prevDate);
 
   const thisMonth = invoices.filter(inv => inv.period === currentPeriod);
   const lastMonth = invoices.filter(inv => inv.period === previousPeriod);
@@ -85,7 +87,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
     if (!client) return;
     const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
     const now = new Date();
-    const period = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const period = formatPeriod(now);
     const inv: Invoice = {
       id: `inv-${Date.now()}`,
       clientId: client.id,
