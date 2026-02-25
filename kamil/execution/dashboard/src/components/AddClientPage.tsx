@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, User, Mail, Target,
-  FileText, Weight, Save,
+  FileText, Weight, Save, Minus, Plus,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -12,6 +12,84 @@ interface AddClientPageProps {
   onBack: () => void;
   onSave: (client: Client) => void;
 }
+
+function NumberStepper({ value, onChange, min, max, step = 1, placeholder, borderColor }: {
+  value: string; onChange: (v: string) => void; min?: number; max?: number; step?: number; placeholder?: string; borderColor?: string;
+}) {
+  const numVal = value === '' ? null : parseFloat(value);
+  const canDec = numVal !== null && (min === undefined || Math.round((numVal - step) * 100) / 100 >= min);
+  const canInc = numVal !== null && (max === undefined || Math.round((numVal + step) * 100) / 100 <= max);
+
+  const adjust = (dir: 1 | -1) => {
+    if (numVal === null) {
+      const initial = placeholder ? parseFloat(placeholder) : (dir === 1 ? (min ?? 0) : (max ?? 0));
+      onChange(String(initial));
+    } else {
+      const next = Math.round((numVal + dir * step) * 100) / 100;
+      if (min !== undefined && next < min) return;
+      if (max !== undefined && next > max) return;
+      onChange(String(next));
+    }
+  };
+
+  return (
+    <div style={{ ...stepperStyles.wrap, borderColor: borderColor || 'var(--glass-border)' }}>
+      <button style={{ ...stepperStyles.btn, opacity: canDec ? 1 : 0.3 }} onClick={() => adjust(-1)} type="button">
+        <Minus size={16} />
+      </button>
+      <input
+        style={stepperStyles.input}
+        type="number"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+      />
+      <button style={{ ...stepperStyles.btn, opacity: canInc ? 1 : 0.3 }} onClick={() => adjust(1)} type="button">
+        <Plus size={16} />
+      </button>
+    </div>
+  );
+}
+
+const stepperStyles: Record<string, React.CSSProperties> = {
+  wrap: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--bg-subtle)',
+    overflow: 'hidden',
+    transition: 'border-color 0.2s',
+  },
+  btn: {
+    width: '42px',
+    height: '46px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    flexShrink: 0,
+    transition: 'color 0.15s, background 0.15s',
+  },
+  input: {
+    flex: 1,
+    minWidth: 0,
+    padding: '10px 4px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '20px',
+    fontFamily: 'var(--font-display)',
+    textAlign: 'center',
+    outline: 'none',
+  },
+};
 
 const planRates: Record<Client['plan'], number> = {
   Basic: 99,
@@ -170,43 +248,19 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
           <div style={{ ...styles.metricRow, flexDirection: isMobile ? 'column' : 'row' }}>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
               <label style={styles.label}>Weight (kg)</label>
-              <div style={{ ...styles.inputWrap, borderColor: errors.weight ? 'var(--accent-danger)' : 'var(--glass-border)' }}>
-                <input
-                  type="number"
-                  placeholder="e.g. 80"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  style={styles.input}
-                />
-              </div>
+              <NumberStepper value={weight} onChange={setWeight} step={0.5} min={30} max={300} placeholder="80" borderColor={errors.weight ? 'var(--accent-danger)' : undefined} />
               {errors.weight && <span style={styles.error}>{errors.weight}</span>}
             </div>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
               <label style={styles.label}>Height (cm)</label>
-              <div style={{ ...styles.inputWrap, borderColor: errors.height ? 'var(--accent-danger)' : 'var(--glass-border)' }}>
-                <input
-                  type="number"
-                  placeholder="e.g. 180"
-                  value={height}
-                  onChange={(e) => setHeight(e.target.value)}
-                  style={styles.input}
-                />
-              </div>
+              <NumberStepper value={height} onChange={setHeight} step={1} min={100} max={250} placeholder="180" borderColor={errors.height ? 'var(--accent-danger)' : undefined} />
               {errors.height && <span style={styles.error}>{errors.height}</span>}
             </div>
           </div>
 
-          <div style={styles.fieldGroup}>
+          <div style={{ ...styles.fieldGroup, maxWidth: isMobile ? '100%' : '50%' }}>
             <label style={styles.label}>Body Fat %</label>
-            <div style={{ ...styles.inputWrap, borderColor: errors.bodyFat ? 'var(--accent-danger)' : 'var(--glass-border)', maxWidth: isMobile ? '100%' : '50%' }}>
-              <input
-                type="number"
-                placeholder="e.g. 20"
-                value={bodyFat}
-                onChange={(e) => setBodyFat(e.target.value)}
-                style={styles.input}
-              />
-            </div>
+            <NumberStepper value={bodyFat} onChange={setBodyFat} step={0.5} min={3} max={60} placeholder="20" borderColor={errors.bodyFat ? 'var(--accent-danger)' : undefined} />
             {errors.bodyFat && <span style={styles.error}>{errors.bodyFat}</span>}
           </div>
         </GlassCard>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Save, Plus, Trash2, X, ChevronUp, ChevronDown,
+  ArrowLeft, Save, Plus, Minus, Trash2, X, ChevronUp, ChevronDown,
   Edit3, Clock, Users, Dumbbell, Check, Copy,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
@@ -17,6 +17,86 @@ interface ProgramBuilderPageProps {
   onBack: () => void;
   backLabel?: string;
 }
+
+function NumberStepper({ value, onChange, min, max, step = 1, placeholder, style: wrapStyle }: {
+  value: string | number; onChange: (v: string) => void; min?: number; max?: number; step?: number; placeholder?: string; style?: React.CSSProperties;
+}) {
+  const strVal = String(value ?? '');
+  const numVal = strVal === '' ? null : parseFloat(strVal);
+  const canDec = numVal !== null && (min === undefined || Math.round((numVal - step) * 100) / 100 >= min);
+  const canInc = numVal !== null && (max === undefined || Math.round((numVal + step) * 100) / 100 <= max);
+
+  const adjust = (dir: 1 | -1) => {
+    if (numVal === null) {
+      const initial = placeholder ? parseFloat(placeholder) : (dir === 1 ? (min ?? 0) : (max ?? 0));
+      onChange(String(initial));
+    } else {
+      const next = Math.round((numVal + dir * step) * 100) / 100;
+      if (min !== undefined && next < min) return;
+      if (max !== undefined && next > max) return;
+      onChange(String(next));
+    }
+  };
+
+  return (
+    <div style={{ ...pbStepperStyles.wrap, ...wrapStyle }}>
+      <button style={{ ...pbStepperStyles.btn, opacity: canDec ? 1 : 0.3 }} onClick={() => adjust(-1)} type="button">
+        <Minus size={14} />
+      </button>
+      <input
+        style={pbStepperStyles.input}
+        type="number"
+        value={strVal}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+      />
+      <button style={{ ...pbStepperStyles.btn, opacity: canInc ? 1 : 0.3 }} onClick={() => adjust(1)} type="button">
+        <Plus size={14} />
+      </button>
+    </div>
+  );
+}
+
+const pbStepperStyles: Record<string, React.CSSProperties> = {
+  wrap: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--bg-elevated)',
+    overflow: 'hidden',
+  },
+  btn: {
+    width: '36px',
+    height: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    flexShrink: 0,
+    transition: 'color 0.15s',
+  },
+  input: {
+    flex: 1,
+    minWidth: 0,
+    padding: '9px 4px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '20px',
+    fontFamily: 'var(--font-display)',
+    textAlign: 'center',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+};
 
 const emptyExercise = (): Exercise => ({
   id: `e${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -235,13 +315,11 @@ export default function ProgramBuilderPage({
             <div style={styles.fieldGroup}>
               <label style={styles.label}>Duration</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <input
-                  type="number"
-                  min={1}
-                  max={52}
+                <NumberStepper
                   value={draft.durationWeeks}
-                  onChange={(e) => setDraft(prev => ({ ...prev, durationWeeks: parseInt(e.target.value) || 1 }))}
-                  style={{ ...styles.input, width: '70px', textAlign: 'center' }}
+                  onChange={(v) => setDraft(prev => ({ ...prev, durationWeeks: parseInt(v) || 1 }))}
+                  min={1} max={52} placeholder="8"
+                  style={{ width: '130px' }}
                 />
                 <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>weeks</span>
               </div>
@@ -515,13 +593,10 @@ export default function ProgramBuilderPage({
                 <div style={styles.fieldRow}>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
                     <label style={styles.label}>Sets</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={20}
+                    <NumberStepper
                       value={exerciseForm.sets}
-                      onChange={(e) => setExerciseForm(prev => ({ ...prev, sets: parseInt(e.target.value) || 1 }))}
-                      style={styles.input}
+                      onChange={(v) => setExerciseForm(prev => ({ ...prev, sets: parseInt(v) || 1 }))}
+                      min={1} max={20} placeholder="3"
                     />
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
@@ -550,14 +625,10 @@ export default function ProgramBuilderPage({
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
                     <label style={styles.label}>RPE (1-10)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
+                    <NumberStepper
                       value={exerciseForm.rpe ?? ''}
-                      onChange={(e) => setExerciseForm(prev => ({ ...prev, rpe: e.target.value ? parseInt(e.target.value) : null }))}
-                      placeholder='Optional'
-                      style={styles.input}
+                      onChange={(v) => setExerciseForm(prev => ({ ...prev, rpe: v ? parseInt(v) : null }))}
+                      min={1} max={10} placeholder="7"
                     />
                   </div>
                 </div>
@@ -576,13 +647,10 @@ export default function ProgramBuilderPage({
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
                     <label style={styles.label}>Rest (seconds)</label>
-                    <input
-                      type="number"
-                      min={0}
+                    <NumberStepper
                       value={exerciseForm.restSeconds ?? ''}
-                      onChange={(e) => setExerciseForm(prev => ({ ...prev, restSeconds: e.target.value ? parseInt(e.target.value) : null }))}
-                      placeholder='Optional'
-                      style={styles.input}
+                      onChange={(v) => setExerciseForm(prev => ({ ...prev, restSeconds: v ? parseInt(v) : null }))}
+                      min={0} max={600} step={15} placeholder="90"
                     />
                   </div>
                 </div>

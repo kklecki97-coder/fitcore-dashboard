@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry } from 'lucide-react';
+import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry, Minus, Plus } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import type { CheckIn } from '../types';
@@ -18,6 +18,92 @@ const moodIcons: Record<number, { icon: typeof Smile; color: string; label: stri
   3: { icon: Meh, color: 'var(--text-secondary)', label: 'Okay' },
   4: { icon: Smile, color: 'var(--accent-success)', label: 'Good' },
   5: { icon: SmilePlus, color: 'var(--accent-primary)', label: 'Great' },
+};
+
+function NumberStepper({ value, onChange, min, max, step = 1, placeholder }: {
+  value: string; onChange: (v: string) => void; min?: number; max?: number; step?: number; placeholder?: string;
+}) {
+  const numVal = value === '' ? null : parseFloat(value);
+  const canDec = numVal !== null && (min === undefined || Math.round((numVal - step) * 100) / 100 >= min);
+  const canInc = numVal !== null && (max === undefined || Math.round((numVal + step) * 100) / 100 <= max);
+
+  const adjust = (dir: 1 | -1) => {
+    if (numVal === null) {
+      // Empty field — use placeholder as starting value, fall back to sensible defaults
+      const initial = placeholder ? parseFloat(placeholder) : (dir === 1 ? (min ?? 0) : (max ?? 0));
+      onChange(String(initial));
+    } else {
+      const next = Math.round((numVal + dir * step) * 100) / 100;
+      if (min !== undefined && next < min) return;
+      if (max !== undefined && next > max) return;
+      onChange(String(next));
+    }
+  };
+
+  return (
+    <div style={stepperStyles.wrap}>
+      <button
+        style={{ ...stepperStyles.btn, opacity: canDec ? 1 : 0.3 }}
+        onClick={() => adjust(-1)}
+        type="button"
+      >
+        <Minus size={14} />
+      </button>
+      <input
+        style={stepperStyles.input}
+        type="number"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+      />
+      <button
+        style={{ ...stepperStyles.btn, opacity: canInc ? 1 : 0.3 }}
+        onClick={() => adjust(1)}
+        type="button"
+      >
+        <Plus size={14} />
+      </button>
+    </div>
+  );
+}
+
+const stepperStyles: Record<string, React.CSSProperties> = {
+  wrap: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(255,255,255,0.03)',
+    overflow: 'hidden',
+  },
+  btn: {
+    width: '36px',
+    height: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    flexShrink: 0,
+    transition: 'color 0.15s, background 0.15s',
+  },
+  input: {
+    flex: 1,
+    minWidth: 0,
+    padding: '10px 4px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontFamily: 'var(--font-mono)',
+    textAlign: 'center',
+    outline: 'none',
+  },
 };
 
 export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clientName }: CheckInPageProps) {
@@ -86,11 +172,11 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
             <div style={styles.fieldRow}>
               <div style={styles.field}>
                 <label style={styles.label}>Weight (kg)</label>
-                <input style={styles.input} type="number" step="0.1" value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} placeholder="83.5" />
+                <NumberStepper value={form.weight} onChange={v => setForm({ ...form, weight: v })} step={0.1} min={30} max={250} placeholder="83.5" />
               </div>
               <div style={styles.field}>
                 <label style={styles.label}>Body Fat (%)</label>
-                <input style={styles.input} type="number" step="0.1" value={form.bodyFat} onChange={e => setForm({ ...form, bodyFat: e.target.value })} placeholder="18.5" />
+                <NumberStepper value={form.bodyFat} onChange={v => setForm({ ...form, bodyFat: v })} step={0.1} min={3} max={60} placeholder="18.5" />
               </div>
             </div>
           </GlassCard>
@@ -124,15 +210,15 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
             <div style={styles.fieldRow}>
               <div style={styles.field}>
                 <label style={styles.label}>Energy (1-10)</label>
-                <input style={styles.input} type="number" min="1" max="10" value={form.energy} onChange={e => setForm({ ...form, energy: e.target.value })} placeholder="7" />
+                <NumberStepper value={form.energy} onChange={v => setForm({ ...form, energy: v })} min={1} max={10} placeholder="7" />
               </div>
               <div style={styles.field}>
                 <label style={styles.label}>Stress (1-10)</label>
-                <input style={styles.input} type="number" min="1" max="10" value={form.stress} onChange={e => setForm({ ...form, stress: e.target.value })} placeholder="4" />
+                <NumberStepper value={form.stress} onChange={v => setForm({ ...form, stress: v })} min={1} max={10} placeholder="4" />
               </div>
               <div style={styles.field}>
                 <label style={styles.label}>Sleep (hrs)</label>
-                <input style={styles.input} type="number" step="0.5" value={form.sleepHours} onChange={e => setForm({ ...form, sleepHours: e.target.value })} placeholder="7.5" />
+                <NumberStepper value={form.sleepHours} onChange={v => setForm({ ...form, sleepHours: v })} step={0.5} min={0} max={16} placeholder="7.5" />
               </div>
             </div>
           </GlassCard>
@@ -143,11 +229,11 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
             <div style={styles.fieldRow}>
               <div style={styles.field}>
                 <label style={styles.label}>Adherence (%)</label>
-                <input style={styles.input} type="number" min="0" max="100" value={form.adherence} onChange={e => setForm({ ...form, adherence: e.target.value })} placeholder="90" />
+                <NumberStepper value={form.adherence} onChange={v => setForm({ ...form, adherence: v })} min={0} max={100} step={5} placeholder="90" />
               </div>
               <div style={styles.field}>
                 <label style={styles.label}>Nutrition (1-10)</label>
-                <input style={styles.input} type="number" min="1" max="10" value={form.nutritionScore} onChange={e => setForm({ ...form, nutritionScore: e.target.value })} placeholder="8" />
+                <NumberStepper value={form.nutritionScore} onChange={v => setForm({ ...form, nutritionScore: v })} min={1} max={10} placeholder="8" />
               </div>
             </div>
           </GlassCard>
