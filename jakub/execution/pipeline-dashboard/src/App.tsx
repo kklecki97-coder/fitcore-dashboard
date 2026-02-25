@@ -13,6 +13,12 @@ const SUPABASE_KEY = 'sb_publishable_51_z3oNgQx0IYRwmJhutDQ_YNoq1_G0'
 // ─── Constants ───
 const DAILY_ENGAGE_LIMIT = 20
 
+type Account = 'jakub' | 'fitcore'
+const ACCOUNTS: { key: Account; label: string; color: string }[] = [
+  { key: 'jakub', label: 'Jakub', color: '#6366f1' },
+  { key: 'fitcore', label: 'FitCore', color: '#f59e0b' },
+]
+
 // ─── Types ───
 interface Lead {
   id: number
@@ -37,6 +43,7 @@ interface Lead {
   dm_draft: string | null
   scraped_at: string | null
   created_at: string | null
+  account: string | null
 }
 
 type PipelineStage = 'new' | 'engaged' | 'dmed' | 'replied' | 'call_booked' | 'closed' | 'dead'
@@ -1423,6 +1430,46 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
   )
 }
 
+// ─── Account Switcher ───
+
+function AccountSwitcher({ account, onChange }: {
+  account: Account
+  onChange: (a: Account) => void
+}) {
+  return (
+    <div style={{
+      display: 'flex',
+      background: 'var(--bg-elevated)',
+      borderRadius: 'var(--radius-md)',
+      padding: 3,
+      border: '1px solid var(--glass-border)',
+    }}>
+      {ACCOUNTS.map(a => (
+        <button
+          key={a.key}
+          onClick={() => onChange(a.key)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: account === a.key ? a.color + '18' : 'transparent',
+            color: account === a.key ? a.color : 'var(--text-secondary)',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            padding: '8px 16px',
+            fontSize: 13,
+            fontFamily: 'var(--font-display)',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          <Instagram size={14} />
+          {a.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ─── PIN Gate ───
 
 const CORRECT_PIN = '2635'
@@ -1603,24 +1650,33 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
 // ─── Main App ───
 
 function Dashboard() {
-  const [leads, setLeads] = useState<Lead[]>([])
+  const [allLeads, setAllLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>('tasks')
-  const [engageBatchIds, setEngageBatchIds] = useState<number[] | null>(null)
+  const [engageBatchIds, setEngageBatchIds] = useState<Record<Account, number[] | null>>({ jakub: null, fitcore: null })
   const [filterStage, setFilterStage] = useState<PipelineStage | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'score' | 'followers' | 'recent'>('score')
+  const [account, setAccount] = useState<Account>(() => (localStorage.getItem('pipeline_account') as Account) || 'jakub')
+
+  const handleAccountChange = (a: Account) => {
+    setAccount(a)
+    localStorage.setItem('pipeline_account', a)
+  }
+
+  // Filter leads by selected account
+  const leads = useMemo(() => allLeads.filter(l => l.account === account), [allLeads, account])
 
   const fetchLeads = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await supabaseFetch('instagram_leads?select=*&order=score.desc&limit=1000')
-      setLeads(data || [])
+      const data = await supabaseFetch('instagram_leads?select=*&order=score.desc&limit=2000')
+      setAllLeads(data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load leads')
-      setLeads([])
+      setAllLeads([])
     } finally {
       setLoading(false)
     }
@@ -1630,15 +1686,15 @@ function Dashboard() {
     fetchLeads()
   }, [fetchLeads])
 
-  // Snapshot the engage batch once on first load — no auto-refilling
+  // Snapshot the engage batch once per account on first load — no auto-refilling
   useEffect(() => {
-    if (engageBatchIds !== null || leads.length === 0) return
+    if (engageBatchIds[account] !== null || leads.length === 0) return
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
     const alreadyEngagedToday = leads.filter(l => l.engaged_at && new Date(l.engaged_at).getTime() >= todayStart.getTime()).length
     const slots = Math.max(0, DAILY_ENGAGE_LIMIT - alreadyEngagedToday)
     const ids = leads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, slots).map(l => l.id)
-    setEngageBatchIds(ids)
-  }, [leads, engageBatchIds])
+    setEngageBatchIds(prev => ({ ...prev, [account]: ids }))
+  }, [leads, engageBatchIds, account])
 
   const handleStatusChange = async (id: number, newStatus: PipelineStage) => {
     const updates: Record<string, string | null> = { status: newStatus }
@@ -1652,7 +1708,7 @@ function Dashboard() {
         method: 'PATCH',
         body: JSON.stringify(updates),
       })
-      setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } as Lead : l))
+      setAllLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } as Lead : l))
       fetchLeads()
     } catch (err) {
       console.error('Failed to update status:', err)
@@ -1671,7 +1727,7 @@ function Dashboard() {
         method: 'PATCH',
         body: JSON.stringify(updates),
       })
-      setLeads(prev => prev.map(l =>
+      setAllLeads(prev => prev.map(l =>
         ids.includes(l.id) ? { ...l, ...updates } as Lead : l
       ))
     } catch (err) {
@@ -1743,12 +1799,12 @@ function Dashboard() {
   }, [leads])
 
   // Today's engage batch: snapshotted on load, shrinks as leads are marked dead/engaged
-  const engageBatch = useMemo(() =>
-    engageBatchIds === null
+  const engageBatch = useMemo(() => {
+    const ids = engageBatchIds[account]
+    return ids === null
       ? []
-      : leads.filter(l => engageBatchIds.includes(l.id) && l.status === 'new'),
-    [leads, engageBatchIds]
-  )
+      : leads.filter(l => ids.includes(l.id) && l.status === 'new')
+  }, [leads, engageBatchIds, account])
 
   // DM-ready batch: leads with status=engaged (no wait time for demo)
   const dmBatch = useMemo(() => {
@@ -1808,6 +1864,9 @@ function Dashboard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Account switcher */}
+          <AccountSwitcher account={account} onChange={handleAccountChange} />
+
           {/* View toggle */}
           <div style={{
             display: 'flex',
@@ -1893,7 +1952,7 @@ function Dashboard() {
       )}
 
       {/* Loading */}
-      {loading && leads.length === 0 ? (
+      {loading && allLeads.length === 0 ? (
         <div style={{ padding: '40px' }}>
           <GlassCard>
             <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)' }}>
