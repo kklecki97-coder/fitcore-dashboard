@@ -109,6 +109,7 @@ export interface WorkoutSetLog {
   reps: number;
   weight: string;
   completed: boolean;
+  rpe?: number | null;
 }
 
 export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages';

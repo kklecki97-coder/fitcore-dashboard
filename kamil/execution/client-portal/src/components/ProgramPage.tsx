@@ -9,10 +9,11 @@ interface ProgramPageProps {
   setLogs: WorkoutSetLog[];
   onLogSet: (log: WorkoutSetLog) => void;
   onRemoveLog: (exerciseId: string, setNumber: number, date: string) => void;
+  onUpdateLog: (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => void;
   workoutLogs: WorkoutLog[];
 }
 
-export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, workoutLogs }: ProgramPageProps) {
+export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs }: ProgramPageProps) {
   const isMobile = useIsMobile();
 
   // ── Compute today's workout day index ──
@@ -57,6 +58,10 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, w
 
   const getSetCompleted = (exerciseId: string, setNum: number) => {
     return setLogs.some(l => l.exerciseId === exerciseId && l.setNumber === setNum && l.completed && l.date === todayStr);
+  };
+
+  const getSetLog = (exerciseId: string, setNum: number) => {
+    return setLogs.find(l => l.exerciseId === exerciseId && l.setNumber === setNum && l.date === todayStr);
   };
 
   // ── Progress calculations ──
@@ -205,44 +210,83 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, w
                     {Array.from({ length: exercise.sets }, (_, i) => {
                       const setNum = i + 1;
                       const completed = getSetCompleted(exercise.id, setNum);
+                      const log = getSetLog(exercise.id, setNum);
+                      const loggedRpe = log?.rpe;
                       return (
-                        <div key={setNum} style={styles.setRow}>
-                          <span style={styles.setLabel}>Set {setNum}</span>
-                          <span style={styles.setTarget}>{exercise.reps} × {exercise.weight}</span>
-                          <button
-                            style={{
-                              ...styles.setCheckBtn,
-                              background: completed ? 'var(--accent-success-dim)' : 'transparent',
-                              borderColor: completed ? 'var(--accent-success)' : 'var(--glass-border)',
-                              color: completed ? 'var(--accent-success)' : 'var(--text-tertiary)',
-                            }}
-                            onClick={() => {
-                              if (completed) {
-                                onRemoveLog(exercise.id, setNum, todayStr);
-                              } else {
-                                onLogSet({
-                                  id: `sl-${exercise.id}-${setNum}-${Date.now()}`,
-                                  date: todayStr,
-                                  exerciseId: exercise.id,
-                                  exerciseName: exercise.name,
-                                  setNumber: setNum,
-                                  reps: parseInt(exercise.reps) || 10,
-                                  weight: exercise.weight,
-                                  completed: true,
-                                });
-                                // Start rest timer if exercise has rest seconds
-                                if (exercise.restSeconds && setNum < exercise.sets) {
-                                  setRestTimer({
+                        <div key={setNum}>
+                          <div style={styles.setRow}>
+                            <span style={styles.setLabel}>Set {setNum}</span>
+                            <span style={styles.setTarget}>{exercise.reps} × {exercise.weight}</span>
+                            <button
+                              style={{
+                                ...styles.setCheckBtn,
+                                background: completed ? 'var(--accent-success-dim)' : 'transparent',
+                                borderColor: completed ? 'var(--accent-success)' : 'var(--glass-border)',
+                                color: completed ? 'var(--accent-success)' : 'var(--text-tertiary)',
+                              }}
+                              onClick={() => {
+                                if (completed) {
+                                  onRemoveLog(exercise.id, setNum, todayStr);
+                                } else {
+                                  onLogSet({
+                                    id: `sl-${exercise.id}-${setNum}-${Date.now()}`,
+                                    date: todayStr,
                                     exerciseId: exercise.id,
-                                    seconds: exercise.restSeconds,
-                                    total: exercise.restSeconds,
+                                    exerciseName: exercise.name,
+                                    setNumber: setNum,
+                                    reps: parseInt(exercise.reps) || 10,
+                                    weight: exercise.weight,
+                                    completed: true,
+                                    rpe: null,
                                   });
+                                  if (exercise.restSeconds && setNum < exercise.sets) {
+                                    setRestTimer({
+                                      exerciseId: exercise.id,
+                                      seconds: exercise.restSeconds,
+                                      total: exercise.restSeconds,
+                                    });
+                                  }
                                 }
-                              }
-                            }}
-                          >
-                            {completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
-                          </button>
+                              }}
+                            >
+                              {completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                            </button>
+                          </div>
+                          {/* RPE selector — shown after set is completed */}
+                          {completed && (
+                            <div style={styles.rpeRow}>
+                              <span style={styles.rpeLabel}>
+                                RPE{exercise.rpe ? ` (target ${exercise.rpe})` : ''}
+                              </span>
+                              <div style={styles.rpePills}>
+                                {[6, 7, 8, 9, 10].map(val => {
+                                  const isSelected = loggedRpe === val;
+                                  return (
+                                    <button
+                                      key={val}
+                                      style={{
+                                        ...styles.rpePill,
+                                        background: isSelected
+                                          ? val >= 9 ? 'var(--accent-danger-dim)' : 'var(--accent-primary-dim)'
+                                          : 'transparent',
+                                        borderColor: isSelected
+                                          ? val >= 9 ? 'var(--accent-danger)' : 'var(--accent-primary)'
+                                          : 'var(--glass-border)',
+                                        color: isSelected
+                                          ? val >= 9 ? 'var(--accent-danger)' : 'var(--accent-primary)'
+                                          : 'var(--text-tertiary)',
+                                      }}
+                                      onClick={() => onUpdateLog(exercise.id, setNum, todayStr, {
+                                        rpe: isSelected ? null : val,
+                                      })}
+                                    >
+                                      {val}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -510,6 +554,40 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     cursor: 'pointer',
     transition: 'all 0.15s',
+  },
+
+  // ── RPE Selector ──
+  rpeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '6px 0 4px',
+  },
+  rpeLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.3px',
+  },
+  rpePills: {
+    display: 'flex',
+    gap: '4px',
+  },
+  rpePill: {
+    width: '30px',
+    height: '26px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '11px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    background: 'transparent',
   },
 
   // ── Summary ──

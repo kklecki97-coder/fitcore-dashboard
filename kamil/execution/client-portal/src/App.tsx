@@ -60,6 +60,14 @@ function App() {
     setSetLogs(prev => prev.filter(l => !(l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date)));
   };
 
+  const handleUpdateLog = (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => {
+    setSetLogs(prev => prev.map(l =>
+      l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date
+        ? { ...l, ...updates }
+        : l
+    ));
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
@@ -81,6 +89,7 @@ function App() {
             setLogs={setLogs}
             onLogSet={handleLogSet}
             onRemoveLog={handleRemoveLog}
+            onUpdateLog={handleUpdateLog}
             workoutLogs={myWorkoutLogs}
           />
         );
