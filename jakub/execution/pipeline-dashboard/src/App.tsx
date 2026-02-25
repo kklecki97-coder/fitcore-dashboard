@@ -1008,7 +1008,7 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
       window.open(`https://instagram.com/${leads[idx].instagram_handle}`, '_blank')
       idx++
       setOpenedCount(idx)
-    }, 20000)
+    }, 30000)
 
     setOpenTimerRef(timer)
   }
@@ -1060,7 +1060,7 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
           >
             {openingAll
               ? <><Pause size={14} /> Opening {openedCount}/{leads.length}...</>
-              : <><Play size={14} /> Open All (20s apart)</>}
+              : <><Play size={14} /> Open All (30s apart)</>}
           </button>
           <button
             onClick={handleMarkAll}
