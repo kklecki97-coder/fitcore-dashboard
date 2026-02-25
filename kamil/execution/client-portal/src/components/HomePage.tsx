@@ -374,8 +374,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '18px',
-    overflowY: 'auto',
-    height: '100%',
+    minHeight: '100%',
   },
   welcome: { marginBottom: '4px' },
   greeting: {

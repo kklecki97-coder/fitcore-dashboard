@@ -56,6 +56,10 @@ function App() {
     setSetLogs(prev => [...prev, log]);
   };
 
+  const handleRemoveLog = (exerciseId: string, setNumber: number, date: string) => {
+    setSetLogs(prev => prev.filter(l => !(l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date)));
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
@@ -76,6 +80,8 @@ function App() {
             program={myProgram}
             setLogs={setLogs}
             onLogSet={handleLogSet}
+            onRemoveLog={handleRemoveLog}
+            workoutLogs={myWorkoutLogs}
           />
         );
       case 'check-in':
@@ -166,7 +172,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   content: {
     flex: 1,
-    overflow: 'hidden',
+    overflow: 'auto',
     paddingBottom: '0px',
   },
 };

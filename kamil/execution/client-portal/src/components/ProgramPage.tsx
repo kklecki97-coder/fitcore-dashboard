@@ -1,20 +1,42 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, Clock, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { CheckCircle2, Circle, Clock, Dumbbell, ChevronDown, ChevronUp, Timer, Zap } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
-import type { WorkoutProgram, WorkoutSetLog } from '../types';
+import type { WorkoutProgram, WorkoutSetLog, WorkoutLog } from '../types';
 
 interface ProgramPageProps {
   program: WorkoutProgram | null;
   setLogs: WorkoutSetLog[];
   onLogSet: (log: WorkoutSetLog) => void;
+  onRemoveLog: (exerciseId: string, setNumber: number, date: string) => void;
+  workoutLogs: WorkoutLog[];
 }
 
-export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageProps) {
+export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, workoutLogs }: ProgramPageProps) {
   const isMobile = useIsMobile();
-  const [selectedDay, setSelectedDay] = useState(0);
+
+  // ── Compute today's workout day index ──
+  const completedWorkouts = workoutLogs.filter(w => w.completed).length;
+  const todayDayIndex = program ? completedWorkouts % program.days.length : 0;
+
+  const [selectedDay, setSelectedDay] = useState(todayDayIndex);
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
+
+  // ── Rest timer state ──
+  const [restTimer, setRestTimer] = useState<{ exerciseId: string; seconds: number; total: number } | null>(null);
+
+  const clearTimer = useCallback(() => setRestTimer(null), []);
+
+  useEffect(() => {
+    if (!restTimer || restTimer.seconds <= 0) return;
+    const interval = setInterval(() => {
+      setRestTimer(prev => {
+        if (!prev || prev.seconds <= 1) return null;
+        return { ...prev, seconds: prev.seconds - 1 };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [restTimer]);
 
   if (!program) {
     return (
@@ -37,10 +59,20 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
     return setLogs.some(l => l.exerciseId === exerciseId && l.setNumber === setNum && l.completed && l.date === todayStr);
   };
 
+  // ── Progress calculations ──
+  const totalSets = day.exercises.reduce((sum, ex) => sum + ex.sets, 0);
+  const completedSets = day.exercises.reduce((sum, ex) => {
+    return sum + Array.from({ length: ex.sets }, (_, i) => getSetCompleted(ex.id, i + 1)).filter(Boolean).length;
+  }, 0);
   const completedExercises = day.exercises.filter(ex => {
-    const allDone = Array.from({ length: ex.sets }, (_, i) => getSetCompleted(ex.id, i + 1));
-    return allDone.every(Boolean);
+    return Array.from({ length: ex.sets }, (_, i) => getSetCompleted(ex.id, i + 1)).every(Boolean);
   }).length;
+  const progressPct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+  const allDone = completedExercises === day.exercises.length;
+
+  // ── Abbreviate day names for pills ──
+  const abbreviate = (name: string) =>
+    name.replace('Upper Body ', 'Upper ').replace('Lower Body ', 'Lower ');
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
@@ -50,26 +82,65 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
         <p style={styles.subtitle}>{program.durationWeeks} week program</p>
       </div>
 
-      {/* Day Selector */}
+      {/* Day Selector — shows workout names + highlights today */}
       <div style={styles.dayRow}>
-        {program.days.map((d, i) => (
-          <button
-            key={d.id}
-            onClick={() => setSelectedDay(i)}
-            style={{
-              ...styles.dayPill,
-              background: i === selectedDay ? 'var(--accent-primary)' : 'var(--bg-elevated)',
-              color: i === selectedDay ? '#07090e' : 'var(--text-secondary)',
-              border: i === selectedDay ? 'none' : '1px solid var(--glass-border)',
-            }}
-          >
-            Day {i + 1}
-          </button>
-        ))}
+        {program.days.map((d, i) => {
+          const isSelected = i === selectedDay;
+          const isToday = i === todayDayIndex;
+          return (
+            <button
+              key={d.id}
+              onClick={() => setSelectedDay(i)}
+              style={{
+                ...styles.dayPill,
+                background: isSelected ? 'var(--accent-primary)' : 'var(--bg-card)',
+                color: isSelected ? '#07090e' : 'var(--text-primary)',
+                border: isSelected ? '1px solid var(--accent-primary)' : isToday ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+              }}
+            >
+              <span>{abbreviate(d.name)}</span>
+              {isToday && !isSelected && <div style={styles.todayDot} />}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Day Name */}
-      <div style={styles.dayName}>{day.name}</div>
+      {/* Progress Bar */}
+      <div style={styles.progressWrap}>
+        <div style={styles.progressHeader}>
+          <span style={styles.progressLabel}>
+            {allDone ? 'Workout Complete!' : `${completedSets}/${totalSets} sets`}
+          </span>
+          <span style={{
+            ...styles.progressPct,
+            color: allDone ? 'var(--accent-success)' : 'var(--accent-primary)',
+          }}>
+            {progressPct}%
+          </span>
+        </div>
+        <div style={styles.progressBarBg}>
+          <div style={{
+            ...styles.progressBarFill,
+            width: `${progressPct}%`,
+            background: allDone ? 'var(--accent-success)' : 'var(--accent-primary)',
+          }} />
+        </div>
+      </div>
+
+      {/* Rest Timer (floating) */}
+      {restTimer && (
+        <div style={styles.timerBar}>
+          <Timer size={16} color="var(--accent-secondary)" />
+          <span style={styles.timerText}>Rest: {restTimer.seconds}s</span>
+          <div style={styles.timerBarBg}>
+            <div style={{
+              ...styles.timerBarFill,
+              width: `${(restTimer.seconds / restTimer.total) * 100}%`,
+            }} />
+          </div>
+          <button style={styles.timerSkip} onClick={clearTimer}>Skip</button>
+        </div>
+      )}
 
       {/* Exercise List */}
       <div style={styles.exerciseList}>
@@ -78,9 +149,12 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
           const allSetsComplete = Array.from({ length: exercise.sets }, (_, i) =>
             getSetCompleted(exercise.id, i + 1)
           ).every(Boolean);
+          const completedCount = Array.from({ length: exercise.sets }, (_, i) =>
+            getSetCompleted(exercise.id, i + 1)
+          ).filter(Boolean).length;
 
           return (
-            <GlassCard key={exercise.id} delay={ei * 0.05} style={styles.exerciseCard}>
+            <div key={exercise.id} style={styles.exerciseCardStatic}>
               {/* Exercise Header */}
               <div
                 style={styles.exerciseHeader}
@@ -90,7 +164,12 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
                   {allSetsComplete ? (
                     <CheckCircle2 size={20} color="var(--accent-success)" />
                   ) : (
-                    <Circle size={20} color="var(--text-tertiary)" />
+                    <div style={styles.exerciseProgress}>
+                      <Circle size={20} color="var(--text-tertiary)" />
+                      {completedCount > 0 && (
+                        <span style={styles.exerciseProgressText}>{completedCount}/{exercise.sets}</span>
+                      )}
+                    </div>
                   )}
                   <div>
                     <div style={{
@@ -111,11 +190,7 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
 
               {/* Expanded Sets */}
               {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  style={styles.setsWrap}
-                >
+                <div style={styles.setsWrap}>
                   {exercise.tempo && (
                     <div style={styles.tempoRow}>
                       <Clock size={12} color="var(--text-tertiary)" />
@@ -142,7 +217,9 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
                               color: completed ? 'var(--accent-success)' : 'var(--text-tertiary)',
                             }}
                             onClick={() => {
-                              if (!completed) {
+                              if (completed) {
+                                onRemoveLog(exercise.id, setNum, todayStr);
+                              } else {
                                 onLogSet({
                                   id: `sl-${exercise.id}-${setNum}-${Date.now()}`,
                                   date: todayStr,
@@ -153,6 +230,14 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
                                   weight: exercise.weight,
                                   completed: true,
                                 });
+                                // Start rest timer if exercise has rest seconds
+                                if (exercise.restSeconds && setNum < exercise.sets) {
+                                  setRestTimer({
+                                    exerciseId: exercise.id,
+                                    seconds: exercise.restSeconds,
+                                    total: exercise.restSeconds,
+                                  });
+                                }
                               }
                             }}
                           >
@@ -162,17 +247,34 @@ export default function ProgramPage({ program, setLogs, onLogSet }: ProgramPageP
                       );
                     })}
                   </div>
-                </motion.div>
+                </div>
               )}
-            </GlassCard>
+            </div>
           );
         })}
       </div>
 
       {/* Summary */}
-      <div style={styles.summary}>
-        {completedExercises}/{day.exercises.length} exercises completed
-      </div>
+      <GlassCard delay={0.1} style={styles.summaryCard}>
+        <div style={styles.summaryRow}>
+          <Zap size={18} color={allDone ? 'var(--accent-success)' : 'var(--accent-primary)'} />
+          <div>
+            <div style={{
+              ...styles.summaryTitle,
+              color: allDone ? 'var(--accent-success)' : 'var(--text-primary)',
+            }}>
+              {allDone
+                ? 'All exercises done — great work!'
+                : `${completedExercises}/${day.exercises.length} exercises completed`}
+            </div>
+            <div style={styles.summarySub}>
+              {allDone
+                ? 'Rest up and come back stronger tomorrow.'
+                : `${totalSets - completedSets} sets remaining — keep going!`}
+            </div>
+          </div>
+        </div>
+      </GlassCard>
     </div>
   );
 }
@@ -183,10 +285,9 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
-    overflowY: 'auto',
-    height: '100%',
+    minHeight: '100%',
   },
-  header: { marginBottom: '4px' },
+  header: { marginBottom: '4px', position: 'relative', zIndex: 2 },
   title: {
     fontSize: '22px',
     fontWeight: 700,
@@ -198,34 +299,127 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)',
     marginTop: '2px',
   },
+
+  // ── Day Selector ──
   dayRow: {
     display: 'flex',
     gap: '8px',
     overflowX: 'auto',
     paddingBottom: '4px',
+    position: 'relative',
+    zIndex: 2,
   },
   dayPill: {
-    padding: '8px 16px',
+    padding: '12px 20px',
     borderRadius: 'var(--radius-md)',
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     transition: 'all 0.15s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    position: 'relative',
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
   },
-  dayName: {
-    fontSize: '16px',
+  todayDot: {
+    width: '5px',
+    height: '5px',
+    borderRadius: '50%',
+    background: 'var(--accent-primary)',
+  },
+
+  // ── Progress Bar ──
+  progressWrap: { position: 'relative', zIndex: 2 },
+  progressHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '6px',
+  },
+  progressLabel: {
+    fontSize: '13px',
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+  },
+  progressPct: {
+    fontSize: '13px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+  },
+  progressBarBg: {
+    height: '6px',
+    borderRadius: '3px',
+    background: 'var(--glass-border)',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: '3px',
+    transition: 'width 0.4s ease',
+  },
+
+  // ── Rest Timer ──
+  timerBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px 14px',
+    borderRadius: 'var(--radius-md)',
+    background: 'rgba(0,229,200,0.06)',
+    border: '1px solid rgba(0,229,200,0.15)',
+  },
+  timerText: {
+    fontSize: '14px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--accent-secondary)',
+    minWidth: '70px',
+  },
+  timerBarBg: {
+    flex: 1,
+    height: '4px',
+    borderRadius: '2px',
+    background: 'var(--glass-border)',
+    overflow: 'hidden',
+  },
+  timerBarFill: {
+    height: '100%',
+    borderRadius: '2px',
+    background: 'var(--accent-secondary)',
+    transition: 'width 1s linear',
+  },
+  timerSkip: {
+    padding: '4px 10px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '11px',
     fontWeight: 600,
-    color: 'var(--text-primary)',
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
   },
+
+  // ── Exercise Cards ──
   exerciseList: {
     display: 'flex',
     flexDirection: 'column',
     gap: '10px',
+    position: 'relative',
+    zIndex: 1,
   },
-  exerciseCard: {
+  exerciseCardStatic: {
+    background: 'var(--bg-card)',
+    backdropFilter: 'blur(var(--glass-blur))',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-lg)',
     padding: '16px',
+    boxShadow: 'var(--shadow-card)',
   },
   exerciseHeader: {
     display: 'flex',
@@ -237,6 +431,19 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
+  },
+  exerciseProgress: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exerciseProgressText: {
+    position: 'absolute',
+    fontSize: '7px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--accent-primary)',
   },
   exerciseName: {
     fontSize: '14px',
@@ -304,13 +511,27 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'all 0.15s',
   },
-  summary: {
-    textAlign: 'center',
-    fontSize: '13px',
-    fontWeight: 600,
-    color: 'var(--text-secondary)',
-    padding: '12px 0 24px',
+
+  // ── Summary ──
+  summaryCard: {
+    marginBottom: '24px',
   },
+  summaryRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  summaryTitle: {
+    fontSize: '14px',
+    fontWeight: 600,
+  },
+  summarySub: {
+    fontSize: '12px',
+    color: 'var(--text-secondary)',
+    marginTop: '2px',
+  },
+
+  // ── Empty State ──
   emptyState: {
     textAlign: 'center',
     padding: '40px 20px',

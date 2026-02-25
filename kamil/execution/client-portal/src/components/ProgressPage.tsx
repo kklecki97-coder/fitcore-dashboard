@@ -237,8 +237,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
-    overflowY: 'auto',
-    height: '100%',
+    minHeight: '100%',
     paddingBottom: '80px',
   },
   title: {
