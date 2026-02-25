@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -46,6 +46,12 @@ interface OverviewPageProps {
 
 export default function OverviewPage({ clients, messages, programs, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
   const activeClients = clients.filter(c => c.status === 'active').length;
   const pendingClients = clients.filter(c => c.status === 'pending').length;
   const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
@@ -194,6 +200,51 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
       dimColor: 'var(--accent-warm-dim)',
     },
   ];
+
+  if (!ready) {
+    return (
+      <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+        {/* Quote skeleton */}
+        <div style={{ ...styles.quoteBar, padding: '24px 20px' }}>
+          <div style={skeletonStyles.line200} />
+          <div style={{ ...skeletonStyles.line100, marginTop: '8px' }} />
+        </div>
+
+        {/* Stat cards skeleton */}
+        <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '10px' : '16px' }}>
+          {[0, 1, 2, 3].map(i => (
+            <GlassCard key={i} delay={0}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={skeletonStyles.circle40} />
+                <div style={skeletonStyles.badge} />
+              </div>
+              <div style={skeletonStyles.line120} />
+              <div style={{ ...skeletonStyles.line80, marginTop: '8px' }} />
+            </GlassCard>
+          ))}
+        </div>
+
+        {/* Summary skeleton */}
+        <GlassCard delay={0}>
+          <div style={skeletonStyles.line140} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={skeletonStyles.circle28} />
+                <div style={{ ...skeletonStyles.lineFull, flex: 1 }} />
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
+        {/* Chart skeleton */}
+        <GlassCard delay={0}>
+          <div style={skeletonStyles.line140} />
+          <div style={{ ...skeletonStyles.chartBlock, marginTop: '16px' }} />
+        </GlassCard>
+      </div>
+    );
+  }
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
@@ -750,4 +801,24 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '6px',
     fontWeight: 500,
   },
+};
+
+const shimmerBg: React.CSSProperties = {
+  background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)',
+  backgroundSize: '200% 100%',
+  animation: 'shimmer 1.5s infinite ease-in-out',
+  borderRadius: '6px',
+};
+
+const skeletonStyles: Record<string, React.CSSProperties> = {
+  line200: { ...shimmerBg, height: '18px', width: '60%', margin: '0 auto' },
+  line140: { ...shimmerBg, height: '16px', width: '140px' },
+  line120: { ...shimmerBg, height: '28px', width: '80px' },
+  line100: { ...shimmerBg, height: '14px', width: '100px', margin: '0 auto' },
+  line80: { ...shimmerBg, height: '14px', width: '100px' },
+  lineFull: { ...shimmerBg, height: '14px', width: '100%' },
+  circle40: { ...shimmerBg, width: '40px', height: '40px', borderRadius: 'var(--radius-md)' },
+  circle28: { ...shimmerBg, width: '28px', height: '28px', borderRadius: '8px' },
+  badge: { ...shimmerBg, width: '60px', height: '22px', borderRadius: '20px' },
+  chartBlock: { ...shimmerBg, width: '100%', height: '220px', borderRadius: '8px' },
 };

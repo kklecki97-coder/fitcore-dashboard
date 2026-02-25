@@ -59,6 +59,7 @@ function App() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>(initialInvoices);
   const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>(initialCheckIns);
 
+  // @ts-ignore — scaffolded for schedule features
   const todayKey = new Date().toISOString().split('T')[0];
   const [sessionsByDate, setSessionsByDate] = useState<Record<string, typeof scheduleToday>>(() => {
     const today = new Date();

@@ -89,6 +89,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
           style={{
             ...styles.sideItem,
             color: 'var(--text-tertiary)',
+            background: 'transparent',
           }}
           title="Log out"
         >
@@ -163,6 +164,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '44px',
     borderRadius: 'var(--radius-md)',
     border: 'none',
+    background: 'transparent',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
