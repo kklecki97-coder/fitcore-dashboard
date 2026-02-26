@@ -742,7 +742,7 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
       window.open(`https://instagram.com/${leads[idx].instagram_handle}`, '_blank')
       idx++
       setOpenedCount(idx)
-    }, 5000)
+    }, 10000)
 
     setOpenTimerRef(timer)
   }
@@ -804,7 +804,7 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
           >
             {openingAll
               ? <><Pause size={14} /> Opening {openedCount}/{leads.length}...</>
-              : <><Play size={14} /> Open All (5s apart)</>}
+              : <><Play size={14} /> Open All (10s apart)</>}
           </button>
           <button
             onClick={handleMarkAll}
