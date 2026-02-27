@@ -286,7 +286,7 @@ export default function App() {
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; }}
-          >Book a Call</a>
+          >Book a Demo</a>
           <a href="/checkout" style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
@@ -333,7 +333,7 @@ export default function App() {
               border: '1px solid rgba(0, 229, 200, 0.4)',
               color: 'var(--accent-primary)', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 600, fontSize: 14, textDecoration: 'none', textAlign: 'center',
-            }}>Book a Call</a>
+            }}>Book a Demo</a>
             <a href="/checkout" onClick={() => setMobileMenuOpen(false)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
@@ -410,7 +410,7 @@ export default function App() {
             transition={{ duration: 0.7, delay: 0.5 }}
             style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}
           >
-            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+            <a href="#pricing" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '16px 36px', borderRadius: 'var(--radius-md)',
@@ -421,9 +421,9 @@ export default function App() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              Book a Free Demo <ArrowRight size={18} />
+              See What You Get <ArrowRight size={18} />
             </a>
-            <a href="#features" style={{
+            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
               color: 'var(--text-primary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
@@ -433,7 +433,7 @@ export default function App() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--glass-border-hover)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--glass-border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              See Features <ArrowRight size={18} />
+              Book a Demo <ArrowRight size={18} />
             </a>
           </motion.div>
         </section>
@@ -916,6 +916,7 @@ export default function App() {
               </div>
             </div>
           </div>
+
         </div>
       </Section>
 
@@ -926,8 +927,15 @@ export default function App() {
       <Section id="pricing">
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 100px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
+              You're one step away from{' '}
+              <span style={{ color: 'var(--accent-primary)' }}>running your coaching like a business.</span>
+            </h2>
+            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6, marginBottom: 20 }}>
+              Here's exactly what happens when you start.
+            </p>
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 20,
+              display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)',
               borderRadius: 100, padding: '7px 18px',
             }}>
@@ -936,13 +944,6 @@ export default function App() {
                 Limited Offer — First Coaches Only
               </span>
             </div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
-              You're one step away from{' '}
-              <span style={{ color: 'var(--accent-primary)' }}>running your coaching like a business.</span>
-            </h2>
-            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-              Here's exactly what happens when you start.
-            </p>
           </div>
 
           {/* Pricing card */}
@@ -1049,7 +1050,7 @@ export default function App() {
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.6)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.3)'; e.currentTarget.style.background = 'transparent'; }}
                   >
-                    Book a Call First
+                    Book a Demo First
                   </a>
                   <span style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 4 }}>
                     No credit card required
