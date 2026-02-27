@@ -861,14 +861,14 @@ export default function App() {
                 fontSize: 11, fontWeight: 700, color: 'var(--accent-danger)',
                 letterSpacing: 2, textTransform: 'uppercase', marginBottom: 28,
               }}>
-                This time next year — without FitCore
+                12 months from now — without FitCore
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {[
-                  { stat: 'Same ceiling.', detail: 'Still capped at the same number of clients. Still manually managing every one of them.' },
-                  { stat: 'Same rate.', detail: 'Still charging what the chaos allows, not what your coaching is worth.' },
-                  { stat: 'Same evenings.', detail: 'Still spending them on admin instead of recovery, family, or building.' },
-                  { stat: 'Same friction.', detail: 'A different month, the same problems. The cost of doing nothing compounds quietly.' },
+                  { stat: 'Burned out, not booked out.', detail: 'You\'re working more hours than ever but your client count hasn\'t moved in months.' },
+                  { stat: 'Leaving money on the table.', detail: 'You know you should charge more. But your setup screams "side hustle" — so you don\'t.' },
+                  { stat: 'Evenings lost to spreadsheets.', detail: 'Another night copy-pasting workouts, chasing payments, updating trackers nobody sees.' },
+                  { stat: 'Another year gone.', detail: 'Different month, same problems. The gap between where you are and where you could be just got wider.' },
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                     <div style={{
@@ -893,14 +893,14 @@ export default function App() {
                 fontSize: 11, fontWeight: 700, color: 'var(--accent-primary)',
                 letterSpacing: 2, textTransform: 'uppercase', marginBottom: 28,
               }}>
-                This time next year — with FitCore
+                12 months from now — with FitCore
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {[
-                  { stat: 'More clients.', detail: 'Your infrastructure scaled. You took on more without working more hours.' },
-                  { stat: 'Higher rates.', detail: 'Your platform justified the price. Clients felt the value. Renewals came without chasing.' },
-                  { stat: 'Evenings back.', detail: 'Admin runs itself. You spend your time where it compounds — coaching, selling, living.' },
-                  { stat: 'A business that looks like you.', detail: 'Professional. Organised. The kind coaches with your skill level actually deserve.' },
+                  { stat: 'You doubled your roster.', detail: 'The system handles the load. You took on 20 more clients and your evenings didn\'t change.' },
+                  { stat: 'You raised your prices.', detail: 'Clients saw a real platform, not a Google Drive link. They paid more — and stayed longer.' },
+                  { stat: 'You got your life back.', detail: 'Workouts auto-deliver. Payments auto-collect. You coach, train, and actually switch off at night.' },
+                  { stat: 'You built something real.', detail: 'Not a freelance hustle. A brand clients trust, refer, and stay loyal to for years.' },
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                     <div style={{
