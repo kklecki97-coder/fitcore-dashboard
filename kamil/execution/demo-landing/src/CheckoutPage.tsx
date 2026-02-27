@@ -6,9 +6,6 @@ import {
   Users, Dumbbell, MessageSquare, BarChart3, Zap, AlertTriangle,
 } from 'lucide-react';
 
-// ── Stripe Payment Link (replace with real URL after creating Stripe account) ──
-const CHECKOUT_URL = 'https://buy.stripe.com/PLACEHOLDER';
-
 // ── Animated wrapper ──
 function FadeIn({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
   const ref = useRef(null);
@@ -77,7 +74,7 @@ export default function CheckoutPage() {
 
         {/* ═══ HEADER ═══ */}
         <FadeIn>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+          <div id="top" style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
               <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 40, height: 40, borderRadius: '50%' }} />
               <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.5 }}>
@@ -105,13 +102,13 @@ export default function CheckoutPage() {
         }} className="checkout-grid">
 
           {/* ── LEFT: Pricing breakdown ── */}
-          <FadeIn delay={0.1}>
+          <FadeIn delay={0.1} style={{ height: '100%' }}>
             <div style={{
               background: 'var(--bg-card)',
               backdropFilter: 'blur(var(--glass-blur))',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid rgba(0, 229, 200, 0.15)',
-              padding: '40px 36px',
+              padding: '32px 28px',
               position: 'relative', overflow: 'hidden',
             }}>
               {/* Top glow */}
@@ -123,37 +120,37 @@ export default function CheckoutPage() {
 
               <div style={{
                 fontSize: 11, fontWeight: 700, color: 'var(--accent-warm)',
-                letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 28,
+                letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20,
               }}>
                 How Pricing Works
               </div>
 
               {/* Step 1: Today — Free Trial */}
               <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24,
-                padding: '20px', borderRadius: 'var(--radius-md)',
+                display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16,
+                padding: '16px', borderRadius: 'var(--radius-md)',
                 background: 'rgba(0, 229, 200, 0.04)',
                 border: '1px solid rgba(0, 229, 200, 0.1)',
               }}>
                 <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
+                  width: 28, height: 28, borderRadius: '50%',
                   background: 'var(--accent-primary-dim)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent-primary)' }}>1</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent-primary)' }}>1</span>
                 </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3 }}>
                     Today — Start Your Free Trial
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
                     <span style={{
-                      fontSize: 36, fontWeight: 800, color: 'var(--accent-primary)',
-                      fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
+                      fontSize: 28, fontWeight: 800, color: 'var(--accent-primary)',
+                      fontFamily: 'var(--font-mono)', letterSpacing: -1.5, lineHeight: 1,
                     }}>$0</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>for 14 days</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>for 14 days</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
                     Full platform access. No card required. Add your clients, build programs, test everything.
                   </div>
                 </div>
@@ -161,35 +158,35 @@ export default function CheckoutPage() {
 
               {/* Step 2: First payment — $100 setup + $49 month */}
               <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24,
-                padding: '20px', borderRadius: 'var(--radius-md)',
+                display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16,
+                padding: '16px', borderRadius: 'var(--radius-md)',
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--glass-border)',
               }}>
                 <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
+                  width: 28, height: 28, borderRadius: '50%',
                   background: 'var(--accent-secondary-dim)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent-secondary)' }}>2</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent-secondary)' }}>2</span>
                 </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3 }}>
                     After Trial — First Payment
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
                     <span style={{
-                      fontSize: 36, fontWeight: 800, color: 'var(--text-primary)',
-                      fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
+                      fontSize: 28, fontWeight: 800, color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-mono)', letterSpacing: -1.5, lineHeight: 1,
                     }}>$149</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                     <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>$100</span> setup fee
                     {' + '}
                     <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>$49</span> first month
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 4, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3, lineHeight: 1.5 }}>
                     Only charged if you decide to continue after the trial.
                   </div>
                 </div>
@@ -197,41 +194,41 @@ export default function CheckoutPage() {
 
               {/* Step 3: After that — just monthly */}
               <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 32,
-                padding: '20px', borderRadius: 'var(--radius-md)',
+                display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 24,
+                padding: '16px', borderRadius: 'var(--radius-md)',
                 background: 'var(--bg-elevated)',
                 border: '1px solid var(--glass-border)',
               }}>
                 <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
+                  width: 28, height: 28, borderRadius: '50%',
                   background: 'var(--accent-warm-dim)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent-warm)' }}>3</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--accent-warm)' }}>3</span>
                 </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3 }}>
                     After That — Just Monthly
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                     <span style={{
-                      fontSize: 36, fontWeight: 800, color: 'var(--text-primary)',
-                      fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
+                      fontSize: 28, fontWeight: 800, color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-mono)', letterSpacing: -1.5, lineHeight: 1,
                     }}>$49</span>
-                    <span style={{ fontSize: 16, color: 'var(--text-secondary)', fontWeight: 500 }}>/month</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>/month</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
                     No setup fee again. Cancel anytime. No contracts. No per-client limits.
                   </div>
                 </div>
               </div>
 
               {/* CTA */}
-              <a href={CHECKOUT_URL} target="_blank" rel="noopener noreferrer" style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              <a href="#top" style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-                color: '#07090e', padding: '16px 32px', borderRadius: 'var(--radius-md)',
-                fontWeight: 700, fontSize: 16, textDecoration: 'none',
+                color: '#07090e', padding: '14px 28px', borderRadius: 'var(--radius-md)',
+                fontWeight: 700, fontSize: 15, textDecoration: 'none',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 width: '100%',
               }}
@@ -248,22 +245,32 @@ export default function CheckoutPage() {
           </FadeIn>
 
           {/* ── RIGHT: What's included ── */}
-          <FadeIn delay={0.2}>
+          <FadeIn delay={0.2} style={{ height: '100%' }}>
             <div style={{
               background: 'var(--bg-card)',
               backdropFilter: 'blur(var(--glass-blur))',
               borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--glass-border)',
-              padding: '40px 36px',
+              border: '1px solid rgba(99, 102, 241, 0.15)',
+              padding: '32px 28px',
+              height: '100%',
+              display: 'flex', flexDirection: 'column',
+              position: 'relative', overflow: 'hidden',
             }}>
+              {/* Top glow — matches left column */}
               <div style={{
-                fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)',
-                letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 28,
+                position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+                width: 300, height: 2,
+                background: 'linear-gradient(90deg, transparent, var(--accent-secondary), transparent)',
+              }} />
+
+              <div style={{
+                fontSize: 12, fontWeight: 800, color: 'var(--accent-warm)',
+                letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20,
               }}>
                 Everything You Get
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'space-between' }}>
                 {[
                   { icon: Users, label: 'Full client management', desc: 'Roster, streaks, revenue, status — all in one view', color: 'var(--accent-primary)' },
                   { icon: Dumbbell, label: 'Workout program builder', desc: '50+ exercises, templates, drag-and-drop scheduling', color: 'var(--accent-secondary)' },
@@ -273,19 +280,25 @@ export default function CheckoutPage() {
                   { icon: AlertTriangle, label: 'Smart alerts for at-risk clients', desc: 'Know before they churn — missed check-ins, dropped streaks', color: 'var(--accent-danger)' },
                   { icon: Users, label: 'No per-client limits', desc: '10 clients or 80 — same price, no extra fees', color: 'var(--accent-warm)' },
                 ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                  <div key={i} style={{
+                    display: 'flex', gap: 12, alignItems: 'center',
+                    padding: '12px 16px', borderRadius: 'var(--radius-md)',
+                    background: 'rgba(22, 28, 42, 0.85)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                  }}>
                     <div style={{
                       width: 34, height: 34, borderRadius: 'var(--radius-sm)',
-                      background: `${item.color}15`,
+                      background: `${item.color}18`,
+                      border: `1px solid ${item.color}25`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
                       <item.icon size={16} style={{ color: item.color }} />
                     </div>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 1 }}>
                         {item.label}
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                         {item.desc}
                       </div>
                     </div>
@@ -462,7 +475,7 @@ export default function CheckoutPage() {
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href={CHECKOUT_URL} target="_blank" rel="noopener noreferrer" style={{
+                <a href="#top" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 10,
                   background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                   color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
