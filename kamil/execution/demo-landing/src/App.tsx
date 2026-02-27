@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import {
   Users, MessageSquare, Dumbbell, BarChart3,
@@ -8,6 +9,8 @@ import {
   AlertTriangle, Eye, TrendingUp,
   Clock, DollarSign, UserMinus,
 } from 'lucide-react';
+import { useLang } from './i18n';
+import type { Lang } from './i18n';
 
 /* ═══════════════════════════════════════════════════════════
    FitCore Demo Landing Page — Identity-Driven Redesign
@@ -63,15 +66,9 @@ function GlassCard({ children, style, delay = 0 }: { children: React.ReactNode; 
 }
 
 // ── Screenshot Carousel ──
-const screenshots = [
-  { src: '/1-overview.png', label: 'Dashboard Overview', desc: 'Revenue, clients, check-ins, smart alerts — all at a glance' },
-  { src: '/2-clients.png', label: 'Client Management', desc: 'Every client\'s progress, plan, and status in one roster' },
-  { src: '/3-programs.png', label: 'Workout Programs', desc: 'Build and assign programs with sets, reps, RPE, and tempo' },
-  { src: '/4-messages.png', label: 'Unified Inbox', desc: 'Telegram, WhatsApp, Instagram, Email — one conversation feed' },
-  { src: '/5-analytics.png', label: 'Analytics & Revenue', desc: 'Revenue trends, retention rates, client value, plan breakdown' },
-];
+interface Screenshot { src: string; label: string; desc: string; }
 
-function ScreenshotCarousel() {
+function ScreenshotCarousel({ screenshots }: { screenshots: Screenshot[] }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -190,6 +187,8 @@ function ScreenshotCarousel() {
    MAIN APP
    ════════════════════════════════════════════════════════════ */
 export default function App() {
+  const { lang, t, switchLang } = useLang();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [emailValue, setEmailValue] = useState('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
@@ -198,10 +197,26 @@ export default function App() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.12], [1, 0.96]);
 
+  const checkoutUrl = lang === 'pl' ? '/pl/checkout' : '/checkout';
+
+  const handleLangToggle = () => {
+    const newLang: Lang = lang === 'en' ? 'pl' : 'en';
+    switchLang(newLang);
+    navigate(newLang === 'pl' ? '/pl/' : '/');
+  };
+
+  const screenshots: Screenshot[] = [
+    { src: '/1-overview.png', label: t.carousel.labels[0], desc: t.carousel.descs[0] },
+    { src: '/2-clients.png', label: t.carousel.labels[1], desc: t.carousel.descs[1] },
+    { src: '/3-programs.png', label: t.carousel.labels[2], desc: t.carousel.descs[2] },
+    { src: '/4-messages.png', label: t.carousel.labels[3], desc: t.carousel.descs[3] },
+    { src: '/5-analytics.png', label: t.carousel.labels[4], desc: t.carousel.descs[4] },
+  ];
+
   const navLinks = [
-    { label: 'Features', href: '#features' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Pricing', href: '#pricing' },
+    { label: t.nav.features, href: '#features' },
+    { label: t.nav.howItWorks, href: '#how-it-works' },
+    { label: t.nav.pricing, href: '#pricing' },
   ];
 
   return (
@@ -286,8 +301,8 @@ export default function App() {
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; }}
-          >Book a Demo</a>
-          <a href="/checkout" style={{
+          >{t.nav.bookDemo}</a>
+          <a href={checkoutUrl} style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
             color: '#07090e', padding: '10px 22px', borderRadius: 'var(--radius-sm)',
@@ -296,7 +311,16 @@ export default function App() {
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px var(--accent-primary-glow)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >Start Now <ArrowRight size={14} /></a>
+          >{t.nav.startNow} <ArrowRight size={14} /></a>
+          <button onClick={handleLangToggle} style={{
+            background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-sm)', padding: '8px 14px', cursor: 'pointer',
+            color: 'var(--text-secondary)', fontSize: 12, fontWeight: 700, letterSpacing: 0.8,
+            fontFamily: 'var(--font-display)', transition: 'border-color 0.2s, color 0.2s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--glass-border-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--glass-border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+          >{lang === 'en' ? 'PL' : 'EN'}</button>
         </div>
 
         <button
@@ -333,13 +357,19 @@ export default function App() {
               border: '1px solid rgba(0, 229, 200, 0.4)',
               color: 'var(--accent-primary)', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 600, fontSize: 14, textDecoration: 'none', textAlign: 'center',
-            }}>Book a Demo</a>
-            <a href="/checkout" onClick={() => setMobileMenuOpen(false)} style={{
+            }}>{t.nav.bookDemo}</a>
+            <a href={checkoutUrl} onClick={() => setMobileMenuOpen(false)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 700, fontSize: 14, textDecoration: 'none', textAlign: 'center',
-            }}>Start Now <ArrowRight size={15} /></a>
+            }}>{t.nav.startNow} <ArrowRight size={15} /></a>
+            <button onClick={() => { handleLangToggle(); setMobileMenuOpen(false); }} style={{
+              background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-sm)', padding: '12px 24px', cursor: 'pointer',
+              color: 'var(--text-secondary)', fontSize: 14, fontWeight: 700, letterSpacing: 0.8,
+              fontFamily: 'var(--font-display)', textAlign: 'center',
+            }}>{lang === 'en' ? 'PL \ud83c\uddf5\ud83c\uddf1' : 'EN \ud83c\uddec\ud83c\udde7'}</button>
           </motion.div>
         )}
       </motion.nav>
@@ -368,7 +398,7 @@ export default function App() {
           >
             <Zap size={14} style={{ color: 'var(--accent-primary)' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)', letterSpacing: 0.5 }}>
-              Built for Fitness Coaches
+              {t.hero.badge}
             </span>
           </motion.div>
 
@@ -381,14 +411,14 @@ export default function App() {
               letterSpacing: '-2px', marginBottom: 24, maxWidth: 900,
             }}
           >
-            Your coaching is elite.{' '}
+            {t.hero.title1}{' '}
             <span style={{
               background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary))',
               backgroundSize: '200% 200%',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               animation: 'gradient-shift 4s ease infinite',
             }}>
-              Your business should look like it.
+              {t.hero.title2}
             </span>
           </motion.h1>
 
@@ -401,7 +431,7 @@ export default function App() {
               maxWidth: 620, marginBottom: 48, fontWeight: 400,
             }}
           >
-            Your clients get Google Sheets and WhatsApp voice notes. You deserve a platform that matches your expertise.
+            {t.hero.subtitle}
           </motion.p>
 
           <motion.div
@@ -421,7 +451,7 @@ export default function App() {
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              See What You Get <ArrowRight size={18} />
+              {t.hero.ctaPrimary} <ArrowRight size={18} />
             </a>
             <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -433,7 +463,7 @@ export default function App() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--glass-border-hover)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--glass-border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              Book a Demo <ArrowRight size={18} />
+              {t.hero.ctaSecondary} <ArrowRight size={18} />
             </a>
           </motion.div>
         </section>
@@ -447,8 +477,8 @@ export default function App() {
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 'clamp(30px, 4.5vw, 48px)', fontWeight: 800, letterSpacing: -1.5 }}>
-              You're great at coaching.{' '}
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>You're drowning in everything else.</span>
+              {t.pain.heading1}{' '}
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>{t.pain.heading2}</span>
             </h2>
           </div>
 
@@ -468,11 +498,10 @@ export default function App() {
                 <Clock size={22} style={{ color: 'var(--accent-danger)' }} />
               </div>
               <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: 'var(--text-primary)' }}>
-                The Admin Trap
+                {t.pain.card1Title}
               </h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                It's 11pm. You're copying a workout into WhatsApp, updating a spreadsheet, and chasing an unpaid invoice.
-                This isn't what you signed up for. Your clients are paying for your expertise — not your evenings.
+                {t.pain.card1Body}
               </p>
             </GlassCard>
 
@@ -491,12 +520,10 @@ export default function App() {
                 <Eye size={24} style={{ color: 'var(--accent-warm)' }} />
               </div>
               <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--accent-warm)' }}>
-                The Perception Gap
+                {t.pain.card2Title}
               </h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                Your coaching is worth $400/month. But when a client gets a Google Form and a shared Drive folder,
-                they feel $150/month. You're not undercharging because your coaching is weak —
-                you're undercharging because your packaging undersells you.
+                {t.pain.card2Body}
               </p>
             </GlassCard>
 
@@ -516,12 +543,10 @@ export default function App() {
                 <TrendingUp size={24} style={{ color: 'var(--accent-secondary)' }} />
               </div>
               <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--accent-secondary)' }}>
-                The Invisible Ceiling
+                {t.pain.card3Title}
               </h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                You can feel the ceiling — somewhere around 20-30 clients — where adding one more breaks something.
-                More tabs, more threads, more balls in the air. That ceiling isn't your capacity.
-                It's your infrastructure.
+                {t.pain.card3Body}
               </p>
             </GlassCard>
           </div>
@@ -540,10 +565,10 @@ export default function App() {
               fontSize: 12, fontWeight: 600, color: 'var(--accent-warm)',
               letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 16,
             }}>
-              <LayoutDashboard size={14} /> The Dashboard
+              <LayoutDashboard size={14} /> {t.dashboard.badge}
             </div>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5 }}>
-              One screen. Every client. No tab-switching.
+              {t.dashboard.heading}
             </h2>
           </div>
         </div>
@@ -551,7 +576,7 @@ export default function App() {
 
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
-          <ScreenshotCarousel />
+          <ScreenshotCarousel screenshots={screenshots} />
         </div>
       </Section>
 
@@ -563,14 +588,14 @@ export default function App() {
             fontSize: 'clamp(28px, 4.5vw, 56px)', fontWeight: 800, lineHeight: 1.15,
             letterSpacing: '-1.5px', margin: '0 auto',
           }}>
-            Every month without a system{' '}
+            {t.stakes.line1}{' '}
             <span style={{
               background: 'linear-gradient(135deg, var(--accent-danger), var(--accent-warm), var(--accent-danger))',
               backgroundSize: '200% 200%',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               animation: 'gradient-shift 4s ease infinite',
             }}>
-              costs you clients, revenue, and hours you'll never get back.
+              {t.stakes.line2}
             </span>
           </p>
         </div>
@@ -583,10 +608,10 @@ export default function App() {
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
-              Be honest with yourself.
+              {t.cost.heading}
             </h2>
             <p style={{ fontSize: 17, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-              You already know the answers. The question is how long you'll keep paying the price.
+              {t.cost.subheading}
             </p>
           </div>
 
@@ -598,8 +623,8 @@ export default function App() {
             {[
               {
                 icon: Clock,
-                question: 'How many hours a week do you spend on admin?',
-                followup: 'Copying workouts, chasing payments, updating spreadsheets. Not coaching.',
+                question: t.cost.cards[0].question,
+                followup: t.cost.cards[0].followup,
                 color: 'var(--accent-danger)',
                 bg: 'rgba(239, 68, 68, 0.12)',
                 border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -607,8 +632,8 @@ export default function App() {
               },
               {
                 icon: DollarSign,
-                question: 'Are you charging what your coaching is actually worth?',
-                followup: 'Or are you pricing based on what Google Sheets and WhatsApp can justify?',
+                question: t.cost.cards[1].question,
+                followup: t.cost.cards[1].followup,
                 color: 'var(--accent-warm)',
                 bg: 'rgba(245, 158, 11, 0.12)',
                 border: '1px solid rgba(245, 158, 11, 0.2)',
@@ -616,8 +641,8 @@ export default function App() {
               },
               {
                 icon: UserMinus,
-                question: 'How many clients have you lost to disorganization?',
-                followup: 'A late check-in. A missed message. A renewal that silently didn\'t happen.',
+                question: t.cost.cards[2].question,
+                followup: t.cost.cards[2].followup,
                 color: 'var(--accent-secondary)',
                 bg: 'rgba(99, 102, 241, 0.12)',
                 border: '1px solid rgba(99, 102, 241, 0.25)',
@@ -625,8 +650,8 @@ export default function App() {
               },
               {
                 icon: AlertTriangle,
-                question: 'What happens when you try to take on 5 more clients?',
-                followup: 'Something breaks. Something slips. You already know the number where it falls apart.',
+                question: t.cost.cards[3].question,
+                followup: t.cost.cards[3].followup,
                 color: 'var(--accent-primary)',
                 bg: 'rgba(0, 229, 200, 0.1)',
                 border: '1px solid rgba(0, 229, 200, 0.2)',
@@ -684,14 +709,13 @@ export default function App() {
               background: 'var(--accent-primary-dim)', borderRadius: 8, padding: '6px 14px',
             }}>
               <Users size={15} style={{ color: 'var(--accent-primary)' }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', letterSpacing: 0.8, textTransform: 'uppercase' }}>Client Management</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', letterSpacing: 0.8, textTransform: 'uppercase' }}>{t.features.clients.badge}</span>
             </div>
             <h3 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: -1, marginBottom: 16, lineHeight: 1.15 }}>
-              Your entire roster, one screen
+              {t.features.clients.heading}
             </h3>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
-              Every client's progress, plan tier, revenue, streak, and last check-in — visible at a glance.
-              Filter by status, spot who needs attention, and never lose track of anyone.
+              {t.features.clients.body}
             </p>
             <a href="#pricing" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
@@ -700,7 +724,7 @@ export default function App() {
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >Get started <ArrowRight size={14} /></a>
+            >{t.features.clients.cta} <ArrowRight size={14} /></a>
           </div>
           <div>
             <img src="/2-clients.png" alt="Client management" style={{
@@ -731,14 +755,13 @@ export default function App() {
               background: 'rgba(41, 171, 226, 0.12)', borderRadius: 8, padding: '6px 14px',
             }}>
               <MessageSquare size={15} style={{ color: '#29ABE2' }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#29ABE2', letterSpacing: 0.8, textTransform: 'uppercase' }}>Unified Inbox</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#29ABE2', letterSpacing: 0.8, textTransform: 'uppercase' }}>{t.features.inbox.badge}</span>
             </div>
             <h3 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: -1, marginBottom: 16, lineHeight: 1.15 }}>
-              Every conversation, one feed
+              {t.features.inbox.heading}
             </h3>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
-              Telegram, WhatsApp, Instagram, Email — all in one inbox.
-              Quick-reply templates, read receipts, and smart suggestions. No more switching between apps.
+              {t.features.inbox.body}
             </p>
             <a href="#pricing" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
@@ -747,7 +770,7 @@ export default function App() {
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >Get started <ArrowRight size={14} /></a>
+            >{t.features.inbox.cta} <ArrowRight size={14} /></a>
           </div>
         </div>
       </Section>
@@ -764,14 +787,13 @@ export default function App() {
               background: 'var(--accent-secondary-dim)', borderRadius: 8, padding: '6px 14px',
             }}>
               <Dumbbell size={15} style={{ color: 'var(--accent-secondary)' }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-secondary)', letterSpacing: 0.8, textTransform: 'uppercase' }}>Workout Programs</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-secondary)', letterSpacing: 0.8, textTransform: 'uppercase' }}>{t.features.workouts.badge}</span>
             </div>
             <h3 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: -1, marginBottom: 16, lineHeight: 1.15 }}>
-              Build programs, assign in seconds
+              {t.features.workouts.heading}
             </h3>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
-              50+ exercise library with sets, reps, RPE, tempo, and rest periods.
-              Save as templates, duplicate, and assign to any client with one click.
+              {t.features.workouts.body}
             </p>
             <a href="#pricing" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
@@ -780,7 +802,7 @@ export default function App() {
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >Get started <ArrowRight size={14} /></a>
+            >{t.features.workouts.cta} <ArrowRight size={14} /></a>
           </div>
           <div>
             <img src="/3-programs.png" alt="Workout programs" style={{
@@ -811,14 +833,13 @@ export default function App() {
               background: 'var(--accent-warm-dim)', borderRadius: 8, padding: '6px 14px',
             }}>
               <BarChart3 size={15} style={{ color: 'var(--accent-warm)' }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-warm)', letterSpacing: 0.8, textTransform: 'uppercase' }}>Analytics & Revenue</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-warm)', letterSpacing: 0.8, textTransform: 'uppercase' }}>{t.features.analytics.badge}</span>
             </div>
             <h3 style={{ fontSize: 'clamp(26px, 3.5vw, 38px)', fontWeight: 800, letterSpacing: -1, marginBottom: 16, lineHeight: 1.15 }}>
-              Know your numbers
+              {t.features.analytics.heading}
             </h3>
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
-              Monthly revenue, projected annual, retention rate, average client value.
-              See which plan tier drives the most income and who your top performers are.
+              {t.features.analytics.body}
             </p>
             <a href="#pricing" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
@@ -827,7 +848,7 @@ export default function App() {
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >Get started <ArrowRight size={14} /></a>
+            >{t.features.analytics.cta} <ArrowRight size={14} /></a>
           </div>
         </div>
       </Section>
@@ -841,8 +862,8 @@ export default function App() {
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontSize: 'clamp(30px, 4.5vw, 52px)', fontWeight: 800, letterSpacing: -1.5, lineHeight: 1.1 }}>
-              Two versions of your business exist.{' '}
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>One of them is waiting.</span>
+              {t.fork.heading1}{' '}
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>{t.fork.heading2}</span>
             </h2>
           </div>
 
@@ -861,15 +882,10 @@ export default function App() {
                 fontSize: 11, fontWeight: 700, color: 'var(--accent-danger)',
                 letterSpacing: 2, textTransform: 'uppercase', marginBottom: 28,
               }}>
-                12 months from now — without FitCore
+                {t.fork.withoutLabel}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {[
-                  { stat: 'Burned out, not booked out.', detail: 'You\'re working more hours than ever but your client count hasn\'t moved in months.' },
-                  { stat: 'Leaving money on the table.', detail: 'You know you should charge more. But your setup screams "side hustle" — so you don\'t.' },
-                  { stat: 'Evenings lost to spreadsheets.', detail: 'Another night copy-pasting workouts, chasing payments, updating trackers nobody sees.' },
-                  { stat: 'Another year gone.', detail: 'Different month, same problems. The gap between where you are and where you could be just got wider.' },
-                ].map((item, i) => (
+                {t.fork.without.map((item, i) => (
                   <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                     <div style={{
                       width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-danger)',
@@ -893,15 +909,10 @@ export default function App() {
                 fontSize: 11, fontWeight: 700, color: 'var(--accent-primary)',
                 letterSpacing: 2, textTransform: 'uppercase', marginBottom: 28,
               }}>
-                12 months from now — with FitCore
+                {t.fork.withLabel}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {[
-                  { stat: 'You doubled your roster.', detail: 'The system handles the load. You took on 20 more clients and your evenings didn\'t change.' },
-                  { stat: 'You raised your prices.', detail: 'Clients saw a real platform, not a Google Drive link. They paid more — and stayed longer.' },
-                  { stat: 'You got your life back.', detail: 'Workouts auto-deliver. Payments auto-collect. You coach, train, and actually switch off at night.' },
-                  { stat: 'You built something real.', detail: 'Not a freelance hustle. A brand clients trust, refer, and stay loyal to for years.' },
-                ].map((item, i) => (
+                {t.fork.with.map((item, i) => (
                   <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                     <div style={{
                       width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-primary)',
@@ -928,11 +939,11 @@ export default function App() {
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 100px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
-              You're one step away from{' '}
-              <span style={{ color: 'var(--accent-primary)' }}>running your coaching like a business.</span>
+              {t.pricing.heading1}{' '}
+              <span style={{ color: 'var(--accent-primary)' }}>{t.pricing.heading2}</span>
             </h2>
             <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6, marginBottom: 20 }}>
-              Here's exactly what happens when you start.
+              {t.pricing.subheading}
             </p>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -941,7 +952,7 @@ export default function App() {
             }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-warm)', animation: 'pulse-glow 2s ease-in-out infinite' }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-warm)', letterSpacing: 1, textTransform: 'uppercase' }}>
-                Limited Offer — First Coaches Only
+                {t.pricing.limitedBadge}
               </span>
             </div>
           </div>
@@ -974,17 +985,17 @@ export default function App() {
                 {/* Free trial */}
                 <div style={{ marginBottom: 32 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
-                    Start Free
+                    {t.pricing.startFreeLabel}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                     <span style={{
                       fontSize: 48, fontWeight: 800, color: 'var(--accent-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
-                    }}>$0</span>
-                    <span style={{ fontSize: 16, color: 'var(--text-secondary)', fontWeight: 500 }}>for 14 days</span>
+                    }}>{t.pricing.trialPrice}</span>
+                    <span style={{ fontSize: 16, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.trialDuration}</span>
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8, lineHeight: 1.5 }}>
-                    Full access. No credit card required. Try everything.
+                    {t.pricing.trialNote}
                   </div>
                   {/* Trial badge */}
                   <div style={{
@@ -994,7 +1005,7 @@ export default function App() {
                   }}>
                     <CheckCircle2 size={15} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)' }}>
-                      Try before you pay — zero risk
+                      {t.pricing.trialBadge}
                     </span>
                   </div>
                 </div>
@@ -1005,28 +1016,28 @@ export default function App() {
                 {/* After trial */}
                 <div style={{ marginBottom: 32 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
-                    After Trial
+                    {t.pricing.afterTrialLabel}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
                     <span style={{
                       fontSize: 48, fontWeight: 800, color: 'var(--text-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
-                    }}>$100</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>+</span>
+                    }}>{t.pricing.setupPrice}</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.oneTime}</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>{t.pricing.plus}</span>
                     <span style={{
                       fontSize: 32, fontWeight: 800, color: 'var(--text-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -1, lineHeight: 1,
-                    }}>$49</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>/month</span>
+                    }}>{t.pricing.monthlyPrice}</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.perMonth}</span>
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                    Only if you decide to keep it. Cancel anytime. No contracts.
+                    {t.pricing.cancelNote}
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <a href="/checkout" style={{
+                  <a href={checkoutUrl} style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                     color: '#07090e', padding: '15px 32px', borderRadius: 'var(--radius-md)',
@@ -1037,7 +1048,7 @@ export default function App() {
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    Start Now <ArrowRight size={16} />
+                    {t.pricing.ctaPrimary} <ArrowRight size={16} />
                   </a>
                   <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -1050,10 +1061,10 @@ export default function App() {
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.6)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.3)'; e.currentTarget.style.background = 'transparent'; }}
                   >
-                    Book a Demo First
+                    {t.pricing.ctaSecondary}
                   </a>
                   <span style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 4 }}>
-                    No credit card required
+                    {t.pricing.noCreditCard}
                   </span>
                 </div>
               </div>
@@ -1061,19 +1072,13 @@ export default function App() {
               {/* Right — what's included */}
               <div style={{ padding: '52px 48px' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 28 }}>
-                  Everything included
+                  {t.pricing.includedLabel}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {[
-                    { item: 'Full coaching platform — ready to use from day one', highlight: false },
-                    { item: 'Full client management — roster, streaks, revenue', highlight: false },
-                    { item: 'Workout program builder with 50+ exercises', highlight: false },
-                    { item: 'Unified inbox — Telegram, WhatsApp, IG, Email', highlight: false },
-                    { item: 'Analytics & revenue tracking', highlight: false },
-                    { item: 'Weekly check-in system for every client', highlight: false },
-                    { item: 'Smart alerts for at-risk clients', highlight: false },
-                    { item: 'Ongoing updates and support', highlight: true },
-                  ].map((row, i) => (
+                  {t.pricing.includedItems.map((item, i) => {
+                    const highlight = i === t.pricing.includedItems.length - 1;
+                    return ({ item, highlight });
+                  }).map((row, i) => (
                     <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                       <CheckCircle2 size={16} style={{
                         color: row.highlight ? 'var(--accent-warm)' : 'var(--accent-primary)',
@@ -1094,8 +1099,7 @@ export default function App() {
                   border: '1px solid var(--glass-border)',
                 }}>
                   <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No per-client limits.</span>{' '}
-                    Manage 10 clients or 80 — same price. Your growth doesn't cost you more.
+                    {t.pricing.noLimitsNote}
                   </div>
                 </div>
               </div>
@@ -1105,8 +1109,7 @@ export default function App() {
           {/* Competitor comparison note */}
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
-              TrueCoach charges up to $179/month. Trainerize scales to $350/month based on clients.{' '}
-              <span style={{ color: 'var(--text-secondary)' }}>FitCore is $49 flat — and it's built for you, not a thousand other coaches.</span>
+              {t.pricing.competitorNote}
             </p>
           </div>
         </div>
@@ -1134,12 +1137,12 @@ export default function App() {
             fontSize: 'clamp(20px, 2.5vw, 28px)', fontWeight: 800,
             letterSpacing: -0.8, marginBottom: 8, lineHeight: 1.2,
           }}>
-            Stay in the loop.
+            {t.newsletter.heading}
           </h3>
           <p style={{
             fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.6,
           }}>
-            Tips for running a better coaching business — no spam, just signal.
+            {t.newsletter.subheading}
           </p>
 
           {emailSubmitted ? (
@@ -1151,7 +1154,7 @@ export default function App() {
                 color: 'var(--accent-primary)', fontSize: 15, fontWeight: 600,
               }}
             >
-              <CheckCircle2 size={18} /> You're in. We'll be in touch.
+              <CheckCircle2 size={18} /> {t.newsletter.success}
             </motion.div>
           ) : (
             <form
@@ -1168,7 +1171,7 @@ export default function App() {
               <input
                 type="email"
                 required
-                placeholder="your@email.com"
+                placeholder={t.newsletter.placeholder}
                 value={emailValue}
                 onChange={(e) => setEmailValue(e.target.value)}
                 style={{
@@ -1195,7 +1198,7 @@ export default function App() {
                 onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
                 onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
               >
-                Subscribe
+                {t.newsletter.button}
               </button>
             </form>
           )}
@@ -1234,9 +1237,9 @@ export default function App() {
           </div>
           <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
             {[
-              { label: 'Features', href: '#features' },
-              { label: 'How It Works', href: '#how-it-works' },
-              { label: 'Pricing', href: '#pricing' },
+              { label: t.nav.features, href: '#features' },
+              { label: t.nav.howItWorks, href: '#how-it-works' },
+              { label: t.nav.pricing, href: '#pricing' },
             ].map(link => (
               <a key={link.label} href={link.href} style={{
                 color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
@@ -1248,7 +1251,7 @@ export default function App() {
             ))}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-            &copy; 2026 FitCore. All rights reserved.
+            {t.footer.copyright}
           </div>
         </div>
       </footer>

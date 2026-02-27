@@ -5,6 +5,7 @@ import {
   ArrowRight, ArrowLeft, Shield,
   Users, Dumbbell, MessageSquare, BarChart3, Zap, AlertTriangle,
 } from 'lucide-react';
+import { useLang } from './i18n';
 
 // ── Animated wrapper ──
 function FadeIn({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
@@ -25,6 +26,10 @@ function FadeIn({ children, delay = 0, style }: { children: React.ReactNode; del
 }
 
 export default function CheckoutPage() {
+  const { lang, t } = useLang();
+  const homeUrl = lang === 'pl' ? '/pl/' : '/';
+  const tc = t.checkout;
+
   return (
     <div style={{ minHeight: '100vh', position: 'relative' }}>
       {/* Ambient glow */}
@@ -47,7 +52,7 @@ export default function CheckoutPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}
       >
-        <Link to="/" style={{
+        <Link to={homeUrl} style={{
           display: 'flex', alignItems: 'center', gap: 10,
           textDecoration: 'none', color: 'var(--text-secondary)',
           fontSize: 14, fontWeight: 500, transition: 'color 0.2s',
@@ -55,12 +60,12 @@ export default function CheckoutPage() {
           onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
           onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
         >
-          <ArrowLeft size={16} /> Back to FitCore
+          <ArrowLeft size={16} /> {tc.backLink}
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <Shield size={14} style={{ color: 'var(--accent-primary)' }} />
           <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500 }}>
-            Secure checkout powered by Stripe
+            {tc.secureNote}
           </span>
         </div>
       </motion.nav>
@@ -112,7 +117,7 @@ export default function CheckoutPage() {
                 fontSize: 11, fontWeight: 700, color: 'var(--accent-warm)',
                 letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20,
               }}>
-                How Pricing Works
+                {tc.howPricingWorks}
               </div>
 
               {/* Step 1: Today — Free Trial */}
@@ -131,17 +136,17 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3 }}>
-                    Today — Start Your Free Trial
+                    {tc.step1Title}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
                     <span style={{
                       fontSize: 28, fontWeight: 800, color: 'var(--accent-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -1.5, lineHeight: 1,
-                    }}>$0</span>
-                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>for 14 days</span>
+                    }}>{tc.step1Price}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>{tc.step1Duration}</span>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                    Full platform access. No card required. Add your clients, build programs, test everything.
+                    {tc.step1Desc}
                   </div>
                 </div>
               </div>
@@ -162,22 +167,22 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3 }}>
-                    After Trial — First Payment
+                    {tc.step2Title}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
                     <span style={{
                       fontSize: 28, fontWeight: 800, color: 'var(--text-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -1.5, lineHeight: 1,
-                    }}>$149</span>
-                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span>
+                    }}>{tc.step2Price}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>{tc.step2OneTime}</span>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>$100</span> setup fee
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{tc.step2Setup}</span> {tc.step2SetupLabel}
                     {' + '}
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>$49</span> first month
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{tc.step2Month}</span> {tc.step2MonthLabel}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 3, lineHeight: 1.5 }}>
-                    Only charged if you decide to continue after the trial.
+                    {tc.step2Note}
                   </div>
                 </div>
               </div>
@@ -198,17 +203,17 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 3 }}>
-                    After That — Just Monthly
+                    {tc.step3Title}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
                     <span style={{
                       fontSize: 28, fontWeight: 800, color: 'var(--text-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -1.5, lineHeight: 1,
-                    }}>$49</span>
-                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>/month</span>
+                    }}>{tc.step3Price}</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>{tc.step3PerMonth}</span>
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                    No setup fee again. Cancel anytime. No contracts. No per-client limits.
+                    {tc.step3Desc}
                   </div>
                 </div>
               </div>
@@ -225,11 +230,11 @@ export default function CheckoutPage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px var(--accent-primary-glow)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                Start Free Trial <ArrowRight size={18} />
+                {tc.startFreeTrial} <ArrowRight size={18} />
               </a>
 
               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 10 }}>
-                No credit card required — 14 days free
+                {tc.noCreditCard}
               </div>
             </div>
           </FadeIn>
@@ -257,18 +262,18 @@ export default function CheckoutPage() {
                 fontSize: 12, fontWeight: 800, color: 'var(--accent-warm)',
                 letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20,
               }}>
-                Everything You Get
+                {tc.everythingYouGet}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'space-between' }}>
                 {[
-                  { icon: Users, label: 'Full client management', desc: 'Roster, streaks, revenue, status — all in one view', color: 'var(--accent-primary)' },
-                  { icon: Dumbbell, label: 'Workout program builder', desc: '50+ exercises, templates, drag-and-drop scheduling', color: 'var(--accent-secondary)' },
-                  { icon: MessageSquare, label: 'Unified inbox', desc: 'Telegram, WhatsApp, Instagram, Email — one thread per client', color: 'var(--accent-warm)' },
-                  { icon: BarChart3, label: 'Analytics & revenue tracking', desc: 'See which clients drive revenue and who needs attention', color: 'var(--accent-primary)' },
-                  { icon: Zap, label: 'Weekly check-in system', desc: 'Automated reminders, mood/sleep/nutrition tracking', color: 'var(--accent-secondary)' },
-                  { icon: AlertTriangle, label: 'Smart alerts for at-risk clients', desc: 'Know before they churn — missed check-ins, dropped streaks', color: 'var(--accent-danger)' },
-                  { icon: Users, label: 'No per-client limits', desc: '10 clients or 80 — same price, no extra fees', color: 'var(--accent-warm)' },
+                  { icon: Users, label: tc.included[0].label, desc: tc.included[0].desc, color: 'var(--accent-primary)' },
+                  { icon: Dumbbell, label: tc.included[1].label, desc: tc.included[1].desc, color: 'var(--accent-secondary)' },
+                  { icon: MessageSquare, label: tc.included[2].label, desc: tc.included[2].desc, color: 'var(--accent-warm)' },
+                  { icon: BarChart3, label: tc.included[3].label, desc: tc.included[3].desc, color: 'var(--accent-primary)' },
+                  { icon: Zap, label: tc.included[4].label, desc: tc.included[4].desc, color: 'var(--accent-secondary)' },
+                  { icon: AlertTriangle, label: tc.included[5].label, desc: tc.included[5].desc, color: 'var(--accent-danger)' },
+                  { icon: Users, label: tc.included[6].label, desc: tc.included[6].desc, color: 'var(--accent-warm)' },
                 ].map((item, i) => (
                   <div key={i} style={{
                     display: 'flex', gap: 12, alignItems: 'center',
@@ -315,37 +320,17 @@ export default function CheckoutPage() {
               letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 32,
               textAlign: 'center',
             }}>
-              What Happens Next
+              {tc.whatHappensNext}
             </div>
 
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24,
             }} className="timeline-grid">
               {[
-                {
-                  step: '1',
-                  title: 'Start your free trial',
-                  desc: 'Sign up in 30 seconds. No credit card, no commitment.',
-                  color: 'var(--accent-primary)',
-                },
-                {
-                  step: '2',
-                  title: 'Use it for 14 days',
-                  desc: 'Full access. Add clients, build programs, test everything.',
-                  color: 'var(--accent-secondary)',
-                },
-                {
-                  step: '3',
-                  title: 'Decide if it\'s for you',
-                  desc: 'Love it? Pay $149 ($100 setup + $49 first month) and keep going. Not for you? Walk away free.',
-                  color: 'var(--accent-warm)',
-                },
-                {
-                  step: '4',
-                  title: '$49/month after that',
-                  desc: 'Simple monthly subscription. Cancel anytime, no contracts.',
-                  color: 'var(--accent-primary)',
-                },
+                { step: '1', title: tc.timeline[0].title, desc: tc.timeline[0].desc, color: 'var(--accent-primary)' },
+                { step: '2', title: tc.timeline[1].title, desc: tc.timeline[1].desc, color: 'var(--accent-secondary)' },
+                { step: '3', title: tc.timeline[2].title, desc: tc.timeline[2].desc, color: 'var(--accent-warm)' },
+                { step: '4', title: tc.timeline[3].title, desc: tc.timeline[3].desc, color: 'var(--accent-primary)' },
               ].map((item, i) => (
                 <div key={i} style={{ textAlign: 'center' }}>
                   <div style={{
@@ -386,36 +371,11 @@ export default function CheckoutPage() {
               letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 28,
               textAlign: 'center',
             }}>
-              Common Questions
+              {tc.commonQuestions}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 640, margin: '0 auto' }}>
-              {[
-                {
-                  q: 'Do I need a credit card to start the trial?',
-                  a: 'No. The 14-day trial is completely free — no card, no payment info, nothing. Just sign up and start using the platform.',
-                },
-                {
-                  q: 'What happens after the 14 days?',
-                  a: 'If you want to continue, your first payment is $149 — that\'s the $100 one-time setup fee plus your first month ($49). After that, it\'s just $49/month. If it\'s not for you, just stop — nothing is charged.',
-                },
-                {
-                  q: 'What is the $100 setup fee for?',
-                  a: 'It\'s a one-time payment that gives you permanent access to the FitCore platform — client management, workout builder, inbox, analytics, check-ins, and everything else.',
-                },
-                {
-                  q: 'Can I cancel the monthly subscription anytime?',
-                  a: 'Yes. No contracts, no cancellation fees. Cancel whenever you want and keep using the platform until the end of your billing period.',
-                },
-                {
-                  q: 'Is there a limit on how many clients I can manage?',
-                  a: 'No. Whether you have 10 clients or 80, the price is the same. Your growth doesn\'t cost you more.',
-                },
-                {
-                  q: 'What if I want to talk to someone first?',
-                  a: 'No problem. You can book a free 15-minute demo call instead — no commitment, just a walkthrough of the platform.',
-                },
-              ].map((item, i) => (
+              {tc.faq.map((item, i) => (
                 <div key={i} style={{
                   padding: '20px 24px', borderRadius: 'var(--radius-md)',
                   background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
@@ -455,13 +415,13 @@ export default function CheckoutPage() {
                 fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 800,
                 letterSpacing: -1, marginBottom: 12, lineHeight: 1.2,
               }}>
-                Ready to run your coaching like a real business?
+                {tc.bottomHeading}
               </h2>
               <p style={{
                 fontSize: 14, color: 'var(--text-secondary)', marginBottom: 28,
                 maxWidth: 440, margin: '0 auto 28px', lineHeight: 1.6,
               }}>
-                14 days free. No credit card. No risk.
+                {tc.bottomSubheading}
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -475,7 +435,7 @@ export default function CheckoutPage() {
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px var(--accent-primary-glow)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  Start Free Trial <ArrowRight size={18} />
+                  {tc.bottomCta} <ArrowRight size={18} />
                 </a>
                 <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
                   fontSize: 14, color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s',
@@ -484,7 +444,7 @@ export default function CheckoutPage() {
                   onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
                   onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
                 >
-                  or book a free demo first →
+                  {tc.bottomSecondary}
                 </a>
               </div>
             </div>
@@ -503,7 +463,7 @@ export default function CheckoutPage() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           flexWrap: 'wrap', gap: 16,
         }}>
-          <Link to="/" style={{
+          <Link to={homeUrl} style={{
             display: 'flex', alignItems: 'center', gap: 8,
             textDecoration: 'none', fontSize: 13, color: 'var(--text-tertiary)',
             transition: 'color 0.2s',
@@ -515,7 +475,7 @@ export default function CheckoutPage() {
             Fit<span style={{ color: 'var(--accent-primary)' }}>Core</span>
           </Link>
           <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-            &copy; 2026 FitCore. All rights reserved.
+            {tc.copyright}
           </span>
         </div>
       </footer>
