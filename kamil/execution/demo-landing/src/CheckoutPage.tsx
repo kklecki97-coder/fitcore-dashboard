@@ -6,6 +6,7 @@ import {
   Users, Dumbbell, MessageSquare, BarChart3, Zap, AlertTriangle,
 } from 'lucide-react';
 import { useLang } from './i18n';
+import { useAuth } from './auth';
 
 // ── Animated wrapper ──
 function FadeIn({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: React.CSSProperties }) {
@@ -27,7 +28,10 @@ function FadeIn({ children, delay = 0, style }: { children: React.ReactNode; del
 
 export default function CheckoutPage() {
   const { lang, t } = useLang();
+  const { isLoggedIn } = useAuth();
   const homeUrl = lang === 'pl' ? '/pl/' : '/';
+  const registerUrl = lang === 'pl' ? '/pl/register' : '/register';
+  const accountUrl = lang === 'pl' ? '/pl/account' : '/account';
   const tc = t.checkout;
 
   return (
@@ -219,7 +223,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* CTA */}
-              <a href="#top" style={{
+              <a href={isLoggedIn ? accountUrl : registerUrl} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                 color: '#07090e', padding: '14px 28px', borderRadius: 'var(--radius-md)',
@@ -230,7 +234,7 @@ export default function CheckoutPage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px var(--accent-primary-glow)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                {tc.startFreeTrial} <ArrowRight size={18} />
+                {isLoggedIn ? t.auth.goToAccount : tc.startFreeTrial} <ArrowRight size={18} />
               </a>
 
               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 10 }}>
@@ -425,7 +429,7 @@ export default function CheckoutPage() {
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="#top" style={{
+                <a href={isLoggedIn ? accountUrl : registerUrl} style={{
                   display: 'inline-flex', alignItems: 'center', gap: 10,
                   background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                   color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
@@ -435,7 +439,7 @@ export default function CheckoutPage() {
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 30px var(--accent-primary-glow)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  {tc.bottomCta} <ArrowRight size={18} />
+                  {isLoggedIn ? t.auth.goToAccount : tc.bottomCta} <ArrowRight size={18} />
                 </a>
                 <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
                   fontSize: 14, color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s',
