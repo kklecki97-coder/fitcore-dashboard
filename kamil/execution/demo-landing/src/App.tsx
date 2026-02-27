@@ -529,6 +529,33 @@ export default function App() {
       </Section>
 
 
+      {/* ════════════════════════════════════════════════════════
+          COACH DASHBOARD — SCREENSHOT CAROUSEL
+         ════════════════════════════════════════════════════════ */}
+      <Section id="features">
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 40px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 12, fontWeight: 600, color: 'var(--accent-warm)',
+              letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 16,
+            }}>
+              <LayoutDashboard size={14} /> The Dashboard
+            </div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5 }}>
+              One screen. Every client. No tab-switching.
+            </h2>
+          </div>
+        </div>
+      </Section>
+
+      <Section>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
+          <ScreenshotCarousel />
+        </div>
+      </Section>
+
+
       {/* ── Stakes Bridge Line ── */}
       <Section>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 100px', textAlign: 'center' }}>
@@ -901,32 +928,6 @@ export default function App() {
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
             >Get started <ArrowRight size={14} /></a>
           </div>
-        </div>
-      </Section>
-
-      {/* ════════════════════════════════════════════════════════
-          COACH DASHBOARD — SCREENSHOT CAROUSEL + FEATURES
-         ════════════════════════════════════════════════════════ */}
-      <Section id="features">
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 40px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontSize: 12, fontWeight: 600, color: 'var(--accent-warm)',
-              letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 16,
-            }}>
-              <LayoutDashboard size={14} /> The Dashboard
-            </div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5 }}>
-              One screen. Every client. No tab-switching.
-            </h2>
-          </div>
-        </div>
-      </Section>
-
-      <Section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 60px' }}>
-          <ScreenshotCarousel />
         </div>
       </Section>
 
