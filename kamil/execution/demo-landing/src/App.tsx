@@ -3,16 +3,17 @@ import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'fra
 import {
   Users, MessageSquare, Dumbbell, BarChart3,
   Zap, ChevronRight, ChevronLeft, ArrowRight, Menu, X,
-  Mail, Play, CheckCircle2,
+  Mail, CheckCircle2,
   LayoutDashboard,
   AlertTriangle, Eye, TrendingUp,
-  Clock, DollarSign, UserMinus, Shield,
+  Clock, DollarSign, UserMinus,
 } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════════════
    FitCore Demo Landing Page — Identity-Driven Redesign
    Positioning: Custom-built platforms for elite fitness coaches
    ═══════════════════════════════════════════════════════════ */
+
 
 // ── Reusable animated section wrapper ──
 function Section({ children, id, style }: { children: React.ReactNode; id?: string; style?: React.CSSProperties }) {
@@ -197,7 +198,8 @@ export default function App() {
 
   const navLinks = [
     { label: 'Features', href: '#features' },
-    { label: 'What You Get', href: '#offer' },
+    { label: 'How It Works', href: '#how-it-works' },
+    { label: 'Pricing', href: '#pricing' },
   ];
 
   return (
@@ -274,14 +276,25 @@ export default function App() {
             >{link.label}</a>
           ))}
           <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+            background: 'transparent',
+            border: '1px solid rgba(0, 229, 200, 0.4)',
+            color: 'var(--accent-primary)', padding: '10px 20px', borderRadius: 'var(--radius-sm)',
+            fontWeight: 600, fontSize: 13, textDecoration: 'none', letterSpacing: 0.3,
+            transition: 'all 0.2s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; }}
+          >Book a Call</a>
+          <a href="/checkout" style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-            color: '#07090e', padding: '10px 24px', borderRadius: 'var(--radius-sm)',
-            fontWeight: 600, fontSize: 14, textDecoration: 'none', letterSpacing: 0.3,
+            color: '#07090e', padding: '10px 22px', borderRadius: 'var(--radius-sm)',
+            fontWeight: 700, fontSize: 13, textDecoration: 'none', letterSpacing: 0.3,
             transition: 'transform 0.2s, box-shadow 0.2s',
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px var(--accent-primary-glow)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >Book a Call</a>
+          >Start Now <ArrowRight size={14} /></a>
         </div>
 
         <button
@@ -314,10 +327,17 @@ export default function App() {
               </a>
             ))}
             <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} style={{
-              background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-              color: '#07090e', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
+              background: 'transparent',
+              border: '1px solid rgba(0, 229, 200, 0.4)',
+              color: 'var(--accent-primary)', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 600, fontSize: 14, textDecoration: 'none', textAlign: 'center',
             }}>Book a Call</a>
+            <a href="/checkout" onClick={() => setMobileMenuOpen(false)} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
+              color: '#07090e', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
+              fontWeight: 700, fontSize: 14, textDecoration: 'none', textAlign: 'center',
+            }}>Start Now <ArrowRight size={15} /></a>
           </motion.div>
         )}
       </motion.nav>
@@ -379,8 +399,7 @@ export default function App() {
               maxWidth: 620, marginBottom: 48, fontWeight: 400,
             }}
           >
-            You spent years mastering your craft. But your clients still get Google Sheets and WhatsApp voice notes.
-            FitCore gives you a professional platform that matches your expertise — so your business finally looks as good as your coaching.
+            Your clients get Google Sheets and WhatsApp voice notes. You deserve a platform that matches your expertise.
           </motion.p>
 
           <motion.div
@@ -402,7 +421,7 @@ export default function App() {
             >
               Book a Free Demo <ArrowRight size={18} />
             </a>
-            <a href="#demo-video" style={{
+            <a href="#features" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
               color: 'var(--text-primary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
@@ -412,7 +431,7 @@ export default function App() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--glass-border-hover)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--glass-border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              <Play size={18} /> Watch Demo
+              See Features <ArrowRight size={18} />
             </a>
           </motion.div>
         </section>
@@ -534,10 +553,12 @@ export default function App() {
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 0 }}>
-              You're not saving money by not having a system.{' '}
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>You're paying for it differently.</span>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
+              Be honest with yourself.
             </h2>
+            <p style={{ fontSize: 17, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+              You already know the answers. The question is how long you'll keep paying the price.
+            </p>
           </div>
 
           <div style={{
@@ -548,9 +569,8 @@ export default function App() {
             {[
               {
                 icon: Clock,
-                value: '5+ hrs/week',
-                label: 'on admin that software should handle',
-                consequence: 'That\'s 20+ hours a month not coaching, not selling, not resting.',
+                question: 'How many hours a week do you spend on admin?',
+                followup: 'Copying workouts, chasing payments, updating spreadsheets. Not coaching.',
                 color: 'var(--accent-danger)',
                 bg: 'rgba(239, 68, 68, 0.12)',
                 border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -558,9 +578,8 @@ export default function App() {
               },
               {
                 icon: DollarSign,
-                value: '$100–200/client',
-                label: 'left on the table from undercharging',
-                consequence: 'With 20 clients, that\'s $2,000–4,000/month you\'re leaving behind.',
+                question: 'Are you charging what your coaching is actually worth?',
+                followup: 'Or are you pricing based on what Google Sheets and WhatsApp can justify?',
                 color: 'var(--accent-warm)',
                 bg: 'rgba(245, 158, 11, 0.12)',
                 border: '1px solid rgba(245, 158, 11, 0.2)',
@@ -568,9 +587,8 @@ export default function App() {
               },
               {
                 icon: UserMinus,
-                value: '10–20% churn',
-                label: 'from poor client experience',
-                consequence: 'Every 5 clients you lose to disorganisation costs you $500–1,000/month.',
+                question: 'How many clients have you lost to disorganization?',
+                followup: 'A late check-in. A missed message. A renewal that silently didn\'t happen.',
                 color: 'var(--accent-secondary)',
                 bg: 'rgba(99, 102, 241, 0.12)',
                 border: '1px solid rgba(99, 102, 241, 0.25)',
@@ -578,9 +596,8 @@ export default function App() {
               },
               {
                 icon: AlertTriangle,
-                value: '20–30 clients',
-                label: 'is your manual ceiling',
-                consequence: 'Past that, something always slips. A check-in missed. A program late. A client lost.',
+                question: 'What happens when you try to take on 5 more clients?',
+                followup: 'Something breaks. Something slips. You already know the number where it falls apart.',
                 color: 'var(--accent-primary)',
                 bg: 'rgba(0, 229, 200, 0.1)',
                 border: '1px solid rgba(0, 229, 200, 0.2)',
@@ -588,35 +605,31 @@ export default function App() {
               },
             ].map((stat, i) => (
               <GlassCard key={i} delay={i * 0.08} style={{
-                padding: '48px 32px 40px', textAlign: 'center',
+                padding: '40px 28px 36px', textAlign: 'center',
                 border: stat.border,
                 background: stat.gradient,
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
               }}>
-                {/* Icon — fixed height block */}
                 <div style={{
                   width: 48, height: 48, borderRadius: 'var(--radius-md)',
                   background: stat.bg, flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: 28,
+                  marginBottom: 24,
                 }}>
                   <stat.icon size={22} style={{ color: stat.color }} />
                 </div>
-                {/* Stat number */}
                 <div style={{
-                  fontSize: 'clamp(24px, 2.8vw, 38px)', fontWeight: 800, color: stat.color,
-                  fontFamily: 'var(--font-mono)', lineHeight: 1.1, letterSpacing: '-1px',
-                  marginBottom: 14, flexShrink: 0, width: '100%', textAlign: 'center',
+                  fontSize: 16, fontWeight: 700, color: stat.color,
+                  lineHeight: 1.4, marginBottom: 12, minHeight: '66px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {stat.value}
+                  {stat.question}
                 </div>
-                {/* Label — fixed height via minHeight to force consistent grid alignment */}
                 <div style={{
-                  fontSize: 14, fontWeight: 500, color: 'var(--text-primary)',
-                  lineHeight: 1.5, minHeight: '42px',
-                  display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+                  fontSize: 13, color: 'var(--text-secondary)',
+                  lineHeight: 1.6, fontStyle: 'italic',
                 }}>
-                  {stat.label}
+                  {stat.followup}
                 </div>
               </GlassCard>
             ))}
@@ -632,8 +645,11 @@ export default function App() {
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
-              What your clients see today vs. what they could see
+              Same coach. Two completely different businesses.
             </h2>
+            <p style={{ fontSize: 17, color: 'var(--text-secondary)', maxWidth: 560, margin: '12px auto 0', lineHeight: 1.6 }}>
+              The only difference is infrastructure. Here's what your clients experience depending on which side you're on.
+            </p>
           </div>
 
           <div style={{
@@ -655,7 +671,6 @@ export default function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {[
                   'Workout plan buried in a WhatsApp thread from 3 weeks ago',
-                  'Progress photos scattered across their camera roll',
                   'Check-ins via a Google Form that nobody reviews on time',
                   '"Just Venmo me" payment process',
                   'No visibility into their own progress or trends',
@@ -684,10 +699,10 @@ export default function App() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {[
-                  'Their program in a clean, branded portal they can access anytime',
+                  'Their program in a clean portal they can access anytime',
                   'Progress photos, weight trends, and PRs tracked automatically',
                   'Weekly check-ins with mood, sleep, nutrition — all in one place',
-                  'Professional invoicing with status tracking',
+                  'Invoices sent automatically — they pay, you move on',
                   'Charts showing their body composition and strength over months',
                   'Feels like working with a premium, organized professional',
                 ].map((item, i) => (
@@ -700,11 +715,24 @@ export default function App() {
             </GlassCard>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <p style={{ fontSize: 16, color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: 600, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginTop: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
+            <p style={{ fontSize: 16, color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: 600, margin: 0 }}>
               The coach charging $400/month isn't better than you.
               They just have better infrastructure. Their client experience does the convincing.
             </p>
+            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: 'transparent',
+              border: '1px solid rgba(0, 229, 200, 0.4)',
+              color: 'var(--accent-primary)', padding: '12px 28px', borderRadius: 'var(--radius-md)',
+              fontWeight: 600, fontSize: 14, textDecoration: 'none', letterSpacing: 0.3,
+              transition: 'border-color 0.2s, background 0.2s, transform 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.background = 'var(--accent-primary-dim)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              See the platform in action <ArrowRight size={15} />
+            </a>
           </div>
         </div>
       </Section>
@@ -715,7 +743,7 @@ export default function App() {
          ════════════════════════════════════════════════════════ */}
 
       {/* Feature 1: Client Management */}
-      <Section>
+      <Section id="how-it-works">
         <div style={{
           maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px',
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center',
@@ -735,6 +763,14 @@ export default function App() {
               Every client's progress, plan tier, revenue, streak, and last check-in — visible at a glance.
               Filter by status, spot who needs attention, and never lose track of anyone.
             </p>
+            <a href="#pricing" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
+              fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)',
+              textDecoration: 'none', transition: 'gap 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
+              onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
+            >Get started <ArrowRight size={14} /></a>
           </div>
           <div>
             <img src="/2-clients.png" alt="Client management" style={{
@@ -774,6 +810,14 @@ export default function App() {
               Telegram, WhatsApp, Instagram, Email — all in one inbox.
               Quick-reply templates, read receipts, and smart suggestions. No more switching between apps.
             </p>
+            <a href="#pricing" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
+              fontSize: 13, fontWeight: 600, color: '#29ABE2',
+              textDecoration: 'none', transition: 'gap 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
+              onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
+            >Get started <ArrowRight size={14} /></a>
           </div>
         </div>
       </Section>
@@ -799,6 +843,14 @@ export default function App() {
               50+ exercise library with sets, reps, RPE, tempo, and rest periods.
               Save as templates, duplicate, and assign to any client with one click.
             </p>
+            <a href="#pricing" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
+              fontSize: 13, fontWeight: 600, color: 'var(--accent-secondary)',
+              textDecoration: 'none', transition: 'gap 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
+              onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
+            >Get started <ArrowRight size={14} /></a>
           </div>
           <div>
             <img src="/3-programs.png" alt="Workout programs" style={{
@@ -838,6 +890,14 @@ export default function App() {
               Monthly revenue, projected annual, retention rate, average client value.
               See which plan tier drives the most income and who your top performers are.
             </p>
+            <a href="#pricing" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
+              fontSize: 13, fontWeight: 600, color: 'var(--accent-warm)',
+              textDecoration: 'none', transition: 'gap 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
+              onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
+            >Get started <ArrowRight size={14} /></a>
           </div>
         </div>
       </Section>
@@ -868,140 +928,349 @@ export default function App() {
         </div>
       </Section>
 
-      {/* ════════════════════════════════════════════════════════
-          DEMO VIDEO
-         ════════════════════════════════════════════════════════ */}
-      <Section id="demo-video">
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 100px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 12 }}>
-              See it in action
-            </h2>
-            <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>
-              6-minute walkthrough of the full dashboard
-            </p>
-          </div>
-          <div style={{
-            position: 'relative', aspectRatio: '16/9', borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden', border: '1px solid var(--glass-border)',
-          }}>
-            <iframe
-              src="https://www.loom.com/embed/26735e972f624b0bab6222c1a2c3dd66"
-              frameBorder="0"
-              allowFullScreen
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-            />
-          </div>
-        </div>
-      </Section>
 
 
       {/* ════════════════════════════════════════════════════════
-          WHAT YOU GET
-         ════════════════════════════════════════════════════════ */}
-      <Section id="offer">
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 100px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              fontSize: 12, fontWeight: 600, color: 'var(--accent-success)',
-              letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 16,
-            }}>
-              <Shield size={14} /> What You Get
-            </div>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
-              Your Complete Coaching Platform
-            </h2>
-            <p style={{ fontSize: 17, color: 'var(--text-secondary)', maxWidth: 560, margin: '0 auto', lineHeight: 1.6 }}>
-              Everything included. No feature gates, no upsells. One platform built around how you coach.
-            </p>
-          </div>
-
-          <GlassCard style={{
-            padding: '48px 40px',
-            border: '1px solid rgba(0, 229, 200, 0.2)',
-            background: 'linear-gradient(135deg, rgba(14, 18, 27, 0.95) 0%, rgba(20, 25, 40, 0.95) 100%)',
-          }}>
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: 20, marginBottom: 40,
-            }}>
-              {[
-                'Client management with progress tracking',
-                'Workout program builder with exercise library',
-                'Unified messaging inbox (all channels)',
-                'Weekly check-in system with wellness metrics',
-                'Revenue analytics & projections',
-                'Payment tracking & invoicing',
-                'Training schedule & calendar',
-                'Smart alerts for at-risk clients',
-                'Branded client portal included',
-                'Mobile responsive — works on any device',
-                'Your branding, colors, and logo',
-                'Ongoing support & updates',
-              ].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--text-secondary)' }}>
-                  <CheckCircle2 size={16} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-                  {item}
-                </div>
-              ))}
-            </div>
-
-            <div style={{
-              borderTop: '1px solid var(--glass-border)', paddingTop: 32,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-            }}>
-              <p style={{ fontSize: 15, color: 'var(--text-secondary)', textAlign: 'center', maxWidth: 500 }}>
-                Pricing depends on your setup: number of clients, integrations, custom features.
-                Book a free call and we'll give you an exact quote.
-              </p>
-              <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-                color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
-                fontWeight: 700, fontSize: 16, textDecoration: 'none',
-                animation: 'pulse-glow 3s ease-in-out infinite',
-                transition: 'transform 0.2s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
-              >
-                Book a Free Demo Call <ArrowRight size={18} />
-              </a>
-            </div>
-          </GlassCard>
-        </div>
-      </Section>
-
-
-      {/* ════════════════════════════════════════════════════════
-          FINAL CTA — STAKES-DRIVEN
+          CLOSING SECTION 1 — THE FORK IN THE ROAD
          ════════════════════════════════════════════════════════ */}
       <Section>
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 120px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <h2 style={{ fontSize: 'clamp(30px, 4.5vw, 52px)', fontWeight: 800, letterSpacing: -1.5, lineHeight: 1.1 }}>
+              Two versions of your business exist.{' '}
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>One of them is waiting.</span>
+            </h2>
+          </div>
+
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2,
+            borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+            border: '1px solid var(--glass-border)',
+          }} className="fork-grid">
+            {/* Left — staying put */}
+            <div style={{
+              padding: '48px 40px',
+              background: 'linear-gradient(160deg, rgba(239, 68, 68, 0.06) 0%, rgba(7, 9, 14, 0.95) 100%)',
+              borderRight: '1px solid var(--glass-border)',
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: 'var(--accent-danger)',
+                letterSpacing: 2, textTransform: 'uppercase', marginBottom: 28,
+              }}>
+                This time next year — without FitCore
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {[
+                  { stat: 'Same ceiling.', detail: 'Still capped at the same number of clients. Still manually managing every one of them.' },
+                  { stat: 'Same rate.', detail: 'Still charging what the chaos allows, not what your coaching is worth.' },
+                  { stat: 'Same evenings.', detail: 'Still spending them on admin instead of recovery, family, or building.' },
+                  { stat: 'Same friction.', detail: 'A different month, the same problems. The cost of doing nothing compounds quietly.' },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-danger)',
+                      flexShrink: 0, marginTop: 8,
+                    }} />
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{item.stat}</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{item.detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right — with FitCore */}
+            <div style={{
+              padding: '48px 40px',
+              background: 'linear-gradient(160deg, rgba(0, 229, 200, 0.06) 0%, rgba(7, 9, 14, 0.95) 100%)',
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: 'var(--accent-primary)',
+                letterSpacing: 2, textTransform: 'uppercase', marginBottom: 28,
+              }}>
+                This time next year — with FitCore
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {[
+                  { stat: 'More clients.', detail: 'Your infrastructure scaled. You took on more without working more hours.' },
+                  { stat: 'Higher rates.', detail: 'Your platform justified the price. Clients felt the value. Renewals came without chasing.' },
+                  { stat: 'Evenings back.', detail: 'Admin runs itself. You spend your time where it compounds — coaching, selling, living.' },
+                  { stat: 'A business that looks like you.', detail: 'Professional. Organised. The kind coaches with your skill level actually deserve.' },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-primary)',
+                      flexShrink: 0, marginTop: 8,
+                    }} />
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{item.stat}</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{item.detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+
+      {/* ════════════════════════════════════════════════════════
+          PRICING
+         ════════════════════════════════════════════════════════ */}
+      <Section id="pricing">
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 100px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 20,
+              background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.25)',
+              borderRadius: 100, padding: '7px 18px',
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-warm)', animation: 'pulse-glow 2s ease-in-out infinite' }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-warm)', letterSpacing: 1, textTransform: 'uppercase' }}>
+                Limited Offer — First Coaches Only
+              </span>
+            </div>
+            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
+              Simple pricing. No surprises.
+            </h2>
+            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
+              Less than a single coaching session per month. The platform that makes every session worth more.
+            </p>
+          </div>
+
+          {/* Pricing card */}
           <GlassCard style={{
-            padding: '64px 48px', textAlign: 'center',
-            background: 'linear-gradient(135deg, rgba(14, 18, 27, 0.9) 0%, rgba(20, 25, 40, 0.9) 100%)',
-            border: '1px solid rgba(0, 229, 200, 0.15)',
+            padding: '0',
+            border: '1px solid rgba(0, 229, 200, 0.2)',
+            background: 'linear-gradient(160deg, rgba(14, 18, 27, 0.98) 0%, rgba(10, 13, 20, 0.98) 100%)',
+            overflow: 'hidden',
+            position: 'relative',
+          }}>
+            {/* Top glow accent */}
+            <div style={{
+              position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
+              width: 400, height: 2,
+              background: 'linear-gradient(90deg, transparent, var(--accent-primary), transparent)',
+            }} />
+
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr',
+            }} className="pricing-inner-grid">
+
+              {/* Left — price block */}
+              <div style={{
+                padding: '52px 48px',
+                borderRight: '1px solid var(--glass-border)',
+                display: 'flex', flexDirection: 'column', justifyContent: 'center',
+              }}>
+                {/* Free trial */}
+                <div style={{ marginBottom: 32 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
+                    Start Free
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    <span style={{
+                      fontSize: 48, fontWeight: 800, color: 'var(--accent-primary)',
+                      fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
+                    }}>$0</span>
+                    <span style={{ fontSize: 16, color: 'var(--text-secondary)', fontWeight: 500 }}>for 14 days</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8, lineHeight: 1.5 }}>
+                    Full access. No credit card required. Try everything.
+                  </div>
+                  {/* Trial badge */}
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
+                    background: 'var(--accent-primary-dim)', border: '1px solid rgba(0, 229, 200, 0.2)',
+                    borderRadius: 'var(--radius-sm)', padding: '10px 16px',
+                  }}>
+                    <CheckCircle2 size={15} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)' }}>
+                      Try before you pay — zero risk
+                    </span>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height: 1, background: 'var(--glass-border)', marginBottom: 32 }} />
+
+                {/* After trial */}
+                <div style={{ marginBottom: 32 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
+                    After Trial
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
+                    <span style={{
+                      fontSize: 48, fontWeight: 800, color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
+                    }}>$100</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>one-time</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>+</span>
+                    <span style={{
+                      fontSize: 32, fontWeight: 800, color: 'var(--text-primary)',
+                      fontFamily: 'var(--font-mono)', letterSpacing: -1, lineHeight: 1,
+                    }}>$49</span>
+                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>/month</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                    Only if you decide to keep it. Cancel anytime. No contracts.
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <a href="/checkout" style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
+                    color: '#07090e', padding: '15px 32px', borderRadius: 'var(--radius-md)',
+                    fontWeight: 700, fontSize: 15, textDecoration: 'none',
+                    animation: 'pulse-glow 3s ease-in-out infinite',
+                    transition: 'transform 0.2s',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                  >
+                    Start Now <ArrowRight size={16} />
+                  </a>
+                  <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    background: 'transparent',
+                    border: '1px solid rgba(0, 229, 200, 0.3)',
+                    color: 'var(--accent-primary)', padding: '12px 28px', borderRadius: 'var(--radius-md)',
+                    fontWeight: 600, fontSize: 13, textDecoration: 'none',
+                    transition: 'all 0.2s',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.6)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.3)'; e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    Book a Call First
+                  </a>
+                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 4 }}>
+                    No credit card required
+                  </span>
+                </div>
+              </div>
+
+              {/* Right — what's included */}
+              <div style={{ padding: '52px 48px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 28 }}>
+                  Everything included
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[
+                    { item: 'Full coaching platform — ready to use from day one', highlight: false },
+                    { item: 'Full client management — roster, streaks, revenue', highlight: false },
+                    { item: 'Workout program builder with 50+ exercises', highlight: false },
+                    { item: 'Unified inbox — Telegram, WhatsApp, IG, Email', highlight: false },
+                    { item: 'Analytics & revenue tracking', highlight: false },
+                    { item: 'Weekly check-in system for every client', highlight: false },
+                    { item: 'Smart alerts for at-risk clients', highlight: false },
+                    { item: 'Ongoing updates and support', highlight: true },
+                  ].map((row, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <CheckCircle2 size={16} style={{
+                        color: row.highlight ? 'var(--accent-warm)' : 'var(--accent-primary)',
+                        flexShrink: 0, marginTop: 1,
+                      }} />
+                      <span style={{
+                        fontSize: 14, lineHeight: 1.5,
+                        color: row.highlight ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        fontWeight: row.highlight ? 600 : 400,
+                      }}>{row.item}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{
+                  marginTop: 32, padding: '16px 20px',
+                  background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--glass-border)',
+                }}>
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No per-client limits.</span>{' '}
+                    Manage 10 clients or 80 — same price. Your growth doesn't cost you more.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Competitor comparison note */}
+          <div style={{ textAlign: 'center', marginTop: 32 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+              TrueCoach charges up to $179/month. Trainerize scales to $350/month based on clients.{' '}
+              <span style={{ color: 'var(--text-secondary)' }}>FitCore is $49 flat — and it's built for you, not a thousand other coaches.</span>
+            </p>
+          </div>
+        </div>
+      </Section>
+
+      {/* ════════════════════════════════════════════════════════
+          CLOSING SECTION 2 — REDUCE FRICTION, DRIVE DECISION
+         ════════════════════════════════════════════════════════ */}
+      <Section>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 120px' }}>
+          <GlassCard style={{
+            padding: '48px 64px', textAlign: 'center',
+            background: 'linear-gradient(160deg, rgba(14, 18, 27, 0.97) 0%, rgba(18, 22, 36, 0.97) 100%)',
+            border: '1px solid rgba(0, 229, 200, 0.18)',
             position: 'relative', overflow: 'hidden',
           }}>
+            {/* Subtle background glow */}
             <div style={{
-              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-              width: 400, height: 400,
-              background: 'radial-gradient(circle, var(--accent-primary-dim) 0%, transparent 70%)',
-              pointerEvents: 'none', opacity: 0.5,
+              position: 'absolute', bottom: -120, left: '50%', transform: 'translateX(-50%)',
+              width: 500, height: 300,
+              background: 'radial-gradient(ellipse, rgba(0, 229, 200, 0.07) 0%, transparent 70%)',
+              pointerEvents: 'none',
             }} />
+
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <h2 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 800, letterSpacing: -1, marginBottom: 16 }}>
-                Every month without a system costs you clients, revenue, and hours you'll never get back.
-              </h2>
-              <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 500, margin: '0 auto 36px', lineHeight: 1.6 }}>
-                15-minute call. No pressure. No commitment.
-                Just a conversation about what your business could look like with the right infrastructure.
-              </p>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
+              {/* Top row: headline left, objections right */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48,
+                alignItems: 'center', marginBottom: 36,
+              }} className="closing-inner-grid">
+                {/* Left: headline + body */}
+                <div style={{ textAlign: 'left' }}>
+                  <h2 style={{
+                    fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 800,
+                    letterSpacing: -1.2, marginBottom: 16, lineHeight: 1.15,
+                  }}>
+                    You don't need to be ready.<br />
+                    <span style={{ color: 'var(--accent-primary)' }}>You just need to see it.</span>
+                  </h2>
+                  <p style={{
+                    fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0,
+                  }}>
+                    No long onboarding. No contract to sign. No commitment on the call.
+                    Book 15 minutes, see the platform live, and decide if it's right for your business.
+                  </p>
+                </div>
+
+                {/* Right: objection cards stacked */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    { q: '"I don\'t have time."', a: '15 minutes. That\'s exactly the problem we solve.' },
+                    { q: '"I\'m not tech-savvy."', a: 'We set everything up. You just use it.' },
+                    { q: '"I need to think about it."', a: 'See it first. Decide after. That\'s what the call is for.' },
+                  ].map((obj, i) => (
+                    <div key={i} style={{
+                      background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)',
+                      padding: '14px 18px', border: '1px solid var(--glass-border)',
+                      display: 'flex', gap: 12, alignItems: 'baseline',
+                    }}>
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic', flexShrink: 0 }}>{obj.q}</span>
+                      <span style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5 }}>→ {obj.a}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <a href="/checkout" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 10,
                   background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                   color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
                   fontWeight: 700, fontSize: 16, textDecoration: 'none',
@@ -1011,16 +1280,35 @@ export default function App() {
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  Book a Free Demo <ArrowRight size={18} />
+                  Start Now <ArrowRight size={18} />
+                </a>
+                <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>or</span>
+                <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontSize: 14, color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s',
+                  fontWeight: 500,
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                >
+                  book a free demo first →
                 </a>
               </div>
-              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 20 }}>
-                Or email us directly: <a href="mailto:contact@fitcore.tech" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>contact@fitcore.tech</a>
-              </p>
             </div>
           </GlassCard>
         </div>
       </Section>
+
+      {/* ── Responsive: fork grid + objections grid + pricing ── */}
+      <style>{`
+        @media (max-width: 768px) {
+          .fork-grid { grid-template-columns: 1fr !important; }
+          .objections-grid { grid-template-columns: 1fr !important; }
+          .closing-inner-grid { grid-template-columns: 1fr !important; }
+          .pricing-inner-grid { grid-template-columns: 1fr !important; }
+          .pricing-inner-grid > div:first-child { border-right: none !important; border-bottom: 1px solid var(--glass-border); }
+        }
+      `}</style>
 
 
       {/* ════════════════════════════════════════════════════════
@@ -1056,7 +1344,8 @@ export default function App() {
           <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
             {[
               { label: 'Features', href: '#features' },
-              { label: 'What You Get', href: '#offer' },
+              { label: 'How It Works', href: '#how-it-works' },
+              { label: 'Pricing', href: '#pricing' },
             ].map(link => (
               <a key={link.label} href={link.href} style={{
                 color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
