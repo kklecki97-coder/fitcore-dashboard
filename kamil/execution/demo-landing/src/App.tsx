@@ -1207,105 +1207,11 @@ export default function App() {
         </div>
       </Section>
 
-      {/* ════════════════════════════════════════════════════════
-          CLOSING SECTION 2 — REDUCE FRICTION, DRIVE DECISION
-         ════════════════════════════════════════════════════════ */}
-      <Section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 120px' }}>
-          <GlassCard style={{
-            padding: '48px 64px', textAlign: 'center',
-            background: 'linear-gradient(160deg, rgba(14, 18, 27, 0.97) 0%, rgba(18, 22, 36, 0.97) 100%)',
-            border: '1px solid rgba(0, 229, 200, 0.18)',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            {/* Subtle background glow */}
-            <div style={{
-              position: 'absolute', bottom: -120, left: '50%', transform: 'translateX(-50%)',
-              width: 500, height: 300,
-              background: 'radial-gradient(ellipse, rgba(0, 229, 200, 0.07) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
-
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              {/* Top row: headline left, objections right */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48,
-                alignItems: 'center', marginBottom: 36,
-              }} className="closing-inner-grid">
-                {/* Left: headline + body */}
-                <div style={{ textAlign: 'left' }}>
-                  <h2 style={{
-                    fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 800,
-                    letterSpacing: -1.2, marginBottom: 16, lineHeight: 1.15,
-                  }}>
-                    You don't need to be ready.<br />
-                    <span style={{ color: 'var(--accent-primary)' }}>You just need to see it.</span>
-                  </h2>
-                  <p style={{
-                    fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0,
-                  }}>
-                    No long onboarding. No contract to sign. No commitment on the call.
-                    Book 15 minutes, see the platform live, and decide if it's right for your business.
-                  </p>
-                </div>
-
-                {/* Right: objection cards stacked */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {[
-                    { q: '"I don\'t have time."', a: '15 minutes. That\'s exactly the problem we solve.' },
-                    { q: '"I\'m not tech-savvy."', a: 'We set everything up. You just use it.' },
-                    { q: '"I need to think about it."', a: 'See it first. Decide after. That\'s what the call is for.' },
-                  ].map((obj, i) => (
-                    <div key={i} style={{
-                      background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)',
-                      padding: '14px 18px', border: '1px solid var(--glass-border)',
-                      display: 'flex', gap: 12, alignItems: 'baseline',
-                    }}>
-                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic', flexShrink: 0 }}>{obj.q}</span>
-                      <span style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5 }}>→ {obj.a}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* CTA row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href="/checkout" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 10,
-                  background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-                  color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
-                  fontWeight: 700, fontSize: 16, textDecoration: 'none',
-                  animation: 'pulse-glow 3s ease-in-out infinite',
-                  transition: 'transform 0.2s',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
-                >
-                  Start Now <ArrowRight size={18} />
-                </a>
-                <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>or</span>
-                <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 14, color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s',
-                  fontWeight: 500,
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
-                >
-                  book a free demo first →
-                </a>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-      </Section>
-
       {/* ── Responsive: fork grid + objections grid + pricing ── */}
       <style>{`
         @media (max-width: 768px) {
           .fork-grid { grid-template-columns: 1fr !important; }
           .objections-grid { grid-template-columns: 1fr !important; }
-          .closing-inner-grid { grid-template-columns: 1fr !important; }
           .pricing-inner-grid { grid-template-columns: 1fr !important; }
           .pricing-inner-grid > div:first-child { border-right: none !important; border-bottom: 1px solid var(--glass-border); }
         }
