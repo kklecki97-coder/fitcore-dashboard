@@ -191,6 +191,8 @@ function ScreenshotCarousel() {
    ════════════════════════════════════════════════════════════ */
 export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll();
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
@@ -1214,9 +1216,88 @@ export default function App() {
           .objections-grid { grid-template-columns: 1fr !important; }
           .pricing-inner-grid { grid-template-columns: 1fr !important; }
           .pricing-inner-grid > div:first-child { border-right: none !important; border-bottom: 1px solid var(--glass-border); }
+          .newsletter-form { flex-direction: column !important; }
         }
       `}</style>
 
+
+      {/* ════════════════════════════════════════════════════════
+          NEWSLETTER — EMAIL CAPTURE
+         ════════════════════════════════════════════════════════ */}
+      <Section>
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 24px 100px', textAlign: 'center' }}>
+          <Mail size={28} style={{ color: 'var(--accent-primary)', marginBottom: 16 }} />
+          <h3 style={{
+            fontSize: 'clamp(20px, 2.5vw, 28px)', fontWeight: 800,
+            letterSpacing: -0.8, marginBottom: 8, lineHeight: 1.2,
+          }}>
+            Stay in the loop.
+          </h3>
+          <p style={{
+            fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.6,
+          }}>
+            Tips for running a better coaching business — no spam, just signal.
+          </p>
+
+          {emailSubmitted ? (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                color: 'var(--accent-primary)', fontSize: 15, fontWeight: 600,
+              }}
+            >
+              <CheckCircle2 size={18} /> You're in. We'll be in touch.
+            </motion.div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                // TODO: wire up to Supabase / email service
+                setEmailSubmitted(true);
+              }}
+              style={{
+                display: 'flex', gap: 10, maxWidth: 420, margin: '0 auto',
+              }}
+              className="newsletter-form"
+            >
+              <input
+                type="email"
+                required
+                placeholder="your@email.com"
+                value={emailValue}
+                onChange={(e) => setEmailValue(e.target.value)}
+                style={{
+                  flex: 1, padding: '12px 16px',
+                  background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                  fontSize: 14, fontFamily: 'var(--font-display)',
+                  outline: 'none', transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--accent-primary)')}
+                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--glass-border)')}
+              />
+              <button
+                type="submit"
+                style={{
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
+                  color: '#07090e', border: 'none', borderRadius: 'var(--radius-md)',
+                  fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                  fontFamily: 'var(--font-display)',
+                  transition: 'transform 0.2s',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-1px)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+              >
+                Subscribe
+              </button>
+            </form>
+          )}
+        </div>
+      </Section>
 
       {/* ════════════════════════════════════════════════════════
           FOOTER
