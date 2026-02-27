@@ -667,105 +667,6 @@ export default function App() {
       </Section>
 
 
-      {/* ════════════════════════════════════════════════════════
-          BEFORE / AFTER CONTRAST
-         ════════════════════════════════════════════════════════ */}
-      <Section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
-              Same coach. Two completely different businesses.
-            </h2>
-            <p style={{ fontSize: 17, color: 'var(--text-secondary)', maxWidth: 560, margin: '12px auto 0', lineHeight: 1.6 }}>
-              The only difference is infrastructure. Here's what your clients experience depending on which side you're on.
-            </p>
-          </div>
-
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24,
-          }} className="before-after-grid">
-            {/* BEFORE */}
-            <GlassCard style={{
-              padding: '36px 32px',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(14, 18, 27, 0.85) 100%)',
-            }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 24,
-                background: 'var(--accent-danger-dim)', borderRadius: 8, padding: '6px 14px',
-              }}>
-                <X size={14} style={{ color: 'var(--accent-danger)' }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-danger)', letterSpacing: 0.5 }}>WITHOUT FITCORE</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {[
-                  'Workout plan buried in a WhatsApp thread from 3 weeks ago',
-                  'Check-ins via a Google Form that nobody reviews on time',
-                  '"Just Venmo me" payment process',
-                  'No visibility into their own progress or trends',
-                  'Feels like they\'re paying for a texting buddy, not a professional service',
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <X size={16} style={{ color: 'var(--accent-danger)', flexShrink: 0, marginTop: 2 }} />
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
-
-            {/* AFTER */}
-            <GlassCard style={{
-              padding: '36px 32px',
-              border: '1px solid rgba(0, 229, 200, 0.2)',
-              background: 'linear-gradient(135deg, rgba(0, 229, 200, 0.05) 0%, rgba(14, 18, 27, 0.85) 100%)',
-            }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 24,
-                background: 'var(--accent-primary-dim)', borderRadius: 8, padding: '6px 14px',
-              }}>
-                <CheckCircle2 size={14} style={{ color: 'var(--accent-primary)' }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', letterSpacing: 0.5 }}>WITH FITCORE</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {[
-                  'Their program in a clean portal they can access anytime',
-                  'Progress photos, weight trends, and PRs tracked automatically',
-                  'Weekly check-ins with mood, sleep, nutrition — all in one place',
-                  'Invoices sent automatically — they pay, you move on',
-                  'Charts showing their body composition and strength over months',
-                  'Feels like working with a premium, organized professional',
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <CheckCircle2 size={16} style={{ color: 'var(--accent-primary)', flexShrink: 0, marginTop: 2 }} />
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item}</span>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
-            <p style={{ fontSize: 16, color: 'var(--text-secondary)', fontStyle: 'italic', maxWidth: 600, margin: 0 }}>
-              The coach charging $400/month isn't better than you.
-              They just have better infrastructure. Their client experience does the convincing.
-            </p>
-            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'transparent',
-              border: '1px solid rgba(0, 229, 200, 0.4)',
-              color: 'var(--accent-primary)', padding: '12px 28px', borderRadius: 'var(--radius-md)',
-              fontWeight: 600, fontSize: 14, textDecoration: 'none', letterSpacing: 0.3,
-              transition: 'border-color 0.2s, background 0.2s, transform 0.2s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.background = 'var(--accent-primary-dim)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              See the platform in action <ArrowRight size={15} />
-            </a>
-          </div>
-        </div>
-      </Section>
-
 
       {/* ════════════════════════════════════════════════════════
           FEATURE ROWS — ALTERNATING IMAGE + TEXT
@@ -1368,9 +1269,6 @@ export default function App() {
           }
           .feature-image-reverse {
             order: -1;
-          }
-          .before-after-grid {
-            grid-template-columns: 1fr !important;
           }
           .pain-cards-grid {
             grid-template-columns: 1fr !important;
