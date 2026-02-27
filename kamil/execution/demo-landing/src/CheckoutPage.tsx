@@ -74,23 +74,13 @@ export default function CheckoutPage() {
 
         {/* ═══ HEADER ═══ */}
         <FadeIn>
-          <div id="top" style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 20 }}>
+          <div id="top" style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
               <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 40, height: 40, borderRadius: '50%' }} />
               <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.5 }}>
                 Fit<span style={{ color: 'var(--accent-primary)' }}>Core</span>
               </span>
             </div>
-            <h1 style={{
-              fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800,
-              letterSpacing: -1.5, marginBottom: 12, lineHeight: 1.15,
-            }}>
-              You're one step away from<br />
-              <span style={{ color: 'var(--accent-primary)' }}>running your coaching like a business.</span>
-            </h1>
-            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-              Here's exactly what happens when you start.
-            </p>
           </div>
         </FadeIn>
 

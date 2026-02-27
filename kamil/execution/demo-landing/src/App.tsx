@@ -1033,10 +1033,11 @@ export default function App() {
               </span>
             </div>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
-              Simple pricing. No surprises.
+              You're one step away from{' '}
+              <span style={{ color: 'var(--accent-primary)' }}>running your coaching like a business.</span>
             </h2>
-            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 480, margin: '0 auto', lineHeight: 1.6 }}>
-              Less than a single coaching session per month. The platform that makes every session worth more.
+            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+              Here's exactly what happens when you start.
             </p>
           </div>
 
