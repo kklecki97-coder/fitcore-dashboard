@@ -17,33 +17,32 @@ import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
 import useIsMobile from './hooks/useIsMobile';
-import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs, invoices as initialInvoices, checkIns as initialCheckIns } from './data';
+import { exerciseLibrary, workoutLogs } from './data';
+import { supabase } from './lib/supabase';
 import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification } from './types';
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('fitcore-auth') === 'true'
-      || sessionStorage.getItem('fitcore-auth') === 'true';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const handleLogin = (remember: boolean) => {
-    if (remember) {
-      localStorage.setItem('fitcore-auth', 'true');
-    } else {
-      sessionStorage.setItem('fitcore-auth', 'true');
-    }
-    // Reset notification refs so stale counts from a previous session
-    // don't generate false notifications on re-login
-    prevMessageCount.current = allMessages.length;
-    prevCheckInCount.current = allCheckIns.length;
-    prevInvoiceCount.current = allInvoices.length;
-    setIsLoggedIn(true);
+  // ── Auth: listen to Supabase session ──
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = (_remember: boolean) => {
+    // Session is handled by Supabase — onAuthStateChange fires automatically
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('fitcore-auth');
-    sessionStorage.removeItem('fitcore-auth');
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   const [currentPage, setCurrentPage] = useState<Page>('overview');
@@ -58,56 +57,155 @@ function App() {
   });
 
   // ── Shared state lifted from child pages ──
-  const [allClients, setAllClients] = useState<Client[]>(initialClients);
-  const [allMessages, setAllMessages] = useState<Message[]>(initialMessages);
-  const [allPrograms, setAllPrograms] = useState<WorkoutProgram[]>(initialPrograms);
-  const [allInvoices, setAllInvoices] = useState<Invoice[]>(initialInvoices);
-  const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>(initialCheckIns);
+  const [allClients, setAllClients] = useState<Client[]>([]);
+  const [allMessages, setAllMessages] = useState<Message[]>([]);
+  const [allPrograms, setAllPrograms] = useState<WorkoutProgram[]>([]);
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+  const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>([]);
+
+  // ── Load data from Supabase on login ──
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const loadClients = async () => {
+      const { data } = await supabase.from('clients').select('*').order('created_at');
+      if (data) {
+        setAllClients(data.map(r => ({
+          id: r.id,
+          name: r.name,
+          avatar: '',
+          email: r.email ?? '',
+          plan: r.plan,
+          status: r.status,
+          startDate: r.start_date ?? '',
+          nextCheckIn: r.next_check_in ?? '',
+          monthlyRate: r.monthly_rate ?? 0,
+          progress: r.progress ?? 0,
+          height: r.height,
+          streak: r.streak ?? 0,
+          goals: r.goals ?? [],
+          notes: r.notes ?? '',
+          metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+          notesHistory: [],
+          activityLog: [],
+          lastActive: r.last_active ?? '',
+        })));
+      }
+    };
+
+    const loadMessages = async () => {
+      const { data } = await supabase.from('messages').select('*').order('timestamp');
+      if (data) {
+        setAllMessages(data.map(r => ({
+          id: r.id,
+          clientId: r.client_id,
+          clientName: allClients.find(c => c.id === r.client_id)?.name ?? '',
+          clientAvatar: '',
+          text: r.text,
+          timestamp: r.timestamp,
+          isRead: r.is_read,
+          isFromCoach: r.is_from_coach,
+          channel: r.channel,
+          deliveryStatus: r.delivery_status,
+        })));
+      }
+    };
+
+    const loadInvoices = async () => {
+      const { data } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
+      if (data) {
+        setAllInvoices(data.map(r => ({
+          id: r.id,
+          clientId: r.client_id,
+          clientName: allClients.find(c => c.id === r.client_id)?.name ?? '',
+          amount: r.amount,
+          status: r.status,
+          dueDate: r.due_date ?? '',
+          paidDate: r.paid_date ?? null,
+          period: r.period ?? '',
+          plan: r.plan,
+        })));
+      }
+    };
+
+    const loadCheckIns = async () => {
+      const { data } = await supabase.from('check_ins').select('*').order('date', { ascending: false });
+      if (data) {
+        setAllCheckIns(data.map(r => ({
+          id: r.id,
+          clientId: r.client_id,
+          clientName: allClients.find(c => c.id === r.client_id)?.name ?? '',
+          date: r.date,
+          status: r.status,
+          weight: r.weight,
+          bodyFat: r.body_fat,
+          mood: r.mood,
+          energy: r.energy,
+          stress: r.stress,
+          sleepHours: r.sleep_hours,
+          steps: r.steps,
+          nutritionScore: r.nutrition_score,
+          notes: r.notes ?? '',
+          wins: r.wins ?? '',
+          challenges: r.challenges ?? '',
+          coachFeedback: r.coach_feedback ?? '',
+          reviewStatus: r.review_status,
+          flagReason: r.flag_reason ?? '',
+          photos: [],
+          followUpNotes: [],
+        })));
+      }
+    };
+
+    const loadPrograms = async () => {
+      const { data } = await supabase
+        .from('workout_programs')
+        .select(`*, workout_days(*, exercises(*))`)
+        .order('created_at');
+      if (data) {
+        setAllPrograms(data.map(p => ({
+          id: p.id,
+          name: p.name,
+          status: p.status,
+          durationWeeks: p.duration_weeks,
+          clientIds: [],
+          isTemplate: p.is_template,
+          createdAt: p.created_at?.split('T')[0] ?? '',
+          updatedAt: p.updated_at?.split('T')[0] ?? '',
+          days: (p.workout_days ?? [])
+            .sort((a: { day_order: number }, b: { day_order: number }) => a.day_order - b.day_order)
+            .map((d: { id: string; name: string; exercises: { id: string; name: string; sets: number; reps: string; weight: string; rpe: number | null; tempo: string; rest_seconds: number | null; notes: string; exercise_order: number }[] }) => ({
+              id: d.id,
+              name: d.name,
+              exercises: (d.exercises ?? [])
+                .sort((a, b) => a.exercise_order - b.exercise_order)
+                .map(e => ({
+                  id: e.id,
+                  name: e.name,
+                  sets: e.sets,
+                  reps: e.reps,
+                  weight: e.weight,
+                  rpe: e.rpe,
+                  tempo: e.tempo,
+                  restSeconds: e.rest_seconds,
+                  notes: e.notes,
+                })),
+            })),
+        })));
+      }
+    };
+
+    loadClients().then(() => {
+      loadMessages();
+      loadInvoices();
+      loadCheckIns();
+      loadPrograms();
+    });
+  }, [isLoggedIn]);
 
   // @ts-ignore — scaffolded for schedule features
   const todayKey = new Date().toISOString().split('T')[0];
-  const [sessionsByDate, setSessionsByDate] = useState<Record<string, typeof scheduleToday>>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tKey = today.toISOString().split('T')[0];
-
-    // Get Monday of current week
-    const dow = today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - dow + (dow === 0 ? -6 : 1));
-
-    const clientPool = [
-      { client: 'Marcus Chen', type: 'Upper Body' },
-      { client: 'Sarah Williams', type: 'Lower Body' },
-      { client: 'Jake Morrison', type: 'Squat Day' },
-      { client: 'Tom Bradley', type: 'Full Body' },
-      { client: 'David Park', type: 'Push Day' },
-      { client: 'Aisha Patel', type: 'Pull Day' },
-    ];
-    const times = ['07:00', '09:00', '11:00', '14:00', '16:00'];
-
-    const weekSessions: Record<string, typeof scheduleToday> = {
-      [tKey]: scheduleToday,
-    };
-
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const key = d.toISOString().split('T')[0];
-      if (key === tKey) continue;
-
-      const isPast = d < today;
-      weekSessions[key] = times.slice(0, 3 + (i % 3)).map((time, j) => ({
-        time,
-        client: clientPool[(i + j) % clientPool.length].client,
-        type: clientPool[(i + j) % clientPool.length].type,
-        status: (isPast ? 'completed' : 'upcoming') as 'completed' | 'upcoming' | 'current',
-        duration: [45, 60, 60, 90, 45][j % 5],
-      }));
-    }
-
-    return weekSessions;
-  });
+  const [sessionsByDate, setSessionsByDate] = useState<Record<string, { time: string; client: string; type: string; status: 'completed' | 'upcoming' | 'current'; duration: number }[]>>({});
 
   // Settings state
   const [profileName, setProfileName] = useState('Coach Kamil');
@@ -240,37 +338,153 @@ function App() {
     setCurrentPage('add-client');
   };
 
-  const handleSaveNewClient = (client: Client) => {
+  const handleSaveNewClient = async (client: Client): Promise<{ tempPassword?: string; error?: string }> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Not authenticated' };
+
+    // 1. Insert client row
+    const { error: insertError } = await supabase.from('clients').insert({
+      id: client.id,
+      coach_id: user.id,
+      name: client.name,
+      email: client.email,
+      plan: client.plan,
+      status: client.status,
+      start_date: client.startDate || null,
+      next_check_in: client.nextCheckIn || null,
+      monthly_rate: client.monthlyRate,
+      progress: client.progress,
+      height: client.height,
+      streak: client.streak,
+      goals: client.goals,
+      notes: client.notes,
+    });
+
+    if (insertError) return { error: insertError.message };
     setAllClients(prev => [...prev, client]);
-    setCurrentPage('clients');
+
+    // 2. Call Edge Function to create auth user for client
+    if (client.email) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-client`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                clientId: client.id,
+                email: client.email,
+                name: client.name,
+              }),
+            }
+          );
+          const result = await res.json();
+          if (result.success) {
+            return { tempPassword: result.tempPassword };
+          }
+          // Edge Function error — client is saved but no auth account
+          return { error: result.error || 'Failed to create login credentials' };
+        } catch {
+          return { error: 'Failed to connect to invitation service' };
+        }
+      }
+    }
+
+    return {};
   };
 
-  const handleUpdateClient = (id: string, updates: Partial<Client>) => {
+  const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
     setAllClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.plan !== undefined) dbUpdates.plan = updates.plan;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate || null;
+    if (updates.nextCheckIn !== undefined) dbUpdates.next_check_in = updates.nextCheckIn || null;
+    if (updates.monthlyRate !== undefined) dbUpdates.monthly_rate = updates.monthlyRate;
+    if (updates.progress !== undefined) dbUpdates.progress = updates.progress;
+    if (updates.height !== undefined) dbUpdates.height = updates.height;
+    if (updates.streak !== undefined) dbUpdates.streak = updates.streak;
+    if (updates.goals !== undefined) dbUpdates.goals = updates.goals;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (Object.keys(dbUpdates).length > 0) {
+      dbUpdates.updated_at = new Date().toISOString();
+      await supabase.from('clients').update(dbUpdates).eq('id', id);
+    }
   };
 
-  const handleDeleteClient = (id: string) => {
+  const handleDeleteClient = async (id: string) => {
     setAllClients(prev => prev.filter(c => c.id !== id));
+    await supabase.from('clients').delete().eq('id', id);
   };
 
-  const handleSendMessage = (msg: Message) => {
+  const handleSendMessage = async (msg: Message) => {
     setAllMessages(prev => [...prev, msg]);
+    await supabase.from('messages').insert({
+      id: msg.id,
+      client_id: msg.clientId,
+      text: msg.text,
+      timestamp: msg.timestamp,
+      is_read: msg.isRead,
+      is_from_coach: msg.isFromCoach,
+      channel: msg.channel,
+      delivery_status: msg.deliveryStatus,
+    });
+  };
+
+  // ── Program helpers ──
+  const saveProgramToDb = async (program: WorkoutProgram, coachId: string) => {
+    await supabase.from('workout_programs').upsert({
+      id: program.id,
+      coach_id: coachId,
+      name: program.name,
+      status: program.status,
+      duration_weeks: program.durationWeeks,
+      is_template: program.isTemplate,
+      updated_at: new Date().toISOString(),
+    });
+    // Delete old days and re-insert (simplest approach for nested data)
+    await supabase.from('workout_days').delete().eq('program_id', program.id);
+    for (let di = 0; di < program.days.length; di++) {
+      const day = program.days[di];
+      await supabase.from('workout_days').insert({ id: day.id, program_id: program.id, name: day.name, day_order: di });
+      for (let ei = 0; ei < day.exercises.length; ei++) {
+        const ex = day.exercises[ei];
+        await supabase.from('exercises').insert({
+          id: ex.id, day_id: day.id, name: ex.name, sets: ex.sets, reps: ex.reps,
+          weight: ex.weight, rpe: ex.rpe, tempo: ex.tempo, rest_seconds: ex.restSeconds,
+          notes: ex.notes, exercise_order: ei,
+        });
+      }
+    }
   };
 
   // ── Program handlers ──
-  const handleAddProgram = (program: WorkoutProgram) => {
+  const handleAddProgram = async (program: WorkoutProgram) => {
     setAllPrograms(prev => [...prev, program]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await saveProgramToDb(program, user.id);
   };
 
-  const handleUpdateProgram = (id: string, updates: Partial<WorkoutProgram>) => {
+  const handleUpdateProgram = async (id: string, updates: Partial<WorkoutProgram>) => {
     setAllPrograms(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    const updated = { ...allPrograms.find(p => p.id === id)!, ...updates };
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await saveProgramToDb(updated, user.id);
   };
 
-  const handleDeleteProgram = (id: string) => {
+  const handleDeleteProgram = async (id: string) => {
     setAllPrograms(prev => prev.filter(p => p.id !== id));
+    await supabase.from('workout_programs').delete().eq('id', id);
   };
 
-  const handleDuplicateProgram = (id: string) => {
+  const handleDuplicateProgram = async (id: string) => {
     const source = allPrograms.find(p => p.id === id);
     if (!source) return;
     const now = new Date().toISOString().split('T')[0];
@@ -292,24 +506,83 @@ function App() {
       })),
     };
     setAllPrograms(prev => [...prev, newProgram]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await saveProgramToDb(newProgram, user.id);
   };
 
   // ── Invoice handlers ──
-  const handleUpdateInvoice = (id: string, updates: Partial<Invoice>) => {
+  const handleUpdateInvoice = async (id: string, updates: Partial<Invoice>) => {
     setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.paidDate !== undefined) dbUpdates.paid_date = updates.paidDate;
+    if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
+    if (Object.keys(dbUpdates).length > 0) {
+      await supabase.from('invoices').update(dbUpdates).eq('id', id);
+    }
   };
 
-  const handleAddInvoice = (invoice: Invoice) => {
+  const handleAddInvoice = async (invoice: Invoice) => {
     setAllInvoices(prev => [...prev, invoice]);
+    await supabase.from('invoices').insert({
+      id: invoice.id,
+      client_id: invoice.clientId,
+      amount: invoice.amount,
+      status: invoice.status,
+      due_date: invoice.dueDate || null,
+      paid_date: invoice.paidDate || null,
+      period: invoice.period,
+      plan: invoice.plan,
+    });
   };
 
   // ── Check-in handlers ──
-  const handleUpdateCheckIn = (id: string, updates: Partial<CheckIn>) => {
+  const handleUpdateCheckIn = async (id: string, updates: Partial<CheckIn>) => {
     setAllCheckIns(prev => prev.map(ci => ci.id === id ? { ...ci, ...updates } : ci));
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.weight !== undefined) dbUpdates.weight = updates.weight;
+    if (updates.bodyFat !== undefined) dbUpdates.body_fat = updates.bodyFat;
+    if (updates.mood !== undefined) dbUpdates.mood = updates.mood;
+    if (updates.energy !== undefined) dbUpdates.energy = updates.energy;
+    if (updates.stress !== undefined) dbUpdates.stress = updates.stress;
+    if (updates.sleepHours !== undefined) dbUpdates.sleep_hours = updates.sleepHours;
+    if (updates.steps !== undefined) dbUpdates.steps = updates.steps;
+    if (updates.nutritionScore !== undefined) dbUpdates.nutrition_score = updates.nutritionScore;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.wins !== undefined) dbUpdates.wins = updates.wins;
+    if (updates.challenges !== undefined) dbUpdates.challenges = updates.challenges;
+    if (updates.coachFeedback !== undefined) dbUpdates.coach_feedback = updates.coachFeedback;
+    if (updates.reviewStatus !== undefined) dbUpdates.review_status = updates.reviewStatus;
+    if (updates.flagReason !== undefined) dbUpdates.flag_reason = updates.flagReason;
+    if (Object.keys(dbUpdates).length > 0) {
+      dbUpdates.updated_at = new Date().toISOString();
+      await supabase.from('check_ins').update(dbUpdates).eq('id', id);
+    }
   };
 
-  const handleAddCheckIn = (checkIn: CheckIn) => {
+  const handleAddCheckIn = async (checkIn: CheckIn) => {
     setAllCheckIns(prev => [...prev, checkIn]);
+    await supabase.from('check_ins').insert({
+      id: checkIn.id,
+      client_id: checkIn.clientId,
+      date: checkIn.date,
+      status: checkIn.status,
+      weight: checkIn.weight,
+      body_fat: checkIn.bodyFat,
+      mood: checkIn.mood,
+      energy: checkIn.energy,
+      stress: checkIn.stress,
+      sleep_hours: checkIn.sleepHours,
+      steps: checkIn.steps,
+      nutrition_score: checkIn.nutritionScore,
+      notes: checkIn.notes,
+      wins: checkIn.wins,
+      challenges: checkIn.challenges,
+      coach_feedback: checkIn.coachFeedback,
+      review_status: checkIn.reviewStatus,
+      flag_reason: checkIn.flagReason,
+    });
   };
 
   const handleViewProgram = (id: string) => {
@@ -431,6 +704,14 @@ function App() {
         return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
     }
   };
+
+  if (authLoading) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>Loading...</div>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={handleLogin} />;

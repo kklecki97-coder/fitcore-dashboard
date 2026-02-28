@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, User, Mail, Target,
   FileText, Weight, Save, Minus, Plus,
+  Copy, Check, X, Loader2,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -10,7 +11,7 @@ import type { Client } from '../types';
 
 interface AddClientPageProps {
   onBack: () => void;
-  onSave: (client: Client) => void;
+  onSave: (client: Client) => Promise<{ tempPassword?: string; error?: string }>;
 }
 
 function NumberStepper({ value, onChange, min, max, step = 1, placeholder, borderColor }: {
@@ -109,6 +110,9 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
   const [goals, setGoals] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ tempPassword?: string; email?: string; error?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -122,8 +126,11 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
+
+    setSaving(true);
+    setResult(null);
 
     const today = new Date().toISOString().split('T')[0];
     const nextWeek = new Date();
@@ -156,7 +163,24 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
       streak: 0,
     };
 
-    onSave(newClient);
+    const res = await onSave(newClient);
+    setSaving(false);
+
+    if (res.tempPassword) {
+      setResult({ tempPassword: res.tempPassword, email: newClient.email });
+    } else if (res.error) {
+      setResult({ error: res.error });
+    } else {
+      // Client saved but no email — go back
+      onBack();
+    }
+  };
+
+  const handleCopyCredentials = () => {
+    if (!result?.tempPassword || !result.email) return;
+    navigator.clipboard.writeText(`Email: ${result.email}\nPassword: ${result.tempPassword}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -329,14 +353,77 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
           </div>
 
           <div style={{ ...styles.actions, width: isMobile ? '100%' : 'auto' }}>
-            <button onClick={onBack} style={styles.cancelBtn}>Cancel</button>
-            <button onClick={handleSubmit} style={{ ...styles.saveBtn, flex: isMobile ? 1 : undefined }}>
-              <Save size={16} />
-              Add Client
+            <button onClick={onBack} style={styles.cancelBtn} disabled={saving}>Cancel</button>
+            <button onClick={handleSubmit} disabled={saving} style={{ ...styles.saveBtn, flex: isMobile ? 1 : undefined, opacity: saving ? 0.7 : 1 }}>
+              {saving ? <Loader2 size={16} className="spin" /> : <Save size={16} />}
+              {saving ? 'Creating...' : 'Add Client'}
             </button>
           </div>
         </div>
       </GlassCard>
+
+      {/* Success / Error Modal */}
+      {result && (
+        <div style={styles.overlay}>
+          <motion.div
+            style={{ ...styles.modal, width: isMobile ? '90%' : '440px' }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {result.tempPassword ? (
+              <>
+                <div style={styles.modalIcon}>
+                  <Check size={28} color="var(--accent-success)" />
+                </div>
+                <h3 style={styles.modalTitle}>Client Created</h3>
+                <p style={styles.modalText}>
+                  Share these login credentials with your client so they can access their portal.
+                </p>
+
+                <div style={styles.credBox}>
+                  <div style={styles.credRow}>
+                    <span style={styles.credLabel}>Email</span>
+                    <span style={styles.credValue}>{result.email}</span>
+                  </div>
+                  <div style={{ ...styles.credRow, borderTop: '1px solid var(--glass-border)' }}>
+                    <span style={styles.credLabel}>Password</span>
+                    <span style={{ ...styles.credValue, fontFamily: 'monospace', letterSpacing: '0.5px' }}>{result.tempPassword}</span>
+                  </div>
+                </div>
+
+                <div style={styles.modalActions}>
+                  <button onClick={handleCopyCredentials} style={styles.copyBtn}>
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? 'Copied!' : 'Copy Credentials'}
+                  </button>
+                  <button onClick={onBack} style={styles.doneBtn}>
+                    Done
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={styles.modalIcon}>
+                  <X size={28} color="var(--accent-danger)" />
+                </div>
+                <h3 style={styles.modalTitle}>Invitation Failed</h3>
+                <p style={styles.modalText}>
+                  The client was saved, but we couldn't create their login credentials.
+                </p>
+                <p style={{ ...styles.modalText, color: 'var(--accent-danger)', fontSize: '15px' }}>
+                  {result.error}
+                </p>
+                <div style={styles.modalActions}>
+                  <button onClick={onBack} style={styles.doneBtn}>
+                    Go to Clients
+                  </button>
+                </div>
+              </>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
@@ -533,5 +620,114 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     boxShadow: '0 0 20px var(--accent-primary-dim)',
     transition: 'transform 0.15s, box-shadow 0.15s',
+  },
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0, 0, 0, 0.6)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  modal: {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-lg, 16px)',
+    padding: '32px',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '12px',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+  },
+  modalIcon: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '50%',
+    background: 'var(--bg-subtle)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: '22px',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    margin: 0,
+  },
+  modalText: {
+    fontSize: '16px',
+    color: 'var(--text-secondary)',
+    textAlign: 'center' as const,
+    lineHeight: 1.5,
+    margin: 0,
+  },
+  credBox: {
+    width: '100%',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-subtle)',
+    overflow: 'hidden',
+    marginTop: '4px',
+  },
+  credRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '12px 16px',
+    gap: '12px',
+  },
+  credLabel: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+    flexShrink: 0,
+  },
+  credValue: {
+    fontSize: '16px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
+    textAlign: 'right' as const,
+    wordBreak: 'break-all' as const,
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '8px',
+    width: '100%',
+    marginTop: '8px',
+  },
+  copyBtn: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '10px 16px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '16px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'border-color 0.15s',
+  },
+  doneBtn: {
+    flex: 1,
+    padding: '10px 16px',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--accent-primary)',
+    border: 'none',
+    color: 'var(--text-on-accent)',
+    fontSize: '16px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'transform 0.15s',
   },
 };

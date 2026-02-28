@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface LoginPageProps {
   onLogin: (remember: boolean) => void;
 }
-
-const VALID_EMAIL = 'kamil@fitcore.io';
-const VALID_PASSWORD = 'fitcore123';
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState('');
@@ -16,7 +14,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -27,15 +25,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
     setLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      if (email === VALID_EMAIL && password === VALID_PASSWORD) {
-        onLogin(rememberMe);
-      } else {
-        setError('Invalid email or password');
-        setLoading(false);
-      }
-    }, 600);
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (authError) {
+      setError('Invalid email or password');
+      setLoading(false);
+    } else {
+      onLogin(rememberMe);
+    }
   };
 
   return (
@@ -128,9 +128,6 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </button>
         </form>
 
-        <p style={styles.hint}>
-          Demo: kamil@fitcore.io / fitcore123
-        </p>
       </motion.div>
     </div>
   );
