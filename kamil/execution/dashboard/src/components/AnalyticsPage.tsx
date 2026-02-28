@@ -54,7 +54,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   // ── Retention ──
   const retentionRate = clients.length > 0
     ? Math.round((clients.filter(c => c.status === 'active').length / clients.length) * 1000) / 10
-    : 100;
+    : 0;
 
   // ── Engagement metrics ──
   const now = new Date();

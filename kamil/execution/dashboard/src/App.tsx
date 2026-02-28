@@ -18,9 +18,9 @@ import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
-import { exerciseLibrary, workoutLogs } from './data';
+import { exerciseLibrary } from './data';
 import { supabase } from './lib/supabase';
-import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification } from './types';
+import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification, WorkoutLog } from './types';
 
 function App() {
   const { t } = useLang();
@@ -65,10 +65,19 @@ function App() {
   const [allPrograms, setAllPrograms] = useState<WorkoutProgram[]>([]);
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>([]);
+  const [allWorkoutLogs, setAllWorkoutLogs] = useState<WorkoutLog[]>([]);
 
   // ── Load data from Supabase on login ──
   useEffect(() => {
     if (!isLoggedIn) return;
+
+    // Load profile from auth user
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setProfileEmail(user.email ?? '');
+        setProfileName(user.user_metadata?.name ?? user.email?.split('@')[0] ?? '');
+      }
+    });
 
     const loadClients = async () => {
       const { data } = await supabase.from('clients').select('*').order('created_at');
@@ -198,11 +207,27 @@ function App() {
       }
     };
 
+    const loadWorkoutLogs = async () => {
+      const { data } = await supabase.from('workout_logs').select('*, clients(name)').order('date', { ascending: false });
+      if (data) {
+        setAllWorkoutLogs(data.map(r => ({
+          id: r.id,
+          clientId: r.client_id,
+          clientName: r.clients?.name ?? '',
+          type: r.type,
+          duration: r.duration ?? 0,
+          date: r.date,
+          completed: r.completed ?? false,
+        })));
+      }
+    };
+
     loadClients().then(() => {
       loadMessages();
       loadInvoices();
       loadCheckIns();
       loadPrograms();
+      loadWorkoutLogs();
     });
   }, [isLoggedIn]);
 
@@ -210,9 +235,9 @@ function App() {
   const todayKey = new Date().toISOString().split('T')[0];
   const [sessionsByDate, setSessionsByDate] = useState<Record<string, { time: string; client: string; type: string; status: 'completed' | 'upcoming' | 'current'; duration: number }[]>>({});
 
-  // Settings state
-  const [profileName, setProfileName] = useState('Coach Kamil');
-  const [profileEmail, setProfileEmail] = useState('kamil@fitcore.io');
+  // Settings state — loaded from Supabase auth user
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
   const [notifications, setNotifications] = useState({
     messages: true,
     checkins: true,
@@ -601,7 +626,7 @@ function App() {
             clientId={selectedClientId}
             clients={allClients}
             programs={allPrograms}
-            workoutLogs={workoutLogs}
+            workoutLogs={allWorkoutLogs}
             checkIns={allCheckIns}
             onBack={handleBackFromClient}
             backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
@@ -615,7 +640,7 @@ function App() {
       case 'messages':
         return <MessagesPage isMobile={isMobile} clients={allClients} messages={allMessages} onSendMessage={handleSendMessage} />;
       case 'analytics':
-        return <AnalyticsPage clients={allClients} invoices={allInvoices} workoutLogs={workoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} />;
+        return <AnalyticsPage clients={allClients} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} />;
       case 'programs':
         return (
           <WorkoutProgramsPage
