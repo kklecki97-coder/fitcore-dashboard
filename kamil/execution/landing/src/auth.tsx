@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { supabase } from './lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 
 // ── Types ──
 
@@ -6,19 +8,12 @@ export interface AuthUser {
   id: string;
   fullName: string;
   email: string;
-  passwordHash: string; // btoa() — demo only, not secure
   coachingNiche?: string;
   clientCount?: string;
   plan: 'trial' | 'pro' | 'cancelled';
   trialStartDate: string;
   trialEndDate: string;
   createdAt: string;
-}
-
-interface AuthSession {
-  userId: string;
-  email: string;
-  loggedInAt: string;
 }
 
 export interface RegisterData {
@@ -46,41 +41,7 @@ interface AuthContextValue {
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
 }
 
-// ── localStorage keys ──
-
-const USERS_KEY = 'fitcore-demo-users';
-const SESSION_KEY = 'fitcore-demo-session';
-
 // ── Helpers ──
-
-function getUsers(): AuthUser[] {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveUsers(users: AuthUser[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
-function getSession(): AuthSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveSession(session: AuthSession) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-}
-
-function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-}
 
 function computeTrialDays(trialEndDate: string): number {
   const end = new Date(trialEndDate);
@@ -89,125 +50,164 @@ function computeTrialDays(trialEndDate: string): number {
   return Math.max(0, diff);
 }
 
+function buildAuthUser(
+  authId: string,
+  email: string,
+  meta: Record<string, unknown>,
+  coachRow?: Record<string, unknown> | null,
+): AuthUser {
+  const now = new Date();
+  const trialEnd = new Date(now);
+  trialEnd.setDate(trialEnd.getDate() + 14);
+
+  return {
+    id: authId,
+    fullName: (coachRow?.name as string) || (meta?.name as string) || email.split('@')[0],
+    email,
+    coachingNiche: (meta?.coaching_niche as string) || undefined,
+    clientCount: (meta?.client_count as string) || undefined,
+    plan: 'trial',
+    trialStartDate: (coachRow?.created_at as string) || now.toISOString(),
+    trialEndDate: trialEnd.toISOString(),
+    createdAt: (coachRow?.created_at as string) || now.toISOString(),
+  };
+}
+
 // ── Context ──
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    const session = getSession();
-    if (!session) return null;
-    const users = getUsers();
-    return users.find(u => u.id === session.userId) || null;
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load user from coach row
+  const loadUser = useCallback(async (session: Session | null) => {
+    if (!session?.user) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    // Skip client users — they shouldn't log into the landing/dashboard
+    if (session.user.user_metadata?.role === 'client') {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    const { data: coach } = await supabase
+      .from('coaches')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
+
+    const authUser = buildAuthUser(
+      session.user.id,
+      session.user.email || '',
+      session.user.user_metadata || {},
+      coach,
+    );
+    setUser(authUser);
+    setLoading(false);
+  }, []);
+
+  // Init: check current session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      loadUser(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      loadUser(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [loadUser]);
 
   const isLoggedIn = user !== null;
   const trialDaysRemaining = user ? computeTrialDays(user.trialEndDate) : 0;
   const isTrialActive = user?.plan === 'trial' && trialDaysRemaining > 0;
 
   const register = useCallback(async (data: RegisterData): Promise<AuthResult> => {
-    // Simulate async
-    await new Promise(r => setTimeout(r, 600));
-
-    const users = getUsers();
-    if (users.some(u => u.email.toLowerCase() === data.email.toLowerCase())) {
-      return { success: false, error: 'emailExists' };
-    }
-
-    const now = new Date();
-    const trialEnd = new Date(now);
-    trialEnd.setDate(trialEnd.getDate() + 14);
-
-    const newUser: AuthUser = {
-      id: crypto.randomUUID(),
-      fullName: data.fullName,
+    const { error } = await supabase.auth.signUp({
       email: data.email,
-      passwordHash: btoa(data.password),
-      coachingNiche: data.coachingNiche,
-      clientCount: data.clientCount,
-      plan: 'trial',
-      trialStartDate: now.toISOString(),
-      trialEndDate: trialEnd.toISOString(),
-      createdAt: now.toISOString(),
-    };
+      password: data.password,
+      options: {
+        data: {
+          name: data.fullName,
+          coaching_niche: data.coachingNiche || null,
+          client_count: data.clientCount || null,
+        },
+      },
+    });
 
-    users.push(newUser);
-    saveUsers(users);
-    saveSession({ userId: newUser.id, email: newUser.email, loggedInAt: now.toISOString() });
-    setUser(newUser);
+    if (error) {
+      if (error.message?.includes('already registered')) {
+        return { success: false, error: 'emailExists' };
+      }
+      return { success: false, error: error.message };
+    }
 
     return { success: true };
   }, []);
 
   const login = useCallback(async (email: string, password: string): Promise<AuthResult> => {
-    await new Promise(r => setTimeout(r, 400));
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    const users = getUsers();
-    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    if (!found || found.passwordHash !== btoa(password)) {
+    if (error) {
       return { success: false, error: 'invalidCredentials' };
     }
-
-    saveSession({ userId: found.id, email: found.email, loggedInAt: new Date().toISOString() });
-    setUser(found);
 
     return { success: true };
   }, []);
 
   const logout = useCallback(() => {
-    clearSession();
+    supabase.auth.signOut();
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback((data: Partial<Pick<AuthUser, 'fullName' | 'coachingNiche' | 'clientCount'>>) => {
+  const updateProfile = useCallback(async (data: Partial<Pick<AuthUser, 'fullName' | 'coachingNiche' | 'clientCount'>>) => {
     if (!user) return;
-    const users = getUsers();
-    const idx = users.findIndex(u => u.id === user.id);
-    if (idx === -1) return;
 
-    const updated = { ...users[idx], ...data };
-    users[idx] = updated;
-    saveUsers(users);
-    setUser(updated);
-  }, [user]);
-
-  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
-    await new Promise(r => setTimeout(r, 400));
-
-    if (!user) return { success: false, error: 'notLoggedIn' };
-    if (user.passwordHash !== btoa(currentPassword)) {
-      return { success: false, error: 'wrongPassword' };
+    // Update coach row in DB
+    const updates: Record<string, unknown> = {};
+    if (data.fullName !== undefined) updates.name = data.fullName;
+    if (Object.keys(updates).length > 0) {
+      await supabase.from('coaches').update(updates).eq('id', user.id);
     }
 
-    const users = getUsers();
-    const idx = users.findIndex(u => u.id === user.id);
-    if (idx === -1) return { success: false, error: 'notFound' };
+    // Update user metadata
+    const metaUpdates: Record<string, unknown> = {};
+    if (data.fullName !== undefined) metaUpdates.name = data.fullName;
+    if (data.coachingNiche !== undefined) metaUpdates.coaching_niche = data.coachingNiche;
+    if (data.clientCount !== undefined) metaUpdates.client_count = data.clientCount;
+    if (Object.keys(metaUpdates).length > 0) {
+      await supabase.auth.updateUser({ data: metaUpdates });
+    }
 
-    const updated = { ...users[idx], passwordHash: btoa(newPassword) };
-    users[idx] = updated;
-    saveUsers(users);
-    setUser(updated);
-
-    return { success: true };
+    // Update local state
+    setUser(prev => prev ? { ...prev, ...data } : null);
   }, [user]);
 
-  // Sync user state if localStorage changes in another tab
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === SESSION_KEY) {
-        if (!e.newValue) {
-          setUser(null);
-        } else {
-          const session: AuthSession = JSON.parse(e.newValue);
-          const users = getUsers();
-          setUser(users.find(u => u.id === session.userId) || null);
-        }
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+  const changePassword = useCallback(async (_currentPassword: string, newPassword: string): Promise<AuthResult> => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
   }, []);
+
+  // Show nothing while loading initial session
+  if (loading) {
+    return (
+      <AuthContext.Provider value={{ user: null, isLoggedIn: false, isTrialActive: false, trialDaysRemaining: 0, login, register, logout, updateProfile, changePassword }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, isLoggedIn, isTrialActive, trialDaysRemaining, login, register, logout, updateProfile, changePassword }}>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 import { useLang } from '../i18n';
+import { supabase } from '../lib/supabase';
 
 interface LoginPageProps {
   onLogin: (remember: boolean) => void;
@@ -15,18 +16,21 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setTimeout(() => {
-      if (email === 'marcus@email.com' && password === 'client123') {
-        onLogin(remember);
-      } else {
-        setError(t.login.invalidCredentials);
-        setLoading(false);
-      }
-    }, 600);
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (authError) {
+      setError(t.login.invalidCredentials);
+      setLoading(false);
+    } else {
+      onLogin(remember);
+    }
   };
 
   return (
@@ -55,7 +59,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="marcus@email.com"
+              placeholder="you@email.com"
               style={styles.input}
               required
             />
