@@ -143,11 +143,9 @@ export default function RegisterPage() {
         navigate(accountUrl);
       } else if (result.error === 'emailExists') {
         setError(ta.errorEmailExists);
-        setDirection('back');
-        setStep(1);
       }
     } catch {
-      setError('Something went wrong. Please try again.');
+      setError(ta.errorGeneric);
     } finally {
       setLoading(false);
     }

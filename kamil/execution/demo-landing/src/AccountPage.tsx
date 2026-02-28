@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Clock, ExternalLink, LogOut, Trash2, Edit3, Check, X, Dumbbell } from 'lucide-react';
+import { User, Mail, Calendar, Clock, ExternalLink, LogOut, Trash2, Edit3, Check, X, Dumbbell, Lock, ChevronLeft, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -12,7 +12,7 @@ import { useAuth } from './auth';
 
 export default function AccountPage() {
   const { lang, t } = useLang();
-  const { user, isTrialActive, trialDaysRemaining, logout, updateProfile } = useAuth();
+  const { user, isTrialActive, trialDaysRemaining, logout, updateProfile, changePassword } = useAuth();
   const navigate = useNavigate();
   const ta = t.auth;
 
@@ -20,18 +20,31 @@ export default function AccountPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editNiche, setEditNiche] = useState('');
+  const [customNiche, setCustomNiche] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
     try { return localStorage.getItem('fitcore-welcome-dismissed') === 'true'; } catch { return false; }
   });
 
+  // Password change state
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+
   // ── Lang-aware links ──
   const homeUrl = lang === 'pl' ? '/pl/' : '/';
+  const checkoutUrl = lang === 'pl' ? '/pl/checkout' : '/checkout';
 
   // ── Null guard (ProtectedRoute handles redirect, but be safe) ──
   if (!user) return null;
 
   // ── Helpers ──
+  const firstName = user.fullName.split(' ')[0];
+
   const initials = user.fullName
     .split(' ')
     .filter(Boolean)
@@ -47,19 +60,31 @@ export default function AccountPage() {
     );
 
   const trialTotalDays = 14;
-  const trialElapsed = trialTotalDays - trialDaysRemaining;
-  const trialPercent = Math.min(100, Math.max(0, (trialElapsed / trialTotalDays) * 100));
+  const trialRemainingPercent = Math.min(100, Math.max(0, (trialDaysRemaining / trialTotalDays) * 100));
   const trialExpired = user.plan === 'trial' && trialDaysRemaining <= 0;
+  const trialRunningLow = user.plan === 'trial' && trialDaysRemaining > 0 && trialDaysRemaining <= 5;
 
   // ── Edit handlers ──
+  const nicheOptions = ta.nicheOptions; // includes 'Other' as last item
+  const otherLabel = nicheOptions[nicheOptions.length - 1]; // 'Other' / 'Inne'
+  const predefinedNiches = nicheOptions.slice(0, -1); // all except 'Other'
+
   const startEditing = () => {
     setEditName(user.fullName);
-    setEditNiche(user.coachingNiche || '');
+    const current = user.coachingNiche || '';
+    if (current && !predefinedNiches.includes(current)) {
+      setEditNiche(otherLabel);
+      setCustomNiche(current);
+    } else {
+      setEditNiche(current);
+      setCustomNiche('');
+    }
     setIsEditing(true);
   };
 
   const saveEdit = () => {
-    updateProfile({ fullName: editName.trim() || user.fullName, coachingNiche: editNiche.trim() || undefined });
+    const finalNiche = editNiche === otherLabel ? customNiche.trim() : editNiche;
+    updateProfile({ fullName: editName.trim() || user.fullName, coachingNiche: finalNiche || undefined });
     setIsEditing(false);
   };
 
@@ -73,7 +98,6 @@ export default function AccountPage() {
   };
 
   const handleDeleteAccount = () => {
-    // Remove user from localStorage
     try {
       const usersRaw = localStorage.getItem('fitcore-demo-users');
       if (usersRaw) {
@@ -89,6 +113,38 @@ export default function AccountPage() {
   const dismissWelcome = () => {
     setWelcomeDismissed(true);
     try { localStorage.setItem('fitcore-welcome-dismissed', 'true'); } catch { /* ignore */ }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    if (newPassword.length < 6) {
+      setPasswordError(ta.errorNewPasswordShort);
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError(ta.errorNewPasswordMismatch);
+      return;
+    }
+
+    setPasswordLoading(true);
+    const result = await changePassword(currentPassword, newPassword);
+    setPasswordLoading(false);
+
+    if (!result.success) {
+      setPasswordError(result.error === 'wrongPassword' ? ta.errorWrongPassword : ta.errorGeneric);
+      return;
+    }
+
+    setPasswordSuccess(true);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setTimeout(() => {
+      setShowPasswordForm(false);
+      setPasswordSuccess(false);
+    }, 2000);
   };
 
   // ── Glass card style ──
@@ -108,6 +164,18 @@ export default function AccountPage() {
     background: 'linear-gradient(90deg, transparent, #00e5c8, transparent)',
     pointerEvents: 'none',
   };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', fontSize: 14, color: '#f0f2f5',
+    background: 'rgba(255, 255, 255, 0.04)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: 8, padding: '10px 14px',
+    outline: 'none', fontFamily: "'Outfit', sans-serif",
+    transition: 'border-color 0.2s',
+  };
+
+  // Included features from pricing
+  const includedItems = t.pricing.includedItems;
 
   return (
     <div style={{ minHeight: '100vh', position: 'relative', fontFamily: "'Outfit', sans-serif" }}>
@@ -141,21 +209,17 @@ export default function AccountPage() {
           </span>
         </Link>
 
-        <button
-          onClick={handleLogout}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'none', border: '1px solid rgba(255, 255, 255, 0.08)',
-            color: '#8b92a5', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-            padding: '8px 16px', borderRadius: 8, transition: 'all 0.2s',
-            fontFamily: "'Outfit', sans-serif",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#8b92a5'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; }}
+        <Link to={homeUrl} style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          textDecoration: 'none', color: '#8b92a5', fontSize: 13, fontWeight: 500,
+          transition: 'color 0.2s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#f0f2f5')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#8b92a5')}
         >
-          <LogOut size={14} />
-          {ta.logOut}
-        </button>
+          <ChevronLeft size={15} />
+          {ta.backToHome}
+        </Link>
       </motion.nav>
 
 
@@ -165,7 +229,7 @@ export default function AccountPage() {
         position: 'relative', zIndex: 1,
       }}>
 
-        {/* Page title */}
+        {/* Page title with greeting */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -176,7 +240,7 @@ export default function AccountPage() {
             fontSize: 28, fontWeight: 800, color: '#f0f2f5',
             letterSpacing: -0.8, margin: 0,
           }}>
-            {ta.accountTitle}
+            {ta.accountGreeting} <span style={{ color: '#00e5c8' }}>{firstName}</span>
           </h1>
         </motion.div>
 
@@ -215,6 +279,67 @@ export default function AccountPage() {
             >
               <X size={16} />
             </button>
+          </motion.div>
+        )}
+
+
+        {/* ── UPGRADE CTA (trial running low or expired) ── */}
+        {(trialRunningLow || trialExpired) && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            style={{
+              ...glassCard,
+              marginBottom: 24,
+              border: trialExpired
+                ? '1px solid rgba(239, 68, 68, 0.25)'
+                : '1px solid rgba(245, 158, 11, 0.25)',
+            }}
+          >
+            <div style={{
+              ...glassGlow,
+              background: trialExpired
+                ? 'linear-gradient(90deg, transparent, #ef4444, transparent)'
+                : 'linear-gradient(90deg, transparent, #f59e0b, transparent)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: trialExpired ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <AlertTriangle size={20} style={{ color: trialExpired ? '#ef4444' : '#f59e0b' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: 16, fontWeight: 700, color: '#f0f2f5', marginBottom: 4,
+                }}>
+                  {trialExpired ? ta.trialExpiredHeading : ta.trialRunningLow}
+                </div>
+                <div style={{ fontSize: 13, color: '#8b92a5', lineHeight: 1.5, marginBottom: 16 }}>
+                  {trialExpired
+                    ? ta.trialExpiredDesc
+                    : `${trialDaysRemaining} ${ta.trialRunningLowDesc}`
+                  }
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                  <Link to={checkoutUrl} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'linear-gradient(135deg, #00e5c8, #00c4aa)',
+                    color: '#07090e', padding: '10px 22px', borderRadius: 8,
+                    fontWeight: 700, fontSize: 13, textDecoration: 'none',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 229, 200, 0.2)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    {ta.upgradeCta} <ArrowRight size={14} />
+                  </Link>
+                  <span style={{ fontSize: 12, color: '#8b92a5' }}>{ta.upgradePrice}</span>
+                </div>
+              </div>
+            </div>
           </motion.div>
         )}
 
@@ -342,24 +467,46 @@ export default function AccountPage() {
               <div className="account-meta-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: isEditing ? 12 : 0 }}>
                 {/* Coaching niche */}
                 {isEditing ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <Dumbbell size={13} style={{ color: '#00e5c8', opacity: 0.7 }} />
-                    <input
-                      type="text"
+                    <select
                       value={editNiche}
-                      onChange={e => setEditNiche(e.target.value)}
-                      placeholder={ta.coachingNicheLabel}
+                      onChange={e => { setEditNiche(e.target.value); if (e.target.value !== otherLabel) setCustomNiche(''); }}
                       style={{
                         fontSize: 12, color: '#f0f2f5',
                         background: 'rgba(255, 255, 255, 0.04)',
                         border: '1px solid rgba(0, 229, 200, 0.2)',
                         borderRadius: 6, padding: '5px 10px',
-                        outline: 'none', width: 180,
+                        outline: 'none', width: 200,
                         fontFamily: "'Outfit', sans-serif",
+                        cursor: 'pointer',
                       }}
                       onFocus={e => (e.currentTarget.style.borderColor = '#00e5c8')}
                       onBlur={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.2)')}
-                    />
+                    >
+                      <option value="" style={{ background: '#0e121b' }}>{ta.coachingNicheLabel}</option>
+                      {nicheOptions.map(opt => (
+                        <option key={opt} value={opt} style={{ background: '#0e121b' }}>{opt}</option>
+                      ))}
+                    </select>
+                    {editNiche === otherLabel && (
+                      <input
+                        type="text"
+                        value={customNiche}
+                        onChange={e => setCustomNiche(e.target.value)}
+                        placeholder={ta.coachingNicheLabel}
+                        style={{
+                          fontSize: 12, color: '#f0f2f5',
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid rgba(0, 229, 200, 0.2)',
+                          borderRadius: 6, padding: '5px 10px',
+                          outline: 'none', width: 160,
+                          fontFamily: "'Outfit', sans-serif",
+                        }}
+                        onFocus={e => (e.currentTarget.style.borderColor = '#00e5c8')}
+                        onBlur={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.2)')}
+                      />
+                    )}
                   </div>
                 ) : user.coachingNiche ? (
                   <div style={{
@@ -482,7 +629,7 @@ export default function AccountPage() {
             }}>
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${100 - trialPercent}%` }}
+                animate={{ width: `${trialRemainingPercent}%` }}
                 transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
                 style={{
                   height: '100%', borderRadius: 3,
@@ -515,11 +662,185 @@ export default function AccountPage() {
         </motion.div>
 
 
-        {/* ── QUICK ACTIONS ── */}
+        {/* ── PASSWORD CHANGE CARD ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.35 }}
+          style={{ ...glassCard, marginBottom: 24 }}
+        >
+          <div style={{ ...glassGlow }} />
+
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: showPasswordForm ? 20 : 0,
+          }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, color: '#8b92a5',
+              letterSpacing: 1.5, textTransform: 'uppercase',
+            }}>
+              {ta.passwordSection}
+            </span>
+            {!showPasswordForm && (
+              <button
+                onClick={() => { setShowPasswordForm(true); setPasswordError(''); setPasswordSuccess(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: 'none', border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: '#8b92a5', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  padding: '6px 12px', borderRadius: 6, transition: 'all 0.2s',
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#00e5c8'; e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.3)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#8b92a5'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; }}
+              >
+                <Lock size={12} />
+                {ta.changePasswordButton}
+              </button>
+            )}
+          </div>
+
+          {showPasswordForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.3 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
+            >
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#8b92a5', marginBottom: 6, display: 'block' }}>
+                  {ta.currentPasswordLabel}
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#8b92a5', marginBottom: 6, display: 'block' }}>
+                  {ta.newPasswordLabel}
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: '#8b92a5', marginBottom: 6, display: 'block' }}>
+                  {ta.confirmNewPasswordLabel}
+                </label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={e => setConfirmNewPassword(e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                />
+              </div>
+
+              {passwordError && (
+                <div style={{
+                  fontSize: 13, color: '#ef4444',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  <AlertTriangle size={14} />
+                  {passwordError}
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div style={{
+                  fontSize: 13, color: '#22c55e',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  <CheckCircle2 size={14} />
+                  {ta.passwordChanged}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button
+                  onClick={handleChangePassword}
+                  disabled={passwordLoading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    background: 'rgba(0, 229, 200, 0.1)', border: '1px solid rgba(0, 229, 200, 0.3)',
+                    color: '#00e5c8', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    padding: '8px 18px', borderRadius: 8, transition: 'all 0.2s',
+                    fontFamily: "'Outfit', sans-serif",
+                    opacity: passwordLoading ? 0.6 : 1,
+                  }}
+                  onMouseEnter={e => { if (!passwordLoading) e.currentTarget.style.background = 'rgba(0, 229, 200, 0.18)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0, 229, 200, 0.1)'; }}
+                >
+                  <Check size={13} />
+                  {passwordLoading ? ta.changingPassword : ta.changePasswordButton}
+                </button>
+                <button
+                  onClick={() => { setShowPasswordForm(false); setPasswordError(''); setPasswordSuccess(false); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword(''); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'none', border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: '#8b92a5', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    padding: '8px 16px', borderRadius: 8, transition: 'color 0.2s',
+                    fontFamily: "'Outfit', sans-serif",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#f0f2f5')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#8b92a5')}
+                >
+                  <X size={13} />
+                  {ta.cancelEdit}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+
+
+        {/* ── WHAT'S INCLUDED CARD ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
+          style={{ ...glassCard, marginBottom: 24 }}
+        >
+          <div style={{ ...glassGlow }} />
+
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: '#8b92a5',
+            letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20,
+          }}>
+            {ta.whatsIncludedSection}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px' }} className="account-included-grid">
+            {includedItems.map((item, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 8,
+                fontSize: 13, color: '#c0c4cf', lineHeight: 1.5,
+              }}>
+                <CheckCircle2 size={15} style={{ color: '#00e5c8', flexShrink: 0, marginTop: 2 }} />
+                {item}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+
+        {/* ── QUICK ACTIONS + LOG OUT ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.45 }}
           style={{ ...glassCard, marginBottom: 48 }}
         >
           <div style={{ ...glassGlow }} />
@@ -531,7 +852,7 @@ export default function AccountPage() {
             {ta.quickActions}
           </div>
 
-          <div className="account-actions-row" style={{ display: 'flex', gap: 12 }}>
+          <div className="account-actions-row" style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             {/* Open Dashboard */}
             <a
               href="https://app.fitcore.tech"
@@ -553,7 +874,7 @@ export default function AccountPage() {
               {ta.goToDashboard}
             </a>
 
-            {/* Book a Demo */}
+            {/* Book a Call */}
             <a
               href="https://cal.com/fitcore/demo"
               target="_blank"
@@ -574,8 +895,24 @@ export default function AccountPage() {
               <ExternalLink size={15} />
               {ta.bookDemoAction}
             </a>
-
           </div>
+
+          {/* Log Out button — inside the card now */}
+          <button
+            onClick={handleLogout}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              background: 'none', border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: '#8b92a5', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              padding: '12px 20px', borderRadius: 10, transition: 'all 0.2s',
+              fontFamily: "'Outfit', sans-serif",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#8b92a5'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; }}
+          >
+            <LogOut size={14} />
+            {ta.logOut}
+          </button>
         </motion.div>
 
 
@@ -673,6 +1010,9 @@ export default function AccountPage() {
           }
           .account-action-btn {
             width: 100% !important;
+          }
+          .account-included-grid {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>

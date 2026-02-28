@@ -11,6 +11,7 @@ export const en = {
     howItWorks: 'How It Works',
     pricing: 'Pricing',
     bookDemo: 'Book a Call',
+    login: 'Log In',
     startNow: 'Start Now',
   },
 
@@ -273,8 +274,10 @@ export const en = {
     errorPasswordMismatch: 'Passwords do not match.',
     errorEmailExists: 'An account with this email already exists.',
     errorInvalidCredentials: 'Invalid email or password.',
+    errorGeneric: 'Something went wrong. Please try again.',
     // Account
     accountTitle: 'Your Account',
+    accountGreeting: 'Welcome back,',
     welcomeMessage: 'Welcome to FitCore!',
     welcomeSubtext: 'Your 14-day free trial has started. Explore everything.',
     profileSection: 'Profile',
@@ -289,6 +292,27 @@ export const en = {
     trialDaysLeft: 'days left',
     trialStarted: 'Trial started',
     trialEnds: 'Trial ends',
+    // Password
+    passwordSection: 'Change Password',
+    currentPasswordLabel: 'Current Password',
+    newPasswordLabel: 'New Password',
+    confirmNewPasswordLabel: 'Confirm New Password',
+    changePasswordButton: 'Update Password',
+    changingPassword: 'Updating...',
+    passwordChanged: 'Password updated successfully.',
+    errorWrongPassword: 'Current password is incorrect.',
+    errorNewPasswordShort: 'New password must be at least 6 characters.',
+    errorNewPasswordMismatch: 'New passwords do not match.',
+    // What's included
+    whatsIncludedSection: "What's Included in Your Plan",
+    // Upgrade CTA
+    trialRunningLow: 'Your trial ends soon',
+    trialRunningLowDesc: 'days left. Upgrade now to keep your dashboard, clients, and programs.',
+    trialExpiredHeading: 'Your trial has ended',
+    trialExpiredDesc: 'Upgrade to keep full access to your coaching platform.',
+    upgradeCta: 'Upgrade Now',
+    upgradePrice: '$49/month after $100 one-time setup',
+    // Quick Actions
     quickActions: 'Quick Actions',
     goToDashboard: 'Open Dashboard',
     bookDemoAction: 'Book a Call',

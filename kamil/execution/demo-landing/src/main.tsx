@@ -40,9 +40,16 @@ function LangUrlSync() {
   return null;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
+
 function AppRoutes() {
   return (
     <>
+      <ScrollToTop />
       <LangUrlSync />
       <Routes>
         {/* English (default) */}

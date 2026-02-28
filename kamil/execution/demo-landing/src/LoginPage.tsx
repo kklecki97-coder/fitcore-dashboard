@@ -13,7 +13,8 @@ export default function LoginPage() {
   const ta = t.auth;
 
   // Where to go after login (defaults to /account, or wherever they came from)
-  const from = (location.state as { from?: string })?.from || (lang === 'pl' ? '/pl/account' : '/account');
+  const rawFrom = (location.state as { from?: string })?.from || '';
+  const from = rawFrom.startsWith('/') ? rawFrom : (lang === 'pl' ? '/pl/account' : '/account');
 
   // ── Redirect if already logged in ──
   useEffect(() => {
@@ -28,7 +29,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showForgotNote, setShowForgotNote] = useState(false);
 
   // ── Focus state for input borders ──
   const [emailFocused, setEmailFocused] = useState(false);
@@ -42,11 +42,17 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setShowForgotNote(false);
 
     // Validate required fields
     if (!email.trim() || !password.trim()) {
       setError(ta.errorRequired);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setError(ta.errorEmailInvalid);
       return;
     }
 
@@ -271,43 +277,15 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Forgot password */}
-          <div style={{ marginTop: -8 }}>
-            <button
-              type="button"
-              onClick={() => setShowForgotNote(prev => !prev)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#00e5c8',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                padding: 0,
-                fontFamily: "'Outfit', sans-serif",
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-            >
-              {ta.forgotPassword}
-            </button>
-            {showForgotNote && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                transition={{ duration: 0.25 }}
-                style={{
-                  fontSize: '12px',
-                  color: '#8b92a5',
-                  marginTop: 6,
-                  lineHeight: 1.5,
-                }}
-              >
-                {ta.forgotPasswordNote}
-              </motion.p>
-            )}
-          </div>
+          {/* Forgot password note */}
+          <p style={{
+            fontSize: '12px',
+            color: '#525a6e',
+            marginTop: -8,
+            lineHeight: 1.5,
+          }}>
+            {ta.forgotPasswordNote}
+          </p>
 
           {/* Error message */}
           {error && (

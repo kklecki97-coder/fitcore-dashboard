@@ -43,6 +43,7 @@ interface AuthContextValue {
   register: (data: RegisterData) => Promise<AuthResult>;
   logout: () => void;
   updateProfile: (data: Partial<Pick<AuthUser, 'fullName' | 'coachingNiche' | 'clientCount'>>) => void;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
 }
 
 // ── localStorage keys ──
@@ -171,6 +172,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(updated);
   }, [user]);
 
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
+    await new Promise(r => setTimeout(r, 400));
+
+    if (!user) return { success: false, error: 'notLoggedIn' };
+    if (user.passwordHash !== btoa(currentPassword)) {
+      return { success: false, error: 'wrongPassword' };
+    }
+
+    const users = getUsers();
+    const idx = users.findIndex(u => u.id === user.id);
+    if (idx === -1) return { success: false, error: 'notFound' };
+
+    const updated = { ...users[idx], passwordHash: btoa(newPassword) };
+    users[idx] = updated;
+    saveUsers(users);
+    setUser(updated);
+
+    return { success: true };
+  }, [user]);
+
   // Sync user state if localStorage changes in another tab
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
@@ -189,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, isTrialActive, trialDaysRemaining, login, register, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, isTrialActive, trialDaysRemaining, login, register, logout, updateProfile, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

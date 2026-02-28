@@ -13,6 +13,7 @@ export const pl: Translations = {
     howItWorks: 'Jak to działa',
     pricing: 'Cennik',
     bookDemo: 'Umów rozmowę',
+    login: 'Zaloguj się',
     startNow: 'Zacznij teraz',
   },
 
@@ -275,8 +276,10 @@ export const pl: Translations = {
     errorPasswordMismatch: 'Hasła nie są identyczne.',
     errorEmailExists: 'Konto z tym adresem email już istnieje.',
     errorInvalidCredentials: 'Nieprawidłowy email lub hasło.',
+    errorGeneric: 'Coś poszło nie tak. Spróbuj ponownie.',
     // Account
     accountTitle: 'Twoje konto',
+    accountGreeting: 'Witaj ponownie,',
     welcomeMessage: 'Witaj w FitCore!',
     welcomeSubtext: 'Twój 14-dniowy darmowy okres próbny wystartował. Testuj wszystko.',
     profileSection: 'Profil',
@@ -291,6 +294,27 @@ export const pl: Translations = {
     trialDaysLeft: 'dni pozostało',
     trialStarted: 'Próba rozpoczęta',
     trialEnds: 'Próba kończy się',
+    // Password
+    passwordSection: 'Zmień hasło',
+    currentPasswordLabel: 'Aktualne hasło',
+    newPasswordLabel: 'Nowe hasło',
+    confirmNewPasswordLabel: 'Potwierdź nowe hasło',
+    changePasswordButton: 'Zmień hasło',
+    changingPassword: 'Zmienianie...',
+    passwordChanged: 'Hasło zostało zmienione.',
+    errorWrongPassword: 'Aktualne hasło jest nieprawidłowe.',
+    errorNewPasswordShort: 'Nowe hasło musi mieć co najmniej 6 znaków.',
+    errorNewPasswordMismatch: 'Nowe hasła nie są identyczne.',
+    // What's included
+    whatsIncludedSection: 'Co zawiera Twój plan',
+    // Upgrade CTA
+    trialRunningLow: 'Twój okres próbny dobiega końca',
+    trialRunningLowDesc: 'dni pozostało. Ulepsz teraz, aby zachować dashboard, klientów i programy.',
+    trialExpiredHeading: 'Twój okres próbny się skończył',
+    trialExpiredDesc: 'Ulepsz, aby zachować pełny dostęp do platformy coachingowej.',
+    upgradeCta: 'Ulepsz teraz',
+    upgradePrice: '199 zł/mies. po jednorazowej opłacie 399 zł',
+    // Quick Actions
     quickActions: 'Szybkie akcje',
     goToDashboard: 'Otwórz dashboard',
     bookDemoAction: 'Umów rozmowę',

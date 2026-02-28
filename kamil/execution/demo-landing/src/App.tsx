@@ -200,6 +200,7 @@ export default function App() {
 
   const checkoutUrl = lang === 'pl' ? '/pl/checkout' : '/checkout';
   const accountUrl = lang === 'pl' ? '/pl/account' : '/account';
+  const loginUrl = lang === 'pl' ? '/pl/login' : '/login';
   const { isLoggedIn } = useAuth();
 
   const handleLangToggle = () => {
@@ -278,12 +279,12 @@ export default function App() {
           maxWidth: '100%',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 36, height: 36, borderRadius: '50%' }} />
           <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: -0.5, color: 'var(--text-primary)' }}>
             Fit<span style={{ color: 'var(--accent-primary)' }}>Core</span>
           </div>
-        </div>
+        </a>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }} className="nav-desktop">
           {navLinks.map(link => (
@@ -315,6 +316,15 @@ export default function App() {
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px var(--accent-primary-glow)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
           >{isLoggedIn ? t.auth.myAccount : t.nav.startNow} <ArrowRight size={14} /></Link>
+          {!isLoggedIn && (
+            <Link to={loginUrl} style={{
+              color: 'var(--text-secondary)', textDecoration: 'none', fontSize: 14, fontWeight: 500,
+              transition: 'color 0.2s', letterSpacing: 0.3,
+            }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+            >{t.nav.login}</Link>
+          )}
           <button onClick={handleLangToggle} style={{
             background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
             borderRadius: 'var(--radius-sm)', padding: '8px 14px', cursor: 'pointer',
@@ -361,6 +371,12 @@ export default function App() {
               color: 'var(--accent-primary)', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 600, fontSize: 14, textDecoration: 'none', textAlign: 'center',
             }}>{t.nav.bookDemo}</a>
+            {!isLoggedIn && (
+              <Link to={loginUrl} onClick={() => setMobileMenuOpen(false)} style={{
+                color: 'var(--text-secondary)', textDecoration: 'none', fontSize: 16, fontWeight: 500, padding: '8px 0',
+                textAlign: 'center',
+              }}>{t.nav.login}</Link>
+            )}
             <Link to={isLoggedIn ? accountUrl : checkoutUrl} onClick={() => setMobileMenuOpen(false)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
