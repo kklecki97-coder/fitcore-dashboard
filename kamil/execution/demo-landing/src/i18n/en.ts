@@ -10,17 +10,17 @@ export const en = {
     features: 'Features',
     howItWorks: 'How It Works',
     pricing: 'Pricing',
-    bookDemo: 'Book a Demo',
+    bookDemo: 'Book a Call',
     startNow: 'Start Now',
   },
 
   hero: {
-    badge: 'Built for Fitness Coaches',
-    title1: 'Your coaching is elite.',
-    title2: 'Your business should look like it.',
-    subtitle: 'Your clients get Google Sheets and WhatsApp voice notes. You deserve a platform that matches your expertise.',
+    badge: 'Custom-Built for Your Coaching Business',
+    title1: 'Your Clients, Programs & Revenue',
+    title2: 'in One Dashboard',
+    subtitle: 'Everything you need to manage clients, deliver world-class programs, and grow your revenue — without the admin chaos.',
     ctaPrimary: 'See What You Get',
-    ctaSecondary: 'Book a Demo',
+    ctaSecondary: 'Book a Call',
   },
 
   pain: {
@@ -148,7 +148,7 @@ export const en = {
     perMonth: '/month',
     cancelNote: "Only if you decide to keep it. Cancel anytime. No contracts.",
     ctaPrimary: 'Start Now',
-    ctaSecondary: 'Book a Demo First',
+    ctaSecondary: 'Book a Call First',
     noCreditCard: 'No credit card required',
     includedLabel: 'Everything included',
     includedItems: [
@@ -223,12 +223,12 @@ export const en = {
       { q: 'What is the $100 setup fee for?', a: "It's a one-time payment that gives you permanent access to the FitCore platform \u2014 client management, workout builder, inbox, analytics, check-ins, and everything else." },
       { q: 'Can I cancel the monthly subscription anytime?', a: 'Yes. No contracts, no cancellation fees. Cancel whenever you want and keep using the platform until the end of your billing period.' },
       { q: 'Is there a limit on how many clients I can manage?', a: "No. Whether you have 10 clients or 80, the price is the same. Your growth doesn't cost you more." },
-      { q: 'What if I want to talk to someone first?', a: 'No problem. You can book a free 15-minute demo call instead \u2014 no commitment, just a walkthrough of the platform.' },
+      { q: 'What if I want to talk to someone first?', a: 'No problem. You can book a free 15-minute call instead \u2014 no commitment, just a walkthrough of the platform.' },
     ],
     bottomHeading: 'Ready to run your coaching like a real business?',
     bottomSubheading: '14 days free. No credit card. No risk.',
     bottomCta: 'Start Free Trial',
-    bottomSecondary: 'or book a free demo first \u2192',
+    bottomSecondary: 'or book a free call first \u2192',
     copyright: '\u00a9 2026 FitCore. All rights reserved.',
   },
   auth: {
@@ -291,7 +291,7 @@ export const en = {
     trialEnds: 'Trial ends',
     quickActions: 'Quick Actions',
     goToDashboard: 'Open Dashboard',
-    bookDemoAction: 'Book a Demo',
+    bookDemoAction: 'Book a Call',
     logOut: 'Log Out',
     deleteAccount: 'Delete Account',
     deleteAccountConfirm: 'Are you sure? This will permanently delete your account.',
@@ -302,6 +302,7 @@ export const en = {
     // Nav
     myAccount: 'My Account',
     goToAccount: 'Go to Your Account',
+    backToHome: 'Back to FitCore',
   },
 };
 

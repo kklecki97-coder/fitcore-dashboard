@@ -575,25 +575,6 @@ export default function AccountPage() {
               {ta.bookDemoAction}
             </a>
 
-            {/* Log Out */}
-            <button
-              onClick={handleLogout}
-              className="account-action-btn"
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                background: 'rgba(239, 68, 68, 0.06)',
-                border: '1px solid rgba(239, 68, 68, 0.15)',
-                color: '#ef4444', padding: '14px 20px', borderRadius: 10,
-                fontWeight: 600, fontSize: 14, cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: "'Outfit', sans-serif",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              <LogOut size={15} />
-              {ta.logOut}
-            </button>
           </div>
         </motion.div>
 

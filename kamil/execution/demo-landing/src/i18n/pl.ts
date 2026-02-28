@@ -12,7 +12,7 @@ export const pl: Translations = {
     features: 'Funkcje',
     howItWorks: 'Jak to działa',
     pricing: 'Cennik',
-    bookDemo: 'Umów demo',
+    bookDemo: 'Umów rozmowę',
     startNow: 'Zacznij teraz',
   },
 
@@ -22,7 +22,7 @@ export const pl: Translations = {
     title2: 'Twój biznes powinien też.',
     subtitle: 'Wysyłasz treningi przez WhatsApp i trzymasz dane w arkuszach. Twoi klienci to widzą. I wyceniają Cię na tej podstawie.',
     ctaPrimary: 'Zobacz co dostajesz',
-    ctaSecondary: 'Umów demo',
+    ctaSecondary: 'Umów rozmowę',
   },
 
   pain: {
@@ -150,7 +150,7 @@ export const pl: Translations = {
     perMonth: '/miesiąc',
     cancelNote: 'Płacisz tylko jeśli zdecydujesz się zostać. Anulujesz kiedy chcesz. Żadnych umów.',
     ctaPrimary: 'Zacznij teraz — za darmo',
-    ctaSecondary: 'Wolisz najpierw zobaczyć? Umów demo',
+    ctaSecondary: 'Wolisz najpierw porozmawiać? Umów rozmowę',
     noCreditCard: 'Bez karty kredytowej',
     includedLabel: 'Wszystko w cenie — bez ukrytych opłat',
     includedItems: [
@@ -230,7 +230,7 @@ export const pl: Translations = {
     bottomHeading: 'Gotowy, żeby prowadzić coaching jak prawdziwy biznes?',
     bottomSubheading: '14 dni za darmo. Bez karty. Bez ryzyka. Bez wymówek.',
     bottomCta: 'Zacznij za darmo — teraz',
-    bottomSecondary: 'lub najpierw umów darmowe demo →',
+    bottomSecondary: 'lub najpierw umów darmową rozmowę →',
     copyright: '© 2026 FitCore. Wszelkie prawa zastrzeżone.',
   },
   auth: {
@@ -293,7 +293,7 @@ export const pl: Translations = {
     trialEnds: 'Próba kończy się',
     quickActions: 'Szybkie akcje',
     goToDashboard: 'Otwórz dashboard',
-    bookDemoAction: 'Umów demo',
+    bookDemoAction: 'Umów rozmowę',
     logOut: 'Wyloguj się',
     deleteAccount: 'Usuń konto',
     deleteAccountConfirm: 'Na pewno? To trwale usunie Twoje konto.',
@@ -304,5 +304,6 @@ export const pl: Translations = {
     // Nav
     myAccount: 'Moje konto',
     goToAccount: 'Przejdź do konta',
+    backToHome: 'Wróć do FitCore',
   },
 };

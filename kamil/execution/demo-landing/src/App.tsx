@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import {
   Users, MessageSquare, Dumbbell, BarChart3,
@@ -305,7 +305,7 @@ export default function App() {
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; }}
           >{t.nav.bookDemo}</a>
-          <a href={isLoggedIn ? accountUrl : checkoutUrl} style={{
+          <Link to={isLoggedIn ? accountUrl : checkoutUrl} style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
             color: '#07090e', padding: '10px 22px', borderRadius: 'var(--radius-sm)',
@@ -314,7 +314,7 @@ export default function App() {
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px var(--accent-primary-glow)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >{isLoggedIn ? t.auth.myAccount : t.nav.startNow} <ArrowRight size={14} /></a>
+          >{isLoggedIn ? t.auth.myAccount : t.nav.startNow} <ArrowRight size={14} /></Link>
           <button onClick={handleLangToggle} style={{
             background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
             borderRadius: 'var(--radius-sm)', padding: '8px 14px', cursor: 'pointer',
@@ -361,12 +361,12 @@ export default function App() {
               color: 'var(--accent-primary)', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 600, fontSize: 14, textDecoration: 'none', textAlign: 'center',
             }}>{t.nav.bookDemo}</a>
-            <a href={isLoggedIn ? accountUrl : checkoutUrl} onClick={() => setMobileMenuOpen(false)} style={{
+            <Link to={isLoggedIn ? accountUrl : checkoutUrl} onClick={() => setMobileMenuOpen(false)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 700, fontSize: 14, textDecoration: 'none', textAlign: 'center',
-            }}>{isLoggedIn ? t.auth.myAccount : t.nav.startNow} <ArrowRight size={15} /></a>
+            }}>{isLoggedIn ? t.auth.myAccount : t.nav.startNow} <ArrowRight size={15} /></Link>
             <button onClick={() => { handleLangToggle(); setMobileMenuOpen(false); }} style={{
               background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
               borderRadius: 'var(--radius-sm)', padding: '12px 24px', cursor: 'pointer',
@@ -1040,7 +1040,7 @@ export default function App() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <a href={checkoutUrl} style={{
+                  <Link to={checkoutUrl} style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                     color: '#07090e', padding: '15px 32px', borderRadius: 'var(--radius-md)',
@@ -1052,7 +1052,7 @@ export default function App() {
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
                     {t.pricing.ctaPrimary} <ArrowRight size={16} />
-                  </a>
+                  </Link>
                   <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
                     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     background: 'transparent',

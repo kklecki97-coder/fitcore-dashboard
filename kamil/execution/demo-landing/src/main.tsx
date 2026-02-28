@@ -60,6 +60,7 @@ function AppRoutes() {
         <Route path="/pl/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
         {/* Catch-all */}
         <Route path="/pl/*" element={<Navigate to="/pl/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

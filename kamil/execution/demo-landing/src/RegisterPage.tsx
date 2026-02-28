@@ -213,7 +213,7 @@ export default function RegisterPage() {
             style={{ width: 28, height: 28, borderRadius: '50%' }}
           />
           <ArrowLeft size={14} />
-          <span>Back to Fit<span style={{ color: '#00e5c8' }}>Core</span></span>
+          <span>{ta.backToHome}</span>
         </Link>
       </motion.div>
 

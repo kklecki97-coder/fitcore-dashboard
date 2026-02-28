@@ -223,7 +223,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* CTA */}
-              <a href={isLoggedIn ? accountUrl : registerUrl} style={{
+              <Link to={isLoggedIn ? accountUrl : registerUrl} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                 color: '#07090e', padding: '14px 28px', borderRadius: 'var(--radius-md)',
@@ -235,7 +235,7 @@ export default function CheckoutPage() {
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
               >
                 {isLoggedIn ? t.auth.goToAccount : tc.startFreeTrial} <ArrowRight size={18} />
-              </a>
+              </Link>
 
               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 10 }}>
                 {tc.noCreditCard}
@@ -429,7 +429,7 @@ export default function CheckoutPage() {
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <a href={isLoggedIn ? accountUrl : registerUrl} style={{
+                <Link to={isLoggedIn ? accountUrl : registerUrl} style={{
                   display: 'inline-flex', alignItems: 'center', gap: 10,
                   background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
                   color: '#07090e', padding: '16px 40px', borderRadius: 'var(--radius-md)',
@@ -440,7 +440,7 @@ export default function CheckoutPage() {
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   {isLoggedIn ? t.auth.goToAccount : tc.bottomCta} <ArrowRight size={18} />
-                </a>
+                </Link>
                 <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
                   fontSize: 14, color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.2s',
                   fontWeight: 500,

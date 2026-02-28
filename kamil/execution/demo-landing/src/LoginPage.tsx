@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useLang } from './i18n';
@@ -7,16 +7,20 @@ import { useAuth } from './auth';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { lang, t } = useLang();
   const { login, isLoggedIn } = useAuth();
   const ta = t.auth;
 
+  // Where to go after login (defaults to /account, or wherever they came from)
+  const from = (location.state as { from?: string })?.from || (lang === 'pl' ? '/pl/account' : '/account');
+
   // ── Redirect if already logged in ──
   useEffect(() => {
     if (isLoggedIn) {
-      navigate(lang === 'pl' ? '/pl/account' : '/account', { replace: true });
+      navigate(from, { replace: true });
     }
-  }, [isLoggedIn, lang, navigate]);
+  }, [isLoggedIn, from, navigate]);
 
   // ── Form state ──
   const [email, setEmail] = useState('');
@@ -50,7 +54,7 @@ export default function LoginPage() {
     try {
       const result = await login(email.trim(), password);
       if (result.success) {
-        navigate(lang === 'pl' ? '/pl/account' : '/account', { replace: true });
+        navigate(from, { replace: true });
       } else {
         setError(ta.errorInvalidCredentials);
       }
