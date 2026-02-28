@@ -16,6 +16,7 @@ import jsPDF from 'jspdf';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn } from '../types';
 
 interface ClientDetailPageProps {
@@ -34,8 +35,9 @@ interface ClientDetailPageProps {
 }
 
 // @ts-ignore — onAddCheckIn scaffolded for upcoming check-in-from-coach feature
-export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, backLabel = 'Back to Clients', onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
+  const { lang, t } = useLang();
   const client = clients.find(c => c.id === clientId);
 
   // All hooks must be called before any early return
@@ -73,6 +75,8 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
 
   if (!client) return null;
 
+  const dateLocale = lang === 'pl' ? 'pl-PL' : 'en-US';
+
   const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
   const weightData = client.metrics.weight.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));
   const bfData = client.metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
@@ -98,18 +102,30 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
   const recoveryScore = Math.min(100, 55 + (client.streak * 1.2) + (client.progress * 0.15));
 
   const radarData = [
-    { metric: 'Strength', value: Math.min(100, (client.metrics.benchPress[client.metrics.benchPress.length - 1] / 120) * 100) },
-    { metric: 'Endurance', value: enduranceScore },
-    { metric: 'Consistency', value: Math.min(100, client.streak * 3.5) },
-    { metric: 'Nutrition', value: nutritionScore },
-    { metric: 'Recovery', value: recoveryScore },
-    { metric: 'Progress', value: client.progress },
+    { metric: t.clientDetail.radarStrength, value: Math.min(100, (client.metrics.benchPress[client.metrics.benchPress.length - 1] / 120) * 100) },
+    { metric: t.clientDetail.radarEndurance, value: enduranceScore },
+    { metric: t.clientDetail.radarConsistency, value: Math.min(100, client.streak * 3.5) },
+    { metric: t.clientDetail.radarNutrition, value: nutritionScore },
+    { metric: t.clientDetail.radarRecovery, value: recoveryScore },
+    { metric: t.clientDetail.radarProgress, value: client.progress },
   ];
 
   const planColors: Record<string, { color: string; bg: string }> = {
     Elite: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
     Premium: { color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
     Basic: { color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
+  };
+
+  const planLabelMap: Record<string, string> = {
+    Basic: t.clients.basic,
+    Premium: t.clients.premium,
+    Elite: t.clients.elite,
+  };
+
+  const statusLabelMap: Record<string, string> = {
+    active: t.clients.active,
+    paused: t.clients.paused,
+    pending: t.clients.pending,
   };
 
   const assignedPrograms = programs.filter(p => p.clientIds.includes(client.id));
@@ -137,21 +153,21 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     });
     setMessageText('');
     setActiveModal(null);
-    flashSaved('Message sent');
+    flashSaved(t.clientDetail.messageSent);
   };
 
   const handleSavePlan = () => {
     const rateMap: Record<string, number> = { Basic: 99, Premium: 199, Elite: 299 };
     const changes: string[] = [];
-    if (editPlan !== client.plan) changes.push(`Plan: ${client.plan} → ${editPlan}`);
-    if (editStatus !== client.status) changes.push(`Status: ${client.status} → ${editStatus}`);
-    const desc = changes.length > 0 ? changes.join(', ') : 'Plan saved (no changes)';
+    if (editPlan !== client.plan) changes.push(t.clientDetail.planChanged(planLabelMap[client.plan], planLabelMap[editPlan]));
+    if (editStatus !== client.status) changes.push(t.clientDetail.statusChanged(statusLabelMap[client.status], statusLabelMap[editStatus]));
+    const desc = changes.length > 0 ? changes.join(', ') : t.clientDetail.planSaved;
     onUpdateClient(client.id, {
       plan: editPlan, status: editStatus, monthlyRate: rateMap[editPlan],
       activityLog: [{ type: 'plan', description: desc, date: new Date().toISOString() }, ...(client.activityLog || [])],
     });
     setActiveModal(null);
-    flashSaved('Plan updated');
+    flashSaved(t.clientDetail.planUpdated);
   };
 
   const handleSaveNotes = () => {
@@ -165,7 +181,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     });
     setEditNotes('');
     setShowNoteInput(false);
-    flashSaved('Note added');
+    flashSaved(t.clientDetail.noteAdded);
   };
 
   const handleToggleKeyNote = (index: number) => {
@@ -191,7 +207,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     onUpdateClient(client.id, updates);
     setMetricsForm({ weight: '', bodyFat: '', benchPress: '', squat: '', deadlift: '' });
     setActiveModal(null);
-    flashSaved('Metrics logged');
+    flashSaved(t.clientDetail.metricsLogged);
   };
 
   const handleToggleProgram = (programId: string) => {
@@ -226,7 +242,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(120);
-    doc.text(`Generated ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`, 14, y);
+    doc.text(`Generated ${new Date().toLocaleDateString(dateLocale, { month: 'long', day: 'numeric', year: 'numeric' })}`, 14, y);
     y += 14;
 
     // Client Info
@@ -314,7 +330,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       const recentActivity = client.activityLog.slice(0, 10);
       recentActivity.forEach(a => {
         if (y > 275) { doc.addPage(); y = 20; }
-        const date = new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const date = new Date(a.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
         doc.text(`${date}  —  ${a.description}`, 14, y);
         y += 5;
       });
@@ -335,7 +351,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       client.notesHistory.forEach(nh => {
         if (y > 270) { doc.addPage(); y = 20; }
         doc.setFont('helvetica', 'bold');
-        doc.text(new Date(nh.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), 14, y);
+        doc.text(new Date(nh.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' }), 14, y);
         y += 5;
         doc.setFont('helvetica', 'normal');
         const lines = doc.splitTextToSize(nh.text, pageWidth - 28);
@@ -380,7 +396,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     if (hrs < 24) return `${hrs}h ago`;
     const days = Math.floor(hrs / 24);
     if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -429,11 +445,11 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               </div>
               <div style={{ ...styles.profileTags, flexWrap: 'wrap' }}>
                 <span style={{ ...styles.planTag, color: planColors[client.plan].color, background: planColors[client.plan].bg }}>
-                  {client.plan}
+                  {planLabelMap[client.plan]}
                 </span>
                 <span style={styles.statusTag}>
                   {client.status === 'active' && <Flame size={12} color="var(--accent-success)" />}
-                  <span style={{ textTransform: 'capitalize' }}>{client.status}</span>
+                  <span style={{ textTransform: 'capitalize' }}>{statusLabelMap[client.status]}</span>
                 </span>
                 {client.streak > 0 && (
                   <span style={styles.streakTag}>
@@ -454,19 +470,19 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
           <div style={{ ...styles.profileActions, ...(isMobile ? { width: '100%', flexWrap: 'wrap' } : {}) }}>
             <button onClick={() => setActiveModal('message')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <MessageSquare size={15} />
-              Message
+              {t.clientDetail.sendMessage}
             </button>
             <button onClick={() => setActiveModal('editPlan')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Edit3 size={15} />
-              Edit Plan
+              {t.clientDetail.editPlanStatus}
             </button>
             <button onClick={() => { setShowNoteInput(false); setEditNotes(''); setActiveModal('notes'); }} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <FileText size={15} />
-              Notes
+              {t.clientDetail.notes}
             </button>
             <button onClick={() => setActiveModal('assignProgram')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
               <Dumbbell size={15} />
-              Program
+              {t.clientDetail.assignProgram}
             </button>
             <button onClick={handleExportReport} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-primary)' }}>
               <Download size={15} />
@@ -479,7 +495,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       {/* Key Metrics */}
       <div style={{ ...styles.metricsRow, ...(isMobile ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' } : {}) }}>
         <GlassCard delay={0.1} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Current Weight</div>
+          <div style={styles.metricLabel}>{t.clientDetail.weight}</div>
           <div style={styles.metricValue}>
             {latestWeight} <span style={styles.metricUnit}>kg</span>
           </div>
@@ -489,7 +505,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
           </div>
         </GlassCard>
         <GlassCard delay={0.12} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Body Fat</div>
+          <div style={styles.metricLabel}>{t.clientDetail.bodyFat}</div>
           <div style={styles.metricValue}>
             {latestBF} <span style={styles.metricUnit}>%</span>
           </div>
@@ -531,7 +547,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       <div style={{ ...styles.chartsGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
         {/* Weight + Body Fat */}
         <GlassCard delay={0.2}>
-          <h3 style={styles.chartTitle}>Weight & Body Fat Trend</h3>
+          <h3 style={styles.chartTitle}>{t.clientDetail.weight} & {t.clientDetail.bodyFat} Trend</h3>
           <div style={{ height: 240, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weightData}>
@@ -544,7 +560,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     fontSize: '18px', fontFamily: 'Outfit',
                   }}
                 />
-                <Line type="monotone" dataKey="value" stroke="#00e5c8" strokeWidth={2.5} dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} name="Weight (kg)" />
+                <Line type="monotone" dataKey="value" stroke="#00e5c8" strokeWidth={2.5} dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} name={`${t.clientDetail.weight} (kg)`} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -552,7 +568,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
 
         {/* Lifts */}
         <GlassCard delay={0.25}>
-          <h3 style={styles.chartTitle}>Strength Progression</h3>
+          <h3 style={styles.chartTitle}>{t.clientDetail.strengthProfile}</h3>
           <div style={{ height: 240, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={liftData}>
@@ -565,16 +581,16 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     fontSize: '18px', fontFamily: 'Outfit',
                   }}
                 />
-                <Line type="monotone" dataKey="bench" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name="Bench (kg)" />
-                <Line type="monotone" dataKey="squat" stroke="#00e5c8" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name="Squat (kg)" />
-                <Line type="monotone" dataKey="deadlift" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name="Deadlift (kg)" />
+                <Line type="monotone" dataKey="bench" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name={`${t.clientDetail.benchPress} (kg)`} />
+                <Line type="monotone" dataKey="squat" stroke="#00e5c8" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name={`${t.clientDetail.squat} (kg)`} />
+                <Line type="monotone" dataKey="deadlift" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name={`${t.clientDetail.deadlift} (kg)`} />
               </LineChart>
             </ResponsiveContainer>
           </div>
           <div style={styles.chartLegend}>
-            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#6366f1' }} />Bench</span>
-            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#00e5c8' }} />Squat</span>
-            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#f59e0b' }} />Deadlift</span>
+            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#6366f1' }} />{t.clientDetail.benchPress}</span>
+            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#00e5c8' }} />{t.clientDetail.squat}</span>
+            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#f59e0b' }} />{t.clientDetail.deadlift}</span>
           </div>
         </GlassCard>
       </div>
@@ -610,7 +626,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         const lastDay = new Date(calYear, calMonth + 1, 0);
         const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
         const daysInMonth = lastDay.getDate();
-        const monthName = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const monthName = firstDay.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' });
 
         // Build 6-row x 7-col grid (pad with nulls)
         const calendarCells: (number | null)[] = [];
@@ -794,7 +810,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                 <h3 style={styles.chartTitle}>Check-In History</h3>
                 {nextScheduled && (
                   <p style={styles.trainingSubtitle}>
-                    Next: {new Date(nextScheduled.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    Next: {new Date(nextScheduled.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
                   </p>
                 )}
               </div>
@@ -854,7 +870,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   >
                     <div style={styles.checkInDate}>
                       <Calendar size={13} color={statusColor} />
-                      <span>{new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span>{new Date(ci.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
 
                     {ci.status === 'completed' && (
@@ -907,7 +923,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         <GlassCard delay={0.28}>
           <div style={styles.trainingSectionHeader}>
             <div>
-              <h3 style={styles.chartTitle}>Recent Activity</h3>
+              <h3 style={styles.chartTitle}>{t.clientDetail.activityLog}</h3>
               <p style={styles.trainingSubtitle}>{client.activityLog.length} events</p>
             </div>
           </div>
@@ -941,7 +957,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
         {/* Performance Radar */}
         <GlassCard delay={0.3}>
-          <h3 style={styles.chartTitle}>Performance Profile</h3>
+          <h3 style={styles.chartTitle}>{t.clientDetail.progressTracker}</h3>
           <div style={{ height: 260, marginTop: '8px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
@@ -985,7 +1001,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
 
         {/* Body Fat Chart */}
         <GlassCard delay={0.4}>
-          <h3 style={styles.chartTitle}>Body Fat Trend</h3>
+          <h3 style={styles.chartTitle}>{t.clientDetail.bodyFat} Trend</h3>
           <div style={{ height: 200, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={bfData}>
@@ -997,7 +1013,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     borderRadius: '10px', fontSize: '18px',
                   }}
                 />
-                <Line type="monotone" dataKey="value" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 4, fill: '#ec4899', strokeWidth: 0 }} name="Body Fat %" />
+                <Line type="monotone" dataKey="value" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 4, fill: '#ec4899', strokeWidth: 0 }} name={`${t.clientDetail.bodyFat} %`} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -1027,10 +1043,10 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               {/* Modal Header */}
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>
-                  {activeModal === 'message' && 'Send Message'}
-                  {activeModal === 'editPlan' && 'Edit Plan'}
-                  {activeModal === 'notes' && 'Coach Notes'}
-                  {activeModal === 'assignProgram' && 'Assign Program'}
+                  {activeModal === 'message' && t.clientDetail.sendMessage}
+                  {activeModal === 'editPlan' && t.clientDetail.editPlanStatus}
+                  {activeModal === 'notes' && t.clientDetail.notes}
+                  {activeModal === 'assignProgram' && t.clientDetail.assignProgram}
                   {activeModal === 'viewCheckIn' && 'Check-In Details'}
                 </h3>
                 <button onClick={() => setActiveModal(null)} style={styles.closeBtn}>
@@ -1051,7 +1067,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     </div>
                   </div>
                   <textarea
-                    placeholder="Type your message..."
+                    placeholder={t.clientDetail.newMessage}
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
                     style={styles.modalTextarea}
@@ -1059,13 +1075,13 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     autoFocus
                   />
                   <div style={styles.modalActions}>
-                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
+                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>{t.clientDetail.cancel}</button>
                     <button
                       onClick={handleSendMessage}
                       style={{ ...styles.modalPrimaryBtn, opacity: messageText.trim() ? 1 : 0.5 }}
                     >
                       <Send size={14} />
-                      Send
+                      {t.clientDetail.send}
                     </button>
                   </div>
                 </div>
@@ -1075,7 +1091,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
               {activeModal === 'editPlan' && (
                 <div style={styles.modalBody}>
                   <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Plan Tier</span>
+                    <span style={styles.modalLabel}>{t.clientDetail.plan}</span>
                     <div style={styles.modalPlanPicker}>
                       {(['Basic', 'Premium', 'Elite'] as const).map((p) => {
                         const isActive = editPlan === p;
@@ -1090,7 +1106,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                               ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'var(--bg-subtle)' } : {}),
                             }}
                           >
-                            <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
+                            <div style={{ fontWeight: 600, fontSize: '18px' }}>{planLabelMap[p]}</div>
                             <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
                           </button>
                         );
@@ -1099,7 +1115,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   </div>
 
                   <div style={styles.modalField}>
-                    <span style={styles.modalLabel}>Status</span>
+                    <span style={styles.modalLabel}>{t.clientDetail.status}</span>
                     <div style={styles.modalStatusPicker}>
                       {(['active', 'paused', 'pending'] as const).map((s) => {
                         const isActive = editStatus === s;
@@ -1113,7 +1129,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                               ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'var(--bg-subtle)' } : {}),
                             }}
                           >
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                            {statusLabelMap[s]}
                           </button>
                         );
                       })}
@@ -1121,10 +1137,10 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   </div>
 
                   <div style={styles.modalActions}>
-                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>Cancel</button>
+                    <button onClick={() => setActiveModal(null)} style={styles.modalCancelBtn}>{t.clientDetail.cancel}</button>
                     <button onClick={handleSavePlan} style={styles.modalPrimaryBtn}>
                       <Save size={14} />
-                      Save Changes
+                      {t.clientDetail.save}
                     </button>
                   </div>
                 </div>
@@ -1157,14 +1173,14 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                           onClick={() => { setShowNoteInput(false); setEditNotes(''); }}
                           style={styles.modalCancelBtn}
                         >
-                          Cancel
+                          {t.clientDetail.cancel}
                         </button>
                         <button
                           onClick={handleSaveNotes}
                           style={{ ...styles.modalPrimaryBtn, opacity: editNotes.trim() ? 1 : 0.5 }}
                         >
                           <Save size={14} />
-                          Save
+                          {t.clientDetail.save}
                         </button>
                       </div>
                     </div>
@@ -1179,7 +1195,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                         </span>
                         <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
                           <Star size={10} style={{ verticalAlign: 'middle', marginRight: '3px' }} />
-                          {client.notesHistory.filter(n => n.isKey).length}/2 key
+                          {client.notesHistory.filter(n => n.isKey).length}/2 {t.clientDetail.keyNote.toLowerCase()}
                         </span>
                       </div>
                       <div style={styles.notesHistoryList}>
@@ -1193,7 +1209,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                   <span style={styles.notesHistoryDate}>
-                                    {new Date(nh.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {new Date(nh.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })}
                                   </span>
                                   {nh.isKey && (
                                     <span style={styles.keyBadge}>
@@ -1271,7 +1287,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     )}
                   </div>
                   <div style={styles.modalActions}>
-                    <button onClick={() => { setActiveModal(null); flashSaved('Program updated'); }} style={styles.modalPrimaryBtn}>
+                    <button onClick={() => { setActiveModal(null); flashSaved(t.clientDetail.programAssigned); }} style={styles.modalPrimaryBtn}>
                       Done
                     </button>
                   </div>
@@ -1285,18 +1301,18 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                     <div style={styles.checkInDetailItem}>
                       <span style={styles.checkInDetailLabel}>Date</span>
                       <span style={styles.checkInDetailValue}>
-                        {new Date(selectedCheckIn.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        {new Date(selectedCheckIn.date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
                     {selectedCheckIn.weight && (
                       <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Weight</span>
+                        <span style={styles.checkInDetailLabel}>{t.clientDetail.weight}</span>
                         <span style={styles.checkInDetailValue}>{selectedCheckIn.weight} kg</span>
                       </div>
                     )}
                     {selectedCheckIn.bodyFat && (
                       <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Body Fat</span>
+                        <span style={styles.checkInDetailLabel}>{t.clientDetail.bodyFat}</span>
                         <span style={styles.checkInDetailValue}>{selectedCheckIn.bodyFat}%</span>
                       </div>
                     )}
@@ -1393,7 +1409,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   {/* Review Status Badge */}
                   {selectedCheckIn.reviewStatus && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>Status:</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>{t.clientDetail.status}:</span>
                       <span style={{
                         padding: '3px 10px',
                         borderRadius: '20px',
@@ -1410,7 +1426,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
 
                   <div style={styles.modalActions}>
                     <button onClick={() => { setActiveModal(null); setSelectedCheckIn(null); }} style={styles.modalCancelBtn}>
-                      Cancel
+                      {t.clientDetail.cancel}
                     </button>
                     {selectedCheckIn.reviewStatus !== 'flagged' && (
                       <button
@@ -1439,7 +1455,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                       style={styles.modalPrimaryBtn}
                     >
                       <Save size={14} />
-                      {selectedCheckIn.reviewStatus === 'reviewed' ? 'Save' : 'Mark Reviewed'}
+                      {selectedCheckIn.reviewStatus === 'reviewed' ? t.clientDetail.save : 'Mark Reviewed'}
                     </button>
                   </div>
                 </div>

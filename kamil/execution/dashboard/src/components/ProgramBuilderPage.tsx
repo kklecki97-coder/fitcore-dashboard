@@ -7,6 +7,7 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, WorkoutProgram, WorkoutDay, Exercise } from '../types';
 
 interface ProgramBuilderPageProps {
@@ -112,8 +113,9 @@ const emptyExercise = (): Exercise => ({
 });
 
 export default function ProgramBuilderPage({
-  program, clients, exerciseLibrary, onSave, onBack, backLabel = 'Back to Programs',
+  program, clients, exerciseLibrary, onSave, onBack, backLabel,
 }: ProgramBuilderPageProps) {
+  const { t } = useLang();
   const isMobile = useIsMobile();
 
   const [draft, setDraft] = useState<WorkoutProgram>(() => {
@@ -173,7 +175,7 @@ export default function ProgramBuilderPage({
   };
 
   const removeDay = (index: number) => {
-    if (!window.confirm(`Remove "${draft.days[index].name}" and all its exercises?`)) return;
+    if (!window.confirm(t.programBuilder.removeDayConfirm(draft.days[index].name))) return;
     setDraft(prev => ({ ...prev, days: prev.days.filter((_, i) => i !== index) }));
     if (activeDayIndex >= draft.days.length - 1) {
       setActiveDayIndex(Math.max(0, draft.days.length - 2));
@@ -275,7 +277,7 @@ export default function ProgramBuilderPage({
   // ── Save ──
   const handleSave = () => {
     if (!draft.name.trim()) {
-      alert('Please enter a program name.');
+      alert(t.programBuilder.enterProgramName);
       return;
     }
     onSave({ ...draft, updatedAt: new Date().toISOString().split('T')[0] });
@@ -295,7 +297,7 @@ export default function ProgramBuilderPage({
       {/* Back Bar */}
       <div style={styles.topBar}>
         <motion.button onClick={onBack} style={styles.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-          <ArrowLeft size={16} /> {backLabel}
+          <ArrowLeft size={16} /> {backLabel ?? t.programBuilder.backToPrograms}
         </motion.button>
       </div>
 
@@ -303,7 +305,7 @@ export default function ProgramBuilderPage({
       <GlassCard delay={0.05}>
         <div style={{ ...styles.metaCard, flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={{ ...styles.fieldGroup, flex: 1 }}>
-            <label style={styles.label}>Program Name</label>
+            <label style={styles.label}>{t.programBuilder.programName}</label>
             <input
               type="text"
               value={draft.name}
@@ -314,7 +316,7 @@ export default function ProgramBuilderPage({
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>Duration</label>
+              <label style={styles.label}>{t.programBuilder.durationWeeks}</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <NumberStepper
                   value={draft.durationWeeks}
@@ -322,19 +324,19 @@ export default function ProgramBuilderPage({
                   min={1} max={52} placeholder="8"
                   style={{ width: '130px' }}
                 />
-                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>weeks</span>
+                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}></span>
               </div>
             </div>
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>Status</label>
+              <label style={styles.label}>{t.programBuilder.status}</label>
               <select
                 value={draft.status}
                 onChange={(e) => setDraft(prev => ({ ...prev, status: e.target.value as WorkoutProgram['status'] }))}
                 style={styles.select}
               >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
+                <option value="draft">{t.programBuilder.draft}</option>
+                <option value="active">{t.programBuilder.active}</option>
+                <option value="completed">{t.programBuilder.completed}</option>
               </select>
             </div>
           </div>
@@ -357,7 +359,7 @@ export default function ProgramBuilderPage({
             <span style={{ fontSize: '18px', color: 'var(--text-tertiary)' }}>No clients assigned</span>
           )}
           <button onClick={() => setAssignModal(true)} style={styles.assignBtn}>
-            <Plus size={13} /> Assign
+            <Plus size={13} /> {t.programBuilder.assignClients}
           </button>
         </div>
       </GlassCard>
@@ -397,20 +399,20 @@ export default function ProgramBuilderPage({
                     <button onClick={() => startRenameDay(i)} style={styles.tinyBtn} title="Rename">
                       <Edit3 size={12} />
                     </button>
-                    <button onClick={() => duplicateDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-secondary)' }} title="Duplicate day">
+                    <button onClick={() => duplicateDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-secondary)' }} title={t.programBuilder.duplicateDay}>
                       <Copy size={12} />
                     </button>
                   </>
                 )}
                 {draft.days.length > 1 && activeDayIndex === i && (
-                  <button onClick={() => removeDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-danger)' }} title="Remove day">
+                  <button onClick={() => removeDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-danger)' }} title={t.programBuilder.removeDay}>
                     <X size={12} />
                   </button>
                 )}
               </div>
             ))}
             <button onClick={addDay} style={styles.addDayBtn}>
-              <Plus size={14} /> Add Day
+              <Plus size={14} /> {t.programBuilder.addDay}
             </button>
           </div>
         </div>
@@ -426,7 +428,7 @@ export default function ProgramBuilderPage({
               <span style={styles.exerciseCount}>{activeDay.exercises.length}</span>
             </div>
             <motion.button onClick={openAddExercise} style={styles.addExerciseBtn} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Plus size={14} /> Add Exercise
+              <Plus size={14} /> {t.programBuilder.addExercise}
             </motion.button>
           </div>
 
@@ -464,8 +466,8 @@ export default function ProgramBuilderPage({
                       </div>
                       {(ex.tempo || ex.restSeconds || ex.notes) && (
                         <div style={styles.detailRow}>
-                          {ex.tempo && <span style={styles.detailText}>Tempo: {ex.tempo}</span>}
-                          {ex.restSeconds && <span style={styles.detailText}>Rest: {ex.restSeconds}s</span>}
+                          {ex.tempo && <span style={styles.detailText}>{t.programBuilder.tempo}: {ex.tempo}</span>}
+                          {ex.restSeconds && <span style={styles.detailText}>{t.programBuilder.restSeconds}: {ex.restSeconds}s</span>}
                           {ex.notes && <span style={{ ...styles.detailText, fontStyle: 'italic', color: 'var(--text-secondary)' }}>{ex.notes}</span>}
                         </div>
                       )}
@@ -475,6 +477,7 @@ export default function ProgramBuilderPage({
                         onClick={() => moveExercise(i, 'up')}
                         style={{ ...styles.actionBtn, opacity: i === 0 ? 0.25 : 1 }}
                         disabled={i === 0}
+                        title={t.programBuilder.moveUp}
                       >
                         <ChevronUp size={14} />
                       </button>
@@ -482,13 +485,14 @@ export default function ProgramBuilderPage({
                         onClick={() => moveExercise(i, 'down')}
                         style={{ ...styles.actionBtn, opacity: i === activeDay.exercises.length - 1 ? 0.25 : 1 }}
                         disabled={i === activeDay.exercises.length - 1}
+                        title={t.programBuilder.moveDown}
                       >
                         <ChevronDown size={14} />
                       </button>
-                      <button onClick={() => openEditExercise(i)} style={styles.actionBtn}>
+                      <button onClick={() => openEditExercise(i)} style={styles.actionBtn} title={t.programBuilder.editExercise}>
                         <Edit3 size={14} />
                       </button>
-                      <button onClick={() => removeExercise(i)} style={{ ...styles.actionBtn, color: 'var(--accent-danger)' }}>
+                      <button onClick={() => removeExercise(i)} style={{ ...styles.actionBtn, color: 'var(--accent-danger)' }} title={t.programBuilder.removeExercise}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -499,9 +503,9 @@ export default function ProgramBuilderPage({
           ) : (
             <div style={styles.emptyDay}>
               <Dumbbell size={32} color="var(--text-tertiary)" />
-              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '18px' }}>No exercises yet</p>
+              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '18px' }}></p>
               <button onClick={openAddExercise} style={styles.addExerciseBtn}>
-                <Plus size={14} /> Add Exercise
+                <Plus size={14} /> {t.programBuilder.addExercise}
               </button>
             </div>
           )}
@@ -514,7 +518,7 @@ export default function ProgramBuilderPage({
               No workout days yet. Add your first day to get started.
             </p>
             <button onClick={addDay} style={styles.addExerciseBtn}>
-              <Plus size={14} /> Add Day
+              <Plus size={14} /> {t.programBuilder.addDay}
             </button>
           </div>
         </GlassCard>
@@ -524,14 +528,14 @@ export default function ProgramBuilderPage({
       <GlassCard delay={0.2}>
         <div style={styles.bottomBar}>
           <div style={styles.summaryChips}>
-            <span style={styles.summaryChip}><Dumbbell size={13} /> {draft.days.length} {draft.days.length === 1 ? 'day' : 'days'}</span>
-            <span style={styles.summaryChip}>{totalExercises} exercises</span>
-            <span style={styles.summaryChip}><Clock size={13} /> {draft.durationWeeks} weeks</span>
+            <span style={styles.summaryChip}><Dumbbell size={13} /> {t.programs.days(draft.days.length)}</span>
+            <span style={styles.summaryChip}>{t.programs.exercises(totalExercises)}</span>
+            <span style={styles.summaryChip}><Clock size={13} /> {t.programs.weeks(draft.durationWeeks)}</span>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={onBack} style={styles.cancelBtnBottom}>Cancel</button>
+            <button onClick={onBack} style={styles.cancelBtnBottom}>{t.programBuilder.cancel}</button>
             <motion.button onClick={handleSave} style={styles.saveBtnBottom} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Save size={14} /> Save
+              <Save size={14} /> {t.programBuilder.saveProgram}
             </motion.button>
           </div>
         </div>
@@ -549,13 +553,13 @@ export default function ProgramBuilderPage({
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>{exerciseModal.editing ? 'Edit Exercise' : 'Add Exercise'}</h3>
+                <h3 style={styles.modalTitle}>{exerciseModal.editing ? t.programBuilder.editExercise : t.programBuilder.addExercise}</h3>
                 <button onClick={() => setExerciseModal(null)} style={styles.closeBtn}><X size={16} /></button>
               </div>
               <div style={styles.modalBody}>
                 {/* Exercise Name with autocomplete */}
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Exercise Name</label>
+                  <label style={styles.label}>{t.programBuilder.exerciseName}</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       ref={inputRef}
@@ -567,7 +571,7 @@ export default function ProgramBuilderPage({
                         setShowSuggestions(true);
                       }}
                       onFocus={() => { if (exerciseSearch.trim()) setShowSuggestions(true); }}
-                      placeholder="Search or type exercise name..."
+                      placeholder={t.programBuilder.searchExercises}
                       style={styles.input}
                     />
                     {showSuggestions && filteredSuggestions.length > 0 && (
@@ -593,7 +597,7 @@ export default function ProgramBuilderPage({
                 {/* Sets + Reps */}
                 <div style={styles.fieldRow}>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Sets</label>
+                    <label style={styles.label}>{t.programBuilder.sets}</label>
                     <NumberStepper
                       value={exerciseForm.sets}
                       onChange={(v) => setExerciseForm(prev => ({ ...prev, sets: parseInt(v) || 1 }))}
@@ -601,7 +605,7 @@ export default function ProgramBuilderPage({
                     />
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Reps</label>
+                    <label style={styles.label}>{t.programBuilder.reps}</label>
                     <input
                       type="text"
                       value={exerciseForm.reps}
@@ -615,7 +619,7 @@ export default function ProgramBuilderPage({
                 {/* Weight + RPE */}
                 <div style={styles.fieldRow}>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Weight / Load</label>
+                    <label style={styles.label}>{t.programBuilder.weight}</label>
                     <input
                       type="text"
                       value={exerciseForm.weight}
@@ -625,7 +629,7 @@ export default function ProgramBuilderPage({
                     />
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>RPE (1-10)</label>
+                    <label style={styles.label}>{t.programBuilder.rpe} (1-10)</label>
                     <NumberStepper
                       value={exerciseForm.rpe ?? ''}
                       onChange={(v) => setExerciseForm(prev => ({ ...prev, rpe: v ? parseInt(v) : null }))}
@@ -637,7 +641,7 @@ export default function ProgramBuilderPage({
                 {/* Tempo + Rest */}
                 <div style={styles.fieldRow}>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Tempo</label>
+                    <label style={styles.label}>{t.programBuilder.tempo}</label>
                     <input
                       type="text"
                       value={exerciseForm.tempo}
@@ -647,7 +651,7 @@ export default function ProgramBuilderPage({
                     />
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Rest (seconds)</label>
+                    <label style={styles.label}>{t.programBuilder.restSeconds}</label>
                     <NumberStepper
                       value={exerciseForm.restSeconds ?? ''}
                       onChange={(v) => setExerciseForm(prev => ({ ...prev, restSeconds: v ? parseInt(v) : null }))}
@@ -658,7 +662,7 @@ export default function ProgramBuilderPage({
 
                 {/* Notes */}
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Notes</label>
+                  <label style={styles.label}>{t.programBuilder.notes}</label>
                   <textarea
                     value={exerciseForm.notes}
                     onChange={(e) => setExerciseForm(prev => ({ ...prev, notes: e.target.value }))}
@@ -669,14 +673,14 @@ export default function ProgramBuilderPage({
                 </div>
               </div>
               <div style={styles.modalActions}>
-                <button onClick={() => setExerciseModal(null)} style={styles.cancelBtnModal}>Cancel</button>
+                <button onClick={() => setExerciseModal(null)} style={styles.cancelBtnModal}>{t.programBuilder.cancel}</button>
                 <motion.button
                   onClick={saveExercise}
                   style={{ ...styles.primaryBtn, opacity: exerciseForm.name.trim() ? 1 : 0.4 }}
                   whileHover={exerciseForm.name.trim() ? { scale: 1.02 } : {}}
                   whileTap={exerciseForm.name.trim() ? { scale: 0.98 } : {}}
                 >
-                  <Check size={14} /> {exerciseModal.editing ? 'Save Changes' : 'Add Exercise'}
+                  <Check size={14} /> {exerciseModal.editing ? t.programBuilder.save : t.programBuilder.addExercise}
                 </motion.button>
               </div>
             </motion.div>
@@ -696,7 +700,7 @@ export default function ProgramBuilderPage({
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Assign Program</h3>
+                <h3 style={styles.modalTitle}>{t.programBuilder.assignClients}</h3>
                 <button onClick={() => setAssignModal(false)} style={styles.closeBtn}><X size={16} /></button>
               </div>
               <div style={{ ...styles.modalBody, maxHeight: '400px', overflowY: 'auto' }}>

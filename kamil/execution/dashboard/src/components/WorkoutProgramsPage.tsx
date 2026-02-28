@@ -7,6 +7,7 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, WorkoutProgram } from '../types';
 
 interface WorkoutProgramsPageProps {
@@ -23,6 +24,7 @@ export default function WorkoutProgramsPage({
   programs, clients, onViewProgram, onAddProgram,
   onDeleteProgram, onDuplicateProgram, onUpdateProgram,
 }: WorkoutProgramsPageProps) {
+  const { t } = useLang();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -82,7 +84,7 @@ export default function WorkoutProgramsPage({
           <Search size={16} color="var(--text-tertiary)" />
           <input
             type="text"
-            placeholder="Search programs..."
+            placeholder={t.programs.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={styles.searchInput}
@@ -91,16 +93,16 @@ export default function WorkoutProgramsPage({
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={styles.filterSelect}>
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="completed">Completed</option>
+            <option value="all">{t.programs.allStatus}</option>
+            <option value="active">{t.programs.active}</option>
+            <option value="draft">{t.programs.draft}</option>
+            <option value="completed">{t.programs.completed}</option>
           </select>
 
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={styles.filterSelect}>
-            <option value="all">All Types</option>
-            <option value="program">Programs</option>
-            <option value="template">Templates</option>
+            <option value="all">{t.programs.allTypes}</option>
+            <option value="program">{t.programs.programsType}</option>
+            <option value="template">{t.programs.templates}</option>
           </select>
 
           <motion.button
@@ -110,7 +112,7 @@ export default function WorkoutProgramsPage({
             whileTap={{ scale: 0.98 }}
           >
             <Plus size={16} />
-            <span>{isMobile ? 'New' : 'New Program'}</span>
+            <span>{isMobile ? t.programs.new : t.programs.newProgram}</span>
           </motion.button>
         </div>
       </div>
@@ -118,10 +120,10 @@ export default function WorkoutProgramsPage({
       {/* Mini Stats */}
       <div style={styles.statsRow}>
         {[
-          { label: 'Active', value: activeCount, color: 'var(--accent-success)', bg: 'var(--accent-success-dim)' },
-          { label: 'Draft', value: draftCount, color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
-          { label: 'Templates', value: templateCount, color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
-          { label: 'Total', value: programs.length, color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
+          { label: t.programs.statActive, value: activeCount, color: 'var(--accent-success)', bg: 'var(--accent-success-dim)' },
+          { label: t.programs.statDraft, value: draftCount, color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
+          { label: t.programs.statTemplates, value: templateCount, color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
+          { label: t.programs.statTotal, value: programs.length, color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
         ].map(stat => (
           <div key={stat.label} style={{ ...styles.statChip, background: stat.bg, color: stat.color }}>
             <span style={styles.statValue}>{stat.value}</span>
@@ -150,14 +152,14 @@ export default function WorkoutProgramsPage({
                     {openMenuId === program.id && (
                       <div className="dropdown-menu" style={styles.dropdown} onClick={(e) => e.stopPropagation()}>
                         <button style={styles.dropdownItem} onClick={() => { onViewProgram(program.id); setOpenMenuId(null); }}>
-                          <Eye size={14} /> View / Edit
+                          <Eye size={14} /> {t.programs.viewEdit}
                         </button>
                         <button style={styles.dropdownItem} onClick={() => { onDuplicateProgram(program.id); setOpenMenuId(null); }}>
-                          <Copy size={14} /> Duplicate
+                          <Copy size={14} /> {t.programs.duplicate}
                         </button>
                         {!program.isTemplate && (
                           <button style={styles.dropdownItem} onClick={() => { handleSaveAsTemplate(program.id); setOpenMenuId(null); }}>
-                            <BookmarkPlus size={14} /> Save as Template
+                            <BookmarkPlus size={14} /> {t.programs.saveAsTemplate}
                           </button>
                         )}
                         <div style={styles.dropdownDivider} />
@@ -165,7 +167,7 @@ export default function WorkoutProgramsPage({
                           style={{ ...styles.dropdownItem, color: 'var(--accent-danger)' }}
                           onClick={() => { setDeleteConfirm(program.id); setOpenMenuId(null); }}
                         >
-                          <Trash2 size={14} /> Delete
+                          <Trash2 size={14} /> {t.programs.delete}
                         </button>
                       </div>
                     )}
@@ -179,14 +181,14 @@ export default function WorkoutProgramsPage({
                     color: program.status === 'active' ? 'var(--accent-success)' : program.status === 'draft' ? 'var(--accent-secondary)' : 'var(--text-tertiary)',
                     background: program.status === 'active' ? 'var(--accent-success-dim)' : program.status === 'draft' ? 'var(--accent-secondary-dim)' : 'var(--bg-subtle-hover)',
                   }}>
-                    {program.status}
+                    {program.status === 'active' ? t.programs.active : program.status === 'draft' ? t.programs.draft : t.programs.completed}
                   </span>
                   <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
-                    <Clock size={11} /> {program.durationWeeks}w
+                    <Clock size={11} /> {t.programs.weeks(program.durationWeeks)}
                   </span>
                   {program.isTemplate && (
                     <span style={{ ...styles.badge, color: 'var(--accent-warm)', background: 'var(--accent-warm-dim)' }}>
-                      Template
+                      {t.programs.template}
                     </span>
                   )}
                 </div>
@@ -210,7 +212,7 @@ export default function WorkoutProgramsPage({
                       </span>
                     </div>
                   ) : (
-                    <span style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>Unassigned</span>
+                    <span style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>{t.programs.unassigned}</span>
                   )}
                 </div>
 
@@ -218,14 +220,14 @@ export default function WorkoutProgramsPage({
                 <div style={styles.summaryRow}>
                   <Dumbbell size={13} color="var(--text-tertiary)" />
                   <span style={styles.summaryText}>
-                    {program.days.length} {program.days.length === 1 ? 'day' : 'days'}, {totalExercises(program)} exercises
+                    {t.programs.days(program.days.length)}, {t.programs.exercises(totalExercises(program))}
                   </span>
                 </div>
 
                 {/* Footer */}
                 <div style={styles.cardFooter}>
-                  <span style={styles.dateText}>Updated {program.updatedAt}</span>
-                  <span style={styles.dateText}>Created {program.createdAt}</span>
+                  <span style={styles.dateText}>{t.programs.updated} {program.updatedAt}</span>
+                  <span style={styles.dateText}>{t.programs.created} {program.createdAt}</span>
                 </div>
               </div>
             </GlassCard>
@@ -237,7 +239,7 @@ export default function WorkoutProgramsPage({
         <div style={styles.empty}>
           <Dumbbell size={40} color="var(--text-tertiary)" />
           <p style={{ color: 'var(--text-secondary)', marginTop: '12px' }}>
-            {programs.length === 0 ? 'No programs yet. Create your first one!' : 'No programs match your filters.'}
+            {programs.length === 0 ? t.programs.noProgramsYet : t.programs.noProgramsMatch}
           </p>
         </div>
       )}
@@ -260,23 +262,22 @@ export default function WorkoutProgramsPage({
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Delete Program</h3>
+                <h3 style={styles.modalTitle}>{t.programs.deleteProgram}</h3>
                 <button onClick={() => setDeleteConfirm(null)} style={styles.closeBtn}><X size={16} /></button>
               </div>
               <div style={styles.modalBody}>
                 <p style={{ fontSize: '20px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>
-                    {programs.find(p => p.id === deleteConfirm)?.name}
-                  </strong>? This action cannot be undone.
+                  {t.programs.deleteConfirm(programs.find(p => p.id === deleteConfirm)?.name ?? '')}
+                  {' '}{t.programs.cannotBeUndone}
                 </p>
               </div>
               <div style={styles.modalActions}>
-                <button onClick={() => setDeleteConfirm(null)} style={styles.cancelBtn}>Cancel</button>
+                <button onClick={() => setDeleteConfirm(null)} style={styles.cancelBtn}>{t.programs.cancel}</button>
                 <button
                   onClick={() => { onDeleteProgram(deleteConfirm); setDeleteConfirm(null); }}
                   style={styles.deleteBtn}
                 >
-                  <Trash2 size={14} /> Delete
+                  <Trash2 size={14} /> {t.programs.delete}
                 </button>
               </div>
             </motion.div>

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, WorkoutLog, CheckIn } from '../types';
 
 interface ProgressPageProps {
@@ -14,6 +15,7 @@ interface ProgressPageProps {
 
 export default function ProgressPage({ client, workoutLogs, checkIns }: ProgressPageProps) {
   const isMobile = useIsMobile();
+  const { t, lang } = useLang();
   const [chartsReady, setChartsReady] = useState(false);
 
   useEffect(() => {
@@ -23,7 +25,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
 
   const { metrics } = client;
   // Dynamic month labels based on client start date
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = lang === 'pl'
+    ? ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru']
+    : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const startMonth = new Date(client.startDate).getMonth();
   const months = metrics.weight.map((_, i) => monthNames[(startMonth + i) % 12]);
   const weights = metrics.weight;
@@ -92,6 +96,8 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference - (completionRate / 100) * ringCircumference;
 
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+
   // ── Goal progress (data-driven from metrics + check-ins) ──
   const parseTarget = (text: string): number | null => {
     const match = text.match(/(\d+(?:\.\d+)?)\s*kg/i) || text.match(/(\d+(?:\.\d+)?)/);
@@ -151,22 +157,22 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
       const latestCI = checkIns.filter(ci => ci.steps !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
       const current = latestCI?.steps ?? 0;
       const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current.toLocaleString()} / ${target.toLocaleString()} steps` };
+      return { goal, progress: Math.max(0, pct), label: `${current.toLocaleString()} / ${target.toLocaleString()} ${t.checkIn.steps}` };
     }
 
     // Cardio / running goal — derive from overall training consistency as proxy
     if (g.includes('5k') || g.includes('run') || g.includes('cardio')) {
       const pct = Math.min(100, Math.round(completionRate * 0.72));
-      return { goal, progress: Math.max(0, pct), label: 'Based on training consistency' };
+      return { goal, progress: Math.max(0, pct), label: t.progress.basedOnConsistency };
     }
 
     // Fallback — use overall client progress
-    return { goal, progress: Math.round(client.progress * 0.7), label: 'In progress' };
+    return { goal, progress: Math.round(client.progress * 0.7), label: t.progress.inProgress };
   });
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px 12px 80px' : '24px 24px 80px' }}>
-      <h2 style={styles.title}>Your Progress</h2>
+      <h2 style={styles.title}>{t.progress.yourProgress}</h2>
 
       {/* Top row: Goals + Weight + Body Fat — horizontal on desktop, stacked on mobile */}
       <div style={{ ...styles.topRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '10px' }}>
@@ -174,7 +180,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
         <GlassCard delay={0.05} style={styles.topCard}>
           <div style={styles.sectionHeader}>
             <Target size={16} color="var(--accent-primary)" />
-            <span style={styles.sectionTitle}>Goals</span>
+            <span style={styles.sectionTitle}>{t.progress.goals}</span>
             <span style={styles.goalCount}>{goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}</span>
           </div>
           <div style={styles.goalProgressList}>
@@ -203,7 +209,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
         {/* Weight Chart */}
         <GlassCard delay={0.1} style={styles.topCard}>
           <div style={styles.chartHeaderCompact}>
-            <div style={styles.chartTitle}>Weight</div>
+            <div style={styles.chartTitle}>{t.progress.weight}</div>
             {weightData.length >= 2 && (
               <div style={{
                 ...styles.trendBadge,
@@ -225,7 +231,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                   <YAxis domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} width={isMobile ? 36 : 32} />
                   <Tooltip
                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary)' }}
-                    formatter={(val) => [`${val} kg`, 'Weight']}
+                    formatter={(val) => [`${val} kg`, t.progress.weight]}
                   />
                   <Line type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2} dot={{ fill: 'var(--accent-primary)', r: 2.5 }} />
                 </LineChart>
@@ -234,7 +240,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           ) : (
             <div style={{ ...styles.emptyState, flex: 1, padding: '16px 12px' }}>
               <BarChart3 size={24} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-              <span style={styles.emptyStateText}>Weigh in at your next check-in</span>
+              <span style={styles.emptyStateText}>{t.progress.weighInNext}</span>
             </div>
           )}
         </GlassCard>
@@ -242,7 +248,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
         {/* Body Fat Chart */}
         <GlassCard delay={0.15} style={styles.topCard}>
           <div style={styles.chartHeaderCompact}>
-            <div style={styles.chartTitle}>Body Fat %</div>
+            <div style={styles.chartTitle}>{t.progress.bodyFatPct}</div>
             {bodyFatData.length >= 2 && (
               <div style={{
                 ...styles.trendBadge,
@@ -264,7 +270,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                   <YAxis domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} width={isMobile ? 36 : 32} />
                   <Tooltip
                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary)' }}
-                    formatter={(val) => [`${val}%`, 'Body Fat']}
+                    formatter={(val) => [`${val}%`, t.progress.bodyFatPct]}
                   />
                   <Line type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2} dot={{ fill: 'var(--accent-secondary)', r: 2.5 }} />
                 </LineChart>
@@ -273,7 +279,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           ) : (
             <div style={{ ...styles.emptyState, flex: 1, padding: '16px 12px' }}>
               <BarChart3 size={24} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-              <span style={styles.emptyStateText}>Body fat data appears after check-ins</span>
+              <span style={styles.emptyStateText}>{t.progress.bodyFatAfterCheckIns}</span>
             </div>
           )}
         </GlassCard>
@@ -306,13 +312,13 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
       <GlassCard delay={0.35}>
         <div style={styles.sectionHeader}>
           <Flame size={18} color="var(--accent-warm)" />
-          <span style={styles.sectionTitle}>Training Consistency</span>
+          <span style={styles.sectionTitle}>{t.progress.trainingConsistency}</span>
         </div>
 
         {workoutLogs.length === 0 ? (
           <div style={styles.emptyState}>
             <Dumbbell size={28} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-            <span style={styles.emptyStateText}>Complete your first workout to start tracking consistency</span>
+            <span style={styles.emptyStateText}>{t.progress.completeFirstWorkout}</span>
           </div>
         ) : <>
         {/* Stats row — 3 mini cards */}
@@ -320,7 +326,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           <div style={styles.statCard}>
             <Dumbbell size={16} color="var(--accent-primary)" />
             <span style={styles.statValue}>{totalSessions}</span>
-            <span style={styles.statLabel}>sessions</span>
+            <span style={styles.statLabel}>{t.progress.sessions}</span>
           </div>
           <div style={styles.statCard}>
             <svg width="44" height="44" viewBox="0 0 44 44" style={{ marginTop: '-2px', marginBottom: '-2px' }}>
@@ -339,18 +345,18 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                 {completionRate}
               </text>
             </svg>
-            <span style={styles.statLabel}>completion %</span>
+            <span style={styles.statLabel}>{t.progress.completionPct}</span>
           </div>
           <div style={styles.statCard}>
             <Flame size={16} color="var(--accent-warm)" />
             <span style={styles.statValue}>{client.streak}</span>
-            <span style={styles.statLabel}>day streak</span>
+            <span style={styles.statLabel}>{t.progress.dayStreak}</span>
           </div>
         </div>
 
         {/* Calendar — day header */}
         <div style={styles.calGrid}>
-          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+          {t.progress.calendarDays.map((d, i) => (
             <div key={i} style={styles.calDayHeader}>{d}</div>
           ))}
         </div>
@@ -439,17 +445,17 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                 }} />
                 <div style={{ flex: 1 }}>
                   <div style={styles.dayDetailDate}>
-                    {new Date(selectedDay + 'T12:00:00').toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    {new Date(selectedDay + 'T12:00:00').toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
                   </div>
                   <div style={styles.dayDetailType}>{selectedLog.type}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={styles.dayDetailDuration}>{selectedLog.duration} min</div>
+                  <div style={styles.dayDetailDuration}>{selectedLog.duration} {t.progress.min}</div>
                   <div style={{
                     ...styles.dayDetailStatus,
                     color: selectedLog.completed ? calDone : calMiss,
                   }}>
-                    {selectedLog.completed ? 'Completed' : 'Missed'}
+                    {selectedLog.completed ? t.progress.completed : t.progress.missed}
                   </div>
                 </div>
               </div>
@@ -459,10 +465,10 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
 
         {/* Legend */}
         <div style={styles.calLegend}>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calDone }} /> Completed</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calMiss }} /> Missed</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'var(--accent-primary)' }} /> Today</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'rgba(255,255,255,0.03)' }} /> Rest</span>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calDone }} /> {t.progress.completed}</span>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calMiss }} /> {t.progress.missed}</span>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'var(--accent-primary)' }} /> {t.progress.today}</span>
+          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'rgba(255,255,255,0.03)' }} /> {t.progress.rest}</span>
         </div>
         </>}
       </GlassCard>
@@ -471,8 +477,8 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
       <GlassCard delay={0.4} style={styles.awardCard}>
         <Award size={24} color="var(--accent-warm)" />
         <div>
-          <div style={styles.awardTitle}>Keep it up!</div>
-          <div style={styles.awardSub}>You've been training for {Math.round((today.getTime() - new Date(client.startDate).getTime()) / 86400000)} days</div>
+          <div style={styles.awardTitle}>{t.progress.keepItUp}</div>
+          <div style={styles.awardSub}>{t.progress.trainingForDays(Math.round((today.getTime() - new Date(client.startDate).getTime()) / 86400000))}</div>
         </div>
       </GlassCard>
     </div>
@@ -480,73 +486,16 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-    minHeight: '100%',
-    paddingBottom: '80px',
-  },
-  title: {
-    fontSize: '22px',
-    fontWeight: 700,
-    letterSpacing: '-0.5px',
-    color: 'var(--text-primary)',
-  },
-  topRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '10px',
-  },
-  topCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    minWidth: 0,
-    overflow: 'hidden',
-  },
-  chartWrap: {
-    width: '100%',
-    flex: 1,
-    minWidth: 0,
-    minHeight: 0,
-  },
-  chartHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '16px',
-  },
-  chartHeaderCompact: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '8px',
-    flexShrink: 0,
-  },
-  chartTitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-  },
-  trendBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '12px',
-    fontWeight: 600,
-    padding: '4px 8px',
-    borderRadius: '8px',
-  },
-  prRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '10px',
-  },
-  prCard: {
-    padding: '16px',
-    textAlign: 'center',
-  },
+  page: { padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '100%', paddingBottom: '80px' },
+  title: { fontSize: '22px', fontWeight: 700, letterSpacing: '-0.5px', color: 'var(--text-primary)' },
+  topRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' },
+  topCard: { display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' },
+  chartWrap: { width: '100%', flex: 1, minWidth: 0, minHeight: 0 },
+  chartHeaderCompact: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexShrink: 0 },
+  chartTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
+  trendBadge: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '8px' },
+  prRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' },
+  prCard: { padding: '16px', textAlign: 'center' },
   prEmoji: { fontSize: '20px', marginBottom: '6px' },
   prName: { fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' },
   prValue: { fontSize: '22px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', marginTop: '4px' },
@@ -554,16 +503,7 @@ const styles: Record<string, React.CSSProperties> = {
   prDiff: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontSize: '12px', fontWeight: 600, marginTop: '4px' },
   sectionHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' },
   sectionTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
-  goalCount: {
-    fontSize: '11px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    color: 'var(--accent-primary)',
-    background: 'var(--accent-primary-dim)',
-    padding: '2px 8px',
-    borderRadius: '10px',
-    marginLeft: 'auto',
-  },
+  goalCount: { fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-primary)', background: 'var(--accent-primary-dim)', padding: '2px 8px', borderRadius: '10px', marginLeft: 'auto' },
   goalProgressList: { display: 'flex', flexDirection: 'column', gap: '14px' },
   goalProgressItem: { display: 'flex', flexDirection: 'column', gap: '4px' },
   goalProgressTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
@@ -572,154 +512,28 @@ const styles: Record<string, React.CSSProperties> = {
   goalProgressBarBg: { height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
   goalProgressBarFill: { height: '100%', borderRadius: '3px', transition: 'width 0.8s ease' },
   goalProgressLabel: { fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' },
-  statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '8px',
-    marginBottom: '16px',
-  },
-  statCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '12px 6px',
-    borderRadius: '10px',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid var(--glass-border)',
-  },
-  statValue: {
-    fontSize: '20px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    color: 'var(--text-primary)',
-    lineHeight: 1,
-  },
-  statLabel: {
-    fontSize: '10px',
-    fontWeight: 500,
-    color: 'var(--text-secondary)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.3px',
-  },
-  calGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '4px',
-    marginBottom: '4px',
-  },
-  calDayHeader: {
-    fontSize: '10px',
-    fontWeight: 700,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase',
-    textAlign: 'center',
-    padding: '4px 0',
-  },
-  calCell: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    minHeight: '50px',
-    borderRadius: '8px',
-    padding: '0 2px 5px',
-    position: 'relative',
-    overflow: 'hidden',
-    transition: 'all 0.15s ease',
-  },
-  calStatusBar: {
-    width: '100%',
-    height: '2.5px',
-    borderRadius: '0 0 1px 1px',
-    marginBottom: '4px',
-    flexShrink: 0,
-  },
-  calDateNum: {
-    fontSize: '13px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    lineHeight: 1,
-  },
-  calWorkoutTag: {
-    fontSize: '8px',
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.2px',
-    maxWidth: '100%',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    marginTop: '3px',
-    lineHeight: 1.2,
-  },
-  dayDetail: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    background: 'rgba(255,255,255,0.03)',
-    borderRadius: '8px',
-    padding: '10px 14px',
-    marginTop: '10px',
-  },
-  dayDetailBar: {
-    width: '3px',
-    height: '32px',
-    borderRadius: '2px',
-    flexShrink: 0,
-  },
-  dayDetailDate: {
-    fontSize: '11px',
-    color: 'var(--text-secondary)',
-  },
-  dayDetailType: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-    marginTop: '2px',
-  },
-  dayDetailDuration: {
-    fontSize: '13px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-mono)',
-    color: 'var(--text-primary)',
-  },
-  dayDetailStatus: {
-    fontSize: '11px',
-    fontWeight: 600,
-    marginTop: '2px',
-  },
-  calLegend: {
-    display: 'flex',
-    gap: '12px',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: '12px',
-  },
+  statsRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' },
+  statCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '12px 6px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)' },
+  statValue: { fontSize: '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 },
+  statLabel: { fontSize: '10px', fontWeight: 500, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' },
+  calGrid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' },
+  calDayHeader: { fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', textAlign: 'center', padding: '4px 0' },
+  calCell: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: '50px', borderRadius: '8px', padding: '0 2px 5px', position: 'relative', overflow: 'hidden', transition: 'all 0.15s ease' },
+  calStatusBar: { width: '100%', height: '2.5px', borderRadius: '0 0 1px 1px', marginBottom: '4px', flexShrink: 0 },
+  calDateNum: { fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-mono)', lineHeight: 1 },
+  calWorkoutTag: { fontSize: '8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2px', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '3px', lineHeight: 1.2 },
+  dayDetail: { display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px 14px', marginTop: '10px' },
+  dayDetailBar: { width: '3px', height: '32px', borderRadius: '2px', flexShrink: 0 },
+  dayDetailDate: { fontSize: '11px', color: 'var(--text-secondary)' },
+  dayDetailType: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' },
+  dayDetailDuration: { fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
+  dayDetailStatus: { fontSize: '11px', fontWeight: 600, marginTop: '2px' },
+  calLegend: { display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '12px' },
   legendItem: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--text-tertiary)' },
   legendDot: { width: '8px', height: '8px', borderRadius: '2px', display: 'inline-block' },
-  skeleton: {
-    width: '100%',
-    height: '180px',
-    borderRadius: '8px',
-    background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)',
-    backgroundSize: '200% 100%',
-    animation: 'shimmer 1.5s infinite ease-in-out',
-  },
-  emptyState: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    padding: '32px 16px',
-  },
-  emptyStateText: {
-    fontSize: '13px',
-    color: 'var(--text-tertiary)',
-    textAlign: 'center',
-    lineHeight: 1.5,
-  },
+  skeleton: { width: '100%', height: '180px', borderRadius: '8px', background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite ease-in-out' },
+  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '32px 16px' },
+  emptyStateText: { fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.5 },
   awardCard: { display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' },
   awardTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
   awardSub: { fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' },

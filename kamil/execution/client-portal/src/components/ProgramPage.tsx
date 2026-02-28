@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, Circle, Clock, Dumbbell, ChevronDown, ChevronUp, Timer, Zap } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { WorkoutProgram, WorkoutSetLog, WorkoutLog } from '../types';
 
 interface ProgramPageProps {
@@ -15,6 +16,7 @@ interface ProgramPageProps {
 
 export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs: _workoutLogs }: ProgramPageProps) {
   const isMobile = useIsMobile();
+  const { t } = useLang();
 
   // ── Compute today's workout day index (based on day-of-week, not completion count) ──
   const todayDayIndex = (() => {
@@ -49,8 +51,8 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
         <GlassCard>
           <div style={styles.emptyState}>
             <Dumbbell size={40} color="var(--text-tertiary)" />
-            <h3 style={styles.emptyTitle}>No program assigned</h3>
-            <p style={styles.emptySub}>Your coach hasn't assigned a workout program yet. Check back soon!</p>
+            <h3 style={styles.emptyTitle}>{t.program.noProgram}</h3>
+            <p style={styles.emptySub}>{t.program.noProgramSub}</p>
           </div>
         </GlassCard>
       </div>
@@ -88,7 +90,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
       {/* Program Header */}
       <div style={styles.header}>
         <h2 style={styles.title}>{program.name}</h2>
-        <p style={styles.subtitle}>{program.durationWeeks} week program</p>
+        <p style={styles.subtitle}>{program.durationWeeks} {t.program.weekProgram}</p>
       </div>
 
       {/* Day Selector — shows workout names + highlights today */}
@@ -118,7 +120,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
       <div style={styles.progressWrap}>
         <div style={styles.progressHeader}>
           <span style={styles.progressLabel}>
-            {allDone ? 'Workout Complete!' : `${completedSets}/${totalSets} sets`}
+            {allDone ? t.program.workoutComplete : t.program.setsProgress(completedSets, totalSets)}
           </span>
           <span style={{
             ...styles.progressPct,
@@ -140,14 +142,14 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
       {restTimer && (
         <div style={styles.timerBar}>
           <Timer size={16} color="var(--accent-secondary)" />
-          <span style={styles.timerText}>Rest: {restTimer.seconds}s</span>
+          <span style={styles.timerText}>{t.program.restTimer(restTimer.seconds)}</span>
           <div style={styles.timerBarBg}>
             <div style={{
               ...styles.timerBarFill,
               width: `${(restTimer.seconds / restTimer.total) * 100}%`,
             }} />
           </div>
-          <button style={styles.timerSkip} onClick={clearTimer}>Skip</button>
+          <button style={styles.timerSkip} onClick={clearTimer}>{t.program.skip}</button>
         </div>
       )}
 
@@ -203,12 +205,12 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                   {exercise.tempo && (
                     <div style={styles.tempoRow}>
                       <Clock size={12} color="var(--text-tertiary)" />
-                      <span>Tempo: {exercise.tempo}</span>
-                      {exercise.restSeconds && <span>· Rest: {exercise.restSeconds}s</span>}
+                      <span>{t.program.tempo} {exercise.tempo}</span>
+                      {exercise.restSeconds && <span>· {t.program.rest} {exercise.restSeconds}s</span>}
                     </div>
                   )}
                   {exercise.notes && (
-                    <div style={styles.exerciseNotes}>Note: {exercise.notes}</div>
+                    <div style={styles.exerciseNotes}>{t.program.note} {exercise.notes}</div>
                   )}
                   <div style={styles.setsList}>
                     {Array.from({ length: exercise.sets }, (_, i) => {
@@ -219,7 +221,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                       return (
                         <div key={setNum}>
                           <div style={styles.setRow}>
-                            <span style={styles.setLabel}>Set {setNum}</span>
+                            <span style={styles.setLabel}>{t.program.set(setNum)}</span>
                             <span style={styles.setTarget}>{exercise.reps} × {exercise.weight}</span>
                             <button
                               style={{
@@ -262,7 +264,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                           {completed && (
                             <div style={styles.rpeRow}>
                               <span style={styles.rpeLabel}>
-                                RPE{exercise.rpe ? ` (target ${exercise.rpe})` : ''}
+                                {t.program.rpe}{exercise.rpe ? ` ${t.program.rpeTarget(exercise.rpe)}` : ''}
                               </span>
                               <div style={styles.rpePills}>
                                 {[6, 7, 8, 9, 10].map(val => {
@@ -314,13 +316,13 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
               color: allDone ? 'var(--accent-success)' : 'var(--text-primary)',
             }}>
               {allDone
-                ? 'All exercises done — great work!'
-                : `${completedExercises}/${day.exercises.length} exercises completed`}
+                ? t.program.allDone
+                : t.program.exercisesCompleted(completedExercises, day.exercises.length)}
             </div>
             <div style={styles.summarySub}>
               {allDone
-                ? 'Rest up and come back stronger tomorrow.'
-                : `${totalSets - completedSets} sets remaining — keep going!`}
+                ? t.program.restUpMessage
+                : t.program.setsRemaining(totalSets - completedSets)}
             </div>
           </div>
         </div>
@@ -330,308 +332,49 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-    minHeight: '100%',
-  },
+  page: { padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '100%' },
   header: { marginBottom: '4px', position: 'relative', zIndex: 2 },
-  title: {
-    fontSize: '22px',
-    fontWeight: 700,
-    letterSpacing: '-0.5px',
-    color: 'var(--text-primary)',
-  },
-  subtitle: {
-    fontSize: '13px',
-    color: 'var(--text-secondary)',
-    marginTop: '2px',
-  },
-
-  // ── Day Selector ──
-  dayRow: {
-    display: 'flex',
-    gap: '8px',
-    overflowX: 'auto',
-    paddingBottom: '4px',
-    position: 'relative',
-    zIndex: 2,
-  },
-  dayPill: {
-    padding: '12px 20px',
-    borderRadius: 'var(--radius-md)',
-    fontSize: '14px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    transition: 'all 0.15s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    position: 'relative',
-    flex: 1,
-    justifyContent: 'center',
-    minWidth: 0,
-  },
-  todayDot: {
-    width: '5px',
-    height: '5px',
-    borderRadius: '50%',
-    background: 'var(--accent-primary)',
-  },
-
-  // ── Progress Bar ──
+  title: { fontSize: '22px', fontWeight: 700, letterSpacing: '-0.5px', color: 'var(--text-primary)' },
+  subtitle: { fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' },
+  dayRow: { display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', position: 'relative', zIndex: 2 },
+  dayPill: { padding: '12px 20px', borderRadius: 'var(--radius-md)', fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '6px', position: 'relative', flex: 1, justifyContent: 'center', minWidth: 0 },
+  todayDot: { width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-primary)' },
   progressWrap: { position: 'relative', zIndex: 2 },
-  progressHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '6px',
-  },
-  progressLabel: {
-    fontSize: '13px',
-    fontWeight: 500,
-    color: 'var(--text-secondary)',
-  },
-  progressPct: {
-    fontSize: '13px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-  },
-  progressBarBg: {
-    height: '6px',
-    borderRadius: '3px',
-    background: 'var(--glass-border)',
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: '3px',
-    transition: 'width 0.4s ease',
-  },
-
-  // ── Rest Timer ──
-  timerBar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '10px 14px',
-    borderRadius: 'var(--radius-md)',
-    background: 'rgba(0,229,200,0.06)',
-    border: '1px solid rgba(0,229,200,0.15)',
-  },
-  timerText: {
-    fontSize: '14px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    color: 'var(--accent-secondary)',
-    minWidth: '70px',
-  },
-  timerBarBg: {
-    flex: 1,
-    height: '4px',
-    borderRadius: '2px',
-    background: 'var(--glass-border)',
-    overflow: 'hidden',
-  },
-  timerBarFill: {
-    height: '100%',
-    borderRadius: '2px',
-    background: 'var(--accent-secondary)',
-    transition: 'width 1s linear',
-  },
-  timerSkip: {
-    padding: '4px 10px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid var(--glass-border)',
-    background: 'transparent',
-    color: 'var(--text-secondary)',
-    fontSize: '11px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-  },
-
-  // ── Exercise Cards ──
-  exerciseList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    position: 'relative',
-    zIndex: 1,
-  },
-  exerciseCardStatic: {
-    background: 'var(--bg-card)',
-    backdropFilter: 'blur(var(--glass-blur))',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '16px',
-    boxShadow: 'var(--shadow-card)',
-  },
-  exerciseHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    cursor: 'pointer',
-  },
-  exerciseLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  exerciseProgress: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  exerciseProgressText: {
-    position: 'absolute',
-    fontSize: '7px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    color: 'var(--accent-primary)',
-  },
-  exerciseName: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-  },
-  exerciseMeta: {
-    fontSize: '12px',
-    color: 'var(--text-secondary)',
-    marginTop: '2px',
-  },
-  setsWrap: {
-    marginTop: '12px',
-    paddingTop: '12px',
-    borderTop: '1px solid var(--glass-border)',
-  },
-  tempoRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '11px',
-    color: 'var(--text-tertiary)',
-    marginBottom: '8px',
-  },
-  exerciseNotes: {
-    fontSize: '12px',
-    color: 'var(--accent-warm)',
-    marginBottom: '10px',
-    fontStyle: 'italic',
-  },
-  setsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  setRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '8px 0',
-    borderBottom: '1px solid rgba(255,255,255,0.03)',
-  },
-  setLabel: {
-    fontSize: '13px',
-    fontWeight: 600,
-    color: 'var(--text-secondary)',
-    minWidth: '48px',
-    width: 'auto',
-  },
-  setTarget: {
-    fontSize: '13px',
-    color: 'var(--text-primary)',
-    fontFamily: 'var(--font-mono)',
-    flex: 1,
-    textAlign: 'center',
-  },
-  setCheckBtn: {
-    width: '44px',
-    height: '44px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-  },
-
-  // ── RPE Selector ──
-  rpeRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '6px 0 4px',
-  },
-  rpeLabel: {
-    fontSize: '11px',
-    fontWeight: 600,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.3px',
-  },
-  rpePills: {
-    display: 'flex',
-    gap: '4px',
-  },
-  rpePill: {
-    width: '30px',
-    height: '26px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '11px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-    background: 'transparent',
-  },
-
-  // ── Summary ──
-  summaryCard: {
-    marginBottom: '24px',
-  },
-  summaryRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  summaryTitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-  },
-  summarySub: {
-    fontSize: '12px',
-    color: 'var(--text-secondary)',
-    marginTop: '2px',
-  },
-
-  // ── Empty State ──
-  emptyState: {
-    textAlign: 'center',
-    padding: '40px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  emptyTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-  },
-  emptySub: {
-    fontSize: '14px',
-    color: 'var(--text-secondary)',
-    maxWidth: '280px',
-  },
+  progressHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
+  progressLabel: { fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' },
+  progressPct: { fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-mono)' },
+  progressBarBg: { height: '6px', borderRadius: '3px', background: 'var(--glass-border)', overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: '3px', transition: 'width 0.4s ease' },
+  timerBar: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(0,229,200,0.06)', border: '1px solid rgba(0,229,200,0.15)' },
+  timerText: { fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-secondary)', minWidth: '70px' },
+  timerBarBg: { flex: 1, height: '4px', borderRadius: '2px', background: 'var(--glass-border)', overflow: 'hidden' },
+  timerBarFill: { height: '100%', borderRadius: '2px', background: 'var(--accent-secondary)', transition: 'width 1s linear' },
+  timerSkip: { padding: '4px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer' },
+  exerciseList: { display: 'flex', flexDirection: 'column', gap: '10px', position: 'relative', zIndex: 1 },
+  exerciseCardStatic: { background: 'var(--bg-card)', backdropFilter: 'blur(var(--glass-blur))', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-lg)', padding: '16px', boxShadow: 'var(--shadow-card)' },
+  exerciseHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' },
+  exerciseLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
+  exerciseProgress: { position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  exerciseProgressText: { position: 'absolute', fontSize: '7px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-primary)' },
+  exerciseName: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
+  exerciseMeta: { fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' },
+  setsWrap: { marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' },
+  tempoRow: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '8px' },
+  exerciseNotes: { fontSize: '12px', color: 'var(--accent-warm)', marginBottom: '10px', fontStyle: 'italic' },
+  setsList: { display: 'flex', flexDirection: 'column', gap: '6px' },
+  setRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' },
+  setLabel: { fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', minWidth: '48px', width: 'auto' },
+  setTarget: { fontSize: '13px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', flex: 1, textAlign: 'center' },
+  setCheckBtn: { width: '44px', height: '44px', borderRadius: 'var(--radius-sm)', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' },
+  rpeRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0 4px' },
+  rpeLabel: { fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.3px' },
+  rpePills: { display: 'flex', gap: '4px' },
+  rpePill: { width: '30px', height: '26px', borderRadius: 'var(--radius-sm)', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)', cursor: 'pointer', transition: 'all 0.15s', background: 'transparent' },
+  summaryCard: { marginBottom: '24px' },
+  summaryRow: { display: 'flex', alignItems: 'center', gap: '12px' },
+  summaryTitle: { fontSize: '14px', fontWeight: 600 },
+  summarySub: { fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' },
+  emptyState: { textAlign: 'center', padding: '40px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' },
+  emptyTitle: { fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' },
+  emptySub: { fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '280px' },
 };

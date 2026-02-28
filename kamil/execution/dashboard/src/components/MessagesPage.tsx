@@ -4,6 +4,7 @@ import { Search, Send, ArrowLeft, X, MessageSquare, Check } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
 import { getInitials, getAvatarColor } from '../data';
+import { useLang } from '../i18n';
 import type { Client, Message, MessageChannel } from '../types';
 
 // ── Delivery status checkmarks ──
@@ -24,7 +25,7 @@ const DeliveryCheck = ({ status, channelColor }: { status?: Message['deliverySta
 };
 
 // ── Typing indicator ──
-const TypingIndicator = () => (
+const TypingIndicator = ({ label }: { label: string }) => (
   <motion.div
     style={styles.typingBubble}
     initial={{ opacity: 0, y: 5 }}
@@ -40,7 +41,7 @@ const TypingIndicator = () => (
         />
       ))}
     </div>
-    <span style={styles.typingText}>typing...</span>
+    <span style={styles.typingText}>{label}</span>
   </motion.div>
 );
 
@@ -49,28 +50,6 @@ interface MessageTemplate {
   text: string;
   category: 'motivation' | 'checkin' | 'reminder' | 'onboarding';
 }
-
-const MESSAGE_TEMPLATES: MessageTemplate[] = [
-  { text: 'Great session today! Keep it up!', category: 'motivation' },
-  { text: "That's a new PR! Celebrate that win.", category: 'motivation' },
-  { text: 'Consistency is paying off. Proud of you!', category: 'motivation' },
-  { text: 'How are you feeling today?', category: 'checkin' },
-  { text: 'How did the session go? Any pain?', category: 'checkin' },
-  { text: "How's nutrition been this week?", category: 'checkin' },
-  { text: "Don't forget to log your meals today", category: 'reminder' },
-  { text: 'Rest day — recovery is part of the process', category: 'reminder' },
-  { text: 'Check-in is due this week. Please submit.', category: 'reminder' },
-  { text: 'Welcome to FitCore! Ready to start?', category: 'onboarding' },
-  { text: "I've set up your first program. Check it out!", category: 'onboarding' },
-];
-
-const TEMPLATE_CATEGORIES: { key: 'all' | MessageTemplate['category']; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'motivation', label: 'Motivation' },
-  { key: 'checkin', label: 'Check-in' },
-  { key: 'reminder', label: 'Reminder' },
-  { key: 'onboarding', label: 'Onboarding' },
-];
 
 // ── Helpers ──
 function getConversationChannel(msgs: Message[]): MessageChannel {
@@ -83,39 +62,6 @@ function getConversationChannel(msgs: Message[]): MessageChannel {
   return 'telegram';
 }
 
-function formatRelativeTime(ts: string): string {
-  const d = new Date(ts);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / 86400000);
-  if (diffDays === 0) return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return d.toLocaleDateString('en-US', { weekday: 'short' });
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function formatTime(ts: string) {
-  return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-}
-
-function formatDateLabel(ts: string): string {
-  return new Date(ts).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-}
-
-function getSuggestedTemplate(lastMsg: string): MessageTemplate | null {
-  const lower = lastMsg.toLowerCase();
-  if (lower.includes('pr') || lower.includes('record') || lower.includes('personal best')) {
-    return MESSAGE_TEMPLATES.find(t => t.text.includes('PR')) || null;
-  }
-  if (lower.includes('pain') || lower.includes('hurt') || lower.includes('sore')) {
-    return MESSAGE_TEMPLATES.find(t => t.text.includes('pain')) || null;
-  }
-  if (lower.includes('missed') || lower.includes('skip')) {
-    return MESSAGE_TEMPLATES.find(t => t.text.includes('Consistency')) || null;
-  }
-  return null;
-}
-
 // ── Component ──
 interface MessagesPageProps {
   isMobile?: boolean;
@@ -125,6 +71,8 @@ interface MessagesPageProps {
 }
 
 export default function MessagesPage({ isMobile = false, clients, messages, onSendMessage }: MessagesPageProps) {
+  const { lang, t } = useLang();
+
   const [selectedClient, setSelectedClient] = useState<string>('c1');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -134,6 +82,65 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   const [templateCategory, setTemplateCategory] = useState<'all' | MessageTemplate['category']>('all');
   const [isClientTyping, setIsClientTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // ── Locale-aware helpers (need lang and t) ──
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+
+  function formatRelativeTime(ts: string): string {
+    const d = new Date(ts);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    if (diffDays === 0) return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: true });
+    if (diffDays === 1) return t.messages.yesterday;
+    if (diffDays < 7) return d.toLocaleDateString(locale, { weekday: 'short' });
+    return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  }
+
+  function formatTime(ts: string) {
+    return new Date(ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  function formatDateLabel(ts: string): string {
+    return new Date(ts).toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  // ── Templates (need t for translated text) ──
+  const MESSAGE_TEMPLATES: MessageTemplate[] = [
+    { text: t.messages.templates.motivation[0], category: 'motivation' },
+    { text: t.messages.templates.motivation[1], category: 'motivation' },
+    { text: t.messages.templates.motivation[2], category: 'motivation' },
+    { text: t.messages.templates.checkIn[0], category: 'checkin' },
+    { text: t.messages.templates.checkIn[1], category: 'checkin' },
+    { text: t.messages.templates.checkIn[2], category: 'checkin' },
+    { text: t.messages.templates.reminder[0], category: 'reminder' },
+    { text: t.messages.templates.reminder[1], category: 'reminder' },
+    { text: t.messages.templates.reminder[2], category: 'reminder' },
+    { text: t.messages.templates.onboarding[0], category: 'onboarding' },
+    { text: t.messages.templates.onboarding[1], category: 'onboarding' },
+  ];
+
+  const TEMPLATE_CATEGORIES: { key: 'all' | MessageTemplate['category']; label: string }[] = [
+    { key: 'all', label: t.messages.all },
+    { key: 'motivation', label: t.messages.motivation },
+    { key: 'checkin', label: t.messages.checkIn },
+    { key: 'reminder', label: t.messages.reminder },
+    { key: 'onboarding', label: t.messages.onboarding },
+  ];
+
+  function getSuggestedTemplate(lastMsg: string): MessageTemplate | null {
+    const lower = lastMsg.toLowerCase();
+    if (lower.includes('pr') || lower.includes('record') || lower.includes('personal best')) {
+      return MESSAGE_TEMPLATES.find(tpl => tpl.text.includes('PR') || tpl.text.includes('rekord')) || null;
+    }
+    if (lower.includes('pain') || lower.includes('hurt') || lower.includes('sore')) {
+      return MESSAGE_TEMPLATES.find(tpl => tpl.text.includes('pain') || tpl.text.includes('ból')) || null;
+    }
+    if (lower.includes('missed') || lower.includes('skip')) {
+      return MESSAGE_TEMPLATES.find(tpl => tpl.text.includes('Consistency') || tpl.text.includes('Regularność')) || null;
+    }
+    return null;
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -210,11 +217,11 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   };
 
   const filterTabs: { key: 'all' | MessageChannel; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'telegram', label: 'Telegram' },
-    { key: 'whatsapp', label: 'WhatsApp' },
-    { key: 'email', label: 'Email' },
-    { key: 'instagram', label: 'Instagram' },
+    { key: 'all', label: t.messages.allChannels },
+    { key: 'telegram', label: t.messages.telegram },
+    { key: 'whatsapp', label: t.messages.whatsapp },
+    { key: 'email', label: t.messages.email },
+    { key: 'instagram', label: t.messages.instagram },
   ];
 
   // Online status
@@ -225,7 +232,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   // Template filtering
   const visibleTemplates = templateCategory === 'all'
     ? MESSAGE_TEMPLATES
-    : MESSAGE_TEMPLATES.filter(t => t.category === templateCategory);
+    : MESSAGE_TEMPLATES.filter(tpl => tpl.category === templateCategory);
 
   // Contextual suggestion
   const lastClientMsg = [...activeConversation].reverse().find(m => !m.isFromCoach);
@@ -240,7 +247,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
       {(!isMobile || !showChat) && (
         <GlassCard delay={0} style={{ ...styles.sidebar, width: isMobile ? '100%' : '340px' }}>
           <div style={styles.sidebarHeader}>
-            <h3 style={styles.sidebarTitle}>Conversations</h3>
+            <h3 style={styles.sidebarTitle}>{t.messages.messagesTitle}</h3>
             <span style={styles.convCount}>{filteredConversations.length}</span>
           </div>
 
@@ -277,7 +284,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
             <Search size={15} color="var(--text-tertiary)" />
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder={t.messages.searchConversations}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchInput}
@@ -294,8 +301,8 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
             {filteredConversations.length === 0 ? (
               <div style={styles.emptyState}>
                 <Search size={28} color="var(--text-tertiary)" />
-                <div style={styles.emptyTitle}>No conversations found</div>
-                <div style={styles.emptySub}>Try a different search or channel filter</div>
+                <div style={styles.emptyTitle}>{t.messages.noConversationsFound}</div>
+                <div style={styles.emptySub}>{t.messages.tryDifferentSearch}</div>
               </div>
             ) : (
               filteredConversations.map((conv, i) => {
@@ -340,7 +347,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                         )}
                       </div>
                       <div style={{ ...styles.convPreview, color: isUnread ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: isUnread ? 500 : 400 }}>
-                        {conv.lastMessage.isFromCoach && <span style={{ color: 'var(--accent-primary)' }}>You: </span>}
+                        {conv.lastMessage.isFromCoach && <span style={{ color: 'var(--accent-primary)' }}>{t.messages.you}</span>}
                         {conv.lastMessage.text}
                       </div>
                     </div>
@@ -385,7 +392,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                   animate={isRecentlyActive ? { scale: [1, 1.4, 1], opacity: [1, 0.6, 1] } : {}}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
-                {isRecentlyActive ? activeClient.lastActive : `Last seen ${activeClient.lastActive}`}
+                {isRecentlyActive ? activeClient.lastActive : `${t.messages.lastSeen} ${activeClient.lastActive}`}
               </div>
             </div>
           </div>
@@ -401,8 +408,8 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
           {activeConversation.length === 0 ? (
             <div style={styles.emptyState}>
               <Send size={32} color="var(--text-tertiary)" />
-              <div style={styles.emptyTitle}>Start the conversation</div>
-              <div style={styles.emptySub}>Send the first message to {activeClient.name}</div>
+              <div style={styles.emptyTitle}>{t.messages.startConversation}</div>
+              <div style={styles.emptySub}>{t.messages.sendFirstMessage(activeClient.name)}</div>
             </div>
           ) : (
             <>
@@ -458,7 +465,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                   </Fragment>
                 );
               })}
-              {isClientTyping && <TypingIndicator />}
+              {isClientTyping && <TypingIndicator label={t.messages.typing} />}
             </>
           )}
           <div ref={messagesEndRef} />
@@ -488,7 +495,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
               })}
             </div>
             <span style={{ ...styles.replyHint, color: CHANNEL_COLORS[replyChannel] }}>
-              Replying via {CHANNEL_LABELS[replyChannel]}
+              {t.messages.replyingVia} {CHANNEL_LABELS[replyChannel]}
             </span>
           </div>
 
@@ -499,7 +506,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <span style={styles.suggestedLabel}>Suggested:</span>
+              <span style={styles.suggestedLabel}>{t.messages.suggested}</span>
               <button
                 onClick={() => setNewMessage(suggestedTemplate.text)}
                 style={styles.suggestedBtn}
@@ -544,7 +551,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
           <div style={styles.inputRow}>
             <input
               type="text"
-              placeholder="Type your message..."
+              placeholder={t.messages.typeMessage}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -566,8 +573,8 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
         <div style={styles.chatArea}>
           <div style={styles.emptyState}>
             <MessageSquare size={48} color="var(--text-tertiary)" />
-            <div style={styles.emptyTitle}>Select a conversation</div>
-            <div style={styles.emptySub}>Choose a client from the left to start messaging</div>
+            <div style={styles.emptyTitle}>{t.messages.selectConversation}</div>
+            <div style={styles.emptySub}>{t.messages.chooseClient}</div>
             <div style={styles.emptyChannelRow}>
               {(['telegram', 'whatsapp', 'email', 'instagram'] as MessageChannel[]).map(ch => (
                 <span key={ch} style={{ ...styles.emptyChannelIcon, color: CHANNEL_COLORS[ch] }}>

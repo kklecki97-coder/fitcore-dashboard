@@ -4,6 +4,9 @@ import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 interface Props { children: ReactNode; }
 interface State { hasError: boolean; error: Error | null; }
 
+// Note: ErrorBoundary is a class component and cannot use hooks (useLang).
+// We detect language from localStorage since context isn't available in error state.
+
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null };
 
@@ -21,24 +24,29 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const lang = localStorage.getItem('fitcore-lang') ?? 'en';
+      const isPl = lang === 'pl';
+
       return (
         <div style={styles.container}>
           <div style={styles.card}>
             <div style={styles.iconWrap}>
               <AlertTriangle size={40} color="var(--accent-danger, #ef4444)" />
             </div>
-            <h2 style={styles.title}>Something went wrong</h2>
+            <h2 style={styles.title}>
+              {isPl ? 'Coś poszło nie tak' : 'Something went wrong'}
+            </h2>
             <p style={styles.message}>
               {this.state.error?.message
                 ? this.state.error.message.slice(0, 200)
-                : 'An unexpected error occurred.'}
+                : isPl ? 'Wystąpił nieoczekiwany błąd.' : 'An unexpected error occurred.'}
             </p>
             <div style={styles.actions}>
               <button style={styles.primaryBtn} onClick={() => window.location.reload()}>
-                <RefreshCw size={16} /> Reload Page
+                <RefreshCw size={16} /> {isPl ? 'Odśwież stronę' : 'Reload Page'}
               </button>
               <button style={styles.secondaryBtn} onClick={this.handleReset}>
-                <RotateCcw size={16} /> Try Again
+                <RotateCcw size={16} /> {isPl ? 'Spróbuj ponownie' : 'Try Again'}
               </button>
             </div>
           </div>

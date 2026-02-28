@@ -4,6 +4,7 @@ import { Sun, Moon, User, Bell, Shield, Palette, X, Save, Plug, ExternalLink, Ch
 import GlassCard from './GlassCard';
 import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Theme, MessageChannel } from '../types';
 
 interface Notifications {
@@ -24,6 +25,7 @@ interface SettingsPageProps {
 }
 
 export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, notifications, onNotificationsChange }: SettingsPageProps) {
+  const { t } = useLang();
   const isMobile = useIsMobile();
 
   // Profile editing state
@@ -70,8 +72,8 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [connectingChannel, setConnectingChannel] = useState(false);
 
   const themeOptions: { value: Theme; label: string; description: string; icon: typeof Sun }[] = [
-    { value: 'dark', label: 'Dark', description: 'Deep black with electric accents', icon: Moon },
-    { value: 'light', label: 'Light', description: 'Clean white with teal accents', icon: Sun },
+    { value: 'dark', label: t.settings.dark, description: t.settings.darkDesc, icon: Moon },
+    { value: 'light', label: t.settings.light, description: t.settings.lightDesc, icon: Sun },
   ];
 
   const handleSaveProfile = () => {
@@ -90,35 +92,35 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   };
 
   const notifItems = [
-    { key: 'messages' as const, label: 'New client messages', desc: 'Get notified when a client sends a message' },
-    { key: 'checkins' as const, label: 'Check-in reminders', desc: 'Reminder before scheduled check-ins' },
-    { key: 'payments' as const, label: 'Payment alerts', desc: 'Notifications for payments received' },
-    { key: 'weekly' as const, label: 'Weekly summary', desc: 'Email digest of your weekly performance' },
+    { key: 'messages' as const, label: t.settings.newClientMessages, desc: t.settings.newClientMessagesSub },
+    { key: 'checkins' as const, label: t.settings.checkInReminders, desc: t.settings.checkInRemindersSub },
+    { key: 'payments' as const, label: t.settings.paymentAlerts, desc: t.settings.paymentAlertsSub },
+    { key: 'weekly' as const, label: t.settings.weeklySummary, desc: t.settings.weeklySummarySub },
   ];
 
   const channelConfig: Record<MessageChannel, { instruction: string; placeholder: string; inputLabel: string; helpUrl: string }> = {
     telegram: {
-      instruction: 'Create a Telegram Bot via @BotFather, then paste the bot token below. FitCore will listen for client messages through your bot.',
+      instruction: t.settings.telegramInstruction,
       placeholder: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz',
-      inputLabel: 'Bot Token',
+      inputLabel: t.settings.botToken,
       helpUrl: 'https://core.telegram.org/bots#botfather',
     },
     whatsapp: {
-      instruction: 'Connect your WhatsApp Business account. Enter your phone number with country code to link it with FitCore.',
+      instruction: t.settings.whatsappInstruction,
       placeholder: '+1 (555) 012-3456',
-      inputLabel: 'Phone Number',
+      inputLabel: t.settings.phoneNumber,
       helpUrl: 'https://business.whatsapp.com/',
     },
     email: {
-      instruction: 'Connect an email address to send and receive client messages directly from FitCore. We support Gmail, Outlook, and custom SMTP.',
+      instruction: t.settings.emailInstruction,
       placeholder: 'you@example.com',
-      inputLabel: 'Email Address',
+      inputLabel: t.settings.emailAddress,
       helpUrl: '',
     },
     instagram: {
-      instruction: 'Link your Instagram Business or Creator account to manage DMs from clients inside FitCore.',
+      instruction: t.settings.instagramInstruction,
       placeholder: '@your.username',
-      inputLabel: 'Instagram Handle',
+      inputLabel: t.settings.instagramHandle,
       helpUrl: 'https://business.instagram.com/',
     },
   };
@@ -155,8 +157,8 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               <User size={18} color="var(--accent-secondary)" />
             </div>
             <div>
-              <h3 style={styles.sectionTitle}>Profile</h3>
-              <p style={styles.sectionSub}>Manage your account information</p>
+              <h3 style={styles.sectionTitle}>{t.settings.profile}</h3>
+              <p style={styles.sectionSub}>{t.settings.profileSub}</p>
             </div>
           </div>
           <div style={styles.divider} />
@@ -182,14 +184,14 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               <div style={styles.profileEmail}>{profileEmail}</div>
             </div>
             {!isEditingProfile && (
-              <button style={styles.editBtn} onClick={() => setIsEditingProfile(true)}>Edit</button>
+              <button style={styles.editBtn} onClick={() => setIsEditingProfile(true)}>{t.settings.edit}</button>
             )}
           </div>
 
           {isEditingProfile ? (
             <div style={styles.fieldGroup}>
               <div style={styles.field}>
-                <label style={styles.fieldLabel}>Display Name</label>
+                <label style={styles.fieldLabel}>{t.settings.displayName}</label>
                 <input
                   type="text"
                   value={editName}
@@ -198,7 +200,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                 />
               </div>
               <div style={styles.field}>
-                <label style={styles.fieldLabel}>Email</label>
+                <label style={styles.fieldLabel}>{t.settings.email}</label>
                 <input
                   type="email"
                   value={editEmail}
@@ -207,30 +209,30 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                 />
               </div>
               <div style={styles.field}>
-                <label style={styles.fieldLabel}>Plan</label>
-                <div style={{ ...styles.fieldValue, color: 'var(--accent-primary)' }}>Pro Plan</div>
+                <label style={styles.fieldLabel}>{t.settings.plan}</label>
+                <div style={{ ...styles.fieldValue, color: 'var(--accent-primary)' }}>{t.settings.proPlan}</div>
               </div>
               <div style={styles.profileActions}>
-                <button style={styles.cancelBtn} onClick={handleCancelEdit}>Cancel</button>
+                <button style={styles.cancelBtn} onClick={handleCancelEdit}>{t.settings.cancel}</button>
                 <button style={styles.saveBtn} onClick={handleSaveProfile}>
                   <Save size={14} />
-                  Save
+                  {t.settings.save}
                 </button>
               </div>
             </div>
           ) : (
             <div style={styles.fieldGroup}>
               <div style={styles.field}>
-                <label style={styles.fieldLabel}>Display Name</label>
+                <label style={styles.fieldLabel}>{t.settings.displayName}</label>
                 <div style={styles.fieldValue}>{profileName}</div>
               </div>
               <div style={styles.field}>
-                <label style={styles.fieldLabel}>Email</label>
+                <label style={styles.fieldLabel}>{t.settings.email}</label>
                 <div style={styles.fieldValue}>{profileEmail}</div>
               </div>
               <div style={styles.field}>
-                <label style={styles.fieldLabel}>Plan</label>
-                <div style={{ ...styles.fieldValue, color: 'var(--accent-primary)' }}>Pro Plan</div>
+                <label style={styles.fieldLabel}>{t.settings.plan}</label>
+                <div style={{ ...styles.fieldValue, color: 'var(--accent-primary)' }}>{t.settings.proPlan}</div>
               </div>
             </div>
           )}
@@ -243,8 +245,8 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               <Palette size={18} color="var(--accent-primary)" />
             </div>
             <div>
-              <h3 style={styles.sectionTitle}>Appearance</h3>
-              <p style={styles.sectionSub}>Customize the look and feel of your dashboard</p>
+              <h3 style={styles.sectionTitle}>{t.settings.appearance}</h3>
+              <p style={styles.sectionSub}>{t.settings.appearanceSub}</p>
             </div>
           </div>
 
@@ -252,8 +254,8 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
 
           <div style={styles.settingRow}>
             <div>
-              <div style={styles.settingLabel}>Theme</div>
-              <div style={styles.settingDesc}>Choose between dark and light mode</div>
+              <div style={styles.settingLabel}>{t.settings.theme}</div>
+              <div style={styles.settingDesc}>{t.settings.themeDescription}</div>
             </div>
           </div>
 
@@ -335,8 +337,8 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               <Bell size={18} color="var(--accent-warm)" />
             </div>
             <div>
-              <h3 style={styles.sectionTitle}>Notifications</h3>
-              <p style={styles.sectionSub}>Configure how you receive alerts</p>
+              <h3 style={styles.sectionTitle}>{t.settings.notifications}</h3>
+              <p style={styles.sectionSub}>{t.settings.notificationsSubAlt}</p>
             </div>
           </div>
           <div style={styles.divider} />
@@ -370,37 +372,37 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               <Shield size={18} color="var(--accent-danger)" />
             </div>
             <div>
-              <h3 style={styles.sectionTitle}>Security</h3>
-              <p style={styles.sectionSub}>Password and authentication settings</p>
+              <h3 style={styles.sectionTitle}>{t.settings.security}</h3>
+              <p style={styles.sectionSub}>{t.settings.securitySubAlt}</p>
             </div>
           </div>
           <div style={styles.divider} />
           <div style={styles.fieldGroup}>
             <div style={styles.field}>
-              <label style={styles.fieldLabel}>Password</label>
+              <label style={styles.fieldLabel}>{t.settings.password}</label>
               <div style={styles.fieldRow}>
                 <div style={styles.fieldValue}>••••••••••</div>
-                <button style={styles.editBtn} onClick={() => setSecurityModal('password')}>Change</button>
+                <button style={styles.editBtn} onClick={() => setSecurityModal('password')}>{t.settings.change}</button>
               </div>
             </div>
             <div style={styles.field}>
-              <label style={styles.fieldLabel}>Two-Factor Authentication</label>
+              <label style={styles.fieldLabel}>{t.settings.twoFactor}</label>
               <div style={styles.fieldRow}>
                 <div style={{ ...styles.fieldValue, color: twoFactorEnabled ? 'var(--accent-success)' : 'var(--text-secondary)', fontSize: '16px' }}>
-                  {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                  {twoFactorEnabled ? t.settings.enabled : t.settings.disabled}
                 </div>
-                <button style={styles.editBtn} onClick={() => setSecurityModal('2fa')}>Manage</button>
+                <button style={styles.editBtn} onClick={() => setSecurityModal('2fa')}>{t.settings.manage}</button>
               </div>
             </div>
           </div>
           <div style={styles.deleteAccountRow}>
             <div>
-              <div style={styles.deleteAccountLabel}>Delete Account</div>
-              <div style={styles.deleteAccountDesc}>Permanently remove your account and all data</div>
+              <div style={styles.deleteAccountLabel}>{t.settings.deleteAccount}</div>
+              <div style={styles.deleteAccountDesc}>{t.settings.deleteAccountDesc}</div>
             </div>
             <button style={styles.deleteAccountBtn} onClick={() => setSecurityModal('delete')}>
               <Trash2 size={13} />
-              Delete
+              {t.settings.deleteAccount}
             </button>
           </div>
         </GlassCard>
@@ -412,8 +414,8 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               <Plug size={18} color="var(--accent-primary)" />
             </div>
             <div>
-              <h3 style={styles.sectionTitle}>Integrations</h3>
-              <p style={styles.sectionSub}>Connect your messaging channels</p>
+              <h3 style={styles.sectionTitle}>{t.settings.integrations}</h3>
+              <p style={styles.sectionSub}>{t.settings.integrationsSubAlt}</p>
             </div>
           </div>
           <div style={styles.divider} />
@@ -443,12 +445,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           padding: '2px 8px',
                         }}>
                           <CheckCircle size={10} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                          Connected
+                          {t.settings.connected}
                         </span>
                       )}
                     </div>
                     <div style={styles.settingDesc}>
-                      {connected ? handle : 'Not connected — click Connect to set up'}
+                      {connected ? handle : t.settings.notConnected}
                     </div>
                   </div>
                 </div>
@@ -458,7 +460,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       style={styles.disconnectBtn}
                       onClick={() => handleDisconnect(channel)}
                     >
-                      Disconnect
+                      {t.settings.disconnect}
                     </button>
                   ) : (
                     <button
@@ -473,7 +475,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       }}
                     >
                       <Plug size={14} />
-                      Connect
+                      {t.settings.connect}
                     </button>
                   )}
                 </div>
@@ -489,8 +491,8 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               <CreditCard size={18} color="#635bff" />
             </div>
             <div>
-              <h3 style={styles.sectionTitle}>Payments</h3>
-              <p style={styles.sectionSub}>Accept payments from clients via Stripe</p>
+              <h3 style={styles.sectionTitle}>{t.settings.payments}</h3>
+              <p style={styles.sectionSub}>{t.settings.paymentsSub}</p>
             </div>
           </div>
           <div style={styles.divider} />
@@ -503,11 +505,11 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             </div>
 
             <p style={styles.stripeDesc}>
-              Connect your Stripe account to accept one-time payments, recurring subscriptions, and send invoices directly from FitCore.
+              {t.settings.stripeDesc}
             </p>
 
             <div style={styles.stripeFeatures}>
-              {['One-time payments', 'Monthly subscriptions', 'Automatic invoicing', 'Payout tracking'].map((feat) => (
+              {[t.settings.oneTimePayments, t.settings.monthlySubscriptions, t.settings.automaticInvoicing, t.settings.payoutTracking].map((feat) => (
                 <div key={feat} style={styles.stripeFeatureItem}>
                   <CheckCircle size={14} color="#635bff" />
                   <span>{feat}</span>
@@ -516,12 +518,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             </div>
 
             <div style={styles.stripeBadge}>
-              <span style={styles.stripeBadgeText}>Coming Soon</span>
+              <span style={styles.stripeBadgeText}>{t.settings.comingSoon}</span>
             </div>
 
             <button style={styles.stripeBtn} disabled>
               <CreditCard size={14} />
-              Connect Stripe
+              {t.settings.connectStripe}
             </button>
           </div>
         </GlassCard>
@@ -557,7 +559,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               {securityModal === 'password' && (
                 <>
                   <div style={styles.modalHeader}>
-                    <h3 style={styles.modalTitle}>Change Password</h3>
+                    <h3 style={styles.modalTitle}>{t.settings.changePassword}</h3>
                     <button style={styles.closeBtn} onClick={() => {
                       setSecurityModal(null);
                       setPasswordError('');
@@ -575,10 +577,10 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       <div style={styles.successBox}>
                         <CheckCircle size={32} color="var(--accent-success)" />
                         <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          Password Updated
+                          {t.settings.passwordUpdatedTitle}
                         </div>
                         <div style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>
-                          Your password has been changed successfully.
+                          {t.settings.passwordChangedSuccess}
                         </div>
                       </div>
                       <div style={styles.modalActions}>
@@ -586,7 +588,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           setSecurityModal(null);
                           setPasswordSuccess(false);
                         }}>
-                          Done
+                          {t.settings.done}
                         </button>
                       </div>
                     </div>
@@ -599,32 +601,32 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                         </div>
                       )}
                       <div style={styles.modalField}>
-                        <label style={styles.fieldLabel}>Current Password</label>
+                        <label style={styles.fieldLabel}>{t.settings.currentPassword}</label>
                         <input
                           type="password"
                           value={currentPassword}
                           onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(''); }}
-                          placeholder="Enter current password"
+                          placeholder={t.settings.currentPassword}
                           style={styles.fieldInput}
                         />
                       </div>
                       <div style={styles.modalField}>
-                        <label style={styles.fieldLabel}>New Password</label>
+                        <label style={styles.fieldLabel}>{t.settings.newPassword}</label>
                         <input
                           type="password"
                           value={newPassword}
                           onChange={(e) => { setNewPassword(e.target.value); setPasswordError(''); }}
-                          placeholder="Min 8 characters"
+                          placeholder={t.settings.newPassword}
                           style={styles.fieldInput}
                         />
                       </div>
                       <div style={styles.modalField}>
-                        <label style={styles.fieldLabel}>Confirm New Password</label>
+                        <label style={styles.fieldLabel}>{t.settings.confirmNewPassword}</label>
                         <input
                           type="password"
                           value={confirmPassword}
                           onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
-                          placeholder="Re-enter new password"
+                          placeholder={t.settings.confirmNewPassword}
                           style={styles.fieldInput}
                         />
                       </div>
@@ -635,13 +637,13 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           setCurrentPassword('');
                           setNewPassword('');
                           setConfirmPassword('');
-                        }}>Cancel</button>
+                        }}>{t.settings.cancel}</button>
                         <button
                           style={{ ...styles.saveBtn, opacity: currentPassword && newPassword && confirmPassword ? 1 : 0.4 }}
                           onClick={() => {
-                            if (!currentPassword) { setPasswordError('Please enter your current password.'); return; }
-                            if (newPassword.length < 8) { setPasswordError('New password must be at least 8 characters.'); return; }
-                            if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match.'); return; }
+                            if (!currentPassword) { setPasswordError(t.settings.enterCurrentPasswordError); return; }
+                            if (newPassword.length < 8) { setPasswordError(t.settings.newPasswordMinLength); return; }
+                            if (newPassword !== confirmPassword) { setPasswordError(t.settings.passwordsDoNotMatch); return; }
                             // TODO: Replace with API call
                             setCurrentPassword('');
                             setNewPassword('');
@@ -649,7 +651,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                             setPasswordSuccess(true);
                           }}
                         >
-                          Update Password
+                          {t.settings.updatePassword}
                         </button>
                       </div>
                     </div>
@@ -661,7 +663,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               {securityModal === '2fa' && (
                 <>
                   <div style={styles.modalHeader}>
-                    <h3 style={styles.modalTitle}>Two-Factor Authentication</h3>
+                    <h3 style={styles.modalTitle}>{t.settings.twoFactor}</h3>
                     <button style={styles.closeBtn} onClick={() => {
                       setSecurityModal(null);
                       setTfaStep('overview');
@@ -683,19 +685,19 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                             background: twoFactorEnabled ? 'var(--accent-success)' : 'var(--text-tertiary)',
                           }} />
                           <span style={{ fontSize: '18px', fontWeight: 500 }}>
-                            2FA is currently <strong>{twoFactorEnabled ? 'enabled' : 'disabled'}</strong>
+                            {t.settings.tfaCurrentlyEnabled} <strong>{twoFactorEnabled ? t.settings.enabled.toLowerCase() : t.settings.disabled.toLowerCase()}</strong>
                           </span>
                         </div>
                         <p style={styles.tfaDesc}>
                           {twoFactorEnabled
-                            ? 'Your account is secured with two-factor authentication. You can disable it or view your backup codes.'
-                            : 'Add an extra layer of security by requiring a verification code from your authenticator app.'}
+                            ? t.settings.tfaEnabledDesc
+                            : t.settings.tfaDisabledDesc}
                         </p>
                         <div style={styles.modalActions}>
                           {twoFactorEnabled ? (
                             <>
                               <button style={styles.cancelBtn} onClick={() => setTfaStep('backup')}>
-                                View Backup Codes
+                                {t.settings.viewBackupCodes}
                               </button>
                               <button
                                 style={{ ...styles.saveBtn, background: 'var(--accent-danger)', boxShadow: '0 0 12px var(--accent-danger-dim)' }}
@@ -705,17 +707,17 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                                   setTfaStep('overview');
                                 }}
                               >
-                                Disable 2FA
+                                {t.settings.disable2FA}
                               </button>
                             </>
                           ) : (
                             <>
-                              <button style={styles.cancelBtn} onClick={() => setSecurityModal(null)}>Cancel</button>
+                              <button style={styles.cancelBtn} onClick={() => setSecurityModal(null)}>{t.settings.cancel}</button>
                               <button
                                 style={{ ...styles.saveBtn, background: 'var(--accent-success)', boxShadow: '0 0 12px var(--accent-success-dim)' }}
                                 onClick={() => setTfaStep('setup')}
                               >
-                                Enable 2FA
+                                {t.settings.enable2FA}
                               </button>
                             </>
                           )}
@@ -727,7 +729,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     {tfaStep === 'setup' && (
                       <>
                         <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 16px' }}>
-                          Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+                          {t.settings.scanQrCode}
                         </p>
                         <div style={styles.qrPlaceholder}>
                           <div style={styles.qrGrid}>
@@ -747,9 +749,9 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           </div>
                         </div>
                         <div style={styles.modalActions}>
-                          <button style={styles.cancelBtn} onClick={() => setTfaStep('overview')}>Back</button>
+                          <button style={styles.cancelBtn} onClick={() => setTfaStep('overview')}>{t.settings.back}</button>
                           <button style={styles.saveBtn} onClick={() => setTfaStep('verify')}>
-                            Next: Verify Code
+                            {t.settings.nextVerifyCode}
                           </button>
                         </div>
                       </>
@@ -759,7 +761,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     {tfaStep === 'verify' && (
                       <>
                         <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 16px' }}>
-                          Enter the 6-digit code from your authenticator app to confirm setup.
+                          {t.settings.enterCodeFromApp}
                         </p>
                         {tfaError && (
                           <div style={styles.errorBox}>
@@ -768,7 +770,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           </div>
                         )}
                         <div style={styles.modalField}>
-                          <label style={styles.fieldLabel}>Verification Code</label>
+                          <label style={styles.fieldLabel}>{t.settings.verificationCode}</label>
                           <input
                             type="text"
                             value={tfaCode}
@@ -783,18 +785,18 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           />
                         </div>
                         <div style={styles.modalActions}>
-                          <button style={styles.cancelBtn} onClick={() => { setTfaStep('setup'); setTfaCode(''); setTfaError(''); }}>Back</button>
+                          <button style={styles.cancelBtn} onClick={() => { setTfaStep('setup'); setTfaCode(''); setTfaError(''); }}>{t.settings.back}</button>
                           <button
                             style={{ ...styles.saveBtn, opacity: tfaCode.length === 6 ? 1 : 0.4 }}
                             onClick={() => {
-                              if (tfaCode.length !== 6) { setTfaError('Please enter a 6-digit code.'); return; }
+                              if (tfaCode.length !== 6) { setTfaError(t.settings.enter6DigitError); return; }
                               // TODO: Replace with API verification
                               setTwoFactorEnabled(true);
                               setTfaCode('');
                               setTfaStep('backup');
                             }}
                           >
-                            Verify & Enable
+                            {t.settings.verifyAndEnable}
                           </button>
                         </div>
                       </>
@@ -804,7 +806,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     {tfaStep === 'backup' && (
                       <>
                         <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
-                          Save these backup codes in a safe place. Each code can only be used once if you lose access to your authenticator.
+                          {t.settings.saveBackupCodesDesc}
                         </p>
                         <div style={styles.backupCodesBox}>
                           <div style={styles.backupCodesGrid}>
@@ -821,7 +823,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                             }}
                           >
                             <Copy size={13} />
-                            {copiedBackup ? 'Copied!' : 'Copy All'}
+                            {copiedBackup ? t.settings.copied : t.settings.copyAll}
                           </button>
                         </div>
                         <div style={styles.modalActions}>
@@ -830,7 +832,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                             setTfaStep('overview');
                             setCopiedBackup(false);
                           }}>
-                            Done
+                            {t.settings.done}
                           </button>
                         </div>
                       </>
@@ -843,7 +845,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               {securityModal === 'delete' && (
                 <>
                   <div style={styles.modalHeader}>
-                    <h3 style={{ ...styles.modalTitle, color: 'var(--accent-danger)' }}>Delete Account</h3>
+                    <h3 style={{ ...styles.modalTitle, color: 'var(--accent-danger)' }}>{t.settings.deleteAccount}</h3>
                     <button style={styles.closeBtn} onClick={() => {
                       setSecurityModal(null);
                       setDeleteConfirmEmail('');
@@ -856,16 +858,16 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       <AlertTriangle size={20} color="var(--accent-danger)" />
                       <div>
                         <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                          This action is permanent
+                          {t.settings.actionPermanent}
                         </div>
                         <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                          All your data — clients, workouts, schedules, messages, and payment history — will be permanently deleted. This cannot be undone.
+                          {t.settings.deleteWarningDesc}
                         </div>
                       </div>
                     </div>
                     <div style={styles.modalField}>
                       <label style={styles.fieldLabel}>
-                        Type <strong>{profileEmail}</strong> to confirm
+                        {t.settings.type} <strong>{profileEmail}</strong> {t.settings.typeToConfirm}
                       </label>
                       <input
                         type="text"
@@ -879,7 +881,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       <button style={styles.cancelBtn} onClick={() => {
                         setSecurityModal(null);
                         setDeleteConfirmEmail('');
-                      }}>Cancel</button>
+                      }}>{t.settings.cancel}</button>
                       <button
                         style={{
                           ...styles.saveBtn,
@@ -896,7 +898,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                         }}
                       >
                         <Trash2 size={14} />
-                        Delete My Account
+                        {t.settings.deleteMyAccount}
                       </button>
                     </div>
                   </div>
@@ -939,7 +941,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     <ChannelIcon channel={integrationModal} size={18} />
                   </div>
                   <h3 style={styles.modalTitle}>
-                    Connect {CHANNEL_LABELS[integrationModal]}
+                    {t.settings.connectChannel(CHANNEL_LABELS[integrationModal])}
                   </h3>
                 </div>
                 <button style={styles.closeBtn} onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}>
@@ -960,7 +962,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     style={styles.helpLink}
                   >
                     <ExternalLink size={13} />
-                    View setup guide
+                    {t.settings.viewSetupGuide}
                   </a>
                 )}
 
@@ -986,7 +988,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}
                     disabled={connectingChannel}
                   >
-                    Cancel
+                    {t.settings.cancel}
                   </button>
                   <button
                     style={{
@@ -1006,12 +1008,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
                           style={{ width: '14px', height: '14px', border: '2px solid rgba(7,9,14,0.3)', borderTopColor: 'var(--text-on-accent)', borderRadius: '50%' }}
                         />
-                        Connecting...
+                        {t.settings.connecting}
                       </>
                     ) : (
                       <>
                         <Plug size={14} />
-                        Connect {CHANNEL_LABELS[integrationModal]}
+                        {t.settings.connectChannel(CHANNEL_LABELS[integrationModal])}
                       </>
                     )}
                   </button>

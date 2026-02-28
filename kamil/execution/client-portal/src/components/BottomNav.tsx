@@ -1,5 +1,6 @@
 import { Home, Dumbbell, ClipboardCheck, TrendingUp, MessageSquare, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
 
 interface BottomNavProps {
@@ -9,25 +10,37 @@ interface BottomNavProps {
   onLogout?: () => void;
 }
 
-const navItems: { icon: typeof Home; label: string; page: ClientPage }[] = [
-  { icon: Home, label: 'Home', page: 'home' },
-  { icon: Dumbbell, label: 'Program', page: 'program' },
-  { icon: ClipboardCheck, label: 'Check-In', page: 'check-in' },
-  { icon: TrendingUp, label: 'Progress', page: 'progress' },
-  { icon: MessageSquare, label: 'Messages', page: 'messages' },
-];
+const navIcons: Record<ClientPage, typeof Home> = {
+  home: Home,
+  program: Dumbbell,
+  'check-in': ClipboardCheck,
+  progress: TrendingUp,
+  messages: MessageSquare,
+};
+
+const navPages: ClientPage[] = ['home', 'program', 'check-in', 'progress', 'messages'];
 
 export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout }: BottomNavProps) {
+  const { t } = useLang();
+
+  const navLabels: Record<ClientPage, string> = {
+    home: t.nav.home,
+    program: t.nav.program,
+    'check-in': t.nav.checkIn,
+    progress: t.nav.progress,
+    messages: t.nav.messages,
+  };
+
   if (isMobile) {
     return (
       <nav style={styles.bottomBar}>
-        {navItems.map((item) => {
-          const active = currentPage === item.page;
-          const Icon = item.icon;
+        {navPages.map((page) => {
+          const active = currentPage === page;
+          const Icon = navIcons[page];
           return (
             <button
-              key={item.page}
-              onClick={() => onNavigate(item.page)}
+              key={page}
+              onClick={() => onNavigate(page)}
               style={{
                 ...styles.bottomItem,
                 color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
@@ -39,7 +52,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
                 opacity: active ? 1 : 0,
                 maxHeight: active ? '16px' : '0px',
               }}>
-                {item.label}
+                {navLabels[page]}
               </span>
             </button>
           );
@@ -52,13 +65,13 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
   return (
     <nav style={styles.sideNav}>
       <div style={styles.sideNavItems}>
-        {navItems.map((item) => {
-          const active = currentPage === item.page;
-          const Icon = item.icon;
+        {navPages.map((page) => {
+          const active = currentPage === page;
+          const Icon = navIcons[page];
           return (
             <motion.button
-              key={item.page}
-              onClick={() => onNavigate(item.page)}
+              key={page}
+              onClick={() => onNavigate(page)}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               style={{
@@ -66,7 +79,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
                 color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
                 background: active ? 'var(--accent-primary-dim)' : 'transparent',
               }}
-              title={item.label}
+              title={navLabels[page]}
             >
               {active && (
                 <motion.div
@@ -91,7 +104,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
             color: 'var(--text-tertiary)',
             background: 'transparent',
           }}
-          title="Log out"
+          title={t.nav.logOut}
         >
           <LogOut size={18} />
         </motion.button>

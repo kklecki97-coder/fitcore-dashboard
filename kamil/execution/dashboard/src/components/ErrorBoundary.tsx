@@ -21,24 +21,30 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const isPl = localStorage.getItem('fitcore-lang') === 'pl';
+      const title = isPl ? 'Coś poszło nie tak' : 'Something went wrong';
+      const fallback = isPl ? 'Wystąpił nieoczekiwany błąd.' : 'An unexpected error occurred.';
+      const reloadLabel = isPl ? 'Odśwież stronę' : 'Reload Page';
+      const retryLabel = isPl ? 'Spróbuj ponownie' : 'Try Again';
+
       return (
         <div style={styles.container}>
           <div style={styles.card}>
             <div style={styles.iconWrap}>
               <AlertTriangle size={40} color="var(--accent-danger, #ef4444)" />
             </div>
-            <h2 style={styles.title}>Something went wrong</h2>
+            <h2 style={styles.title}>{title}</h2>
             <p style={styles.message}>
               {this.state.error?.message
                 ? this.state.error.message.slice(0, 200)
-                : 'An unexpected error occurred.'}
+                : fallback}
             </p>
             <div style={styles.actions}>
               <button style={styles.primaryBtn} onClick={() => window.location.reload()}>
-                <RefreshCw size={16} /> Reload Page
+                <RefreshCw size={16} /> {reloadLabel}
               </button>
               <button style={styles.secondaryBtn} onClick={this.handleReset}>
-                <RotateCcw size={16} /> Try Again
+                <RotateCcw size={16} /> {retryLabel}
               </button>
             </div>
           </div>

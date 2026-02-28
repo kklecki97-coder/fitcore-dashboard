@@ -17,10 +17,13 @@ import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
 import useIsMobile from './hooks/useIsMobile';
+import { useLang } from './i18n';
 import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs, invoices as initialInvoices, checkIns as initialCheckIns } from './data';
 import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification } from './types';
 
 function App() {
+  const { t } = useLang();
+
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('fitcore-auth') === 'true'
       || sessionStorage.getItem('fitcore-auth') === 'true';
@@ -32,8 +35,6 @@ function App() {
     } else {
       sessionStorage.setItem('fitcore-auth', 'true');
     }
-    // Reset notification refs so stale counts from a previous session
-    // don't generate false notifications on re-login
     prevMessageCount.current = allMessages.length;
     prevCheckInCount.current = allCheckIns.length;
     prevInvoiceCount.current = allInvoices.length;
@@ -71,7 +72,6 @@ function App() {
     today.setHours(0, 0, 0, 0);
     const tKey = today.toISOString().split('T')[0];
 
-    // Get Monday of current week
     const dow = today.getDay();
     const monday = new Date(today);
     monday.setDate(today.getDate() - dow + (dow === 0 ? -6 : 1));
@@ -149,7 +149,7 @@ function App() {
         newNotifs.push({
           id: `notif-msg-${msg.id}`,
           type: 'message',
-          title: `New message from ${client?.name || 'Client'}`,
+          title: t.notifications.newMessageFrom(client?.name || 'Client'),
           description: msg.text.slice(0, 80) + (msg.text.length > 80 ? '...' : ''),
           timestamp: msg.timestamp,
           isRead: false,
@@ -166,7 +166,7 @@ function App() {
         newNotifs.push({
           id: `notif-ci-${ci.id}`,
           type: 'checkin',
-          title: `${ci.clientName} submitted a check-in`,
+          title: t.notifications.checkInSubmitted(ci.clientName),
           description: `Check-in for ${ci.date}`,
           timestamp: new Date().toISOString(),
           isRead: false,
@@ -183,7 +183,7 @@ function App() {
         newNotifs.push({
           id: `notif-inv-${inv.id}`,
           type: 'payment',
-          title: `New invoice — $${inv.amount}`,
+          title: t.notifications.paymentReceived(`$${inv.amount}`),
           description: `${inv.clientName} — ${inv.period}`,
           timestamp: new Date().toISOString(),
           isRead: false,
@@ -197,7 +197,7 @@ function App() {
     if (newNotifs.length > 0) {
       setAppNotifications(prev => [...newNotifs, ...prev]);
     }
-  }, [allMessages, allCheckIns, allInvoices, allClients]);
+  }, [allMessages, allCheckIns, allInvoices, allClients, t]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -210,19 +210,9 @@ function App() {
     if (isMobile) setSidebarOpen(false);
   };
 
-  const PAGE_LABELS: Record<Page, string> = {
-    'overview': 'Overview',
-    'clients': 'Clients',
-    'client-detail': 'Clients',
-    'add-client': 'Clients',
-    'messages': 'Messages',
-    'analytics': 'Analytics',
-    'schedule': 'Schedule',
-    'settings': 'Settings',
-    'programs': 'Programs',
-    'program-builder': 'Programs',
-    'payments': 'Payments',
-    'check-ins': 'Check-Ins',
+  const getPageLabel = (page: Page): string => {
+    const info = t.header.pages[page];
+    return info ? info.title : page;
   };
 
   const handleViewClient = (id: string) => {
@@ -350,7 +340,7 @@ function App() {
             workoutLogs={workoutLogs}
             checkIns={allCheckIns}
             onBack={handleBackFromClient}
-            backLabel={`Back to ${PAGE_LABELS[previousPage]}`}
+            backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
             onUpdateClient={handleUpdateClient}
             onSendMessage={handleSendMessage}
             onUpdateProgram={handleUpdateProgram}
@@ -390,7 +380,7 @@ function App() {
               setSelectedProgramId('');
             }}
             onBack={handleBackFromProgram}
-            backLabel={`Back to ${PAGE_LABELS[previousPage]}`}
+            backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
           />
         );
       case 'payments':

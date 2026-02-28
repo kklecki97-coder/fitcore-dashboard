@@ -8,6 +8,7 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, Invoice } from '../types';
 
 interface PaymentsPageProps {
@@ -22,6 +23,7 @@ type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
 export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
+  const { lang, t } = useLang();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
@@ -32,6 +34,14 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
   const [reminderDraft, setReminderDraft] = useState('');
   const [reminderSent, setReminderSent] = useState(false);
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
+
+  // ── Status label helper ──
+  const statusLabel = (s: string) => {
+    if (s === 'paid') return t.payments.paid;
+    if (s === 'pending') return t.payments.pending;
+    if (s === 'overdue') return t.payments.overdue;
+    return s;
+  };
 
   // ── Summary stats ──
   const activeClients = clients.filter(c => c.status === 'active');
@@ -63,6 +73,9 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
     return Math.round(((current - previous) / previous) * 100);
   };
   const revenueDelta = getRevenueDelta(totalRevenue, lastMonthRevenue);
+
+  // ── Date locale ──
+  const dateLocale = lang === 'pl' ? 'pl-PL' : 'en-US';
 
   // ── Filter + sort invoices ──
   const filtered = invoices.filter(inv => {
@@ -111,10 +124,10 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
   };
 
   const filterTabs: { key: FilterStatus; label: string; count: number }[] = [
-    { key: 'all', label: 'All', count: invoices.length },
-    { key: 'paid', label: 'Paid', count: invoices.filter(i => i.status === 'paid').length },
-    { key: 'pending', label: 'Pending', count: invoices.filter(i => i.status === 'pending').length },
-    { key: 'overdue', label: 'Overdue', count: invoices.filter(i => i.status === 'overdue').length },
+    { key: 'all', label: t.payments.filterAll, count: invoices.length },
+    { key: 'paid', label: t.payments.filterPaid, count: invoices.filter(i => i.status === 'paid').length },
+    { key: 'pending', label: t.payments.filterPending, count: invoices.filter(i => i.status === 'pending').length },
+    { key: 'overdue', label: t.payments.filterOverdue, count: invoices.filter(i => i.status === 'overdue').length },
   ];
 
   return (
@@ -125,10 +138,10 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           <div style={styles.summaryIcon}>
             <DollarSign size={20} color="var(--accent-success)" />
           </div>
-          <div style={styles.summaryLabel}>Revenue This Month</div>
+          <div style={styles.summaryLabel}>{t.payments.revenueThisMonth}</div>
           <div style={styles.summaryValue}>${totalRevenue.toLocaleString()}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-success)' }}>
-            {paidCount}/{totalCount} invoices paid
+            {t.payments.invoicesPaid(paidCount)} ({paidCount}/{totalCount})
           </div>
           {lastMonthRevenue > 0 && (
             <div style={{ ...styles.trendLine, color: revenueDelta >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
@@ -142,15 +155,15 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           <div style={{ ...styles.summaryIcon }}>
             <Clock size={20} color="var(--accent-warm)" />
           </div>
-          <div style={styles.summaryLabel}>Pending</div>
+          <div style={styles.summaryLabel}>{t.payments.pending}</div>
           <div style={styles.summaryValue}>${pendingAmount.toLocaleString()}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-warm)' }}>
-            {thisMonth.filter(i => i.status === 'pending').length} invoice{thisMonth.filter(i => i.status === 'pending').length !== 1 ? 's' : ''}
+            {t.payments.invoiceCount(thisMonth.filter(i => i.status === 'pending').length)}
           </div>
           {lastMonthPending > 0 && pendingAmount !== lastMonthPending && (
             <div style={{ ...styles.trendLine, color: pendingAmount <= lastMonthPending ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
               {pendingAmount <= lastMonthPending ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-              {pendingAmount < lastMonthPending ? 'Less' : 'More'} than last month
+              {pendingAmount < lastMonthPending ? t.payments.lessThanLast : t.payments.moreThanLast}
             </div>
           )}
         </GlassCard>
@@ -159,15 +172,15 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           <div style={{ ...styles.summaryIcon }}>
             <AlertTriangle size={20} color="var(--accent-danger)" />
           </div>
-          <div style={styles.summaryLabel}>Overdue</div>
+          <div style={styles.summaryLabel}>{t.payments.overdue}</div>
           <div style={styles.summaryValue}>${overdueAmount.toLocaleString()}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-danger)' }}>
-            {thisMonth.filter(i => i.status === 'overdue').length} invoice{thisMonth.filter(i => i.status === 'overdue').length !== 1 ? 's' : ''}
+            {t.payments.invoiceCount(thisMonth.filter(i => i.status === 'overdue').length)}
           </div>
           {lastMonthOverdue > 0 && overdueAmount !== lastMonthOverdue && (
             <div style={{ ...styles.trendLine, color: overdueAmount <= lastMonthOverdue ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
               {overdueAmount <= lastMonthOverdue ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-              {overdueAmount < lastMonthOverdue ? 'Less' : 'More'} than last month
+              {overdueAmount < lastMonthOverdue ? t.payments.lessThanLast : t.payments.moreThanLast}
             </div>
           )}
         </GlassCard>
@@ -176,10 +189,10 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           <div style={{ ...styles.summaryIcon }}>
             <CheckCircle2 size={20} color="var(--accent-primary)" />
           </div>
-          <div style={styles.summaryLabel}>All-Time Revenue</div>
+          <div style={styles.summaryLabel}>{t.payments.allTimeRevenue}</div>
           <div style={styles.summaryValue}>${allTimePaid.toLocaleString()}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--text-tertiary)' }}>
-            {activeClients.length} active clients
+            {activeClients.length} {t.payments.activeClients}
           </div>
         </GlassCard>
       </div>
@@ -189,7 +202,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
         {/* Toolbar */}
         <div style={{ ...styles.toolbar, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : '16px' }}>
           <div style={styles.toolbarLeft}>
-            <h3 style={styles.sectionTitle}>Invoices</h3>
+            <h3 style={styles.sectionTitle}>{t.payments.invoices}</h3>
             <div style={styles.filterTabs}>
               {filterTabs.map(tab => (
                 <button
@@ -212,7 +225,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
               <Search size={14} color="var(--text-tertiary)" />
               <input
                 type="text"
-                placeholder="Search clients..."
+                placeholder={t.payments.searchClients}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={styles.searchInput}
@@ -225,15 +238,15 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
                 style={styles.sortSelect}
               >
-                <option value="date">Date</option>
-                <option value="amount">Amount</option>
-                <option value="name">Name</option>
+                <option value="date">{t.payments.sortDate}</option>
+                <option value="amount">{t.payments.sortAmount}</option>
+                <option value="name">{t.payments.sortName}</option>
               </select>
               <ChevronDown size={12} color="var(--text-tertiary)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             </div>
             <button onClick={() => setCreateModal(true)} style={styles.createBtn}>
               <DollarSign size={14} />
-              New Invoice
+              {t.payments.newInvoice}
             </button>
           </div>
         </div>
@@ -241,20 +254,20 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
         {/* Table Header */}
         {!isMobile && (
           <div style={styles.tableHeader}>
-            <span style={{ ...styles.th, flex: 2 }}>Client</span>
-            <span style={{ ...styles.th, flex: 1 }}>Period</span>
-            <span style={{ ...styles.th, flex: 1 }}>Plan</span>
-            <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>Amount</span>
-            <span style={{ ...styles.th, flex: 1 }}>Due Date</span>
-            <span style={{ ...styles.th, flex: 1 }}>Status</span>
-            <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>Action</span>
+            <span style={{ ...styles.th, flex: 2 }}>{t.payments.client}</span>
+            <span style={{ ...styles.th, flex: 1 }}>{t.payments.period}</span>
+            <span style={{ ...styles.th, flex: 1 }}>{t.payments.plan}</span>
+            <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>{t.payments.amount}</span>
+            <span style={{ ...styles.th, flex: 1 }}>{t.payments.dueDate}</span>
+            <span style={{ ...styles.th, flex: 1 }}>{t.payments.status}</span>
+            <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>{t.payments.action}</span>
           </div>
         )}
 
         {/* Rows */}
         <div style={styles.tableBody}>
           {filtered.length === 0 && (
-            <div style={styles.emptyState}>No invoices found.</div>
+            <div style={styles.emptyState}>{t.payments.noInvoicesFound}</div>
           )}
           {filtered.map((inv, i) => {
             const sc = statusColors[inv.status];
@@ -287,7 +300,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                       <div style={{ textAlign: 'right' }}>
                         <div style={styles.amount}>${inv.amount}</div>
                         <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
-                          {inv.status}
+                          {statusLabel(inv.status)}
                         </span>
                       </div>
                     </div>
@@ -299,12 +312,12 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                             style={{ ...styles.markPaidBtn, background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.15)', color: 'var(--accent-danger)', flex: 1 }}
                           >
                             <MessageSquare size={13} />
-                            Remind
+                            {t.payments.remind}
                           </button>
                         )}
                         <button onClick={() => handleMarkPaid(inv.id)} style={{ ...styles.markPaidBtn, flex: 1 }}>
                           <CheckCircle2 size={13} />
-                          Mark Paid
+                          {t.payments.markAsPaid}
                         </button>
                       </div>
                     )}
@@ -326,14 +339,14 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                       ${inv.amount}
                     </span>
                     <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '17px' }}>
-                      {new Date(inv.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(inv.dueDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
                     </span>
                     <span style={{ ...styles.td, flex: 1 }}>
                       <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
                         {inv.status === 'paid' && <CheckCircle2 size={11} />}
                         {inv.status === 'pending' && <Clock size={11} />}
                         {inv.status === 'overdue' && <AlertTriangle size={11} />}
-                        {inv.status}
+                        {statusLabel(inv.status)}
                       </span>
                     </span>
                     <span style={{ ...styles.td, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
@@ -343,18 +356,18 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                           style={styles.reminderBtnSmall}
                         >
                           <MessageSquare size={12} />
-                          Remind
+                          {t.payments.remind}
                         </button>
                       )}
                       {inv.status !== 'paid' ? (
                         <button onClick={(e) => { e.stopPropagation(); handleMarkPaid(inv.id); }} style={styles.markPaidBtnSmall}>
                           <CheckCircle2 size={12} />
-                          Mark Paid
+                          {t.payments.markAsPaid}
                         </button>
                       ) : (
                         <span style={styles.paidDateLabel}>
                           <CheckCircle2 size={12} />
-                          Paid {inv.paidDate && new Date(inv.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {t.payments.paid} {inv.paidDate && new Date(inv.paidDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
                         </span>
                       )}
                       {clientHistory.length > 0 && (
@@ -378,7 +391,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                       style={{ overflow: 'hidden' }}
                     >
                       <div style={styles.historySection}>
-                        <div style={styles.historyLabel}>Payment History — {inv.clientName}</div>
+                        <div style={styles.historyLabel}>{t.payments.paymentHistory(inv.clientName)}</div>
                         {clientHistory.map(h => {
                           const hsc = statusColors[h.status];
                           return (
@@ -390,11 +403,11 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                                   {h.status === 'paid' && <CheckCircle2 size={10} />}
                                   {h.status === 'pending' && <Clock size={10} />}
                                   {h.status === 'overdue' && <AlertTriangle size={10} />}
-                                  {h.status}
+                                  {statusLabel(h.status)}
                                 </span>
                               </span>
                               <span style={{ ...styles.td, flex: 1, fontSize: '14px', color: 'var(--text-tertiary)' }}>
-                                {h.paidDate ? `Paid ${new Date(h.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : h.status === 'overdue' ? 'Overdue' : '—'}
+                                {h.paidDate ? `${t.payments.paid} ${new Date(h.paidDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}` : h.status === 'overdue' ? t.payments.overdue : '—'}
                               </span>
                             </div>
                           );
@@ -430,25 +443,25 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
               onClick={e => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Create Invoice</h3>
+                <h3 style={styles.modalTitle}>{t.payments.createInvoice}</h3>
                 <button onClick={() => setCreateModal(false)} style={styles.closeBtn}><X size={18} /></button>
               </div>
               <div style={styles.modalBody}>
                 <div style={styles.modalField}>
-                  <span style={styles.modalLabel}>Client</span>
+                  <span style={styles.modalLabel}>{t.payments.client}</span>
                   <select
                     value={newInvoice.clientId}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, clientId: e.target.value }))}
                     style={styles.modalSelect}
                   >
-                    <option value="">Select a client...</option>
+                    <option value="">{t.payments.selectClient}</option>
                     {clients.filter(c => c.status === 'active' || c.status === 'pending').map(c => (
                       <option key={c.id} value={c.id}>{c.name} ({c.plan})</option>
                     ))}
                   </select>
                 </div>
                 <div style={styles.modalField}>
-                  <span style={styles.modalLabel}>Plan Tier</span>
+                  <span style={styles.modalLabel}>{t.payments.planTier}</span>
                   <div style={styles.planPicker}>
                     {(['Basic', 'Premium', 'Elite'] as const).map(p => {
                       const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
@@ -470,13 +483,13 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                   </div>
                 </div>
                 <div style={styles.modalActions}>
-                  <button onClick={() => setCreateModal(false)} style={styles.cancelBtn}>Cancel</button>
+                  <button onClick={() => setCreateModal(false)} style={styles.cancelBtn}>{t.common.cancel}</button>
                   <button
                     onClick={handleCreateInvoice}
                     style={{ ...styles.primaryBtn, opacity: newInvoice.clientId ? 1 : 0.5 }}
                   >
                     <Send size={14} />
-                    Create Invoice
+                    {t.payments.createInvoice}
                   </button>
                 </div>
               </div>
@@ -508,9 +521,9 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                     {getInitials(reminderModal.clientName)}
                   </div>
                   <div>
-                    <h3 style={{ ...styles.modalTitle, fontSize: '18px' }}>Remind {reminderModal.clientName.split(' ')[0]}</h3>
+                    <h3 style={{ ...styles.modalTitle, fontSize: '18px' }}>{t.payments.remindClient(reminderModal.clientName.split(' ')[0])}</h3>
                     <span style={{ fontSize: '13px', color: 'var(--accent-danger)' }}>
-                      ${reminderModal.amount} overdue
+                      {t.payments.amountOverdue(reminderModal.amount)}
                     </span>
                   </div>
                 </div>
@@ -530,15 +543,15 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '20px 0' }}
                   >
                     <CheckCircle2 size={32} color="var(--accent-success)" />
-                    <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Reminder Sent!</p>
+                    <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{t.payments.reminderSent}</p>
                     <p style={{ fontSize: '14px', color: 'var(--text-tertiary)', margin: 0, textAlign: 'center' }}>
-                      Payment reminder sent to {reminderModal.clientName.split(' ')[0]}.
+                      {t.payments.reminderSentTo(reminderModal.clientName.split(' ')[0])}
                     </p>
                     <button
                       style={styles.cancelBtn}
                       onClick={() => { setReminderModal(null); setReminderDraft(''); setReminderSent(false); }}
                     >
-                      Close
+                      {t.payments.close}
                     </button>
                   </motion.div>
                 ) : (
@@ -546,20 +559,20 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                     <textarea
                       value={reminderDraft}
                       onChange={e => setReminderDraft(e.target.value)}
-                      placeholder={`Hey ${reminderModal.clientName.split(' ')[0]}, just a friendly reminder about your $${reminderModal.amount} payment...`}
+                      placeholder={t.payments.reminderPlaceholder(reminderModal.clientName.split(' ')[0], reminderModal.amount)}
                       style={styles.reminderTextarea}
                       rows={4}
                     />
                     <div style={styles.modalActions}>
                       <button onClick={() => { setReminderModal(null); setReminderDraft(''); }} style={styles.cancelBtn}>
-                        Cancel
+                        {t.common.cancel}
                       </button>
                       <button
                         onClick={() => setReminderSent(true)}
                         style={styles.primaryBtn}
                       >
                         <Send size={14} />
-                        Send Reminder
+                        {t.payments.sendReminder}
                       </button>
                     </div>
                   </>

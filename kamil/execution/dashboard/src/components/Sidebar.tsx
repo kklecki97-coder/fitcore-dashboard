@@ -11,6 +11,8 @@ import {
   CreditCard,
   ClipboardCheck,
 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useLang } from '../i18n';
 import type { Page } from '../types';
 
 interface SidebarProps {
@@ -20,18 +22,44 @@ interface SidebarProps {
   onLogout?: () => void;
 }
 
-const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = [
-  { icon: LayoutDashboard, label: 'Overview', page: 'overview' },
-  { icon: Users, label: 'Clients', page: 'clients' },
-  { icon: Dumbbell, label: 'Programs', page: 'programs' },
-  { icon: MessageSquare, label: 'Messages', page: 'messages' },
-  { icon: ClipboardCheck, label: 'Check-Ins', page: 'check-ins' },
-  { icon: CreditCard, label: 'Payments', page: 'payments' },
-  { icon: BarChart3, label: 'Analytics', page: 'analytics' },
-  { icon: CalendarDays, label: 'Schedule', page: 'schedule' },
+const navPages: { icon: typeof LayoutDashboard; page: Page }[] = [
+  { icon: LayoutDashboard, page: 'overview' },
+  { icon: Users, page: 'clients' },
+  { icon: Dumbbell, page: 'programs' },
+  { icon: MessageSquare, page: 'messages' },
+  { icon: ClipboardCheck, page: 'check-ins' },
+  { icon: CreditCard, page: 'payments' },
+  { icon: BarChart3, page: 'analytics' },
+  { icon: CalendarDays, page: 'schedule' },
 ];
 
+const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'messages' | 'checkIns' | 'payments' | 'analytics' | 'schedule'> = {
+  'overview': 'overview',
+  'clients': 'clients',
+  'programs': 'programs',
+  'messages': 'messages',
+  'check-ins': 'checkIns',
+  'payments': 'payments',
+  'analytics': 'analytics',
+  'schedule': 'schedule',
+};
+
 export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach Kamil', onLogout }: SidebarProps) {
+  const { lang, t, switchLang } = useLang();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const handleLangToggle = () => {
+    const newLang = lang === 'en' ? 'pl' : 'en';
+    switchLang(newLang);
+    if (newLang === 'pl' && !pathname.startsWith('/pl')) {
+      navigate('/pl' + (pathname === '/' ? '/' : pathname));
+    } else if (newLang === 'en' && pathname.startsWith('/pl')) {
+      const enPath = pathname.replace(/^\/pl\/?/, '/') || '/';
+      navigate(enPath);
+    }
+  };
+
   return (
     <aside style={styles.sidebar}>
       {/* Logo */}
@@ -39,16 +67,17 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
         <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 38, height: 38, borderRadius: '50%' }} />
         <div>
           <div style={styles.logoText}>FitCore</div>
-          <div style={styles.logoSub}>Coach Pro</div>
+          <div style={styles.logoSub}>{t.nav.coachPro}</div>
         </div>
       </div>
 
       {/* Navigation */}
       <nav style={styles.nav}>
-        <div style={styles.navLabel}>MENU</div>
-        {navItems.map((item) => {
+        <div style={styles.navLabel}>{t.nav.menu}</div>
+        {navPages.map((item) => {
           const isActive = currentPage === item.page;
           const Icon = item.icon;
+          const labelKey = navLabelKeys[item.page];
           return (
             <motion.button
               key={item.page}
@@ -68,7 +97,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
                 />
               )}
               <Icon size={22} style={{ opacity: isActive ? 1 : 0.5 }} />
-              <span style={{ opacity: isActive ? 1 : 0.6 }}>{item.label}</span>
+              <span style={{ opacity: isActive ? 1 : 0.6 }}>{t.nav[labelKey]}</span>
             </motion.button>
           );
         })}
@@ -77,6 +106,12 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
       {/* Bottom */}
       <div style={styles.bottom}>
         <div style={styles.divider} />
+
+        {/* Language toggle */}
+        <button onClick={handleLangToggle} style={styles.langBtn}>
+          {lang === 'en' ? t.lang.pl : t.lang.en}
+        </button>
+
         <motion.button
           onClick={() => onNavigate('settings')}
           style={{
@@ -94,18 +129,18 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
             />
           )}
           <Settings size={22} style={{ opacity: currentPage === 'settings' ? 1 : 0.5 }} />
-          <span style={{ opacity: currentPage === 'settings' ? 1 : 0.6 }}>Settings</span>
+          <span style={{ opacity: currentPage === 'settings' ? 1 : 0.6 }}>{t.nav.settings}</span>
         </motion.button>
         <button
           onClick={() => {
-            if (window.confirm('Are you sure you want to log out?')) {
+            if (window.confirm(t.nav.logoutConfirm)) {
               onLogout?.();
             }
           }}
           style={styles.navItem}
         >
           <LogOut size={22} style={{ opacity: 0.5 }} />
-          <span style={{ opacity: 0.6 }}>Log Out</span>
+          <span style={{ opacity: 0.6 }}>{t.nav.logOut}</span>
         </button>
 
         {/* Coach Profile */}
@@ -113,7 +148,7 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
           <div style={styles.coachAvatar}>{profileName.charAt(0).toUpperCase()}</div>
           <div>
             <div style={styles.coachName}>{profileName}</div>
-            <div style={styles.coachPlan}>Pro Plan</div>
+            <div style={styles.coachPlan}>{t.nav.proPlan}</div>
           </div>
         </div>
       </div>
@@ -221,6 +256,22 @@ const styles: Record<string, React.CSSProperties> = {
     height: '1px',
     background: 'var(--glass-border)',
     margin: '8px 0 12px',
+  },
+  langBtn: {
+    padding: '6px 14px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--accent-primary)',
+    background: 'transparent',
+    color: 'var(--accent-primary)',
+    fontSize: '13px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    letterSpacing: '1px',
+    cursor: 'pointer',
+    alignSelf: 'flex-start',
+    marginLeft: '12px',
+    marginBottom: '8px',
+    transition: 'background 0.15s',
   },
   coachCard: {
     display: 'flex',

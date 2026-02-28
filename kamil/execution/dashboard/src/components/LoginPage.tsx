@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
+import { useLang } from '../i18n';
 
 interface LoginPageProps {
   onLogin: (remember: boolean) => void;
@@ -10,6 +11,7 @@ const VALID_EMAIL = 'kamil@fitcore.io';
 const VALID_PASSWORD = 'fitcore123';
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
+  const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -21,18 +23,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setError('');
 
     if (!email.trim() || !password.trim()) {
-      setError('Please fill in all fields');
+      setError(t.login.fillAllFields);
       return;
     }
 
     setLoading(true);
 
-    // Simulate network delay
     setTimeout(() => {
       if (email === VALID_EMAIL && password === VALID_PASSWORD) {
         onLogin(rememberMe);
       } else {
-        setError('Invalid email or password');
+        setError(t.login.invalidCredentials);
         setLoading(false);
       }
     }, 600);
@@ -50,17 +51,17 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         <div style={styles.logoSection}>
           <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 42, height: 42, borderRadius: '50%' }} />
           <div>
-            <div style={styles.logoText}>FitCore</div>
-            <div style={styles.logoSub}>COACH DASHBOARD</div>
+            <div style={styles.logoText}>{t.login.brand}</div>
+            <div style={styles.logoSub}>{t.login.portal}</div>
           </div>
         </div>
 
-        <p style={styles.subtitle}>Sign in to manage your clients and programs</p>
+        <p style={styles.subtitle}>{t.login.subtitle}</p>
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={styles.form}>
           <div style={styles.field}>
-            <label style={styles.label}>Email</label>
+            <label style={styles.label}>{t.login.email}</label>
             <input
               type="email"
               value={email}
@@ -73,7 +74,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Password</label>
+            <label style={styles.label}>{t.login.password}</label>
             <input
               type="password"
               value={password}
@@ -95,7 +96,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             >
               {rememberMe && <span style={styles.checkmark}>&#10003;</span>}
             </div>
-            <span style={styles.rememberText}>Remember me</span>
+            <span style={styles.rememberText}>{t.login.rememberMe}</span>
           </label>
 
           {error && (
@@ -118,18 +119,18 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             }}
           >
             {loading ? (
-              <span>Signing in...</span>
+              <span>{t.login.signingIn}</span>
             ) : (
               <>
                 <LogIn size={16} />
-                Sign In
+                {t.login.signIn}
               </>
             )}
           </button>
         </form>
 
         <p style={styles.hint}>
-          Demo: kamil@fitcore.io / fitcore123
+          {t.login.demoHint}
         </p>
       </motion.div>
     </div>

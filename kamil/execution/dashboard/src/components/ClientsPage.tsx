@@ -8,6 +8,7 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, WorkoutProgram } from '../types';
 
 interface ClientsPageProps {
@@ -22,6 +23,7 @@ interface ClientsPageProps {
 
 export default function ClientsPage({ clients: allClients, programs, onViewClient, onAddClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
   const isMobile = useIsMobile();
+  const { t } = useLang();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -89,6 +91,24 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
     return colors[plan];
   };
 
+  const statusLabel = (status: Client['status']) => {
+    const map: Record<Client['status'], string> = {
+      active: t.clients.active,
+      paused: t.clients.paused,
+      pending: t.clients.pending,
+    };
+    return map[status];
+  };
+
+  const planLabel = (plan: Client['plan']) => {
+    const map: Record<Client['plan'], string> = {
+      Basic: t.clients.basic,
+      Premium: t.clients.premium,
+      Elite: t.clients.elite,
+    };
+    return map[plan];
+  };
+
   const handleTogglePause = (clientId: string) => {
     const client = allClients.find(c => c.id === clientId);
     if (client) {
@@ -120,7 +140,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
           <Search size={16} color="var(--text-tertiary)" />
           <input
             type="text"
-            placeholder="Search clients..."
+            placeholder={t.clients.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={styles.searchInput}
@@ -135,10 +155,10 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               onChange={(e) => setFilterPlan(e.target.value)}
               style={styles.select}
             >
-              <option value="all">All Plans</option>
-              <option value="Elite">Elite</option>
-              <option value="Premium">Premium</option>
-              <option value="Basic">Basic</option>
+              <option value="all">{t.clients.allPlans}</option>
+              <option value="Elite">{t.clients.elite}</option>
+              <option value="Premium">{t.clients.premium}</option>
+              <option value="Basic">{t.clients.basic}</option>
             </select>
           </div>
           <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
@@ -147,10 +167,10 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               onChange={(e) => setFilterStatus(e.target.value)}
               style={styles.select}
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="pending">Pending</option>
+              <option value="all">{t.clients.allStatuses}</option>
+              <option value="active">{t.clients.active}</option>
+              <option value="paused">{t.clients.paused}</option>
+              <option value="pending">{t.clients.pending}</option>
             </select>
           </div>
           <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
@@ -160,17 +180,17 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               style={styles.select}
             >
-              <option value="status">Sort: Status</option>
-              <option value="name">Sort: Name (A–Z)</option>
-              <option value="newest">Sort: Newest</option>
-              <option value="plan">Sort: Plan Tier</option>
+              <option value="status">{t.clients.sortStatus}</option>
+              <option value="name">{t.clients.sortName}</option>
+              <option value="newest">{t.clients.sortNewest}</option>
+              <option value="plan">{t.clients.sortPlan}</option>
             </select>
           </div>
         </div>
 
         <button onClick={onAddClient} style={{ ...styles.addBtn, ...(isMobile ? { width: '100%', justifyContent: 'center' } : {}) }}>
           <Plus size={16} />
-          Add Client
+          {t.clients.addClient}
         </button>
       </div>
 
@@ -179,22 +199,22 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--accent-success)' }}>
             {allClients.filter(c => c.status === 'active').length}
-          </span> Active
+          </span> {t.clients.active}
         </div>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--accent-warm)' }}>
             {allClients.filter(c => c.status === 'paused').length}
-          </span> Paused
+          </span> {t.clients.paused}
         </div>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--accent-secondary)' }}>
             {allClients.filter(c => c.status === 'pending').length}
-          </span> Pending
+          </span> {t.clients.pending}
         </div>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--text-primary)' }}>
             {allClients.length}
-          </span> Total
+          </span> {t.clients.total}
         </div>
       </div>
 
@@ -203,16 +223,16 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
         <div style={styles.emptyState}>
           <User size={48} color="var(--text-tertiary)" />
           <div style={styles.emptyTitle}>
-            {allClients.length === 0 ? 'No clients yet' : 'No clients match your filters'}
+            {allClients.length === 0 ? t.clients.noClientsYet : t.clients.noClientsMatch}
           </div>
           <div style={styles.emptySub}>
             {allClients.length === 0
-              ? 'Add your first client to get started.'
-              : 'Try adjusting your search or filters.'}
+              ? t.clients.addFirstClient
+              : t.clients.adjustFilters}
           </div>
           {allClients.length === 0 && (
             <button onClick={onAddClient} style={{ ...styles.addBtn, marginTop: '16px' }}>
-              <Plus size={16} /> Add Client
+              <Plus size={16} /> {t.clients.addClient}
             </button>
           )}
         </div>
@@ -242,8 +262,8 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                         <div className="avatar-tooltip" style={styles.tooltip}>
                           <div style={styles.tooltipLabel}>
                             {keyNotes.length > 0 ? (
-                              <><Star size={10} style={{ verticalAlign: 'middle', marginRight: '3px' }} />Key Notes</>
-                            ) : 'Latest Note'}
+                              <><Star size={10} style={{ verticalAlign: 'middle', marginRight: '3px' }} />{t.clients.keyNotes}</>
+                            ) : t.clients.latestNote}
                           </div>
                           {displayNotes.map((n, idx) => (
                             <div key={idx} style={idx > 0 ? { marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--glass-border)' } : undefined}>
@@ -275,13 +295,13 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                           style={styles.menuItem}
                           onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onViewClient(client.id); }}
                         >
-                          <User size={14} /> View Profile
+                          <User size={14} /> {t.clients.viewProfile}
                         </button>
                         <button
                           style={styles.menuItem}
                           onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); onNavigate?.('messages'); }}
                         >
-                          <MessageSquare size={14} /> Message
+                          <MessageSquare size={14} /> {t.clients.message}
                         </button>
                         <button
                           style={styles.menuItem}
@@ -291,7 +311,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                             setEditModal({ clientId: client.id, plan: client.plan, status: client.status });
                           }}
                         >
-                          <Edit3 size={14} /> Edit Plan
+                          <Edit3 size={14} /> {t.clients.editPlan}
                         </button>
                         <button
                           style={styles.menuItem}
@@ -302,7 +322,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                           }}
                         >
                           {client.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
-                          {client.status === 'paused' ? 'Resume' : 'Pause'}
+                          {client.status === 'paused' ? t.clients.resume : t.clients.pause}
                         </button>
                         <div style={styles.menuDivider} />
                         <button
@@ -313,7 +333,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                             setDeleteConfirm(client.id);
                           }}
                         >
-                          <Trash2 size={14} /> Delete
+                          <Trash2 size={14} /> {t.clients.delete}
                         </button>
                       </div>
                   )}
@@ -322,11 +342,11 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
 
               <div style={styles.cardMeta}>
                 <span style={{ ...styles.planBadge, color: badge.color, background: badge.bg }}>
-                  {client.plan}
+                  {planLabel(client.plan)}
                 </span>
                 <span style={styles.statusBadge}>
                   {statusIcon(client.status)}
-                  <span style={{ textTransform: 'capitalize' }}>{client.status}</span>
+                  <span style={{ textTransform: 'capitalize' }}>{statusLabel(client.status)}</span>
                 </span>
                 {programs.filter(p => p.clientIds.includes(client.id)).map(p => (
                   <span key={p.id} style={styles.programBadge}>
@@ -338,17 +358,17 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
 
               <div style={styles.cardStats}>
                 <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>Progress</div>
+                  <div style={styles.cardStatLabel}>{t.clients.progress}</div>
                   <div style={styles.cardStatValue}>{client.progress}%</div>
                 </div>
                 <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>Rate</div>
+                  <div style={styles.cardStatLabel}>{t.clients.rate}</div>
                   <div style={styles.cardStatValue}>${client.monthlyRate}</div>
                 </div>
                 <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>Streak</div>
+                  <div style={styles.cardStatLabel}>{t.clients.streak}</div>
                   <div style={styles.cardStatValue}>
-                    {client.streak > 0 ? `${client.streak}d` : '—'}
+                    {client.streak > 0 ? `${client.streak}d` : '\u2014'}
                   </div>
                 </div>
               </div>
@@ -397,14 +417,14 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Edit Plan</h3>
+                <h3 style={styles.modalTitle}>{t.clients.editPlanStatus}</h3>
                 <button style={styles.closeBtn} onClick={() => setEditModal(null)}>
                   <X size={18} />
                 </button>
               </div>
               <div style={styles.modalBody}>
                 <div style={styles.modalField}>
-                  <span style={styles.modalLabel}>Plan Tier</span>
+                  <span style={styles.modalLabel}>{t.clients.planTier}</span>
                   <div style={styles.modalPlanPicker}>
                     {(['Basic', 'Premium', 'Elite'] as const).map(p => {
                       const isActive = editModal.plan === p;
@@ -419,7 +439,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                             ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'var(--bg-subtle)' } : {}),
                           }}
                         >
-                          <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
+                          <div style={{ fontWeight: 600, fontSize: '18px' }}>{planLabel(p)}</div>
                           <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
                         </button>
                       );
@@ -428,7 +448,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 </div>
 
                 <div style={styles.modalField}>
-                  <span style={styles.modalLabel}>Status</span>
+                  <span style={styles.modalLabel}>{t.clients.status}</span>
                   <div style={styles.modalPlanPicker}>
                     {(['active', 'paused', 'pending'] as const).map(s => {
                       const isActive = editModal.status === s;
@@ -442,7 +462,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                             ...(isActive ? { borderColor: colorMap[s], color: colorMap[s], background: 'var(--bg-subtle)' } : {}),
                           }}
                         >
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                          {statusLabel(s)}
                         </button>
                       );
                     })}
@@ -450,10 +470,10 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 </div>
               </div>
               <div style={styles.modalActions}>
-                <button style={styles.modalCancelBtn} onClick={() => setEditModal(null)}>Cancel</button>
+                <button style={styles.modalCancelBtn} onClick={() => setEditModal(null)}>{t.clients.cancel}</button>
                 <button style={styles.modalPrimaryBtn} onClick={handleSaveEdit}>
                   <Save size={14} />
-                  Save Changes
+                  {t.clients.saveChanges}
                 </button>
               </div>
             </motion.div>
@@ -481,26 +501,25 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Delete Client</h3>
+                <h3 style={styles.modalTitle}>{t.clients.deleteClient}</h3>
                 <button style={styles.closeBtn} onClick={() => setDeleteConfirm(null)}>
                   <X size={18} />
                 </button>
               </div>
               <div style={styles.modalBody}>
                 <p style={{ fontSize: '20px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                  Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>
-                    {allClients.find(c => c.id === deleteConfirm)?.name}
-                  </strong>? This action cannot be undone.
+                  {t.clients.deleteConfirmMsg(allClients.find(c => c.id === deleteConfirm)?.name || '')}{' '}
+                  {t.clients.cannotBeUndone}
                 </p>
               </div>
               <div style={styles.modalActions}>
-                <button style={styles.modalCancelBtn} onClick={() => setDeleteConfirm(null)}>Cancel</button>
+                <button style={styles.modalCancelBtn} onClick={() => setDeleteConfirm(null)}>{t.clients.cancel}</button>
                 <button
                   style={{ ...styles.modalPrimaryBtn, background: 'var(--accent-danger)', boxShadow: 'none' }}
                   onClick={() => handleDelete(deleteConfirm)}
                 >
                   <Trash2 size={14} />
-                  Delete
+                  {t.clients.delete}
                 </button>
               </div>
             </motion.div>

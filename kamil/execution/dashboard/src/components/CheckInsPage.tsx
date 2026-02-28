@@ -11,6 +11,7 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, CheckIn, Page } from '../types';
 
 interface CheckInsPageProps {
@@ -70,14 +71,6 @@ function DeltaBadge({ current, previous, unit, inverse }: { current: number; pre
   );
 }
 
-const moodIcons: Record<number, { icon: typeof Smile; color: string; label: string }> = {
-  1: { icon: Angry, color: 'var(--accent-danger)', label: 'Terrible' },
-  2: { icon: Frown, color: 'var(--accent-warm)', label: 'Bad' },
-  3: { icon: Meh, color: 'var(--text-secondary)', label: 'Okay' },
-  4: { icon: Smile, color: 'var(--accent-success)', label: 'Good' },
-  5: { icon: SmilePlus, color: 'var(--accent-primary)', label: 'Great' },
-};
-
 function ScoreBar({ value, max = 10, color }: { value: number; max?: number; color: string }) {
   const pct = (value / max) * 100;
   return (
@@ -92,6 +85,7 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
 
 export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onNavigate: _onNavigate }: CheckInsPageProps) {
   const isMobile = useIsMobile();
+  const { lang, t } = useLang();
   const [filter, setFilter] = useState<FilterTab>('pending');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -101,6 +95,16 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   const [messageModal, setMessageModal] = useState<{ clientId: string; clientName: string } | null>(null);
   const [messageDraft, setMessageDraft] = useState('');
   const [messageSent, setMessageSent] = useState(false);
+
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+
+  const moodIcons: Record<number, { icon: typeof Smile; color: string; label: string }> = {
+    1: { icon: Angry, color: 'var(--accent-danger)', label: t.checkIns.moodLabels[1] },
+    2: { icon: Frown, color: 'var(--accent-warm)', label: t.checkIns.moodLabels[2] },
+    3: { icon: Meh, color: 'var(--text-secondary)', label: t.checkIns.moodLabels[3] },
+    4: { icon: Smile, color: 'var(--accent-success)', label: t.checkIns.moodLabels[4] },
+    5: { icon: SmilePlus, color: 'var(--accent-primary)', label: t.checkIns.moodLabels[5] },
+  };
 
   // ── Computed data ──
   const completedCheckIns = checkIns.filter(ci => ci.status === 'completed');
@@ -229,11 +233,11 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   };
 
   const tabs: { key: FilterTab; label: string; count: number; color: string }[] = [
-    { key: 'pending', label: 'To Review', count: pendingReview.length, color: 'var(--accent-warm)' },
-    { key: 'flagged', label: 'Flagged', count: flagged.length, color: 'var(--accent-danger)' },
-    { key: 'reviewed', label: 'Done', count: reviewed.length, color: 'var(--accent-success)' },
-    { key: 'missed', label: 'Missed', count: missedCheckIns.length, color: 'var(--accent-danger)' },
-    { key: 'all', label: 'All', count: completedCheckIns.length + missedCheckIns.length, color: 'var(--text-secondary)' },
+    { key: 'pending', label: t.checkIns.pending, count: pendingReview.length, color: 'var(--accent-warm)' },
+    { key: 'flagged', label: t.checkIns.flagged, count: flagged.length, color: 'var(--accent-danger)' },
+    { key: 'reviewed', label: t.checkIns.reviewed, count: reviewed.length, color: 'var(--accent-success)' },
+    { key: 'missed', label: t.checkIns.missed, count: missedCheckIns.length, color: 'var(--accent-danger)' },
+    { key: 'all', label: t.checkIns.all, count: completedCheckIns.length + missedCheckIns.length, color: 'var(--text-secondary)' },
   ];
 
   return (
@@ -241,35 +245,35 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
       {/* Summary Cards */}
       <div style={{ ...styles.summaryRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
         <GlassCard delay={0}>
-          <div style={styles.summaryLabel}>To Review</div>
+          <div style={styles.summaryLabel}>{t.checkIns.pending}</div>
           <div style={{ ...styles.summaryValue, color: pendingReview.length > 0 ? 'var(--accent-warm)' : 'var(--text-primary)' }}>
             {pendingReview.length}
           </div>
-          <div style={styles.summaryHint}>check-ins waiting</div>
+          <div style={styles.summaryHint}>{t.checkIns.checkInsWaiting}</div>
         </GlassCard>
         <GlassCard delay={0.05}>
-          <div style={styles.summaryLabel}>Flagged</div>
+          <div style={styles.summaryLabel}>{t.checkIns.flagged}</div>
           <div style={{ ...styles.summaryValue, color: flagged.length > 0 ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
             {flagged.length}
           </div>
-          <div style={styles.summaryHint}>need intervention</div>
+          <div style={styles.summaryHint}>{t.checkIns.needIntervention}</div>
         </GlassCard>
         <GlassCard delay={0.1}>
-          <div style={styles.summaryLabel}>Avg Steps</div>
+          <div style={styles.summaryLabel}>{t.checkIns.steps}</div>
           <div style={styles.summaryValue}>
             {completedCheckIns.length > 0
               ? Math.round(completedCheckIns.filter(ci => ci.steps != null).reduce((s, ci) => s + (ci.steps || 0), 0) / completedCheckIns.filter(ci => ci.steps != null).length).toLocaleString()
               : 0}
           </div>
-          <div style={styles.summaryHint}>daily avg across clients</div>
+          <div style={styles.summaryHint}>{t.checkIns.dailyAvg}</div>
         </GlassCard>
         <GlassCard delay={0.15}>
-          <div style={styles.summaryLabel}>Upcoming</div>
+          <div style={styles.summaryLabel}>{t.checkIns.upcoming}</div>
           <div style={styles.summaryValue}>{scheduledCheckIns.length}</div>
           <div style={styles.upcomingDetails}>
             {dueToday.length > 0 && (
               <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: 'var(--text-on-accent)' }}>{dueToday.length} today</span>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: 'var(--text-on-accent)' }}>{dueToday.length} {t.checkIns.dueToday.toLowerCase()}</span>
                 <span style={styles.upcomingNames}>
                   {dueToday.map((ci, i) => (
                     <span key={ci.id}>
@@ -287,7 +291,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
             )}
             {dueTomorrow.length > 0 && (
               <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: 'var(--text-on-accent)' }}>{dueTomorrow.length} tomorrow</span>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: 'var(--text-on-accent)' }}>{dueTomorrow.length} {t.checkIns.dueTomorrow.toLowerCase()}</span>
                 <span style={styles.upcomingNames}>
                   {dueTomorrow.map((ci, i) => (
                     <span key={ci.id}>
@@ -305,10 +309,10 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
             )}
             {dueLater.length > 0 && (
               <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--bg-subtle-hover)', color: 'var(--text-secondary)' }}>{dueLater.length} later</span>
+                <span style={{ ...styles.upcomingBadge, background: 'var(--bg-subtle-hover)', color: 'var(--text-secondary)' }}>{dueLater.length} {t.checkIns.dueLater.toLowerCase()}</span>
               </div>
             )}
-            {scheduledCheckIns.length === 0 && <span style={styles.summaryHint}>none scheduled</span>}
+            {scheduledCheckIns.length === 0 && <span style={styles.summaryHint}>{t.checkIns.noneScheduled}</span>}
           </div>
         </GlassCard>
       </div>
@@ -319,7 +323,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
         <div style={styles.queueHeader}>
           <div style={styles.queueTitleRow}>
             <ClipboardCheck size={18} color="var(--accent-primary)" />
-            <h3 style={styles.queueTitle}>Check-In Review Queue</h3>
+            <h3 style={styles.queueTitle}>{t.checkIns.reviewQueue}</h3>
           </div>
           <div style={styles.tabRow}>
             {tabs.map(tab => (
@@ -350,7 +354,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search clients..."
+              placeholder={t.checkIns.searchClients}
               style={styles.searchInput}
             />
           </div>
@@ -363,10 +367,10 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
               {filter === 'pending' ? (
                 <>
                   <CheckCircle2 size={32} color="var(--accent-success)" />
-                  <p>All caught up! No check-ins to review.</p>
+                  <p>{t.checkIns.allCaughtUp}</p>
                 </>
               ) : (
-                <p style={{ color: 'var(--text-tertiary)' }}>No check-ins match your filter.</p>
+                <p style={{ color: 'var(--text-tertiary)' }}>{t.checkIns.noMatch}</p>
               )}
             </div>
           )}
@@ -402,7 +406,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                       <div>
                         <div style={styles.queueClientName}>{ci.clientName}</div>
                         <div style={styles.queueDate}>
-                          {new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
                           {client && <span style={{ marginLeft: '8px', color: 'var(--text-tertiary)' }}>{client.plan}</span>}
                           {(() => {
                             const days = getDaysSinceLastCheckIn(ci.clientId);
@@ -419,7 +423,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 background: isLate ? 'var(--accent-danger-dim)' : isWarning ? 'var(--accent-warm-dim)' : 'var(--bg-subtle-hover)',
                                 color: isLate ? 'var(--accent-danger)' : isWarning ? 'var(--accent-warm)' : 'var(--text-tertiary)',
                               }}>
-                                {days === 0 ? 'Today' : days === 1 ? '1d ago' : `${days}d ago`}
+                                {days === 0 ? t.checkIns.today : t.checkIns.dAgo(days)}
                               </span>
                             );
                           })()}
@@ -494,23 +498,23 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 <AlertTriangle size={18} color="var(--accent-danger)" />
                                 <div>
                                   <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                                    {ci.clientName} missed their check-in
+                                    {t.checkIns.missedCheckIn(ci.clientName)}
                                   </div>
                                   <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                    Due {new Date(ci.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} — no data submitted
+                                    {t.checkIns.dueOn} {new Date(ci.date).toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })} — {t.checkIns.noDataSubmitted}
                                   </div>
                                 </div>
                               </div>
                               <div style={styles.actionButtons}>
                                 <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
-                                  View Profile
+                                  {t.checkIns.viewProfile}
                                 </button>
                                 <button
                                   onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })}
                                   style={styles.actionBtnMessage}
                                 >
                                   <MessageSquare size={13} />
-                                  Follow Up
+                                  {t.checkIns.sendFollowUp}
                                 </button>
                               </div>
                             </>
@@ -520,32 +524,32 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           <div style={{ ...styles.comparisonGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             {/* This Week */}
                             <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>This Week — {new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                              <div style={styles.comparisonLabel}>{t.checkIns.thisWeek} — {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</div>
                               <div style={styles.metricsGrid}>
                                 {ci.weight != null && (
                                   <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Weight</span>
+                                    <span style={styles.metricCellLabel}>{t.checkIns.weight}</span>
                                     <span style={styles.metricCellValue}>{ci.weight}kg</span>
                                     {prev?.weight != null && <DeltaBadge current={ci.weight} previous={prev.weight} unit="kg" inverse />}
                                   </div>
                                 )}
                                 {ci.bodyFat != null && (
                                   <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Body Fat</span>
+                                    <span style={styles.metricCellLabel}>{t.checkIns.bodyFat}</span>
                                     <span style={styles.metricCellValue}>{ci.bodyFat}%</span>
                                     {prev?.bodyFat != null && <DeltaBadge current={ci.bodyFat} previous={prev.bodyFat} unit="%" inverse />}
                                   </div>
                                 )}
                                 {ci.steps != null && (
                                   <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Steps</span>
+                                    <span style={styles.metricCellLabel}>{t.checkIns.steps}</span>
                                     <span style={{ ...styles.metricCellValue, color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.steps.toLocaleString()}</span>
                                     {prev?.steps != null && <DeltaBadge current={ci.steps} previous={prev.steps} unit="" />}
                                   </div>
                                 )}
                                 {ci.sleepHours != null && (
                                   <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Sleep</span>
+                                    <span style={styles.metricCellLabel}>{t.checkIns.sleepHours}</span>
                                     <span style={styles.metricCellValue}>{ci.sleepHours}h</span>
                                     {prev?.sleepHours != null && <DeltaBadge current={ci.sleepHours} previous={prev.sleepHours} unit="h" />}
                                   </div>
@@ -556,25 +560,25 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
                                 {ci.mood && (
                                   <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Mood</span>
+                                    <span style={styles.wellnessLabel}>{t.checkIns.mood}</span>
                                     <ScoreBar value={ci.mood} max={5} color={moodIcons[ci.mood]?.color || 'var(--text-secondary)'} />
                                   </div>
                                 )}
                                 {ci.energy != null && (
                                   <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Energy</span>
+                                    <span style={styles.wellnessLabel}>{t.checkIns.energy}</span>
                                     <ScoreBar value={ci.energy} color={ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
                                   </div>
                                 )}
                                 {ci.stress != null && (
                                   <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Stress</span>
+                                    <span style={styles.wellnessLabel}>{t.checkIns.stress}</span>
                                     <ScoreBar value={ci.stress} color={ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
                                   </div>
                                 )}
                                 {ci.nutritionScore != null && (
                                   <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Nutrition</span>
+                                    <span style={styles.wellnessLabel}>{t.checkIns.nutritionScore}</span>
                                     <ScoreBar value={ci.nutritionScore} color={ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
                                   </div>
                                 )}
@@ -583,13 +587,13 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
 
                             {/* Trends */}
                             <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>8-Week Trends</div>
+                              <div style={styles.comparisonLabel}>{t.checkIns.weekTrends}</div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {(() => {
                                   const weightTrend = getTrend(ci.clientId, 'weight');
                                   return weightTrend.length >= 2 && (
                                     <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Weight</span>
+                                      <span style={styles.trendLabel}>{t.checkIns.weight}</span>
                                       <Sparkline data={weightTrend} color="var(--accent-primary)" />
                                     </div>
                                   );
@@ -598,7 +602,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   const stepsTrend = getTrend(ci.clientId, 'steps');
                                   return stepsTrend.length >= 2 && (
                                     <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Steps</span>
+                                      <span style={styles.trendLabel}>{t.checkIns.steps}</span>
                                       <Sparkline data={stepsTrend} color="var(--accent-success)" />
                                     </div>
                                   );
@@ -607,7 +611,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   const moodTrend = getTrend(ci.clientId, 'mood');
                                   return moodTrend.length >= 2 && (
                                     <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Mood</span>
+                                      <span style={styles.trendLabel}>{t.checkIns.mood}</span>
                                       <Sparkline data={moodTrend} color="var(--accent-warm)" />
                                     </div>
                                   );
@@ -616,7 +620,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   const sleepTrend = getTrend(ci.clientId, 'sleepHours');
                                   return sleepTrend.length >= 2 && (
                                     <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Sleep</span>
+                                      <span style={styles.trendLabel}>{t.checkIns.sleepHours}</span>
                                       <Sparkline data={sleepTrend} color="var(--accent-secondary)" />
                                     </div>
                                   );
@@ -625,7 +629,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   const energyTrend = getTrend(ci.clientId, 'energy');
                                   return energyTrend.length >= 2 && (
                                     <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Energy</span>
+                                      <span style={styles.trendLabel}>{t.checkIns.energy}</span>
                                       <Sparkline data={energyTrend} color="#f59e0b" />
                                     </div>
                                   );
@@ -638,14 +642,14 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           <div style={{ ...styles.notesGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr' }}>
                             {ci.notes && (
                               <div style={styles.noteBlock}>
-                                <span style={styles.noteLabel}>Client Notes</span>
+                                <span style={styles.noteLabel}>{t.checkIns.notes}</span>
                                 <p style={styles.noteText}>{ci.notes}</p>
                               </div>
                             )}
                             {ci.wins && (
                               <div style={styles.noteBlock}>
                                 <span style={{ ...styles.noteLabel, color: 'var(--accent-success)' }}>
-                                  <Award size={11} /> Wins
+                                  <Award size={11} /> {t.checkIns.wins}
                                 </span>
                                 <p style={styles.noteText}>{ci.wins}</p>
                               </div>
@@ -653,7 +657,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             {ci.challenges && (
                               <div style={styles.noteBlock}>
                                 <span style={{ ...styles.noteLabel, color: 'var(--accent-warm)' }}>
-                                  <Target size={11} /> Challenges
+                                  <Target size={11} /> {t.checkIns.challenges}
                                 </span>
                                 <p style={styles.noteText}>{ci.challenges}</p>
                               </div>
@@ -664,7 +668,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {ci.photos && ci.photos.length > 0 && (
                             <div>
                               <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)' }}>
-                                <Camera size={11} /> Progress Photos
+                                <Camera size={11} /> {t.checkIns.progressPhotos}
                               </span>
                               <div style={styles.photosRow}>
                                 {ci.photos.map((photo, pi) => (
@@ -685,14 +689,14 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {ci.photos && ci.photos.length === 0 && ci.status === 'completed' && (
                             <div style={styles.noPhotoBanner}>
                               <Camera size={14} color="var(--text-tertiary)" />
-                              <span>No progress photos submitted this week</span>
+                              <span>{t.checkIns.noPhotosThisWeek}</span>
                             </div>
                           )}
 
                           {/* Previous coach feedback (if exists) */}
                           {ci.coachFeedback && ci.reviewStatus === 'reviewed' && (
                             <div style={styles.existingFeedback}>
-                              <span style={{ ...styles.noteLabel, color: 'var(--accent-primary)' }}>Your Feedback</span>
+                              <span style={{ ...styles.noteLabel, color: 'var(--accent-primary)' }}>{t.checkIns.yourFeedback}</span>
                               <p style={styles.noteText}>{ci.coachFeedback}</p>
                             </div>
                           )}
@@ -701,13 +705,13 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {ci.followUpNotes && ci.followUpNotes.length > 0 && (
                             <div>
                               <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)' }}>
-                                <ClipboardCheck size={11} /> Follow-Up Notes
+                                <ClipboardCheck size={11} /> {t.checkIns.followUpNotes}
                               </span>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
                                 {ci.followUpNotes.map((fn, fi) => (
                                   <div key={fi} style={styles.followUpNote}>
                                     <span style={styles.followUpDate}>
-                                      {new Date(fn.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                      {new Date(fn.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
                                     </span>
                                     <span style={styles.followUpText}>{fn.text}</span>
                                   </div>
@@ -722,7 +726,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                               <input
                                 value={followUpDrafts[ci.id] || ''}
                                 onChange={e => setFollowUpDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                placeholder="Add a follow-up note..."
+                                placeholder={t.checkIns.addFollowUpPlaceholder}
                                 style={styles.followUpField}
                                 onKeyDown={e => { if (e.key === 'Enter') handleAddFollowUp(ci); }}
                               />
@@ -735,7 +739,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 disabled={!followUpDrafts[ci.id]?.trim()}
                               >
                                 <Plus size={13} />
-                                Add Note
+                                {t.checkIns.addNote}
                               </button>
                             </div>
                           )}
@@ -754,7 +758,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                               <textarea
                                 value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
                                 onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                placeholder="Write your feedback..."
+                                placeholder={t.checkIns.writeFeedbackPlaceholder}
                                 style={styles.feedbackInput}
                                 rows={2}
                               />
@@ -764,7 +768,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 <input
                                   value={flagDrafts[ci.id] || ''}
                                   onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                  placeholder="Flag reason (e.g. needs program change, schedule a call...)"
+                                  placeholder={t.checkIns.flagReasonPlaceholder}
                                   style={styles.flagInput}
                                 />
                                 <button
@@ -772,12 +776,12 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5 }}
                                   disabled={!flagDrafts[ci.id]?.trim()}
                                 >
-                                  Flag
+                                  {t.checkIns.flag}
                                 </button>
                               </div>
                               <div style={styles.actionButtons}>
                                 <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
-                                  View Profile
+                                  {t.checkIns.viewProfile}
                                 </button>
                                 {/* Point 2: Send Message shortcut */}
                                 <button
@@ -785,7 +789,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   style={styles.actionBtnMessage}
                                 >
                                   <MessageSquare size={13} />
-                                  Send Message
+                                  {t.checkIns.sendMessage}
                                 </button>
                                 <div style={{ flex: 1 }} />
                                 <button
@@ -793,7 +797,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   style={styles.actionBtnPrimary}
                                 >
                                   <CheckCircle2 size={13} />
-                                  Mark Reviewed
+                                  {t.checkIns.markReviewed}
                                 </button>
                               </div>
                             </div>
@@ -805,20 +809,20 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                               <textarea
                                 value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
                                 onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                placeholder="Add feedback and resolve..."
+                                placeholder={t.checkIns.addFeedbackPlaceholder}
                                 style={styles.feedbackInput}
                                 rows={2}
                               />
                               <div style={styles.actionButtons}>
-                                <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>
+                                <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>{t.checkIns.viewProfile}</button>
                                 <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
                                   <MessageSquare size={13} />
-                                  Send Message
+                                  {t.checkIns.sendMessage}
                                 </button>
                                 <div style={{ flex: 1 }} />
                                 <button onClick={() => handleMarkReviewed(ci.id)} style={styles.actionBtnPrimary}>
                                   <CheckCircle2 size={13} />
-                                  Resolve & Review
+                                  {t.checkIns.resolveReview}
                                 </button>
                               </div>
                             </div>
@@ -827,10 +831,10 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {/* Reviewed — just view + message shortcuts */}
                           {ci.reviewStatus === 'reviewed' && (
                             <div style={styles.actionButtons}>
-                              <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>
+                              <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>{t.checkIns.viewProfile}</button>
                               <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
                                 <MessageSquare size={13} />
-                                Message
+                                {t.checkIns.message}
                               </button>
                             </div>
                           )}
@@ -871,9 +875,9 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                   </div>
                   <div>
                     <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                      Message {messageModal.clientName.split(' ')[0]}
+                      {t.checkIns.messageClient(messageModal.clientName.split(' ')[0])}
                     </h3>
-                    <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>Quick message from Check-Ins</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>{t.checkIns.quickMessage}</span>
                   </div>
                 </div>
                 <button
@@ -892,15 +896,15 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                     style={styles.messageSentState}
                   >
                     <CheckCircle2 size={32} color="var(--accent-success)" />
-                    <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Message Sent!</p>
+                    <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{t.checkIns.messageSent}</p>
                     <p style={{ fontSize: '14px', color: 'var(--text-tertiary)', margin: 0 }}>
-                      Your message to {messageModal.clientName.split(' ')[0]} has been sent.
+                      {t.checkIns.messageSentTo(messageModal.clientName.split(' ')[0])}
                     </p>
                     <button
                       style={styles.actionBtnSecondary}
                       onClick={() => { setMessageModal(null); setMessageDraft(''); setMessageSent(false); }}
                     >
-                      Close
+                      {t.checkIns.close}
                     </button>
                   </motion.div>
                 ) : (
@@ -918,7 +922,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         style={styles.actionBtnSecondary}
                         onClick={() => { setMessageModal(null); setMessageDraft(''); }}
                       >
-                        Cancel
+                        {t.checkIns.cancel}
                       </button>
                       <button
                         style={{
@@ -937,7 +941,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         }}
                       >
                         <Send size={14} />
-                        Send Message
+                        {t.checkIns.sendMessage}
                       </button>
                     </div>
                   </>

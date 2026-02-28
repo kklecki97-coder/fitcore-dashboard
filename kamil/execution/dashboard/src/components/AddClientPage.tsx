@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client } from '../types';
 
 interface AddClientPageProps {
@@ -98,6 +99,7 @@ const planRates: Record<Client['plan'], number> = {
 };
 
 export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
+  const { t } = useLang();
   const isMobile = useIsMobile();
 
   const [name, setName] = useState('');
@@ -110,14 +112,26 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const planLabels: Record<Client['plan'], string> = {
+    Basic: t.addClient.basic,
+    Premium: t.addClient.premium,
+    Elite: t.addClient.elite,
+  };
+
+  const planPrices: Record<Client['plan'], string> = {
+    Basic: t.addClient.basicPrice,
+    Premium: t.addClient.premiumPrice,
+    Elite: t.addClient.elitePrice,
+  };
+
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = 'Name is required';
-    if (!email.trim()) errs.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Invalid email';
-    if (height && (isNaN(Number(height)) || Number(height) <= 0)) errs.height = 'Enter a valid height';
-    if (weight && (isNaN(Number(weight)) || Number(weight) <= 0)) errs.weight = 'Enter a valid weight';
-    if (bodyFat && (isNaN(Number(bodyFat)) || Number(bodyFat) < 0 || Number(bodyFat) > 100)) errs.bodyFat = 'Enter a valid body fat %';
+    if (!name.trim()) errs.name = t.addClient.nameRequired;
+    if (!email.trim()) errs.email = t.addClient.emailRequired;
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = t.addClient.invalidEmail;
+    if (height && (isNaN(Number(height)) || Number(height) <= 0)) errs.height = t.addClient.validHeight;
+    if (weight && (isNaN(Number(weight)) || Number(weight) <= 0)) errs.weight = t.addClient.validWeight;
+    if (bodyFat && (isNaN(Number(bodyFat)) || Number(bodyFat) < 0 || Number(bodyFat) > 100)) errs.bodyFat = t.addClient.validBodyFat;
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -170,9 +184,9 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
       >
         <button onClick={onBack} style={styles.backBtn}>
           <ArrowLeft size={18} />
-          Back
+          {t.addClient.back}
         </button>
-        <h2 style={styles.pageTitle}>Add New Client</h2>
+        <h2 style={styles.pageTitle}>{t.addClient.title}</h2>
       </motion.div>
 
       {/* Form */}
@@ -181,11 +195,11 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
         <GlassCard delay={0.05}>
           <div style={styles.sectionHeader}>
             <User size={16} color="var(--accent-primary)" />
-            <h3 style={styles.sectionTitle}>Personal Information</h3>
+            <h3 style={styles.sectionTitle}>{t.addClient.personalInfo}</h3>
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Full Name *</label>
+            <label style={styles.label}>{t.addClient.fullName}</label>
             <div style={{ ...styles.inputWrap, borderColor: errors.name ? 'var(--accent-danger)' : 'var(--glass-border)' }}>
               <User size={14} color="var(--text-tertiary)" />
               <input
@@ -200,7 +214,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Email Address *</label>
+            <label style={styles.label}>{t.addClient.emailAddress}</label>
             <div style={{ ...styles.inputWrap, borderColor: errors.email ? 'var(--accent-danger)' : 'var(--glass-border)' }}>
               <Mail size={14} color="var(--text-tertiary)" />
               <input
@@ -215,7 +229,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Plan</label>
+            <label style={styles.label}>{t.addClient.plan}</label>
             <div style={styles.planPicker}>
               {(['Basic', 'Premium', 'Elite'] as const).map((p) => (
                 <button
@@ -229,8 +243,8 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
                     ...(plan === p && p === 'Basic' ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' } : {}),
                   }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
-                  <div style={{ fontSize: '15px', opacity: 0.7 }}>${planRates[p]}/mo</div>
+                  <div style={{ fontWeight: 600, fontSize: '18px' }}>{planLabels[p]}</div>
+                  <div style={{ fontSize: '15px', opacity: 0.7 }}>{planPrices[p]}</div>
                 </button>
               ))}
             </div>
@@ -241,25 +255,25 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
         <GlassCard delay={0.1}>
           <div style={styles.sectionHeader}>
             <Weight size={16} color="var(--accent-primary)" />
-            <h3 style={styles.sectionTitle}>Starting Metrics</h3>
+            <h3 style={styles.sectionTitle}>{t.addClient.startingMetrics}</h3>
           </div>
-          <p style={styles.sectionSub}>Optional — can be filled in later</p>
+          <p style={styles.sectionSub}>{t.addClient.optionalSubtitle}</p>
 
           <div style={{ ...styles.metricRow, flexDirection: isMobile ? 'column' : 'row' }}>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.label}>Weight (kg)</label>
+              <label style={styles.label}>{t.addClient.weightKg}</label>
               <NumberStepper value={weight} onChange={setWeight} step={0.5} min={30} max={300} placeholder="80" borderColor={errors.weight ? 'var(--accent-danger)' : undefined} />
               {errors.weight && <span style={styles.error}>{errors.weight}</span>}
             </div>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.label}>Height (cm)</label>
+              <label style={styles.label}>{t.addClient.heightCm}</label>
               <NumberStepper value={height} onChange={setHeight} step={1} min={100} max={250} placeholder="180" borderColor={errors.height ? 'var(--accent-danger)' : undefined} />
               {errors.height && <span style={styles.error}>{errors.height}</span>}
             </div>
           </div>
 
           <div style={{ ...styles.fieldGroup, maxWidth: isMobile ? '100%' : '50%' }}>
-            <label style={styles.label}>Body Fat %</label>
+            <label style={styles.label}>{t.addClient.bodyFatPct}</label>
             <NumberStepper value={bodyFat} onChange={setBodyFat} step={0.5} min={3} max={60} placeholder="20" borderColor={errors.bodyFat ? 'var(--accent-danger)' : undefined} />
             {errors.bodyFat && <span style={styles.error}>{errors.bodyFat}</span>}
           </div>
@@ -269,11 +283,11 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
         <GlassCard delay={0.15}>
           <div style={styles.sectionHeader}>
             <Target size={16} color="var(--accent-primary)" />
-            <h3 style={styles.sectionTitle}>Goals</h3>
+            <h3 style={styles.sectionTitle}>{t.addClient.goalsSeparated}</h3>
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Client Goals</label>
+            <label style={styles.label}>{t.addClient.goalsSeparated}</label>
             <div style={{ ...styles.inputWrap, alignItems: 'flex-start' }}>
               <Target size={14} color="var(--text-tertiary)" style={{ marginTop: '2px' }} />
               <input
@@ -284,7 +298,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
                 style={styles.input}
               />
             </div>
-            <span style={styles.hint}>Separate multiple goals with commas</span>
+            <span style={styles.hint}>{t.addClient.goalsHint}</span>
           </div>
         </GlassCard>
 
@@ -292,11 +306,11 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
         <GlassCard delay={0.2}>
           <div style={styles.sectionHeader}>
             <FileText size={16} color="var(--accent-primary)" />
-            <h3 style={styles.sectionTitle}>Coach Notes</h3>
+            <h3 style={styles.sectionTitle}>{t.addClient.coachNotes}</h3>
           </div>
 
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Notes</label>
+            <label style={styles.label}>{t.addClient.notes}</label>
             <textarea
               placeholder="Any relevant details — injuries, schedule preferences, experience level..."
               value={notes}
@@ -313,26 +327,26 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
         <div style={{ ...styles.submitRow, flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={styles.summary}>
             <div style={styles.summaryItem}>
-              <span style={styles.summaryLabel}>Plan</span>
-              <span style={styles.summaryValue}>{plan}</span>
+              <span style={styles.summaryLabel}>{t.addClient.plan}</span>
+              <span style={styles.summaryValue}>{planLabels[plan]}</span>
             </div>
             <div style={styles.summaryDivider} />
             <div style={styles.summaryItem}>
-              <span style={styles.summaryLabel}>Monthly Rate</span>
+              <span style={styles.summaryLabel}>{t.addClient.monthlyRate}</span>
               <span style={{ ...styles.summaryValue, color: 'var(--accent-success)' }}>${planRates[plan]}</span>
             </div>
             <div style={styles.summaryDivider} />
             <div style={styles.summaryItem}>
-              <span style={styles.summaryLabel}>Status</span>
-              <span style={styles.summaryValue}>Pending</span>
+              <span style={styles.summaryLabel}>{t.addClient.status}</span>
+              <span style={styles.summaryValue}>{t.common.pending}</span>
             </div>
           </div>
 
           <div style={{ ...styles.actions, width: isMobile ? '100%' : 'auto' }}>
-            <button onClick={onBack} style={styles.cancelBtn}>Cancel</button>
+            <button onClick={onBack} style={styles.cancelBtn}>{t.addClient.cancel}</button>
             <button onClick={handleSubmit} style={{ ...styles.saveBtn, flex: isMobile ? 1 : undefined }}>
               <Save size={16} />
-              Add Client
+              {t.addClient.saveClient}
             </button>
           </div>
         </div>

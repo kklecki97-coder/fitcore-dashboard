@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, CheckCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLang } from '../i18n';
 import type { Message } from '../types';
 
 interface MessagesPageProps {
@@ -12,6 +13,7 @@ interface MessagesPageProps {
 }
 
 export default function MessagesPage({ messages, onSendMessage, coachName, clientId, clientName }: MessagesPageProps) {
+  const { t, lang } = useLang();
   const [newMessage, setNewMessage] = useState('');
   const [isCoachTyping, setIsCoachTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -61,6 +63,8 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
     }
   });
 
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     const today = new Date();
@@ -68,13 +72,13 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     const isYesterday = d.toDateString() === yesterday.toDateString();
-    if (isToday) return 'Today';
-    if (isYesterday) return 'Yesterday';
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (isToday) return t.messages.today;
+    if (isYesterday) return t.messages.yesterday;
+    return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
   };
 
   const formatTime = (ts: string) => {
-    return new Date(ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return new Date(ts).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   return (
@@ -90,7 +94,7 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
           <div style={styles.coachName}>{coachName}</div>
           <div style={styles.onlineStatus}>
             <span style={styles.onlineDot} />
-            Online
+            {t.messages.online}
           </div>
         </div>
       </div>
@@ -162,7 +166,7 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
           value={newMessage}
           onChange={e => setNewMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message your coach…"
+          placeholder={t.messages.placeholder}
         />
         <button
           style={{

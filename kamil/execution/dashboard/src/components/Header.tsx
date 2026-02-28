@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Bell, MessageSquare, ClipboardCheck, DollarSign, Dumbbell, UserPlus, CheckCircle } from 'lucide-react';
+import { useLang } from '../i18n';
 import type { Page, AppNotification, NotificationType } from '../types';
 
 interface HeaderProps {
@@ -13,36 +14,6 @@ interface HeaderProps {
   onNotificationClick?: (notif: AppNotification) => void;
 }
 
-const pageTitles: Record<Page, string> = {
-  overview: 'Overview',
-  clients: 'Clients',
-  'client-detail': 'Client Details',
-  'add-client': 'Add Client',
-  messages: 'Messages',
-  analytics: 'Analytics',
-  schedule: 'Schedule',
-  settings: 'Settings',
-  programs: 'Programs',
-  'program-builder': 'Program Builder',
-  payments: 'Payments',
-  'check-ins': 'Check-Ins',
-};
-
-const pageSubtitles: Record<Page, string> = {
-  overview: "Here's what's happening today",
-  clients: 'Manage your client roster',
-  'client-detail': 'Track progress and manage training',
-  'add-client': 'Add a new client to your roster',
-  messages: 'Stay connected with your clients',
-  analytics: 'Revenue and performance insights',
-  schedule: "Today's training sessions",
-  settings: 'Customize your dashboard experience',
-  programs: 'Build and manage workout programs',
-  'program-builder': 'Design your workout program',
-  payments: 'Invoices and payment tracking',
-  'check-ins': 'Review and manage weekly client check-ins',
-};
-
 const NOTIF_ICON_CONFIG: Record<NotificationType, { icon: typeof MessageSquare; color: string }> = {
   message: { icon: MessageSquare, color: 'var(--accent-primary)' },
   checkin: { icon: ClipboardCheck, color: 'var(--accent-warm)' },
@@ -51,36 +22,39 @@ const NOTIF_ICON_CONFIG: Record<NotificationType, { icon: typeof MessageSquare; 
   client: { icon: UserPlus, color: 'var(--accent-primary)' },
 };
 
-function formatTimeAgo(timestamp: string): string {
-  const now = new Date();
-  const date = new Date(timestamp);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  if (diffDay === 1) return 'Yesterday';
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
 export default function Header({ currentPage, isMobile, onMenuToggle, notifications = [], onMarkRead: _onMarkRead, onMarkAllRead, onNotificationClick }: HeaderProps) {
+  const { lang, t } = useLang();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const today = new Date().toLocaleDateString('en-US', {
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+  const today = new Date().toLocaleDateString(locale, {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   });
 
-  // Close dropdown on click outside
+  const pageInfo = t.header.pages[currentPage] || { title: currentPage, subtitle: '' };
+
+  function formatTimeAgo(timestamp: string): string {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return t.header.justNow;
+    if (diffMin < 60) return t.header.mAgo(diffMin);
+    if (diffHr < 24) return t.header.hAgo(diffHr);
+    if (diffDay === 1) return t.header.yesterday;
+    if (diffDay < 7) return t.header.dAgo(diffDay);
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  }
+
   useEffect(() => {
     if (!isOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -107,8 +81,8 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
           <h1 style={{
             ...styles.title,
             fontSize: isMobile ? '17px' : '20px',
-          }}>{pageTitles[currentPage]}</h1>
-          {!isMobile && <p style={styles.subtitle}>{pageSubtitles[currentPage]}</p>}
+          }}>{pageInfo.title}</h1>
+          {!isMobile && <p style={styles.subtitle}>{pageInfo.subtitle}</p>}
         </div>
       </div>
 
@@ -147,7 +121,7 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
               >
                 {/* Dropdown Header */}
                 <div style={styles.dropdownHeader}>
-                  <h3 style={styles.dropdownTitle}>Notifications</h3>
+                  <h3 style={styles.dropdownTitle}>{t.header.notifications}</h3>
                   {unreadCount > 0 && (
                     <button
                       style={styles.markAllBtn}
@@ -155,7 +129,7 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
                         onMarkAllRead?.();
                       }}
                     >
-                      Mark all as read
+                      {t.header.markAllRead}
                     </button>
                   )}
                 </div>
@@ -165,8 +139,8 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
                   {notifications.length === 0 ? (
                     <div style={styles.emptyState}>
                       <CheckCircle size={32} color="var(--accent-primary)" style={{ opacity: 0.5 }} />
-                      <p style={styles.emptyText}>All caught up!</p>
-                      <p style={styles.emptySubtext}>No new notifications</p>
+                      <p style={styles.emptyText}>{t.header.allCaughtUp}</p>
+                      <p style={styles.emptySubtext}>{t.header.noNewNotifications}</p>
                     </div>
                   ) : (
                     notifications.map((notif) => {

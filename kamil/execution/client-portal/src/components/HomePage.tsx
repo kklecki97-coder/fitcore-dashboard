@@ -1,6 +1,7 @@
 import { Flame, Calendar, TrendingDown, Dumbbell, MessageSquare, ArrowRight, Send, ClipboardCheck, Target } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage } from '../types';
 
 interface HomePageProps {
@@ -15,6 +16,7 @@ interface HomePageProps {
 
 export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate }: HomePageProps) {
   const isMobile = useIsMobile();
+  const { t, lang } = useLang();
 
   // ── Today's workout day (based on day-of-week, not completion count) ──
   const todayDayIndex = (() => {
@@ -78,7 +80,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       if (isToday || isFuture) upcomingDayIdx++;
     }
 
-    return { day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i], date: d.getDate(), dateStr, log, isToday, isPast, isFuture, scheduledName };
+    return { day: t.home.weekDays[i], date: d.getDate(), dateStr, log, isToday, isPast, isFuture, scheduledName };
   });
 
   // ── Goal progress (parse from goal strings) ──
@@ -105,7 +107,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       return { goal, progress: Math.max(0, pct), label: `${current}h / ${target}h` };
     }
     // Default fallback
-    return { goal, progress: Math.round(client.progress * 0.7), label: 'In progress' };
+    return { goal, progress: Math.round(client.progress * 0.7), label: t.home.inProgress };
   });
 
   // ── Last coach message ──
@@ -115,12 +117,14 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   const checkInDueNow = daysUntilCheckIn !== null && daysUntilCheckIn <= 1;
   const unreadMessages = messages.filter(m => m.isFromCoach && !m.isRead).length;
 
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
       {/* ── Welcome ── */}
       <div style={styles.welcome}>
-        <h1 style={styles.greeting}>Hey {client.name.split(' ')[0]}</h1>
-        <p style={styles.motivational}>Keep pushing — consistency beats perfection.</p>
+        <h1 style={styles.greeting}>{t.home.greeting(client.name.split(' ')[0])}</h1>
+        <p style={styles.motivational}>{t.home.motivational}</p>
       </div>
 
       {/* ── Stats Row ── */}
@@ -139,7 +143,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         <GlassCard delay={0.08} style={styles.statCard}>
           <div style={styles.statIcon}><Flame size={16} color="var(--accent-warm)" /></div>
           <div style={styles.statValue}>{client.streak}</div>
-          <div style={styles.statLabel}>day streak</div>
+          <div style={styles.statLabel}>{t.home.dayStreak}</div>
         </GlassCard>
 
         <GlassCard delay={0.1} style={styles.statCard}>
@@ -150,7 +154,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             }} />
           </div>
           <div style={styles.statValue}>{client.progress}<span style={styles.statUnit}>%</span></div>
-          <div style={styles.statLabel}>progress</div>
+          <div style={styles.statLabel}>{t.home.progress}</div>
         </GlassCard>
       </div>
 
@@ -159,22 +163,22 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         <div style={styles.cardHeader}>
           <div style={styles.cardIcon}><Dumbbell size={18} /></div>
           <div>
-            <div style={styles.cardTitle}>Today's Workout</div>
-            <div style={styles.cardSub}>{todayWorkout?.name || 'Rest Day'}</div>
+            <div style={styles.cardTitle}>{t.home.todaysWorkout}</div>
+            <div style={styles.cardSub}>{todayWorkout?.name || t.home.restDay}</div>
           </div>
         </div>
         {todayWorkout ? (
           <>
             <div style={styles.workoutMeta}>
-              <span>{todayWorkout.exercises.length} exercises</span>
-              <span>~60 min</span>
+              <span>{todayWorkout.exercises.length} {t.home.exercises}</span>
+              <span>{t.home.approxTime}</span>
             </div>
             <button style={styles.startBtn} onClick={() => onNavigate('program')}>
-              Start Workout <ArrowRight size={16} />
+              {t.home.startWorkout} <ArrowRight size={16} />
             </button>
           </>
         ) : (
-          <p style={styles.restText}>Rest day — recover and come back stronger tomorrow.</p>
+          <p style={styles.restText}>{t.home.restText}</p>
         )}
       </GlassCard>
 
@@ -184,7 +188,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
           <div style={{ ...styles.quickIcon, background: 'var(--accent-warm-dim)', color: 'var(--accent-warm)' }}>
             <Dumbbell size={18} />
           </div>
-          <span style={styles.quickLabel}>Log Workout</span>
+          <span style={styles.quickLabel}>{t.home.logWorkout}</span>
         </button>
         <button style={styles.quickBtn} onClick={() => onNavigate('check-in')}>
           <div style={{ ...styles.quickIconWrap }}>
@@ -193,7 +197,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             </div>
             {checkInDueNow && <div style={styles.quickBadge} />}
           </div>
-          <span style={styles.quickLabel}>Check-In</span>
+          <span style={styles.quickLabel}>{t.home.checkIn}</span>
         </button>
         <button style={styles.quickBtn} onClick={() => onNavigate('messages')}>
           <div style={{ ...styles.quickIconWrap }}>
@@ -202,7 +206,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             </div>
             {unreadMessages > 0 && <div style={styles.quickBadge} />}
           </div>
-          <span style={styles.quickLabel}>Message</span>
+          <span style={styles.quickLabel}>{t.home.message}</span>
         </button>
       </div>
 
@@ -265,7 +269,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
           <div style={{ ...styles.cardIcon, background: 'var(--accent-success-dim, rgba(34,197,94,0.1))', color: 'var(--accent-success)' }}>
             <Target size={18} />
           </div>
-          <div style={styles.cardTitle}>Goals</div>
+          <div style={styles.cardTitle}>{t.home.goals}</div>
         </div>
         <div style={styles.goalsList}>
           {goalProgress.map((g, i) => (
@@ -305,13 +309,13 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
               </div>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={styles.cardTitle}>Next Check-In</div>
+              <div style={styles.cardTitle}>{t.home.nextCheckIn}</div>
               <div style={styles.checkInDue}>
                 {daysUntilCheckIn !== null && daysUntilCheckIn <= 0
-                  ? 'Due today — submit now!'
+                  ? t.home.dueToday
                   : daysUntilCheckIn === 1
-                    ? 'Due tomorrow'
-                    : `Due in ${daysUntilCheckIn} days`}
+                    ? t.home.dueTomorrow
+                    : t.home.dueInDays(daysUntilCheckIn!)}
               </div>
             </div>
             <ArrowRight size={16} color="var(--text-tertiary)" />
@@ -326,27 +330,27 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             <div style={{ ...styles.cardIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
               <MessageSquare size={18} />
             </div>
-            <div style={styles.cardTitle}>From {coachName}</div>
+            <div style={styles.cardTitle}>{t.home.from(coachName)}</div>
           </div>
 
           {/* Latest message */}
           {lastCoachMsg && (
             <div style={styles.coachSection} onClick={() => onNavigate('messages')}>
-              <div style={styles.coachSectionLabel}>Latest Message</div>
+              <div style={styles.coachSectionLabel}>{t.home.latestMessage}</div>
               <p style={styles.coachMsgText}>
                 {lastCoachMsg.text.length > 120 ? lastCoachMsg.text.slice(0, 120) + '…' : lastCoachMsg.text}
               </p>
-              <div style={styles.coachSectionTime}>{formatRelative(new Date(lastCoachMsg.timestamp))}</div>
+              <div style={styles.coachSectionTime}>{formatRelative(new Date(lastCoachMsg.timestamp), t, locale)}</div>
             </div>
           )}
 
           {/* Check-in feedback */}
           {latestReviewed && (
             <div style={{ ...styles.coachSection, ...(lastCoachMsg ? { marginTop: '14px', borderTop: '1px solid var(--glass-border)', paddingTop: '14px' } : {}) }} onClick={() => onNavigate('check-in')}>
-              <div style={styles.coachSectionLabel}>Check-In Feedback</div>
+              <div style={styles.coachSectionLabel}>{t.home.checkInFeedback}</div>
               <p style={styles.feedbackText}>{latestReviewed.coachFeedback}</p>
               <div style={styles.coachSectionTime}>
-                {new Date(latestReviewed.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date(latestReviewed.date + 'T00:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
               </div>
             </div>
           )}
@@ -357,18 +361,18 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   );
 }
 
-function formatRelative(date: Date): string {
+function formatRelative(date: Date, t: ReturnType<typeof useLang>['t'], locale: string): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1) return t.home.justNow;
+  if (diffMin < 60) return t.home.mAgo(diffMin);
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 24) return t.home.hAgo(diffH);
   const diffD = Math.floor(diffH / 24);
-  if (diffD === 1) return 'Yesterday';
-  if (diffD < 7) return `${diffD}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diffD === 1) return t.home.yesterday;
+  if (diffD < 7) return t.home.dAgo(diffD);
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 // ── Styles ──

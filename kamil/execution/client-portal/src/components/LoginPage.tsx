@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
+import { useLang } from '../i18n';
 
 interface LoginPageProps {
   onLogin: (remember: boolean) => void;
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
+  const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -21,7 +23,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       if (email === 'marcus@email.com' && password === 'client123') {
         onLogin(remember);
       } else {
-        setError('Invalid email or password');
+        setError(t.login.invalidCredentials);
         setLoading(false);
       }
     }, 600);
@@ -40,15 +42,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 42, height: 42, borderRadius: '50%' }} />
           <div>
             <div style={styles.logoTitle}>FitCore</div>
-            <div style={styles.logoSub}>CLIENT PORTAL</div>
+            <div style={styles.logoSub}>{t.login.portal}</div>
           </div>
         </div>
 
-        <p style={styles.subtitle}>Sign in to view your workouts and track your progress</p>
+        <p style={styles.subtitle}>{t.login.subtitle}</p>
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <div>
-            <label style={styles.label}>Email</label>
+            <label style={styles.label}>{t.login.email}</label>
             <input
               type="email"
               value={email}
@@ -60,7 +62,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
 
           <div>
-            <label style={styles.label}>Password</label>
+            <label style={styles.label}>{t.login.password}</label>
             <input
               type="password"
               value={password}
@@ -82,7 +84,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             >
               {remember && <span style={{ fontSize: '12px', color: '#07090e', fontWeight: 800 }}>✓</span>}
             </div>
-            <span style={styles.rememberText} onClick={() => setRemember(!remember)}>Remember me</span>
+            <span style={styles.rememberText} onClick={() => setRemember(!remember)}>{t.login.rememberMe}</span>
           </div>
 
           {error && (
@@ -105,11 +107,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             }}
           >
             <LogIn size={16} />
-            {loading ? 'Signing in…' : 'Sign In'}
+            {loading ? t.login.signingIn : t.login.signIn}
           </button>
         </form>
 
-        <p style={styles.hint}>Demo: marcus@email.com / client123</p>
+        <p style={styles.hint}>{t.login.demoHint}</p>
       </motion.div>
     </div>
   );

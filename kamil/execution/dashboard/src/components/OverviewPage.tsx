@@ -21,19 +21,20 @@ import GlassCard from './GlassCard';
 import { revenueData } from '../data';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, Message, WorkoutProgram } from '../types';
 
-const QUOTES = [
-  { text: 'The only bad workout is the one that didn\'t happen.', author: 'Unknown' },
-  { text: 'Success isn\'t always about greatness. It\'s about consistency.', author: 'Dwayne Johnson' },
-  { text: 'Take care of your body. It\'s the only place you have to live.', author: 'Jim Rohn' },
-  { text: 'The pain you feel today will be the strength you feel tomorrow.', author: 'Arnold Schwarzenegger' },
-  { text: 'Your body can stand almost anything. It\'s your mind that you have to convince.', author: 'Unknown' },
-  { text: 'Discipline is the bridge between goals and accomplishment.', author: 'Jim Rohn' },
-  { text: 'The resistance that you fight physically in the gym strengthens you.', author: 'Arnold Schwarzenegger' },
-  { text: 'Don\'t count the days. Make the days count.', author: 'Muhammad Ali' },
-  { text: 'What seems impossible today will one day become your warm-up.', author: 'Unknown' },
-  { text: 'The best project you\'ll ever work on is you.', author: 'Sonny Franco' },
+const QUOTE_AUTHORS = [
+  'Unknown',
+  'Dwayne Johnson',
+  'Jim Rohn',
+  'Arnold Schwarzenegger',
+  'Unknown',
+  'Jim Rohn',
+  'Arnold Schwarzenegger',
+  'Muhammad Ali',
+  'Unknown',
+  'Sonny Franco',
 ];
 
 interface OverviewPageProps {
@@ -46,6 +47,7 @@ interface OverviewPageProps {
 
 export default function OverviewPage({ clients, messages, programs, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
+  const { t } = useLang();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -83,9 +85,10 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
     const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
-    return QUOTES[dayOfYear % QUOTES.length];
+    const idx = dayOfYear % t.overview.quotes.length;
+    return { text: t.overview.quotes[idx], author: QUOTE_AUTHORS[idx] };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [new Date().toDateString()]);
+  }, [new Date().toDateString(), t]);
 
   // AI Summary — smart aggregation from real data
   const insights = useMemo(() => {
@@ -95,7 +98,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     const active = clients.filter(c => c.status === 'active');
     items.push({
       icon: Users,
-      text: `${active.length}/${clients.length} clients active this week`,
+      text: t.overview.insightActiveWeek(active.length, clients.length),
       color: 'var(--accent-primary)',
     });
 
@@ -104,7 +107,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     if (topStreak && topStreak.streak > 0) {
       items.push({
         icon: Flame,
-        text: `${topStreak.name}'s ${topStreak.streak}-day streak — longest active`,
+        text: t.overview.insightStreak(topStreak.name, topStreak.streak),
         color: 'var(--accent-warm)',
       });
     }
@@ -115,7 +118,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
       const latestBench = topProgress.metrics.benchPress[topProgress.metrics.benchPress.length - 1];
       items.push({
         icon: TrendingUp,
-        text: `${topProgress.name} leading at ${topProgress.progress}% progress (Bench: ${latestBench}kg)`,
+        text: t.overview.insightLeading(topProgress.name, topProgress.progress, latestBench),
         color: 'var(--accent-success)',
       });
     }
@@ -125,7 +128,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
       const names = pendingCheckIns.slice(0, 3).map(c => c.name.split(' ')[0]);
       items.push({
         icon: Clock,
-        text: `${pendingCheckIns.length} check-in${pendingCheckIns.length > 1 ? 's' : ''} overdue (${names.join(', ')})`,
+        text: t.overview.insightOverdue(pendingCheckIns.length, names.join(', ')),
         color: 'var(--accent-danger)',
       });
     }
@@ -134,7 +137,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     if (unreadMessages.length > 0) {
       items.push({
         icon: MessageSquare,
-        text: `${unreadMessages.length} unread message${unreadMessages.length > 1 ? 's' : ''} waiting`,
+        text: t.overview.insightUnread(unreadMessages.length),
         color: 'var(--accent-secondary)',
       });
     }
@@ -144,8 +147,8 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     items.push({
       icon: DollarSign,
       text: revChange >= 0
-        ? `Revenue up ${Math.round(revChange)}% vs last month`
-        : `Revenue down ${Math.abs(Math.round(revChange))}% vs last month`,
+        ? t.overview.insightRevenueUp(Math.round(revChange))
+        : t.overview.insightRevenueDown(Math.abs(Math.round(revChange))),
       color: revChange >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
     });
 
@@ -154,26 +157,26 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     if (activePrograms.length > 0) {
       items.push({
         icon: Dumbbell,
-        text: `${activePrograms.length} active program${activePrograms.length > 1 ? 's' : ''} running`,
+        text: t.overview.insightPrograms(activePrograms.length),
         color: 'var(--accent-primary)',
       });
     }
 
     return items;
-  }, [clients, pendingCheckIns, unreadMessages, programs, lastMonth, prevMonth]);
+  }, [clients, pendingCheckIns, unreadMessages, programs, lastMonth, prevMonth, t]);
 
   const statCards = [
     {
-      label: 'Active Clients',
+      label: t.overview.activeClients,
       value: activeClients.toString(),
-      change: pendingClients > 0 ? `${pendingClients} pending` : 'Stable',
+      change: pendingClients > 0 ? t.overview.pending(pendingClients) : t.overview.stable,
       trend: pendingClients > 0 ? 'neutral' as const : 'up' as const,
       icon: Users,
       color: 'var(--accent-primary)',
       dimColor: 'var(--accent-primary-dim)',
     },
     {
-      label: 'Monthly Revenue',
+      label: t.overview.monthlyRevenue,
       value: `$${totalRevenue.toLocaleString()}`,
       change: revenueChange >= 0 ? `+${revenueChange}%` : `${revenueChange}%`,
       trend: revenueChange >= 0 ? 'up' as const : 'down' as const,
@@ -182,18 +185,18 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
       dimColor: 'var(--accent-success-dim)',
     },
     {
-      label: 'At-Risk Clients',
+      label: t.overview.atRiskClients,
       value: atRiskClients.length.toString(),
-      change: atRiskClients.length > 0 ? 'Needs attention' : 'All good',
+      change: atRiskClients.length > 0 ? t.overview.needsAttention : t.overview.allGood,
       trend: atRiskClients.length > 0 ? 'down' as const : 'up' as const,
       icon: AlertTriangle,
       color: atRiskClients.length > 0 ? 'var(--accent-danger)' : 'var(--accent-success)',
       dimColor: atRiskClients.length > 0 ? 'var(--accent-danger-dim)' : 'var(--accent-success-dim)',
     },
     {
-      label: 'Pending Check-ins',
+      label: t.overview.pendingCheckIns,
       value: pendingCheckIns.length.toString(),
-      change: pendingCheckIns.length > 0 ? 'Due today' : 'All caught up',
+      change: pendingCheckIns.length > 0 ? t.overview.dueToday : t.overview.allCaughtUp,
       trend: 'neutral' as const,
       icon: CalendarCheck,
       color: 'var(--accent-warm)',
@@ -292,7 +295,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
         <div style={styles.cardHeader}>
           <div style={styles.insightTitleRow}>
             <Sparkles size={15} color="var(--accent-primary)" />
-            <h3 style={styles.cardTitle}>Dashboard Summary</h3>
+            <h3 style={styles.cardTitle}>{t.overview.dashboardSummary}</h3>
           </div>
         </div>
         <div style={{ ...styles.insightList, ...(isMobile ? {} : { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 24px' }) }}>
@@ -320,12 +323,12 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
       <GlassCard delay={0.2}>
         <div style={styles.cardHeader}>
           <div>
-            <h3 style={styles.cardTitle}>Revenue Overview</h3>
-            <p style={styles.cardSubtitle}>Monthly recurring revenue</p>
+            <h3 style={styles.cardTitle}>{t.overview.revenueOverview}</h3>
+            <p style={styles.cardSubtitle}>{t.overview.monthlyRecurring}</p>
           </div>
           <div style={styles.legendRow}>
             <span style={getLegendDotStyle('#00e5c8')} />
-            <span style={styles.legendText}>Revenue</span>
+            <span style={styles.legendText}>{t.overview.revenue}</span>
           </div>
         </div>
         <div style={{ height: isMobile ? 180 : 220, marginTop: '16px' }}>
@@ -361,7 +364,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
                 }}
                 labelStyle={{ color: '#8b92a5' }}
                 itemStyle={{ color: '#00e5c8' }}
-                formatter={(value) => [`$${value}`, 'Revenue']}
+                formatter={(value) => [`$${value}`, t.overview.revenue]}
               />
               <Area
                 type="monotone"
@@ -383,11 +386,11 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
         <GlassCard delay={0.3}>
           <div style={styles.cardHeader}>
             <div>
-              <h3 style={styles.cardTitle}>At-Risk Clients</h3>
+              <h3 style={styles.cardTitle}>{t.overview.atRiskClientsTitle}</h3>
               <p style={styles.cardSubtitle}>
                 {atRiskClients.length > 0
-                  ? `${atRiskClients.length} client${atRiskClients.length > 1 ? 's' : ''} need${atRiskClients.length === 1 ? 's' : ''} attention`
-                  : 'All clients on track'}
+                  ? t.overview.clientsNeedAttention(atRiskClients.length)
+                  : t.overview.allOnTrack}
               </p>
             </div>
             <AlertTriangle size={16} color={atRiskClients.length > 0 ? 'var(--accent-danger)' : 'var(--text-tertiary)'} />
@@ -395,14 +398,14 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
           <div style={styles.riskList}>
             {atRiskClients.length === 0 ? (
               <div style={styles.emptyState}>
-                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>No at-risk clients right now</span>
+                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>{t.overview.noAtRisk}</span>
               </div>
             ) : (
               atRiskClients.map((client, i) => {
                 const reasons: string[] = [];
-                if (client.status === 'paused') reasons.push('Paused');
-                if (client.streak === 0) reasons.push('No streak');
-                if (client.progress < 30) reasons.push(`${client.progress}% progress`);
+                if (client.status === 'paused') reasons.push(t.overview.paused);
+                if (client.streak === 0) reasons.push(t.overview.noStreak);
+                if (client.progress < 30) reasons.push(t.overview.progress(client.progress));
                 return (
                   <motion.div
                     key={client.id}
@@ -437,8 +440,8 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
         <GlassCard delay={0.35}>
           <div style={styles.cardHeader}>
             <div>
-              <h3 style={styles.cardTitle}>Top Performers</h3>
-              <p style={styles.cardSubtitle}>Highest progress this month</p>
+              <h3 style={styles.cardTitle}>{t.overview.topPerformers}</h3>
+              <p style={styles.cardSubtitle}>{t.overview.highestProgress}</p>
             </div>
             <TrendingUp size={16} color="var(--text-tertiary)" />
           </div>
@@ -488,11 +491,11 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
         <GlassCard delay={0.4} style={{ gridColumn: '1 / -1' }}>
           <div style={styles.cardHeader}>
             <div>
-              <h3 style={styles.cardTitle}>Recent Messages</h3>
-              <p style={styles.cardSubtitle}>{unreadMessages.length} unread</p>
+              <h3 style={styles.cardTitle}>{t.overview.recentMessages}</h3>
+              <p style={styles.cardSubtitle}>{t.overview.unread(unreadMessages.length)}</p>
             </div>
             <button onClick={() => onNavigate('messages')} style={styles.viewAllBtn}>
-              View all
+              {t.overview.viewAll}
             </button>
           </div>
           <div style={styles.messageList}>

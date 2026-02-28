@@ -8,11 +8,8 @@ import {
 import GlassCard from './GlassCard';
 import { scheduleToday, getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, WorkoutProgram } from '../types';
-
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'];
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -21,11 +18,6 @@ function getWeekStart(date: Date): Date {
   d.setDate(diff);
   d.setHours(0, 0, 0, 0);
   return d;
-}
-
-function formatFullDate(date: Date): string {
-  const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
-  return `${dayName}, ${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
 interface SchedulePageProps {
@@ -38,6 +30,9 @@ interface SchedulePageProps {
 
 export default function SchedulePage({ clients, programs, sessionsByDate, onSessionsChange, onViewClient }: SchedulePageProps) {
   const isMobile = useIsMobile();
+  const { lang, t } = useLang();
+
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
 
   // All half-hour slots for the add-session modal picker
   const allTimeSlots: string[] = [];
@@ -68,6 +63,16 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
   // Sessions to show for selected day
   const displaySessions = sessionsByDate[selectedKey] || [];
+
+  // Locale-aware full date formatting
+  const formatFullDate = (date: Date): string => {
+    return date.toLocaleDateString(locale, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   // ── Week summary ──
   const weekDays: string[] = [];
@@ -171,7 +176,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
             <ChevronLeft size={18} />
           </button>
           <div style={{ ...styles.weekDays, overflowX: isMobile ? 'auto' : undefined, justifyContent: isMobile ? 'flex-start' : 'center' }}>
-            {DAY_NAMES.map((day, i) => {
+            {t.schedule.weekDays.map((day, i) => {
               const dayDate = new Date(weekStart);
               dayDate.setDate(dayDate.getDate() + i);
               const date = dayDate.getDate();
@@ -220,13 +225,13 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
           <div style={styles.timelineHeader}>
             <div>
               <h3 style={styles.sectionTitle}>
-                {isSelectedToday ? "Today's Timeline" : formatFullDate(selectedDate).split(',')[0] + "'s Timeline"}
+                {isSelectedToday ? t.schedule.todaysTimeline : selectedDate.toLocaleDateString(locale, { weekday: 'long' }) + " — " + t.schedule.timeline}
               </h3>
               <p style={styles.sectionSub}>{formatFullDate(selectedDate)}</p>
             </div>
             <button style={styles.addSessionBtn} onClick={() => setShowAddModal(true)}>
               <Plus size={14} />
-              Add Session
+              {t.schedule.addSession}
             </button>
           </div>
 
@@ -328,7 +333,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                                     {session.status === 'current' && (
                                       <span style={styles.liveBadge}>
                                         <span style={styles.livePulse} />
-                                        IN SESSION
+                                        {t.schedule.inSession}
                                       </span>
                                     )}
                                     {(session.status === 'upcoming' || session.status === 'current') && (
@@ -336,14 +341,14 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                                         <button
                                           style={styles.sessionActionBtn}
                                           onClick={() => handleMarkCompleted(selectedKey, session.time)}
-                                          title="Mark completed"
+                                          title={t.schedule.markCompleted}
                                         >
                                           <CheckCircle2 size={15} color="var(--accent-success)" />
                                         </button>
                                         <button
                                           style={styles.sessionActionBtn}
                                           onClick={() => handleCancelSession(selectedKey, session.time)}
-                                          title="Cancel session"
+                                          title={t.schedule.cancelSession}
                                         >
                                           <XCircle size={15} color="var(--accent-danger)" />
                                         </button>
@@ -371,7 +376,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
         <div style={styles.sideColumn}>
           {/* Day Summary */}
           <GlassCard delay={0.15}>
-            <h3 style={styles.sectionTitle}>Day Summary</h3>
+            <h3 style={styles.sectionTitle}>{t.schedule.daySummary}</h3>
             <div style={styles.summaryStats}>
               <div style={styles.summaryItem}>
                 <div style={{ ...styles.summaryIcon, background: 'var(--accent-success-dim)' }}>
@@ -381,7 +386,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                   <div style={styles.summaryValue}>
                     {displaySessions.filter(s => s.status === 'completed').length}
                   </div>
-                  <div style={styles.summaryLabel}>Completed</div>
+                  <div style={styles.summaryLabel}>{t.schedule.completed}</div>
                 </div>
               </div>
               <div style={styles.summaryItem}>
@@ -392,7 +397,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                   <div style={styles.summaryValue}>
                     {displaySessions.filter(s => s.status === 'current').length}
                   </div>
-                  <div style={styles.summaryLabel}>In Progress</div>
+                  <div style={styles.summaryLabel}>{t.schedule.inProgress}</div>
                 </div>
               </div>
               <div style={styles.summaryItem}>
@@ -403,7 +408,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                   <div style={styles.summaryValue}>
                     {displaySessions.filter(s => s.status === 'upcoming').length}
                   </div>
-                  <div style={styles.summaryLabel}>Upcoming</div>
+                  <div style={styles.summaryLabel}>{t.schedule.upcoming}</div>
                 </div>
               </div>
             </div>
@@ -411,18 +416,18 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
           {/* Week Summary */}
           <GlassCard delay={0.18}>
-            <h3 style={styles.sectionTitle}>Week Overview</h3>
+            <h3 style={styles.sectionTitle}>{t.schedule.weekOverview}</h3>
             <div style={styles.weekSummary}>
               <div style={styles.weekStatRow}>
-                <span style={styles.weekStatLabel}>Total Sessions</span>
+                <span style={styles.weekStatLabel}>{t.schedule.totalSessions}</span>
                 <span style={styles.weekStatValue}>{weekTotal}</span>
               </div>
               <div style={styles.weekStatRow}>
-                <span style={styles.weekStatLabel}>Completed</span>
+                <span style={styles.weekStatLabel}>{t.schedule.completed}</span>
                 <span style={{ ...styles.weekStatValue, color: 'var(--accent-success)' }}>{weekCompleted}</span>
               </div>
               <div style={styles.weekStatRow}>
-                <span style={styles.weekStatLabel}>Remaining</span>
+                <span style={styles.weekStatLabel}>{t.schedule.remaining}</span>
                 <span style={{ ...styles.weekStatValue, color: 'var(--accent-primary)' }}>{weekUpcoming}</span>
               </div>
               {weekTotal > 0 && (
@@ -438,7 +443,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
           {/* Upcoming Check-ins */}
           <GlassCard delay={0.22}>
-            <h3 style={styles.sectionTitle}>Upcoming Check-ins</h3>
+            <h3 style={styles.sectionTitle}>{t.schedule.upcomingCheckIns}</h3>
             <div style={styles.checkinList}>
               {(() => {
                 const nowMs = new Date().getTime();
@@ -466,10 +471,10 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={styles.checkinNameLink}>{client.name}</div>
-                          <div style={styles.checkinDate}>{new Date(client.nextCheckIn + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                          <div style={styles.checkinDate}>{new Date(client.nextCheckIn + 'T00:00:00').toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</div>
                         </div>
                         <div style={styles.checkinDays}>
-                          {daysLeft === 1 ? 'Tomorrow' : `${daysLeft}d`}
+                          {daysLeft === 1 ? t.schedule.tomorrow : `${daysLeft}d`}
                         </div>
                       </motion.div>
                     );
@@ -500,7 +505,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>
-                  {addAtTime ? `Add Session at ${formatTimeLabel(addAtTime)}` : 'Add Session'}
+                  {addAtTime ? t.schedule.addSessionAt(formatTimeLabel(addAtTime)) : t.schedule.addSession}
                 </h3>
                 <button style={styles.closeBtn} onClick={() => { setShowAddModal(false); setAddAtTime(null); }}>
                   <X size={18} />
@@ -509,13 +514,13 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
               <div style={styles.modalBody}>
                 <div style={styles.modalField}>
-                  <label style={styles.modalLabel}>Client</label>
+                  <label style={styles.modalLabel}>{t.schedule.client}</label>
                   <select
                     value={newSession.client}
                     onChange={(e) => setNewSession(prev => ({ ...prev, client: e.target.value }))}
                     style={styles.modalSelect}
                   >
-                    <option value="">Select a client...</option>
+                    <option value="">{t.schedule.selectClient}</option>
                     {clients.filter(c => c.status !== 'paused').map(c => (
                       <option key={c.id} value={c.name}>{c.name}</option>
                     ))}
@@ -523,13 +528,13 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                 </div>
 
                 <div style={styles.modalField}>
-                  <label style={styles.modalLabel}>Session Type</label>
+                  <label style={styles.modalLabel}>{t.schedule.sessionType}</label>
                   <select
                     value={newSession.type}
                     onChange={(e) => setNewSession(prev => ({ ...prev, type: e.target.value }))}
                     style={styles.modalSelect}
                   >
-                    <option value="">Select type...</option>
+                    <option value="">{t.schedule.selectType}</option>
                     {(() => {
                       const selectedClient = clients.find(c => c.name === newSession.client);
                       const clientPrograms = selectedClient
@@ -562,7 +567,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <div style={{ ...styles.modalField, flex: 1 }}>
-                    <label style={styles.modalLabel}>Time</label>
+                    <label style={styles.modalLabel}>{t.schedule.time}</label>
                     <select
                       value={newSession.time}
                       onChange={(e) => setNewSession(prev => ({ ...prev, time: e.target.value }))}
@@ -574,7 +579,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                     </select>
                   </div>
                   <div style={{ ...styles.modalField, flex: 1 }}>
-                    <label style={styles.modalLabel}>Duration</label>
+                    <label style={styles.modalLabel}>{t.schedule.duration}</label>
                     <select
                       value={newSession.duration}
                       onChange={(e) => setNewSession(prev => ({ ...prev, duration: parseInt(e.target.value, 10) }))}
@@ -593,7 +598,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
 
               <div style={styles.modalActions}>
                 <button style={styles.modalCancelBtn} onClick={() => { setShowAddModal(false); setAddAtTime(null); }}>
-                  Cancel
+                  {t.schedule.cancel}
                 </button>
                 <button
                   style={{
@@ -602,7 +607,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                   }}
                   onClick={handleAddSession}
                 >
-                  Add Session
+                  {t.schedule.saveSession}
                 </button>
               </div>
             </motion.div>

@@ -10,6 +10,7 @@ import {
 import GlassCard from './GlassCard';
 import { revenueData, getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { Client, Invoice, WorkoutLog, CheckIn } from '../types';
 
 interface AnalyticsPageProps {
@@ -22,13 +23,16 @@ interface AnalyticsPageProps {
 
 export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns, onViewClient }: AnalyticsPageProps) {
   const isMobile = useIsMobile();
+  const { lang, t } = useLang();
+
+  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
 
   // ── Revenue from real invoices ──
   const paidInvoices = invoices.filter(inv => inv.status === 'paid');
-  const currentPeriod = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const currentPeriod = new Date().toLocaleDateString(locale, { month: 'short', year: 'numeric' });
   const prevDate = new Date();
   prevDate.setMonth(prevDate.getMonth() - 1);
-  const previousPeriod = prevDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const previousPeriod = prevDate.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 
   const thisMonthInvoices = invoices.filter(inv => inv.period === currentPeriod);
   const lastMonthInvoices = invoices.filter(inv => inv.period === previousPeriod);
@@ -139,7 +143,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   // ── Stat cards config ──
   const statCards = [
     {
-      label: 'Monthly Revenue',
+      label: t.analytics.monthlyRevenue,
       value: `$${thisMonthRevenue.toLocaleString()}`,
       change: revenueChangePercent,
       changeLabel: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
@@ -149,7 +153,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
       dim: 'var(--accent-success-dim)',
     },
     {
-      label: 'Projected Annual',
+      label: t.analytics.projectedAnnual,
       value: `$${projectedAnnual.toLocaleString()}`,
       change: revenueChangePercent,
       changeLabel: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
@@ -159,20 +163,20 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
       dim: 'var(--accent-primary-dim)',
     },
     {
-      label: 'Avg. Client Value',
+      label: t.analytics.avgClientValue,
       value: `$${avgClientValue}`,
       change: 0,
-      changeLabel: `${activePayingClients.length} clients`,
+      changeLabel: `${activePayingClients.length} ${t.payments.activeClients}`,
       positive: true,
       icon: CreditCard,
       color: 'var(--accent-secondary)',
       dim: 'var(--accent-secondary-dim)',
     },
     {
-      label: 'Retention Rate',
+      label: t.analytics.retentionRate,
       value: `${retentionRate}%`,
       change: 0,
-      changeLabel: retentionRate >= 90 ? 'Excellent' : retentionRate >= 75 ? 'Good' : 'Needs focus',
+      changeLabel: retentionRate >= 90 ? t.analytics.excellent : retentionRate >= 75 ? t.analytics.good : t.analytics.needsFocus,
       positive: retentionRate >= 75,
       icon: Target,
       color: 'var(--accent-warm)',
@@ -224,14 +228,14 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
             </div>
             <div>
               <div style={styles.engagementValue}>{completedWorkouts.length}</div>
-              <div style={styles.engagementLabel}>Workouts (30d)</div>
+              <div style={styles.engagementLabel}>{t.analytics.workouts30d}</div>
             </div>
             <div style={styles.engagementMeta}>
               <span style={{ color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>
-                {workoutCompletionRate}% completed
+                {t.analytics.pctCompleted(workoutCompletionRate)}
               </span>
               <span style={{ color: 'var(--text-tertiary)' }}>
-                ~{avgWorkoutsPerWeek}/wk per client
+                {t.analytics.perWeekPerClient(avgWorkoutsPerWeek)}
               </span>
             </div>
           </div>
@@ -244,7 +248,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
             </div>
             <div>
               <div style={styles.engagementValue}>{checkInRate}%</div>
-              <div style={styles.engagementLabel}>Check-In Rate</div>
+              <div style={styles.engagementLabel}>{t.analytics.checkInRate}</div>
             </div>
             <div style={styles.engagementMeta}>
               <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>
@@ -264,11 +268,11 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
             </div>
             <div>
               <div style={styles.engagementValue}>${totalCollected.toLocaleString()}</div>
-              <div style={styles.engagementLabel}>Total Collected</div>
+              <div style={styles.engagementLabel}>{t.payments.allTimeRevenue}</div>
             </div>
             <div style={styles.engagementMeta}>
               <span style={{ color: 'var(--text-secondary)' }}>
-                {paidInvoices.length} invoices paid
+                {t.payments.invoicesPaid(paidInvoices.length)}
               </span>
               <span style={{ color: 'var(--accent-warm)' }}>
                 {invoices.filter(inv => inv.status === 'overdue').length} overdue
@@ -281,7 +285,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
       {/* Revenue Over Time + Plan Distribution */}
       <div style={{ ...styles.chartRow, flexDirection: isMobile ? 'column' : 'row' }}>
         <GlassCard delay={0.3} style={{ flex: 2 }}>
-          <h3 style={styles.chartTitle}>Revenue Over Time</h3>
+          <h3 style={styles.chartTitle}>{t.analytics.revenueTrend}</h3>
           <div style={{ height: isMobile ? 220 : 280, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueChartData}>
@@ -293,7 +297,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                 </defs>
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
                 <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, 'Revenue']} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, t.overview.revenue]} />
                 <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
               </AreaChart>
             </ResponsiveContainer>
@@ -301,7 +305,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
         </GlassCard>
 
         <GlassCard delay={0.35} style={{ flex: 1 }}>
-          <h3 style={styles.chartTitle}>Client Distribution</h3>
+          <h3 style={styles.chartTitle}>{t.analytics.planDistribution}</h3>
           <div style={{ height: isMobile ? 220 : 280, marginTop: '8px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -337,13 +341,13 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
       <div style={{ ...styles.bottomRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
         {/* Revenue by Plan */}
         <GlassCard delay={0.4}>
-          <h3 style={styles.chartTitle}>Revenue by Plan</h3>
+          <h3 style={styles.chartTitle}>{t.analytics.revenueByPlan}</h3>
           <div style={{ height: 220, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={planRevenue} layout="vertical">
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
                 <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={70} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, 'Revenue']} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, t.overview.revenue]} />
                 <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
                   <Cell fill="#f59e0b" />
                   <Cell fill="#6366f1" />
@@ -356,7 +360,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
 
         {/* Retention */}
         <GlassCard delay={0.45}>
-          <h3 style={styles.chartTitle}>Client Retention</h3>
+          <h3 style={styles.chartTitle}>{t.analytics.retentionOverTime}</h3>
           <div style={{ height: 220, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={retentionData}>
@@ -377,7 +381,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
 
         {/* Progress Distribution */}
         <GlassCard delay={0.5}>
-          <h3 style={styles.chartTitle}>Client Progress</h3>
+          <h3 style={styles.chartTitle}>{t.analytics.progressDistribution}</h3>
           <div style={{ height: 220, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={progressDistribution}>
@@ -401,20 +405,20 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
         <div style={{ ...styles.tableHeader, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : undefined }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Award size={18} color="var(--accent-warm)" />
-            <h3 style={styles.chartTitle}>Client Breakdown</h3>
+            <h3 style={styles.chartTitle}>{t.analytics.clientEngagement}</h3>
           </div>
           <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>
-            {activePayingClients.length} active clients
+            {activePayingClients.length} {t.payments.activeClients}
           </span>
         </div>
         <div style={{ ...styles.table, overflowX: isMobile ? 'auto' : undefined }}>
           <div style={{ ...styles.tableRow, minWidth: isMobile ? '700px' : undefined }}>
             <span style={{ ...styles.tableHead, width: '40px' }}>#</span>
-            <span style={{ ...styles.tableHead, flex: 1 }}>Client</span>
+            <span style={{ ...styles.tableHead, flex: 1 }}>{t.analytics.client}</span>
             <span style={{ ...styles.tableHead, width: '80px' }}>Plan</span>
-            <span style={{ ...styles.tableHead, width: '100px' }}>Revenue</span>
-            <span style={{ ...styles.tableHead, width: '90px' }}>Workouts</span>
-            <span style={{ ...styles.tableHead, width: '90px' }}>Check-Ins</span>
+            <span style={{ ...styles.tableHead, width: '100px' }}>{t.analytics.revenueLabel}</span>
+            <span style={{ ...styles.tableHead, width: '90px' }}>{t.analytics.workouts}</span>
+            <span style={{ ...styles.tableHead, width: '90px' }}>{t.analytics.checkInsLabel}</span>
             <span style={{ ...styles.tableHead, width: '80px' }}>Status</span>
           </div>
           {clientEngagement.map((client, i) => (
