@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
@@ -237,6 +237,35 @@ function App() {
 
     loadData();
   }, [isLoggedIn]);
+
+  // ── Poll messages every 10s when on messages page ──
+  const refreshMessages = useCallback(async () => {
+    if (!clientUser) return;
+    const { data: msgData } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('client_id', clientUser.id)
+      .order('timestamp');
+    if (msgData) {
+      setMessages(msgData.map(r => ({
+        id: r.id,
+        clientId: r.client_id,
+        clientName: clientUser.name,
+        clientAvatar: '',
+        text: r.text,
+        timestamp: r.timestamp,
+        isRead: r.is_read,
+        isFromCoach: r.is_from_coach,
+        channel: r.channel,
+      })));
+    }
+  }, [clientUser]);
+
+  useEffect(() => {
+    if (!isLoggedIn || currentPage !== 'messages') return;
+    const interval = setInterval(refreshMessages, 10000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn, currentPage, refreshMessages]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

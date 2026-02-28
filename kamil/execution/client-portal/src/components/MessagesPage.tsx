@@ -27,7 +27,7 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
   const handleSend = () => {
     if (!newMessage.trim()) return;
     const msg: Message = {
-      id: `msg-client-${Date.now()}`,
+      id: crypto.randomUUID(),
       clientId,
       clientName,
       clientAvatar: '',

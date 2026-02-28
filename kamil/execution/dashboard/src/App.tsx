@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
@@ -79,10 +79,10 @@ function App() {
       }
     });
 
-    const loadClients = async () => {
+    const loadClients = async (): Promise<Client[]> => {
       const { data } = await supabase.from('clients').select('*').order('created_at');
       if (data) {
-        setAllClients(data.map(r => ({
+        const clients = data.map(r => ({
           id: r.id,
           name: r.name,
           avatar: '',
@@ -101,17 +101,20 @@ function App() {
           notesHistory: [],
           activityLog: [],
           lastActive: r.last_active ?? '',
-        })));
+        }));
+        setAllClients(clients);
+        return clients;
       }
+      return [];
     };
 
-    const loadMessages = async () => {
+    const loadMessages = async (clientsList: Client[]) => {
       const { data } = await supabase.from('messages').select('*').order('timestamp');
       if (data) {
         setAllMessages(data.map(r => ({
           id: r.id,
           clientId: r.client_id,
-          clientName: allClients.find(c => c.id === r.client_id)?.name ?? '',
+          clientName: clientsList.find(c => c.id === r.client_id)?.name ?? '',
           clientAvatar: '',
           text: r.text,
           timestamp: r.timestamp,
@@ -123,13 +126,13 @@ function App() {
       }
     };
 
-    const loadInvoices = async () => {
+    const loadInvoices = async (clientsList: Client[]) => {
       const { data } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
       if (data) {
         setAllInvoices(data.map(r => ({
           id: r.id,
           clientId: r.client_id,
-          clientName: allClients.find(c => c.id === r.client_id)?.name ?? '',
+          clientName: clientsList.find(c => c.id === r.client_id)?.name ?? '',
           amount: r.amount,
           status: r.status,
           dueDate: r.due_date ?? '',
@@ -140,13 +143,13 @@ function App() {
       }
     };
 
-    const loadCheckIns = async () => {
+    const loadCheckIns = async (clientsList: Client[]) => {
       const { data } = await supabase.from('check_ins').select('*').order('date', { ascending: false });
       if (data) {
         setAllCheckIns(data.map(r => ({
           id: r.id,
           clientId: r.client_id,
-          clientName: allClients.find(c => c.id === r.client_id)?.name ?? '',
+          clientName: clientsList.find(c => c.id === r.client_id)?.name ?? '',
           date: r.date,
           status: r.status,
           weight: r.weight,
@@ -222,14 +225,44 @@ function App() {
       }
     };
 
-    loadClients().then(() => {
-      loadMessages();
-      loadInvoices();
-      loadCheckIns();
+    loadClients().then((clientsList) => {
+      loadMessages(clientsList);
+      loadInvoices(clientsList);
+      loadCheckIns(clientsList);
       loadPrograms();
       loadWorkoutLogs();
     });
   }, [isLoggedIn]);
+
+  // ── Poll messages every 10s when on messages/client-detail page ──
+  const clientsRef = useRef<Client[]>([]);
+  useEffect(() => { clientsRef.current = allClients; }, [allClients]);
+
+  const refreshMessages = useCallback(async () => {
+    const { data } = await supabase.from('messages').select('*').order('timestamp');
+    if (data) {
+      const clients = clientsRef.current;
+      setAllMessages(data.map(r => ({
+        id: r.id,
+        clientId: r.client_id,
+        clientName: clients.find(c => c.id === r.client_id)?.name ?? '',
+        clientAvatar: '',
+        text: r.text,
+        timestamp: r.timestamp,
+        isRead: r.is_read,
+        isFromCoach: r.is_from_coach,
+        channel: r.channel,
+        deliveryStatus: r.delivery_status,
+      })));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    if (currentPage !== 'messages' && currentPage !== 'client-detail') return;
+    const interval = setInterval(refreshMessages, 10000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn, currentPage, refreshMessages]);
 
   // @ts-ignore — scaffolded for schedule features
   const todayKey = new Date().toISOString().split('T')[0];
