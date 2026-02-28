@@ -98,14 +98,7 @@ export default function AccountPage() {
   };
 
   const handleDeleteAccount = () => {
-    try {
-      const usersRaw = localStorage.getItem('fitcore-demo-users');
-      if (usersRaw) {
-        const users = JSON.parse(usersRaw);
-        const filtered = users.filter((u: { id: string }) => u.id !== user.id);
-        localStorage.setItem('fitcore-demo-users', JSON.stringify(filtered));
-      }
-    } catch { /* ignore */ }
+    // Account deletion requires admin privileges — just log out for now
     logout();
     navigate(homeUrl);
   };
