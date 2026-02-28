@@ -99,9 +99,8 @@ const pbStepperStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-let _idCounter = 0;
 const emptyExercise = (): Exercise => ({
-  id: `e${++_idCounter}-${Math.random().toString(36).slice(2, 6)}`,
+  id: crypto.randomUUID(),
   name: '',
   sets: 3,
   reps: '10',
@@ -121,7 +120,7 @@ export default function ProgramBuilderPage({
   const [draft, setDraft] = useState<WorkoutProgram>(() => {
     if (program) return JSON.parse(JSON.stringify(program));
     return {
-      id: `wp${++_idCounter}`,
+      id: crypto.randomUUID(),
       name: '',
       status: 'draft' as const,
       durationWeeks: 4,
@@ -166,7 +165,7 @@ export default function ProgramBuilderPage({
   // ── Day management ──
   const addDay = () => {
     const newDay: WorkoutDay = {
-      id: `wd${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       name: `Day ${draft.days.length + 1}`,
       exercises: [],
     };
@@ -186,11 +185,11 @@ export default function ProgramBuilderPage({
     const source = draft.days[index];
     const newDay: WorkoutDay = {
       ...JSON.parse(JSON.stringify(source)),
-      id: `wd${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       name: `${source.name} (Copy)`,
       exercises: source.exercises.map(e => ({
         ...e,
-        id: `e${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: crypto.randomUUID(),
       })),
     };
     setDraft(prev => ({

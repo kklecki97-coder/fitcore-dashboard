@@ -138,7 +138,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
   const handleSendMessage = () => {
     if (!messageText.trim()) return;
     const msg: Message = {
-      id: `m-${Date.now()}`,
+      id: crypto.randomUUID(),
       clientId: client.id,
       clientName: client.name,
       clientAvatar: '',

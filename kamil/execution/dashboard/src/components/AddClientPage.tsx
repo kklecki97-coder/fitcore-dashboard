@@ -151,7 +151,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
     nextWeek.setDate(nextWeek.getDate() + 7);
 
     const newClient: Client = {
-      id: `c${Date.now()}`,
+      id: crypto.randomUUID(),
       name: name.trim(),
       avatar: '',
       email: email.trim().toLowerCase(),

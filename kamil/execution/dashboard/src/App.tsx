@@ -496,7 +496,7 @@ function App() {
     const now = new Date().toISOString().split('T')[0];
     const newProgram: WorkoutProgram = {
       ...source,
-      id: `wp${Date.now()}`,
+      id: crypto.randomUUID(),
       name: `${source.name} (Copy)`,
       status: 'draft',
       clientIds: [],
@@ -504,10 +504,10 @@ function App() {
       updatedAt: now,
       days: source.days.map(d => ({
         ...d,
-        id: `wd${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: crypto.randomUUID(),
         exercises: d.exercises.map(e => ({
           ...e,
-          id: `e${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          id: crypto.randomUUID(),
         })),
       })),
     };

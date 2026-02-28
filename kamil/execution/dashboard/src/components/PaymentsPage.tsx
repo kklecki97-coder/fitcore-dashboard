@@ -102,7 +102,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
     const now = new Date();
     const period = formatPeriod(now);
     const inv: Invoice = {
-      id: `inv-${Date.now()}`,
+      id: crypto.randomUUID(),
       clientId: client.id,
       clientName: client.name,
       amount: rateMap[newInvoice.plan],

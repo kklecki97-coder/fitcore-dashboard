@@ -196,7 +196,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   const handleSend = () => {
     if (!newMessage.trim() || !activeClient) return;
     const msg: Message = {
-      id: `m-${Date.now()}`,
+      id: crypto.randomUUID(),
       clientId: selectedClient,
       clientName: activeClient.name,
       clientAvatar: '',
