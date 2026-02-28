@@ -146,16 +146,16 @@ def run_apify_actor(api_key, actor_id, run_input, poll_interval=5):
 
 # --- HASHTAG SEARCH ---
 HASHTAGS = [
-    "fitnesscoach",
-    "onlinecoach",
-    "onlinepersonaltrainer",
-    "personaltrainer",
-    "onlinefitnesscoach",
-    "fitnessbusiness",
-    "nutritioncoach",
-    "transformationcoach",
-    "coachlife",
-    "onlinecoaching",
+    "trenerpersonalny",
+    "treningpersonalny",
+    "trenerfitness",
+    "trenerkaonline",
+    "trenersonline",
+    "treningonline",
+    "dietetykonline",
+    "trenerpolska",
+    "fitnesstrener",
+    "treningsilowy",
 ]
 
 def search_hashtags(api_key, limit_per_hashtag=100):
@@ -183,11 +183,11 @@ def search_hashtags(api_key, limit_per_hashtag=100):
 
 # --- KEYWORD SEARCH ---
 SEARCH_KEYWORDS = [
-    "online fitness coach",
-    "personal trainer online",
-    "fitness coaching",
-    "online nutrition coach",
-    "fitness coach USA",
+    "trener personalny online",
+    "trener fitness polska",
+    "coaching fitness",
+    "dietetyk online",
+    "trenerka personalna",
 ]
 
 def search_keywords(api_key, limit_per_keyword=50):
@@ -242,15 +242,25 @@ def scrape_profiles(api_key, usernames):
 
 
 # --- FILTERING ---
-# Bio keywords that indicate online coaching
+# Bio keywords that indicate fitness coaching (English + Polish)
 POSITIVE_BIO_KEYWORDS = [
+    # English
     "coach", "coaching", "trainer", "training", "pt ",
     "personal trainer", "online coach", "fitness coach",
     "nutrition", "transform", "1:1", "1-on-1", "one on one",
-    "apply", "dm me", "link in bio", "programs", "clients",
-    "accountability", "macro", "meal plan", "workout plan",
+    "apply", "dm me", "programs", "clients",
+    "macro", "meal plan", "workout plan",
     "fat loss", "weight loss", "body transformation",
     "certified", "nasm", "ace ", "issa", "nsca",
+    # Polish
+    "trener", "trenerka", "treningi", "personalny", "personalna",
+    "dietetyk", "dietetyczka", "plany treningowe", "plan treningowy",
+    "plany dietetyczne", "plan dietetyczny", "konsultacje",
+    "klienci", "transformacja", "sylwetka", "odchudzanie",
+    "redukcja", "masa", "budowanie masy", "trening silowy",
+    "zapisy", "online coaching", "treningi online",
+    "napisz dm", "napisz do mnie", "link w bio",
+    "zmiana sylwetki", "zmiana stylu", "prowadzenie",
 ]
 
 # Bio keywords that disqualify
@@ -260,23 +270,23 @@ NEGATIVE_BIO_KEYWORDS = [
     "real estate", "crypto", "forex", "mlm",
     "photographer", "model", "influencer",
     "parody", "fan page", "meme",
+    # Polish disqualifiers
+    "fotograf", "modelka", "nieruchomości",
+    "kryptowaluty", "coach biznesowy", "life coach",
 ]
 
-# US state abbreviations and cities for location filtering
-US_INDICATORS = [
-    # State abbreviations
-    " al", " ak", " az", " ar", " ca", " co", " ct", " de", " fl", " ga",
-    " hi", " id", " il", " in", " ia", " ks", " ky", " la", " me", " md",
-    " ma", " mi", " mn", " ms", " mo", " mt", " ne", " nv", " nh", " nj",
-    " nm", " ny", " nc", " nd", " oh", " ok", " or", " pa", " ri", " sc",
-    " sd", " tn", " tx", " ut", " vt", " va", " wa", " wv", " wi", " wy",
-    # Common large city mentions
-    "usa", "united states", "new york", "los angeles", "chicago", "houston",
-    "phoenix", "philadelphia", "san antonio", "san diego", "dallas", "austin",
-    "miami", "atlanta", "denver", "seattle", "boston", "nashville", "portland",
-    "las vegas", "charlotte", "san francisco", "tampa", "orlando", "minneapolis",
-    # Timezone references
-    "est", "cst", "mst", "pst", "eastern", "central", "pacific",
+# Poland location indicators
+POLAND_INDICATORS = [
+    # Country
+    "polska", "poland", "pl", "🇵🇱",
+    # Major cities
+    "warszawa", "warsaw", "kraków", "krakow", "wrocław", "wroclaw",
+    "poznań", "poznan", "gdańsk", "gdansk", "łódź", "lodz",
+    "katowice", "szczecin", "bydgoszcz", "lublin", "białystok",
+    "bialystok", "rzeszów", "rzeszow", "toruń", "torun",
+    "kielce", "olsztyn", "opole", "gliwice", "zabrze",
+    "częstochowa", "czestochowa", "radom", "sosnowiec",
+    "gdynia", "sopot", "zakopane",
 ]
 
 
@@ -363,12 +373,13 @@ def filter_profiles(profiles, min_followers=1000, max_followers=50000):
             "scraped_at": datetime.now(timezone.utc).isoformat(),
         }
 
-        # Try to detect US-based
+        # Try to detect Poland-based
         bio_lower = bio
         location_text = (p.get("locationName") or "").lower()
-        combined = f"{bio_lower} {location_text}"
-        is_us = any(indicator in combined for indicator in US_INDICATORS)
-        lead["likely_us"] = is_us
+        full_name_lower = (p.get("fullName") or "").lower()
+        combined = f"{bio_lower} {location_text} {full_name_lower}"
+        is_poland = any(indicator in combined for indicator in POLAND_INDICATORS)
+        lead["likely_us"] = is_poland  # Reusing column, now means "likely_poland"
 
         # Score the lead (simple heuristic)
         score = 0
@@ -376,13 +387,13 @@ def filter_profiles(profiles, min_followers=1000, max_followers=50000):
             score += 2
         if p.get("externalUrl"):
             score += 2
-        if "online" in bio:
+        if any(term in bio for term in ["online", "treningi online", "coaching online"]):
             score += 2
-        if any(term in bio for term in ["1:1", "1-on-1", "apply", "dm me", "clients"]):
+        if any(term in bio for term in ["1:1", "1-on-1", "zapisy", "napisz", "dm me", "clients", "klienci"]):
             score += 2
-        if 5000 <= followers <= 30000:
-            score += 1  # Sweet spot
-        if is_us:
+        if 2000 <= followers <= 30000:
+            score += 1  # Sweet spot for Polish market
+        if is_poland:
             score += 1
         lead["score"] = score
 
@@ -398,6 +409,114 @@ def filter_profiles(profiles, min_followers=1000, max_followers=50000):
     # Sort by score descending
     qualified.sort(key=lambda x: -x["score"])
 
+    return qualified
+
+
+# --- AI QUALIFICATION ---
+def qualify_with_ai(leads, api_key_openai):
+    """Use GPT to verify each lead is a real Polish fitness coach."""
+    print(f"\n{'='*60}")
+    print(f"STEP 3b: AI qualification — verifying {len(leads)} leads")
+    print(f"{'='*60}")
+
+    if not api_key_openai:
+        print("  [WARN] OPENAI_API_KEY not found, skipping AI qualification")
+        return leads
+
+    qualified = []
+    rejected = 0
+
+    for i, lead in enumerate(leads):
+        bio = lead.get("bio", "")
+        name = lead.get("full_name", "")
+        handle = lead.get("instagram_handle", "")
+        biz_cat = lead.get("business_category", "")
+        followers = lead.get("follower_count", 0)
+
+        prompt = f"""You are a lead qualification assistant. Analyze this Instagram profile and answer TWO questions.
+
+Profile:
+- Handle: @{handle}
+- Name: {name}
+- Bio: {bio}
+- Business category: {biz_cat}
+- Followers: {followers}
+
+Question 1: Is this person POLISH (from Poland)?
+IMPORTANT: Czech, Slovak, Croatian, Serbian and other Slavic languages are NOT Polish.
+- Czech uses: ř, ů, ě, ž, š, č — words like "jóga", "běh", "trenérka", "pohyb", "učitelka"
+- Slovak uses: ľ, ŕ, ĺ, ô — words like "tréner"
+- Polish uses: ą, ę, ó, ś, ł, ż, ź, ć, ń — words like "trener", "treningi", "dietetyk", "sylwetka"
+Look at the LANGUAGE of the bio text, not just the characters. If the bio is in Czech, Slovak, or any other non-Polish language, answer false.
+
+Question 2: Is this person an actual FITNESS COACH or PERSONAL TRAINER who works with individual clients?
+- YES if: personal trainer, fitness coach, online coach, nutrition coach/dietitian who coaches people, transformation coach
+- NO if: health blog, gym chain, fitness influencer who doesn't coach, supplement brand, yoga studio (not individual coach), photographer, business coach, life coach, generic wellness page, motivational page
+
+Respond ONLY with this exact JSON format, nothing else:
+{{"is_polish": true/false, "is_fitness_coach": true/false, "reason": "one sentence explanation"}}"""
+
+        body = json.dumps({
+            "model": "gpt-5-mini",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_completion_tokens": 1000,
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            "https://api.openai.com/v1/chat/completions",
+            data=body,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key_openai}",
+            },
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                content = result["choices"][0]["message"]["content"].strip()
+
+                # If empty response (reasoning model used all tokens), reject as unqualified
+                if not content:
+                    print(f"  {i+1}/{len(leads)} @{handle}: [EMPTY RESPONSE] — rejecting (unverified)")
+                    rejected += 1
+                    continue
+
+                # Parse JSON response
+                # Strip markdown code blocks if present
+                if content.startswith("```"):
+                    content = content.split("\n", 1)[1] if "\n" in content else content
+                    content = content.rsplit("```", 1)[0].strip()
+
+                parsed = json.loads(content)
+                is_polish = parsed.get("is_polish", False)
+                is_coach = parsed.get("is_fitness_coach", False)
+                reason = parsed.get("reason", "")
+
+                status = "PASS" if (is_polish and is_coach) else "REJECT"
+                tag = ""
+                if not is_polish:
+                    tag += " [NOT POLISH]"
+                if not is_coach:
+                    tag += " [NOT COACH]"
+
+                print(f"  {i+1}/{len(leads)} @{handle}: {status}{tag} — {reason}")
+
+                if is_polish and is_coach:
+                    qualified.append(lead)
+                else:
+                    rejected += 1
+
+        except Exception as e:
+            print(f"  {i+1}/{len(leads)} @{handle}: [ERROR] {e} — rejecting (unverified)")
+            rejected += 1
+
+        # Small delay to avoid rate limits
+        if i < len(leads) - 1:
+            time.sleep(0.3)
+
+    print(f"\n  AI qualification: {len(qualified)} passed, {rejected} rejected")
     return qualified
 
 
@@ -632,6 +751,14 @@ def main():
         print("\nNo leads passed filtering. Try adjusting criteria.")
         return
 
+    # Step 3b: AI qualification
+    openai_key = env.get("OPENAI_API_KEY")
+    leads = qualify_with_ai(leads, openai_key)
+
+    if not leads:
+        print("\nNo leads passed AI qualification. Try adjusting criteria.")
+        return
+
     # Print top leads preview
     print(f"\n{'='*60}")
     print(f"TOP 10 LEADS (by score)")
@@ -663,7 +790,7 @@ def main():
         push_to_supabase(leads, env)
 
     # Summary
-    us_leads = sum(1 for l in leads if l["likely_us"])
+    pl_leads = sum(1 for l in leads if l["likely_us"])
     biz_leads = sum(1 for l in leads if l["is_business_account"])
     with_website = sum(1 for l in leads if l["website"])
     avg_score = sum(l["score"] for l in leads) / len(leads) if leads else 0
@@ -674,7 +801,7 @@ def main():
     print(f"  Profiles found: {len(usernames)}")
     print(f"  Profiles scraped: {len(profiles)}")
     print(f"  Qualified leads: {len(leads)}")
-    print(f"  Likely US-based: {us_leads}")
+    print(f"  Likely Poland-based: {pl_leads}")
     print(f"  Business accounts: {biz_leads}")
     print(f"  With website: {with_website}")
     print(f"  Average score: {avg_score:.1f}")
