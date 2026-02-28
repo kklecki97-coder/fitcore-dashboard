@@ -8,7 +8,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import GlassCard from './GlassCard';
-import { revenueData, getInitials, getAvatarColor } from '../data';
+import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { Client, Invoice, WorkoutLog, CheckIn } from '../types';
@@ -74,24 +74,20 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     ? Math.round((completedCheckIns.length / scheduledOrDone.length) * 100)
     : 0;
 
-  // ── Revenue chart from invoices (aggregate by period) ──
-  const periodRevenue: Record<string, number> = {};
-  const periodClients: Record<string, Set<string>> = {};
-  paidInvoices.forEach(inv => {
-    periodRevenue[inv.period] = (periodRevenue[inv.period] || 0) + inv.amount;
-    if (!periodClients[inv.period]) periodClients[inv.period] = new Set();
-    periodClients[inv.period].add(inv.clientId);
-  });
-  // Merge invoice-derived data with revenueData (keep revenueData months for chart continuity)
-  const currentYear = new Date().getFullYear();
-  const revenueChartData = revenueData.map(rd => {
-    // Try current year first, then previous year, then fallback to mock data
-    const revKey = `${rd.month} ${currentYear}`;
-    const prevKey = `${rd.month} ${currentYear - 1}`;
+  // ── Revenue chart from real invoices (last 6 months) ──
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const revenueChartData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const label = monthNames[d.getMonth()];
+    const monthPaid = paidInvoices.filter(inv => {
+      if (!inv.paidDate) return false;
+      const pd = new Date(inv.paidDate);
+      return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+    });
     return {
-      month: rd.month,
-      revenue: periodRevenue[revKey] ?? periodRevenue[prevKey] ?? rd.revenue,
-      clients: periodClients[revKey]?.size ?? periodClients[prevKey]?.size ?? rd.clients,
+      month: label,
+      revenue: monthPaid.reduce((s, inv) => s + inv.amount, 0),
+      clients: new Set(monthPaid.map(inv => inv.clientId)).size,
     };
   });
 

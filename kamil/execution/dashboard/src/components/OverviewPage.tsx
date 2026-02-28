@@ -18,11 +18,10 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import GlassCard from './GlassCard';
-import { revenueData } from '../data';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, Message, WorkoutProgram } from '../types';
+import type { Client, Message, WorkoutProgram, Invoice } from '../types';
 
 const QUOTE_AUTHORS = [
   'Unknown',
@@ -41,11 +40,12 @@ interface OverviewPageProps {
   clients: Client[];
   messages: Message[];
   programs: WorkoutProgram[];
+  invoices: Invoice[];
   onViewClient: (id: string) => void;
   onNavigate: (page: 'messages') => void;
 }
 
-export default function OverviewPage({ clients, messages, programs, onViewClient, onNavigate }: OverviewPageProps) {
+export default function OverviewPage({ clients, messages, programs, invoices, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const [ready, setReady] = useState(false);
@@ -59,10 +59,33 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
   const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
   const unreadMessages = messages.filter(m => !m.isRead && !m.isFromCoach);
 
-  // Compute revenue change from last two months
+  // Compute revenue chart from real invoices
+  const revenueData = useMemo(() => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const months: { month: string; revenue: number; clients: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = monthNames[d.getMonth()];
+      const paidInvoices = invoices.filter(inv => {
+        if (inv.status !== 'paid' || !inv.paidDate) return false;
+        const pd = new Date(inv.paidDate);
+        return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+      });
+      months.push({
+        month: label,
+        revenue: paidInvoices.reduce((sum, inv) => sum + inv.amount, 0),
+        clients: new Set(paidInvoices.map(inv => inv.clientId)).size,
+      });
+    }
+    return months;
+  }, [invoices]);
+
   const lastMonth = revenueData[revenueData.length - 1];
   const prevMonth = revenueData[revenueData.length - 2];
-  const revenueChange = prevMonth ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100) : 0;
+  const revenueChange = prevMonth && prevMonth.revenue > 0
+    ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100)
+    : 0;
 
   // At-risk: paused, streak dropped to 0, or progress below 30%
   const atRiskClients = clients.filter(c =>

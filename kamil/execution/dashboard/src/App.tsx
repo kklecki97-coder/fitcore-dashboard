@@ -220,20 +220,8 @@ function App() {
     weekly: false,
   });
 
-  // App notifications (bell icon)
-  const [appNotifications, setAppNotifications] = useState<AppNotification[]>(() => {
-    const now = Date.now();
-    return [
-      { id: 'n1', type: 'message', title: 'New message from Marcus Johnson', description: 'Hey coach, I hit a new PR on bench today! 225lbs!', timestamp: new Date(now - 5 * 60000).toISOString(), isRead: false, clientId: 'c1', targetPage: 'messages' as const },
-      { id: 'n2', type: 'checkin', title: 'Sarah Chen submitted a check-in', description: 'Weekly check-in completed — all metrics updated', timestamp: new Date(now - 35 * 60000).toISOString(), isRead: false, clientId: 'c2', targetPage: 'check-ins' as const },
-      { id: 'n3', type: 'payment', title: 'Payment received — $150', description: 'David Park paid invoice #INV-2024-012', timestamp: new Date(now - 2 * 3600000).toISOString(), isRead: false, clientId: 'c3', targetPage: 'payments' as const },
-      { id: 'n4', type: 'program', title: "Alex Rivera's program starts tomorrow", description: 'Hypertrophy Phase 2 — 4 days/week begins Monday', timestamp: new Date(now - 4 * 3600000).toISOString(), isRead: false, clientId: 'c4', targetPage: 'programs' as const },
-      { id: 'n5', type: 'message', title: 'New message from Emma Wilson', description: "Can we reschedule Thursday's session?", timestamp: new Date(now - 8 * 3600000).toISOString(), isRead: true, clientId: 'c5', targetPage: 'messages' as const },
-      { id: 'n6', type: 'checkin', title: 'Lisa Thompson missed check-in', description: 'Weekly check-in was due yesterday — no submission', timestamp: new Date(now - 24 * 3600000).toISOString(), isRead: true, clientId: 'c6', targetPage: 'check-ins' as const },
-      { id: 'n7', type: 'payment', title: 'Payment overdue — $200', description: 'Mike Chen invoice #INV-2024-009 is 5 days overdue', timestamp: new Date(now - 48 * 3600000).toISOString(), isRead: true, clientId: 'c7', targetPage: 'payments' as const },
-      { id: 'n8', type: 'client', title: 'Welcome to FitCore!', description: 'Your dashboard is set up and ready to go', timestamp: new Date(now - 72 * 3600000).toISOString(), isRead: true, targetPage: 'overview' as const },
-    ];
-  });
+  // App notifications (bell icon) — start empty, populated from real-time events
+  const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
 
   // Track data counts to detect new items for notifications
   const prevMessageCount = useRef(allMessages.length);
@@ -592,7 +580,7 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
       case 'clients':
         return (
           <ClientsPage
@@ -694,7 +682,7 @@ function App() {
           />
         );
       default:
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
     }
   };
 

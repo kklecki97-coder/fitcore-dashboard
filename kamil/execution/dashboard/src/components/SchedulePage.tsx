@@ -6,7 +6,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { scheduleToday, getInitials, getAvatarColor } from '../data';
+import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { Client, WorkoutProgram } from '../types';
@@ -20,11 +20,13 @@ function getWeekStart(date: Date): Date {
   return d;
 }
 
+type ScheduleSession = { time: string; client: string; type: string; status: 'completed' | 'upcoming' | 'current'; duration: number };
+
 interface SchedulePageProps {
   clients: Client[];
   programs: WorkoutProgram[];
-  sessionsByDate: Record<string, typeof scheduleToday>;
-  onSessionsChange: (sessions: Record<string, typeof scheduleToday>) => void;
+  sessionsByDate: Record<string, ScheduleSession[]>;
+  onSessionsChange: (sessions: Record<string, ScheduleSession[]>) => void;
   onViewClient: (id: string) => void;
 }
 
