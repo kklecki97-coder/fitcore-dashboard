@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Lock, CheckCircle } from 'lucide-react';
 import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -10,12 +11,22 @@ import CheckInPage from './components/CheckInPage';
 import ProgressPage from './components/ProgressPage';
 import MessagesPage from './components/MessagesPage';
 import useIsMobile from './hooks/useIsMobile';
+import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
 import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog } from './types';
 
 function App() {
+  const { t } = useLang();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // ── Password recovery state ──
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetUpdating, setResetUpdating] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   // ── Auth: listen to Supabase session ──
   useEffect(() => {
@@ -23,7 +34,10 @@ function App() {
       setIsLoggedIn(!!session);
       setAuthLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowResetPassword(true);
+      }
       setIsLoggedIn(!!session);
     });
     return () => subscription.unsubscribe();
@@ -35,6 +49,38 @@ function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+
+    if (resetNewPassword.length < 6) {
+      setResetError(t.login.passwordMinReset);
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError(t.login.passwordMismatchReset);
+      return;
+    }
+
+    setResetUpdating(true);
+    const { error } = await supabase.auth.updateUser({ password: resetNewPassword });
+
+    if (error) {
+      setResetError(error.message);
+    } else {
+      setResetSuccess(true);
+    }
+    setResetUpdating(false);
+  };
+
+  const handleCloseResetModal = () => {
+    setShowResetPassword(false);
+    setResetNewPassword('');
+    setResetConfirmPassword('');
+    setResetError('');
+    setResetSuccess(false);
   };
 
   const [currentPage, setCurrentPage] = useState<ClientPage>('home');
@@ -400,6 +446,80 @@ function App() {
 
   return (
     <ErrorBoundary>
+    {/* Password Reset Modal */}
+    {showResetPassword && (
+      <div style={resetStyles.overlay}>
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          style={resetStyles.card}
+        >
+          {resetSuccess ? (
+            <div style={{ textAlign: 'center' }}>
+              <CheckCircle size={48} color="var(--accent-primary)" style={{ marginBottom: 16 }} />
+              <h2 style={resetStyles.title}>{t.login.passwordUpdated}</h2>
+              <button onClick={handleCloseResetModal} style={resetStyles.btn}>
+                {t.login.backToLogin}
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                <Lock size={36} color="var(--accent-primary)" style={{ marginBottom: 12 }} />
+                <h2 style={resetStyles.title}>{t.login.setNewPassword}</h2>
+              </div>
+              <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div>
+                  <label style={resetStyles.label}>{t.login.newPassword}</label>
+                  <input
+                    type="password"
+                    value={resetNewPassword}
+                    onChange={e => setResetNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={resetStyles.input}
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label style={resetStyles.label}>{t.login.confirmNewPassword}</label>
+                  <input
+                    type="password"
+                    value={resetConfirmPassword}
+                    onChange={e => setResetConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={resetStyles.input}
+                    required
+                  />
+                </div>
+                {resetError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ color: 'var(--accent-danger)', fontSize: 13, fontWeight: 500, textAlign: 'center' }}
+                  >
+                    {resetError}
+                  </motion.div>
+                )}
+                <button
+                  type="submit"
+                  disabled={resetUpdating}
+                  style={{
+                    ...resetStyles.btn,
+                    opacity: resetUpdating ? 0.7 : 1,
+                    cursor: resetUpdating ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {resetUpdating ? t.login.updatingPassword : t.login.updatePassword}
+                </button>
+              </form>
+            </>
+          )}
+        </motion.div>
+      </div>
+    )}
+
     <div style={styles.app}>
       {/* Desktop side nav */}
       {!isMobile && (
@@ -455,6 +575,68 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     overflow: 'auto',
     paddingBottom: '0px',
+  },
+};
+
+const resetStyles: Record<string, React.CSSProperties> = {
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.7)',
+    backdropFilter: 'blur(8px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    padding: 20,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    background: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-xl)',
+    padding: '40px 32px',
+    boxShadow: 'var(--shadow-elevated)',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    margin: 0,
+  },
+  label: {
+    display: 'block',
+    fontSize: 12,
+    fontWeight: 600,
+    color: 'var(--text-secondary)',
+    marginBottom: 6,
+    letterSpacing: '0.3px',
+    textTransform: 'uppercase' as const,
+  },
+  input: {
+    width: '100%',
+    padding: '11px 14px',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text-primary)',
+    fontSize: 14,
+    fontFamily: 'var(--font-display)',
+    outline: 'none',
+  },
+  btn: {
+    width: '100%',
+    padding: 12,
+    border: 'none',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    boxShadow: '0 0 16px var(--accent-primary-dim)',
   },
 };
 

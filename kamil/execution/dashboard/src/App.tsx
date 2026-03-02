@@ -175,7 +175,7 @@ function App() {
     const loadPrograms = async () => {
       const { data } = await supabase
         .from('workout_programs')
-        .select(`*, workout_days(*, exercises(*))`)
+        .select(`*, workout_days(*, exercises(*)), program_clients(client_id)`)
         .order('created_at');
       if (data) {
         setAllPrograms(data.map(p => ({
@@ -183,7 +183,7 @@ function App() {
           name: p.name,
           status: p.status,
           durationWeeks: p.duration_weeks,
-          clientIds: [],
+          clientIds: (p.program_clients ?? []).map((pc: { client_id: string }) => pc.client_id),
           isTemplate: p.is_template,
           createdAt: p.created_at?.split('T')[0] ?? '',
           updatedAt: p.updated_at?.split('T')[0] ?? '',
@@ -479,7 +479,7 @@ function App() {
 
   // ── Program helpers ──
   const saveProgramToDb = async (program: WorkoutProgram, coachId: string) => {
-    await supabase.from('workout_programs').upsert({
+    const r1 = await supabase.from('workout_programs').upsert({
       id: program.id,
       coach_id: coachId,
       name: program.name,
@@ -488,6 +488,14 @@ function App() {
       is_template: program.isTemplate,
       updated_at: new Date().toISOString(),
     });
+    if (r1.error) console.error('saveProgramToDb upsert:', r1.error);
+    // Sync program_clients junction table
+    await supabase.from('program_clients').delete().eq('program_id', program.id);
+    if (program.clientIds.length > 0) {
+      await supabase.from('program_clients').insert(
+        program.clientIds.map(cid => ({ program_id: program.id, client_id: cid }))
+      );
+    }
     // Delete old days and re-insert (simplest approach for nested data)
     await supabase.from('workout_days').delete().eq('program_id', program.id);
     for (let di = 0; di < program.days.length; di++) {
@@ -512,10 +520,14 @@ function App() {
   };
 
   const handleUpdateProgram = async (id: string, updates: Partial<WorkoutProgram>) => {
-    setAllPrograms(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-    const updated = { ...allPrograms.find(p => p.id === id)!, ...updates };
+    let updated: WorkoutProgram | null = null;
+    setAllPrograms(prev => {
+      const next = prev.map(p => p.id === id ? { ...p, ...updates } : p);
+      updated = next.find(p => p.id === id) ?? null;
+      return next;
+    });
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) await saveProgramToDb(updated, user.id);
+    if (user && updated) await saveProgramToDb(updated, user.id);
   };
 
   const handleDeleteProgram = async (id: string) => {

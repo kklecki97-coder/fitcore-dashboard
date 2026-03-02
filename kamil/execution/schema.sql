@@ -259,7 +259,7 @@ create policy "workout_programs: coach owns" on workout_programs
 
 create policy "program_clients: coach owns" on program_clients
   for all using (
-    exists (select 1 from workout_programs where workout_programs.id = program_clients.program_id and workout_programs.coach_id = auth.uid())
+    exists (select 1 from clients where clients.id = program_clients.client_id and clients.coach_id = auth.uid())
   );
 
 create policy "workout_days: coach owns" on workout_days

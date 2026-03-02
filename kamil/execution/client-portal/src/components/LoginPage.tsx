@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LogIn } from 'lucide-react';
+import { LogIn, ArrowLeft, Mail } from 'lucide-react';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 
@@ -15,6 +15,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Forgot password state
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSending, setResetSending] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +38,32 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     } else {
       onLogin(remember);
     }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+    setResetSending(true);
+    setResetError('');
+
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
+      resetEmail.trim().toLowerCase(),
+      { redirectTo: 'https://client.fitcore.tech' }
+    );
+
+    if (resetErr) {
+      setResetError(resetErr.message);
+    } else {
+      setResetSent(true);
+    }
+    setResetSending(false);
+  };
+
+  const handleBackToLogin = () => {
+    setForgotMode(false);
+    setResetSent(false);
+    setResetError('');
+    setResetEmail('');
   };
 
   return (
@@ -50,78 +83,156 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
         </div>
 
-        <p style={styles.subtitle}>{t.login.subtitle}</p>
+        {forgotMode ? (
+          <>
+            <p style={styles.subtitle}>{t.login.enterEmailReset}</p>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div>
-            <label style={styles.label}>{t.login.email}</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@email.com"
-              style={styles.input}
-              required
-            />
-          </div>
+            {resetSent ? (
+              <div style={{ textAlign: 'center' }}>
+                <Mail size={40} color="var(--accent-primary)" style={{ marginBottom: 16 }} />
+                <h3 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 600, marginBottom: 8 }}>
+                  {t.login.resetLinkSent}
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.5, marginBottom: 24 }}>
+                  {t.login.checkEmailReset}
+                </p>
+                <button onClick={handleBackToLogin} style={{ ...styles.btn, cursor: 'pointer' }}>
+                  <ArrowLeft size={16} />
+                  {t.login.backToLogin}
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} style={styles.form}>
+                <div>
+                  <label style={styles.label}>{t.login.email}</label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={e => setResetEmail(e.target.value)}
+                    placeholder="you@email.com"
+                    style={styles.input}
+                    required
+                  />
+                </div>
 
-          <div>
-            <label style={styles.label}>{t.login.password}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={styles.input}
-              required
-            />
-          </div>
+                {resetError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={styles.error}
+                  >
+                    {resetError}
+                  </motion.div>
+                )}
 
-          <div style={styles.rememberRow}>
-            <div
-              onClick={() => setRemember(!remember)}
-              style={{
-                ...styles.checkbox,
-                background: remember ? 'var(--accent-primary)' : 'transparent',
-                borderColor: remember ? 'var(--accent-primary)' : 'var(--glass-border)',
-              }}
-            >
-              {remember && <span style={{ fontSize: '12px', color: '#07090e', fontWeight: 800 }}>✓</span>}
-            </div>
-            <span style={styles.rememberText} onClick={() => setRemember(!remember)}>{t.login.rememberMe}</span>
-          </div>
+                <button
+                  type="submit"
+                  disabled={resetSending}
+                  style={{
+                    ...styles.btn,
+                    opacity: resetSending ? 0.7 : 1,
+                    cursor: resetSending ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <Mail size={16} />
+                  {resetSending ? t.login.sendingResetLink : t.login.sendResetLink}
+                </button>
 
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={styles.error}
-            >
-              {error}
-            </motion.div>
-          )}
+                <div style={{ textAlign: 'center' }}>
+                  <span
+                    onClick={handleBackToLogin}
+                    style={{ color: 'var(--accent-primary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'none' }}
+                  >
+                    {t.login.backToLogin}
+                  </span>
+                </div>
+              </form>
+            )}
+          </>
+        ) : (
+          <>
+            <p style={styles.subtitle}>{t.login.subtitle}</p>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.btn,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            <LogIn size={16} />
-            {loading ? t.login.signingIn : t.login.signIn}
-          </button>
-        </form>
+            <form onSubmit={handleSubmit} style={styles.form}>
+              <div>
+                <label style={styles.label}>{t.login.email}</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  style={styles.input}
+                  required
+                />
+              </div>
 
-        <p style={styles.hint}>
-          {t.login.demoHint}
-          <br />
-          <a href="/join" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
-            {t.login.haveInvite}
-          </a>
-        </p>
+              <div>
+                <label style={styles.label}>{t.login.password}</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <div style={styles.rememberRow}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                  <div
+                    onClick={() => setRemember(!remember)}
+                    style={{
+                      ...styles.checkbox,
+                      background: remember ? 'var(--accent-primary)' : 'transparent',
+                      borderColor: remember ? 'var(--accent-primary)' : 'var(--glass-border)',
+                    }}
+                  >
+                    {remember && <span style={{ fontSize: '12px', color: '#07090e', fontWeight: 800 }}>✓</span>}
+                  </div>
+                  <span style={styles.rememberText} onClick={() => setRemember(!remember)}>{t.login.rememberMe}</span>
+                </div>
+                <span
+                  onClick={() => { setForgotMode(true); setResetEmail(email); }}
+                  style={{ fontSize: '12px', color: 'var(--accent-primary)', cursor: 'pointer' }}
+                >
+                  {t.login.forgotPassword}
+                </span>
+              </div>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={styles.error}
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  ...styles.btn,
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                <LogIn size={16} />
+                {loading ? t.login.signingIn : t.login.signIn}
+              </button>
+            </form>
+
+            <p style={styles.hint}>
+              {t.login.demoHint}
+              <br />
+              <a href="/join" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
+                {t.login.haveInvite}
+              </a>
+            </p>
+          </>
+        )}
       </motion.div>
     </div>
   );
