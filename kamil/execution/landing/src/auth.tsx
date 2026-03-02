@@ -96,17 +96,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const { data: coach } = await supabase
+    const { data: coach, error: coachError } = await supabase
       .from('coaches')
       .select('*')
       .eq('id', session.user.id)
       .single();
 
+    // If no coach row exists, try to create one (trigger may have failed)
+    let coachRow = coach;
+    if (coachError || !coach) {
+      const meta = session.user.user_metadata || {};
+      const { data: newCoach, error: insertError } = await supabase
+        .from('coaches')
+        .insert({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: (meta.name as string) || session.user.email?.split('@')[0] || 'Coach',
+        })
+        .select()
+        .single();
+
+      if (!insertError && newCoach) {
+        coachRow = newCoach;
+      } else {
+        console.error('No coach row and unable to create one:', insertError?.message);
+      }
+    }
+
     const authUser = buildAuthUser(
       session.user.id,
       session.user.email || '',
       session.user.user_metadata || {},
-      coach,
+      coachRow,
     );
     setUser(authUser);
     setLoading(false);
@@ -130,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isTrialActive = user?.plan === 'trial' && trialDaysRemaining > 0;
 
   const register = useCallback(async (data: RegisterData): Promise<AuthResult> => {
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -147,6 +168,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: 'emailExists' };
       }
       return { success: false, error: error.message };
+    }
+
+    // The DB trigger should auto-create the coach row, but verify it exists.
+    // If the trigger failed silently, insert the row manually as a fallback.
+    const userId = signUpData.user?.id;
+    if (userId) {
+      const { data: coach } = await supabase
+        .from('coaches')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (!coach) {
+        const { error: insertError } = await supabase.from('coaches').insert({
+          id: userId,
+          email: data.email,
+          name: data.fullName,
+        });
+
+        if (insertError) {
+          console.error('Failed to create coach row:', insertError.message);
+          return { success: false, error: 'Account created but profile setup failed. Please try logging in.' };
+        }
+      }
     }
 
     return { success: true };
@@ -190,7 +235,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(prev => prev ? { ...prev, ...data } : null);
   }, [user]);
 
-  const changePassword = useCallback(async (_currentPassword: string, newPassword: string): Promise<AuthResult> => {
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
+    // Verify current password by re-authenticating
+    if (!user?.email) {
+      return { success: false, error: 'No user email found' };
+    }
+
+    const { error: verifyError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+    if (verifyError) {
+      return { success: false, error: 'Current password is incorrect' };
+    }
+
+    // Current password verified — now update to new password
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
@@ -198,7 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return { success: true };
-  }, []);
+  }, [user?.email]);
 
   // Show nothing while loading initial session
   if (loading) {

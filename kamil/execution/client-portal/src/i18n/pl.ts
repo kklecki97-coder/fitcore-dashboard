@@ -16,6 +16,27 @@ export const pl: Translations = {
     signingIn: 'Logowanie…',
     signIn: 'Zaloguj się',
     demoHint: 'Demo: marcus@email.com / client123',
+    haveInvite: 'Masz link zaproszenia?',
+  },
+
+  register: {
+    portal: 'PANEL KLIENTA',
+    subtitle: 'Utwórz konto, aby śledzić swoje treningi i postępy',
+    fullName: 'Imię i Nazwisko',
+    namePlaceholder: 'Twoje imię i nazwisko',
+    email: 'E-mail',
+    password: 'Hasło',
+    confirmPassword: 'Potwierdź Hasło',
+    createAccount: 'Utwórz Konto',
+    creating: 'Tworzenie konta…',
+    nameRequired: 'Imię jest wymagane',
+    emailRequired: 'E-mail jest wymagany',
+    passwordMin: 'Hasło musi mieć co najmniej 6 znaków',
+    passwordMismatch: 'Hasła nie są zgodne',
+    emailExists: 'Ten e-mail jest już zarejestrowany',
+    genericError: 'Coś poszło nie tak. Spróbuj ponownie.',
+    invalidLink: 'Nieprawidłowy Link Zaproszenia',
+    invalidLinkDesc: 'Ten link zaproszenia wygasł, został już użyty lub nie istnieje. Poproś trenera o nowy link.',
   },
 
   nav: {

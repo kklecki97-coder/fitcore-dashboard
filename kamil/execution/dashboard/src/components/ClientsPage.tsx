@@ -188,7 +188,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
           </div>
         </div>
 
-        <button onClick={onAddClient} style={{ ...styles.addBtn, ...(isMobile ? { width: '100%', justifyContent: 'center' } : {}) }}>
+        <button onClick={onAddClient} style={{ ...styles.addBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
           <Plus size={16} />
           {t.clients.addClient}
         </button>
@@ -400,21 +400,21 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
       {/* Edit Plan Modal */}
       <AnimatePresence>
         {editModal && (
-          <>
-            <motion.div
-              key="edit-overlay"
-              style={styles.overlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setEditModal(null)}
-            />
+          <motion.div
+            key="edit-overlay"
+            style={styles.overlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setEditModal(null)}
+          >
             <motion.div
               key="edit-modal"
               style={styles.modal}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={e => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>{t.clients.editPlanStatus}</h3>
@@ -477,28 +477,28 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 </button>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirm && (
-          <>
-            <motion.div
-              key="del-overlay"
-              style={styles.overlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDeleteConfirm(null)}
-            />
+          <motion.div
+            key="del-overlay"
+            style={styles.overlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setDeleteConfirm(null)}
+          >
             <motion.div
               key="del-modal"
               style={styles.modal}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={e => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>{t.clients.deleteClient}</h3>
@@ -523,9 +523,10 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 </button>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
@@ -783,19 +784,17 @@ const styles: Record<string, React.CSSProperties> = {
     inset: 0,
     background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 100,
   },
   modal: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
     background: 'var(--bg-secondary)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     width: '420px',
     maxWidth: '90vw',
-    zIndex: 101,
     boxShadow: 'var(--shadow-elevated)',
     overflow: 'hidden',
   },

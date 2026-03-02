@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { I18nProvider, useLang } from './i18n'
 import './index.css'
 import App from './App.tsx'
+import RegisterPage from './components/RegisterPage.tsx'
 
 function LangUrlSync() {
   const { pathname } = useLocation();
@@ -39,6 +40,9 @@ function AppRoutes() {
     <>
       <LangUrlSync />
       <Routes>
+        {/* Invite registration */}
+        <Route path="/join/:code" element={<RegisterPage />} />
+        <Route path="/pl/join/:code" element={<RegisterPage />} />
         {/* English (default) */}
         <Route path="/*" element={<App />} />
         {/* Polish prefix */}

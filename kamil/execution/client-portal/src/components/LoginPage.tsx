@@ -115,7 +115,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </button>
         </form>
 
-        <p style={styles.hint}>{t.login.demoHint}</p>
+        <p style={styles.hint}>
+          {t.login.demoHint}
+          <br />
+          <a href="/join" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>
+            {t.login.haveInvite}
+          </a>
+        </p>
       </motion.div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, User, Bell, Shield, Palette, X, Save, Plug, ExternalLink, CheckCircle, CreditCard, Camera, Trash2, Copy, AlertTriangle } from 'lucide-react';
+import { Sun, Moon, User, Bell, Shield, Palette, X, Save, Plug, ExternalLink, CheckCircle, CreditCard, Camera, Trash2, Copy, AlertTriangle, UserPlus, Mail, Loader2, Check, Link } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import GlassCard from './GlassCard';
 import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
 import useIsMobile from '../hooks/useIsMobile';
@@ -70,6 +71,95 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [integrationModal, setIntegrationModal] = useState<MessageChannel | null>(null);
   const [integrationInput, setIntegrationInput] = useState('');
   const [connectingChannel, setConnectingChannel] = useState(false);
+
+  // Invite state
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePlan, setInvitePlan] = useState<'Basic' | 'Premium' | 'Elite'>('Basic');
+  const [inviteGenerating, setInviteGenerating] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ success: boolean; link?: string; error?: string } | null>(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  const generateInviteCode = () => {
+    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(b => charset[b % charset.length]).join('');
+  };
+
+  const handleSendInvite = async () => {
+    if (!inviteName.trim()) return;
+    if (!inviteEmail.trim()) return;
+    setInviteGenerating(true);
+    setInviteResult(null);
+
+    try {
+      const code = generateInviteCode();
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 7);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get coach name for the email
+      const { data: coachRow } = await supabase
+        .from('coaches')
+        .select('name')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      const { error: insertError } = await supabase.from('invite_codes').insert({
+        code,
+        coach_id: user.id,
+        client_name: inviteName.trim(),
+        client_email: inviteEmail.trim().toLowerCase(),
+        plan: invitePlan,
+        expires_at: expires.toISOString(),
+      });
+
+      if (insertError) throw insertError;
+
+      const inviteLink = `https://client.fitcore.tech/join/${code}`;
+
+      // Call edge function to send email
+      const { error: fnError } = await supabase.functions.invoke('send-invite-email', {
+        body: {
+          code,
+          clientName: inviteName.trim(),
+          clientEmail: inviteEmail.trim().toLowerCase(),
+          plan: invitePlan,
+          coachName: coachRow?.name || 'Your Coach',
+        },
+      });
+
+      if (fnError) {
+        // Email failed but invite code was created — still show the link
+        console.warn('Email send failed:', fnError.message);
+      }
+
+      setInviteResult({ success: true, link: inviteLink });
+    } catch (err) {
+      setInviteResult({ success: false, error: err instanceof Error ? err.message : t.settings.inviteError });
+    } finally {
+      setInviteGenerating(false);
+    }
+  };
+
+  const handleCopyInvite = () => {
+    if (inviteResult?.link) {
+      navigator.clipboard.writeText(inviteResult.link);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    }
+  };
+
+  const handleResetInvite = () => {
+    setInviteName('');
+    setInviteEmail('');
+    setInvitePlan('Basic');
+    setInviteResult(null);
+    setInviteCopied(false);
+  };
 
   const themeOptions: { value: Theme; label: string; description: string; icon: typeof Sun }[] = [
     { value: 'dark', label: t.settings.dark, description: t.settings.darkDesc, icon: Moon },
@@ -527,6 +617,143 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             </button>
           </div>
         </GlassCard>
+
+        {/* Client Invites — Row 3, spans 2 cols */}
+        <div style={{ gridColumn: isMobile ? undefined : 'span 2' }}>
+        <GlassCard delay={0.35}>
+          <div style={styles.sectionHeader}>
+            <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
+              <UserPlus size={18} color="var(--accent-primary)" />
+            </div>
+            <div>
+              <h3 style={styles.sectionTitle}>{t.settings.clientInvites}</h3>
+              <p style={styles.sectionSub}>{t.settings.clientInvitesSub}</p>
+            </div>
+          </div>
+          <div style={styles.divider} />
+
+          {inviteResult?.success ? (
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              >
+                <CheckCircle size={40} color="var(--accent-success)" style={{ marginBottom: 12 }} />
+              </motion.div>
+              <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
+                {t.settings.inviteSentTitle}
+              </div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>
+                {t.settings.inviteSentTo(inviteEmail)}
+              </div>
+
+              {inviteResult.link && (
+                <div style={styles.inviteLinkBox}>
+                  <Link size={14} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>
+                    {inviteResult.link}
+                  </span>
+                  <button onClick={handleCopyInvite} style={styles.inviteCopyBtn}>
+                    {inviteCopied ? <Check size={14} /> : <Copy size={14} />}
+                    {inviteCopied ? t.settings.inviteLinkCopied : t.settings.inviteLinkCopy}
+                  </button>
+                </div>
+              )}
+
+              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: 10 }}>
+                {t.settings.inviteExpiry}
+              </div>
+
+              <button onClick={handleResetInvite} style={styles.inviteSendAnotherBtn}>
+                <Mail size={14} />
+                {t.settings.sendAnother}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={styles.field}>
+                <label style={styles.fieldLabel}>{t.settings.inviteClientName}</label>
+                <input
+                  type="text"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  placeholder={t.settings.inviteNamePlaceholder}
+                  style={styles.fieldInput}
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.fieldLabel}>{t.settings.inviteClientEmail}</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder={t.settings.inviteEmailPlaceholder}
+                  style={styles.fieldInput}
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.fieldLabel}>{t.settings.invitePlan}</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {(['Basic', 'Premium', 'Elite'] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setInvitePlan(p)}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: `1.5px solid ${invitePlan === p ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
+                        background: invitePlan === p ? 'rgba(0,229,200,0.08)' : 'transparent',
+                        color: invitePlan === p ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-display)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {inviteResult?.error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{ fontSize: '13px', color: 'var(--accent-danger)', textAlign: 'center' }}
+                >
+                  {inviteResult.error}
+                </motion.div>
+              )}
+
+              <button
+                onClick={handleSendInvite}
+                disabled={inviteGenerating || !inviteName.trim() || !inviteEmail.trim()}
+                style={{
+                  ...styles.inviteSendBtn,
+                  opacity: inviteGenerating || !inviteName.trim() || !inviteEmail.trim() ? 0.5 : 1,
+                  cursor: inviteGenerating || !inviteName.trim() || !inviteEmail.trim() ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {inviteGenerating ? (
+                  <>
+                    <Loader2 size={15} className="spin" />
+                    {t.settings.sendingInvite}
+                  </>
+                ) : (
+                  <>
+                    <Mail size={15} />
+                    {t.settings.sendInvite}
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </GlassCard>
+        </div>
       </div>
 
       {/* Security Modals — Password / 2FA / Delete */}
@@ -1642,5 +1869,64 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     flexShrink: 0,
+  },
+  // Invite styles
+  inviteSendBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px',
+    border: 'none',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    boxShadow: '0 0 16px var(--accent-primary-dim)',
+    transition: 'opacity 0.15s',
+  },
+  inviteLinkBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 14px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.02)',
+    marginBottom: '4px',
+  },
+  inviteCopyBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--accent-primary)',
+    background: 'rgba(0,229,200,0.08)',
+    color: 'var(--accent-primary)',
+    fontSize: '12px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
+  inviteSendAnotherBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '10px 20px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    marginTop: '16px',
+    transition: 'border-color 0.15s',
   },
 };

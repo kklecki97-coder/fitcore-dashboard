@@ -14,6 +14,27 @@ export const en = {
     signingIn: 'Signing in…',
     signIn: 'Sign In',
     demoHint: 'Demo: marcus@email.com / client123',
+    haveInvite: 'Have an invite link?',
+  },
+
+  register: {
+    portal: 'CLIENT PORTAL',
+    subtitle: 'Create your account to start tracking your workouts and progress',
+    fullName: 'Full Name',
+    namePlaceholder: 'Your full name',
+    email: 'Email',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    createAccount: 'Create Account',
+    creating: 'Creating account…',
+    nameRequired: 'Name is required',
+    emailRequired: 'Email is required',
+    passwordMin: 'Password must be at least 6 characters',
+    passwordMismatch: 'Passwords do not match',
+    emailExists: 'This email is already registered',
+    genericError: 'Something went wrong. Please try again.',
+    invalidLink: 'Invalid Invite Link',
+    invalidLinkDesc: 'This invite link is expired, already used, or does not exist. Please ask your coach for a new link.',
   },
 
   nav: {
