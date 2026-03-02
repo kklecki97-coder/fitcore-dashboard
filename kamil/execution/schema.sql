@@ -323,8 +323,11 @@ create policy "notifications: coach owns" on notifications
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.coaches (id, email, name)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)));
+  -- Only create coach profile if the user is NOT a client
+  if coalesce(new.raw_user_meta_data->>'role', '') != 'client' then
+    insert into public.coaches (id, email, name)
+    values (new.id, new.email, coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)));
+  end if;
   return new;
 end;
 $$ language plpgsql security definer;
