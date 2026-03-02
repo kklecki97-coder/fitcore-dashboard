@@ -182,7 +182,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
       status: 'completed',
       weight: form.weight ? parseFloat(form.weight) : null,
       bodyFat: form.bodyFat ? parseFloat(form.bodyFat) : null,
-      mood: (form.mood || null) as CheckIn['mood'],
+      mood: (form.mood !== 0 ? form.mood : null) as CheckIn['mood'],
       energy: form.energy ? parseInt(form.energy, 10) : null,
       stress: form.stress ? parseInt(form.stress, 10) : null,
       sleepHours: form.sleepHours ? parseFloat(form.sleepHours) : null,

@@ -81,7 +81,8 @@ function App() {
     });
 
     const loadClients = async (): Promise<Client[]> => {
-      const { data } = await supabase.from('clients').select('*').order('created_at');
+      const { data, error } = await supabase.from('clients').select('*').order('created_at');
+      if (error) { console.error('loadClients failed:', error); return []; }
       if (data) {
         const clients = data.map(r => ({
           id: r.id,
@@ -110,12 +111,15 @@ function App() {
     };
 
     const loadMessages = async (clientsList: Client[]) => {
-      const { data } = await supabase.from('messages').select('*').order('timestamp');
+      // Fix #15: Build name map instead of .find() per record
+      const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
+      const { data, error } = await supabase.from('messages').select('*').order('timestamp');
+      if (error) { console.error('loadMessages failed:', error); return; }
       if (data) {
         setAllMessages(data.map(r => ({
           id: r.id,
           clientId: r.client_id,
-          clientName: clientsList.find(c => c.id === r.client_id)?.name ?? '',
+          clientName: nameMap.get(r.client_id) ?? '',
           clientAvatar: '',
           text: r.text,
           timestamp: r.timestamp,
@@ -128,12 +132,14 @@ function App() {
     };
 
     const loadInvoices = async (clientsList: Client[]) => {
-      const { data } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
+      const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
+      const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
+      if (error) { console.error('loadInvoices failed:', error); return; }
       if (data) {
         setAllInvoices(data.map(r => ({
           id: r.id,
           clientId: r.client_id,
-          clientName: clientsList.find(c => c.id === r.client_id)?.name ?? '',
+          clientName: nameMap.get(r.client_id) ?? '',
           amount: r.amount,
           status: r.status,
           dueDate: r.due_date ?? '',
@@ -145,12 +151,14 @@ function App() {
     };
 
     const loadCheckIns = async (clientsList: Client[]) => {
-      const { data } = await supabase.from('check_ins').select('*').order('date', { ascending: false });
+      const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
+      const { data, error } = await supabase.from('check_ins').select('*').order('date', { ascending: false });
+      if (error) { console.error('loadCheckIns failed:', error); return; }
       if (data) {
         setAllCheckIns(data.map(r => ({
           id: r.id,
           clientId: r.client_id,
-          clientName: clientsList.find(c => c.id === r.client_id)?.name ?? '',
+          clientName: nameMap.get(r.client_id) ?? '',
           date: r.date,
           status: r.status,
           weight: r.weight,
@@ -174,10 +182,11 @@ function App() {
     };
 
     const loadPrograms = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('workout_programs')
         .select(`*, workout_days(*, exercises(*)), program_clients(client_id)`)
         .order('created_at');
+      if (error) { console.error('loadPrograms failed:', error); return; }
       if (data) {
         setAllPrograms(data.map(p => ({
           id: p.id,
@@ -212,7 +221,8 @@ function App() {
     };
 
     const loadWorkoutLogs = async () => {
-      const { data } = await supabase.from('workout_logs').select('*, clients(name)').order('date', { ascending: false });
+      const { data, error } = await supabase.from('workout_logs').select('*, clients(name)').order('date', { ascending: false });
+      if (error) { console.error('loadWorkoutLogs failed:', error); return; }
       if (data) {
         setAllWorkoutLogs(data.map(r => ({
           id: r.id,
@@ -243,13 +253,14 @@ function App() {
   useEffect(() => { clientsRef.current = allClients; }, [allClients]);
 
   const refreshMessages = useCallback(async () => {
-    const { data } = await supabase.from('messages').select('*').order('timestamp');
+    const { data, error } = await supabase.from('messages').select('*').order('timestamp');
+    if (error) { console.error('refreshMessages failed:', error); return; }
     if (data) {
-      const clients = clientsRef.current;
+      const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
       setAllMessages(data.map(r => ({
         id: r.id,
         clientId: r.client_id,
-        clientName: clients.find(c => c.id === r.client_id)?.name ?? '',
+        clientName: nameMap.get(r.client_id) ?? '',
         clientAvatar: '',
         text: r.text,
         timestamp: r.timestamp,
@@ -404,7 +415,6 @@ function App() {
     });
 
     if (insertError) return { error: insertError.message };
-    setAllClients(prev => [...prev, client]);
 
     // 2. Call Edge Function to create auth user for client
     if (client.email) {
@@ -428,16 +438,23 @@ function App() {
           );
           const result = await res.json();
           if (result.success) {
+            // Only add to state after both DB insert and Edge Function succeed
+            setAllClients(prev => [...prev, client]);
             return { tempPassword: result.tempPassword };
           }
-          // Edge Function error — client is saved but no auth account
+          // Edge Function failed — rollback the client row
+          await supabase.from('clients').delete().eq('id', client.id);
           return { error: result.error || 'Failed to create login credentials' };
         } catch {
+          // Network error — rollback the client row
+          await supabase.from('clients').delete().eq('id', client.id);
           return { error: 'Failed to connect to invitation service' };
         }
       }
     }
 
+    // No email — client saved without auth account, add to state
+    setAllClients(prev => [...prev, client]);
     return {};
   };
 
@@ -458,7 +475,8 @@ function App() {
     if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
-      await supabase.from('clients').update(dbUpdates).eq('id', id);
+      const { error } = await supabase.from('clients').update(dbUpdates).eq('id', id);
+      if (error) console.error('handleUpdateClient failed:', error);
     }
   };
 
@@ -467,6 +485,7 @@ function App() {
     setAllClients(prev => prev.filter(c => c.id !== id));
     // Clean up related records before deleting client
     await supabase.from('workout_set_logs').delete().eq('client_id', id);
+    await supabase.from('workout_logs').delete().eq('client_id', id);
     await supabase.from('check_in_photos').delete().in('check_in_id',
       (await supabase.from('check_ins').select('id').eq('client_id', id)).data?.map(r => r.id) ?? []
     );
@@ -482,8 +501,9 @@ function App() {
   };
 
   const handleSendMessage = async (msg: Message) => {
+    // Optimistic update
     setAllMessages(prev => [...prev, msg]);
-    await supabase.from('messages').insert({
+    const { error } = await supabase.from('messages').insert({
       id: msg.id,
       client_id: msg.clientId,
       text: msg.text,
@@ -493,6 +513,11 @@ function App() {
       channel: msg.channel,
       delivery_status: msg.deliveryStatus,
     });
+    if (error) {
+      console.error('handleSendMessage failed:', error);
+      // Rollback optimistic update
+      setAllMessages(prev => prev.filter(m => m.id !== msg.id));
+    }
   };
 
   // ── Program helpers ──
@@ -516,16 +541,24 @@ function App() {
     }
     // Delete old days and re-insert (simplest approach for nested data)
     await supabase.from('workout_days').delete().eq('program_id', program.id);
-    for (let di = 0; di < program.days.length; di++) {
-      const day = program.days[di];
-      await supabase.from('workout_days').insert({ id: day.id, program_id: program.id, name: day.name, day_order: di });
-      for (let ei = 0; ei < day.exercises.length; ei++) {
-        const ex = day.exercises[ei];
-        await supabase.from('exercises').insert({
+    // Batch insert all days at once
+    if (program.days.length > 0) {
+      const dayRows = program.days.map((day, di) => ({
+        id: day.id, program_id: program.id, name: day.name, day_order: di,
+      }));
+      const { error: daysError } = await supabase.from('workout_days').insert(dayRows);
+      if (daysError) { console.error('saveProgramToDb days insert:', daysError); return; }
+      // Batch insert all exercises across all days at once
+      const exerciseRows = program.days.flatMap((day, _di) =>
+        day.exercises.map((ex, ei) => ({
           id: ex.id, day_id: day.id, name: ex.name, sets: ex.sets, reps: ex.reps,
           weight: ex.weight, rpe: ex.rpe, tempo: ex.tempo, rest_seconds: ex.restSeconds,
           notes: ex.notes, exercise_order: ei,
-        });
+        }))
+      );
+      if (exerciseRows.length > 0) {
+        const { error: exError } = await supabase.from('exercises').insert(exerciseRows);
+        if (exError) console.error('saveProgramToDb exercises insert:', exError);
       }
     }
   };
@@ -549,8 +582,13 @@ function App() {
   };
 
   const handleDeleteProgram = async (id: string) => {
+    const removed = allPrograms.find(p => p.id === id);
     setAllPrograms(prev => prev.filter(p => p.id !== id));
-    await supabase.from('workout_programs').delete().eq('id', id);
+    const { error } = await supabase.from('workout_programs').delete().eq('id', id);
+    if (error) {
+      console.error('handleDeleteProgram failed:', error);
+      if (removed) setAllPrograms(prev => [...prev, removed]);
+    }
   };
 
   const handleDuplicateProgram = async (id: string) => {
@@ -587,13 +625,14 @@ function App() {
     if (updates.paidDate !== undefined) dbUpdates.paid_date = updates.paidDate;
     if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
     if (Object.keys(dbUpdates).length > 0) {
-      await supabase.from('invoices').update(dbUpdates).eq('id', id);
+      const { error } = await supabase.from('invoices').update(dbUpdates).eq('id', id);
+      if (error) console.error('handleUpdateInvoice failed:', error);
     }
   };
 
   const handleAddInvoice = async (invoice: Invoice) => {
     setAllInvoices(prev => [...prev, invoice]);
-    await supabase.from('invoices').insert({
+    const { error } = await supabase.from('invoices').insert({
       id: invoice.id,
       client_id: invoice.clientId,
       amount: invoice.amount,
@@ -603,6 +642,10 @@ function App() {
       period: invoice.period,
       plan: invoice.plan,
     });
+    if (error) {
+      console.error('handleAddInvoice failed:', error);
+      setAllInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
+    }
   };
 
   // ── Check-in handlers ──
@@ -626,13 +669,14 @@ function App() {
     if (updates.flagReason !== undefined) dbUpdates.flag_reason = updates.flagReason;
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
-      await supabase.from('check_ins').update(dbUpdates).eq('id', id);
+      const { error } = await supabase.from('check_ins').update(dbUpdates).eq('id', id);
+      if (error) console.error('handleUpdateCheckIn failed:', error);
     }
   };
 
   const handleAddCheckIn = async (checkIn: CheckIn) => {
     setAllCheckIns(prev => [...prev, checkIn]);
-    await supabase.from('check_ins').insert({
+    const { error } = await supabase.from('check_ins').insert({
       id: checkIn.id,
       client_id: checkIn.clientId,
       date: checkIn.date,
@@ -652,6 +696,10 @@ function App() {
       review_status: checkIn.reviewStatus,
       flag_reason: checkIn.flagReason,
     });
+    if (error) {
+      console.error('handleAddCheckIn failed:', error);
+      setAllCheckIns(prev => prev.filter(ci => ci.id !== checkIn.id));
+    }
   };
 
   const handleViewProgram = (id: string) => {

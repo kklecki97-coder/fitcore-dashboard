@@ -47,11 +47,14 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
               }}
             >
               <Icon size={20} />
-              <span style={{
-                ...styles.bottomLabel,
-                opacity: active ? 1 : 0,
-                maxHeight: active ? '16px' : '0px',
-              }}>
+              <span
+                style={{
+                  ...styles.bottomLabel,
+                  opacity: active ? 1 : 0,
+                  maxHeight: active ? '16px' : '0px',
+                }}
+                aria-hidden={!active}
+              >
                 {navLabels[page]}
               </span>
             </button>

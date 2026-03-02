@@ -62,6 +62,21 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
   const day = program.days[selectedDay];
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // Fix #12: Guard against undefined day
+  if (!day) {
+    return (
+      <div style={styles.page}>
+        <GlassCard>
+          <div style={styles.emptyState}>
+            <Dumbbell size={40} color="var(--text-tertiary)" />
+            <h3 style={styles.emptyTitle}>{t.program.noProgram}</h3>
+            <p style={styles.emptySub}>{t.program.noProgramSub}</p>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
+
   const getSetCompleted = (exerciseId: string, setNum: number) => {
     return setLogs.some(l => l.exerciseId === exerciseId && l.setNumber === setNum && l.completed && l.date === todayStr);
   };
@@ -170,6 +185,10 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
               <div
                 style={styles.exerciseHeader}
                 onClick={() => setExpandedExercise(isExpanded ? null : exercise.id)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedExercise(isExpanded ? null : exercise.id); } }}
+                tabIndex={0}
+                role="button"
+                aria-expanded={isExpanded}
               >
                 <div style={styles.exerciseLeft}>
                   {allSetsComplete ? (
@@ -235,7 +254,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                                   onRemoveLog(exercise.id, setNum, todayStr);
                                 } else {
                                   const logId = crypto.randomUUID();
-                                  const parsedReps = parseInt(exercise.reps.split('-')[0]) || 10;
+                                  const parsedReps = exercise.reps ? parseInt(exercise.reps.split('-')[0]) || 10 : 10;
                                   onLogSet({
                                     id: logId,
                                     date: todayStr,

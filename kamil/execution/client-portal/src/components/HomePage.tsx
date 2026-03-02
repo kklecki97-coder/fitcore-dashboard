@@ -89,6 +89,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       const start = weights[0];
       const current = weights[weights.length - 1];
       const target = 80;
+      if (start === target) return { goal, progress: current === target ? 100 : 0, label: `${current}kg → ${target}kg` };
       const pct = Math.min(100, Math.round(((start - current) / (start - target)) * 100));
       return { goal, progress: Math.max(0, pct), label: `${current}kg → ${target}kg` };
     }

@@ -34,10 +34,10 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
     if (authError) {
       setError(t.login.invalidCredentials);
-      setLoading(false);
     } else {
       onLogin(remember);
     }
+    setLoading(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -48,7 +48,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
     const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
       resetEmail.trim().toLowerCase(),
-      { redirectTo: 'https://client.fitcore.tech' }
+      { redirectTo: window.location.origin }
     );
 
     if (resetErr) {
@@ -181,7 +181,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               <div style={styles.rememberRow}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                   <div
+                    role="checkbox"
+                    aria-checked={remember}
+                    tabIndex={0}
                     onClick={() => setRemember(!remember)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setRemember(!remember); } }}
                     style={{
                       ...styles.checkbox,
                       background: remember ? 'var(--accent-primary)' : 'transparent',

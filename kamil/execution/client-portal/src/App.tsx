@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Lock, CheckCircle } from 'lucide-react';
+import { Lock, CheckCircle, RefreshCw } from 'lucide-react';
 import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
@@ -30,9 +30,15 @@ function App() {
 
   // ── Auth: listen to Supabase session ──
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error('getSession failed:', error);
       setIsLoggedIn(!!session);
       setAuthLoading(false);
+
+      // Check for password recovery from URL hash (cross-tab support — Fix #19)
+      if (session && window.location.hash.includes('type=recovery')) {
+        setShowResetPassword(true);
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -81,6 +87,10 @@ function App() {
     setResetConfirmPassword('');
     setResetError('');
     setResetSuccess(false);
+    // Clean up URL hash if present
+    if (window.location.hash.includes('type=recovery')) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   };
 
   const [currentPage, setCurrentPage] = useState<ClientPage>('home');
@@ -91,6 +101,7 @@ function App() {
   });
 
   const [dataLoading, setDataLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   // ── Data state (loaded from Supabase) ──
   const [clientUser, setClientUser] = useState<Client | null>(null);
@@ -102,176 +113,333 @@ function App() {
   const [setLogs, setSetLogs] = useState<WorkoutSetLog[]>([]);
   const [toastError, setToastError] = useState<string | null>(null);
 
+  // Fix #20: Longer toast duration (6s) and click-to-dismiss
   const showError = (msg: string) => {
     setToastError(msg);
-    setTimeout(() => setToastError(null), 4000);
+    setTimeout(() => setToastError(null), 6000);
   };
 
+  // Track latest message timestamp for delta fetching (Fix #22)
+  const lastMsgTimestamp = useRef<string | null>(null);
+
   // ── Load all client data from Supabase on login ──
+  const loadData = useCallback(async () => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('getUser failed:', userError);
+      return false;
+    }
+
+    // Load the client row for this auth user
+    const { data: clientRow, error: clientError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('auth_user_id', user.id)
+      .maybeSingle();
+
+    if (clientError) {
+      console.error('clients query failed:', clientError);
+      return false;
+    }
+    if (!clientRow) return false;
+
+    // Load client metrics (time series)
+    const { data: metricsData, error: metricsError } = await supabase
+      .from('client_metrics')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .order('recorded_at');
+
+    if (metricsError) console.error('client_metrics query failed:', metricsError);
+
+    const metrics = {
+      weight: (metricsData ?? []).filter(m => m.weight != null).map(m => Number(m.weight)),
+      bodyFat: (metricsData ?? []).filter(m => m.body_fat != null).map(m => Number(m.body_fat)),
+      benchPress: (metricsData ?? []).filter(m => m.bench_press != null).map(m => Number(m.bench_press)),
+      squat: (metricsData ?? []).filter(m => m.squat != null).map(m => Number(m.squat)),
+      deadlift: (metricsData ?? []).filter(m => m.deadlift != null).map(m => Number(m.deadlift)),
+    };
+
+    const client: Client = {
+      id: clientRow.id,
+      name: clientRow.name,
+      avatar: '',
+      email: clientRow.email ?? '',
+      plan: clientRow.plan,
+      status: clientRow.status,
+      startDate: clientRow.start_date ?? '',
+      nextCheckIn: clientRow.next_check_in ?? '',
+      monthlyRate: clientRow.monthly_rate ?? 0,
+      progress: clientRow.progress ?? 0,
+      metrics,
+      goals: clientRow.goals ?? [],
+      notes: clientRow.notes ?? '',
+      lastActive: clientRow.last_active ?? '',
+      streak: clientRow.streak ?? 0,
+    };
+    setClientUser(client);
+
+    // Load coach name
+    const { data: coachRow, error: coachError } = await supabase
+      .from('coaches')
+      .select('name')
+      .eq('id', clientRow.coach_id)
+      .single();
+    if (coachError) console.error('coaches query failed:', coachError);
+    if (coachRow) setCoachName(coachRow.name);
+
+    // Load assigned program (via program_clients junction)
+    const { data: assignments, error: assignError } = await supabase
+      .from('program_clients')
+      .select('program_id')
+      .eq('client_id', clientRow.id);
+
+    if (assignError) console.error('program_clients query failed:', assignError);
+
+    if (assignments && assignments.length > 0) {
+      const programIds = assignments.map(a => a.program_id);
+      const { data: programs, error: progError } = await supabase
+        .from('workout_programs')
+        .select('*, workout_days(*, exercises(*))')
+        .in('id', programIds)
+        .order('created_at', { ascending: false });
+
+      if (progError) console.error('workout_programs query failed:', progError);
+
+      if (programs && programs.length > 0) {
+        const activeProgram = programs.find(p => p.status === 'active') ?? programs[0];
+        setMyProgram({
+          id: activeProgram.id,
+          name: activeProgram.name,
+          status: activeProgram.status,
+          durationWeeks: activeProgram.duration_weeks,
+          clientIds: [clientRow.id],
+          isTemplate: activeProgram.is_template,
+          createdAt: activeProgram.created_at?.split('T')[0] ?? '',
+          updatedAt: activeProgram.updated_at?.split('T')[0] ?? '',
+          days: (activeProgram.workout_days ?? [])
+            .sort((a: { day_order: number }, b: { day_order: number }) => a.day_order - b.day_order)
+            .map((d: { id: string; name: string; exercises: { id: string; name: string; sets: number; reps: string; weight: string; rpe: number | null; tempo: string; rest_seconds: number | null; notes: string; exercise_order: number }[] }) => ({
+              id: d.id,
+              name: d.name,
+              exercises: (d.exercises ?? [])
+                .sort((a, b) => a.exercise_order - b.exercise_order)
+                .map(e => ({
+                  id: e.id,
+                  name: e.name,
+                  sets: e.sets,
+                  reps: e.reps,
+                  weight: e.weight,
+                  rpe: e.rpe,
+                  tempo: e.tempo,
+                  restSeconds: e.rest_seconds,
+                  notes: e.notes,
+                })),
+            })),
+        });
+      }
+    }
+
+    // Load check-ins
+    const { data: checkInData, error: ciError } = await supabase
+      .from('check_ins')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .order('date', { ascending: false });
+
+    if (ciError) console.error('check_ins query failed:', ciError);
+
+    if (checkInData) {
+      // Load photos for all check-ins
+      const checkInIds = checkInData.map(r => r.id);
+      const { data: photoData } = checkInIds.length > 0
+        ? await supabase.from('check_in_photos').select('*').in('check_in_id', checkInIds)
+        : { data: [] };
+
+      // Fix #1: Use signed URLs instead of public URLs for photos
+      const photosByCheckIn: Record<string, { url: string; label: string }[]> = {};
+      for (const p of (photoData ?? [])) {
+        if (!photosByCheckIn[p.check_in_id]) photosByCheckIn[p.check_in_id] = [];
+        let photoUrl = p.url;
+        // If URL is a public Supabase storage URL, generate a signed one instead
+        if (photoUrl && photoUrl.includes('/storage/v1/object/public/')) {
+          const storagePath = photoUrl.split('/storage/v1/object/public/check-in-photos/')[1];
+          if (storagePath) {
+            const { data: signedData } = await supabase.storage
+              .from('check-in-photos')
+              .createSignedUrl(storagePath, 3600); // 1 hour expiry
+            if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
+          }
+        }
+        photosByCheckIn[p.check_in_id].push({ url: photoUrl, label: p.label ?? '' });
+      }
+
+      setCheckIns(checkInData.map(r => ({
+        id: r.id,
+        clientId: r.client_id,
+        clientName: clientRow.name,
+        date: r.date,
+        status: r.status,
+        weight: r.weight,
+        bodyFat: r.body_fat,
+        mood: r.mood,
+        energy: r.energy,
+        stress: r.stress,
+        sleepHours: r.sleep_hours,
+        steps: r.steps,
+        nutritionScore: r.nutrition_score,
+        notes: r.notes ?? '',
+        wins: r.wins ?? '',
+        challenges: r.challenges ?? '',
+        coachFeedback: r.coach_feedback ?? '',
+        reviewStatus: r.review_status,
+        flagReason: r.flag_reason ?? '',
+        photos: photosByCheckIn[r.id] ?? [],
+      })));
+    }
+
+    // Load messages
+    const { data: msgData, error: msgError } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .order('timestamp');
+
+    if (msgError) console.error('messages query failed:', msgError);
+
+    if (msgData) {
+      setMessages(msgData.map(r => ({
+        id: r.id,
+        clientId: r.client_id,
+        clientName: clientRow.name,
+        clientAvatar: '',
+        text: r.text,
+        timestamp: r.timestamp,
+        isRead: r.is_read,
+        isFromCoach: r.is_from_coach,
+        channel: r.channel,
+      })));
+      // Track last message timestamp for delta fetching
+      if (msgData.length > 0) {
+        lastMsgTimestamp.current = msgData[msgData.length - 1].timestamp;
+      }
+    }
+
+    // Load workout logs
+    const { data: logData, error: logError } = await supabase
+      .from('workout_logs')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .order('date', { ascending: false });
+
+    if (logError) console.error('workout_logs query failed:', logError);
+
+    if (logData) {
+      setWorkoutLogs(logData.map(r => ({
+        id: r.id,
+        clientId: r.client_id,
+        clientName: clientRow.name,
+        type: r.type,
+        duration: r.duration ?? 0,
+        date: r.date,
+        completed: r.completed ?? false,
+      })));
+    }
+
+    // Load workout set logs
+    const { data: setLogData, error: slError } = await supabase
+      .from('workout_set_logs')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .order('date', { ascending: false });
+
+    if (slError) console.error('workout_set_logs query failed:', slError);
+
+    if (setLogData) {
+      setSetLogs(setLogData.map(r => ({
+        id: r.id,
+        date: r.date,
+        exerciseId: r.exercise_id,
+        exerciseName: r.exercise_name,
+        setNumber: r.set_number,
+        reps: r.reps,
+        weight: r.weight ?? '',
+        completed: r.completed ?? false,
+        rpe: r.rpe,
+      })));
+    }
+
+    return true;
+  }, []);
+
   useEffect(() => {
     if (!isLoggedIn) return;
+    setDataLoading(true);
+    setLoadError(false);
+    loadData().then((success) => {
+      if (!success) setLoadError(true);
+    }).catch(() => {
+      setLoadError(true);
+    }).finally(() => setDataLoading(false));
+  }, [isLoggedIn, loadData]);
 
-    const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  // Fix #21: Retry button for failed data loads
+  const handleRetry = () => {
+    setDataLoading(true);
+    setLoadError(false);
+    loadData().then((success) => {
+      if (!success) setLoadError(true);
+    }).catch(() => {
+      setLoadError(true);
+    }).finally(() => setDataLoading(false));
+  };
 
-      // Load the client row for this auth user
-      const { data: clientRow } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('auth_user_id', user.id)
-        .single();
+  // ── Poll messages every 10s when on messages page ──
+  // Fix #10: Use ref for callback to avoid stale closures
+  const clientUserRef = useRef(clientUser);
+  useEffect(() => { clientUserRef.current = clientUser; }, [clientUser]);
 
-      if (!clientRow) return;
+  const refreshMessages = useCallback(async () => {
+    const cu = clientUserRef.current;
+    if (!cu) return;
 
-      // Load client metrics (time series)
-      const { data: metricsData } = await supabase
-        .from('client_metrics')
-        .select('*')
-        .eq('client_id', clientRow.id)
-        .order('recorded_at');
+    // Fix #22: Delta fetching — only get messages newer than last known
+    let query = supabase
+      .from('messages')
+      .select('*')
+      .eq('client_id', cu.id)
+      .order('timestamp');
 
-      const metrics = {
-        weight: (metricsData ?? []).filter(m => m.weight != null).map(m => m.weight as number),
-        bodyFat: (metricsData ?? []).filter(m => m.body_fat != null).map(m => m.body_fat as number),
-        benchPress: (metricsData ?? []).filter(m => m.bench_press != null).map(m => m.bench_press as number),
-        squat: (metricsData ?? []).filter(m => m.squat != null).map(m => m.squat as number),
-        deadlift: (metricsData ?? []).filter(m => m.deadlift != null).map(m => m.deadlift as number),
-      };
+    if (lastMsgTimestamp.current) {
+      query = query.gt('timestamp', lastMsgTimestamp.current);
+    }
 
-      const client: Client = {
-        id: clientRow.id,
-        name: clientRow.name,
-        avatar: '',
-        email: clientRow.email ?? '',
-        plan: clientRow.plan,
-        status: clientRow.status,
-        startDate: clientRow.start_date ?? '',
-        nextCheckIn: clientRow.next_check_in ?? '',
-        monthlyRate: clientRow.monthly_rate ?? 0,
-        progress: clientRow.progress ?? 0,
-        metrics,
-        goals: clientRow.goals ?? [],
-        notes: clientRow.notes ?? '',
-        lastActive: clientRow.last_active ?? '',
-        streak: clientRow.streak ?? 0,
-      };
-      setClientUser(client);
+    const { data: msgData, error } = await query;
+    if (error) return;
 
-      // Load coach name
-      const { data: coachRow } = await supabase
-        .from('coaches')
-        .select('name')
-        .eq('id', clientRow.coach_id)
-        .single();
-      if (coachRow) setCoachName(coachRow.name);
-
-      // Load assigned program (via program_clients junction)
-      const { data: assignments } = await supabase
-        .from('program_clients')
-        .select('program_id')
-        .eq('client_id', clientRow.id);
-
-      if (assignments && assignments.length > 0) {
-        // Get the first active program, or the most recently assigned
-        const programIds = assignments.map(a => a.program_id);
-        const { data: programs } = await supabase
-          .from('workout_programs')
-          .select('*, workout_days(*, exercises(*))')
-          .in('id', programIds)
-          .order('created_at', { ascending: false });
-
-        if (programs && programs.length > 0) {
-          // Prefer active program
-          const activeProgram = programs.find(p => p.status === 'active') ?? programs[0];
-          setMyProgram({
-            id: activeProgram.id,
-            name: activeProgram.name,
-            status: activeProgram.status,
-            durationWeeks: activeProgram.duration_weeks,
-            clientIds: [clientRow.id],
-            isTemplate: activeProgram.is_template,
-            createdAt: activeProgram.created_at?.split('T')[0] ?? '',
-            updatedAt: activeProgram.updated_at?.split('T')[0] ?? '',
-            days: (activeProgram.workout_days ?? [])
-              .sort((a: { day_order: number }, b: { day_order: number }) => a.day_order - b.day_order)
-              .map((d: { id: string; name: string; exercises: { id: string; name: string; sets: number; reps: string; weight: string; rpe: number | null; tempo: string; rest_seconds: number | null; notes: string; exercise_order: number }[] }) => ({
-                id: d.id,
-                name: d.name,
-                exercises: (d.exercises ?? [])
-                  .sort((a, b) => a.exercise_order - b.exercise_order)
-                  .map(e => ({
-                    id: e.id,
-                    name: e.name,
-                    sets: e.sets,
-                    reps: e.reps,
-                    weight: e.weight,
-                    rpe: e.rpe,
-                    tempo: e.tempo,
-                    restSeconds: e.rest_seconds,
-                    notes: e.notes,
-                  })),
-              })),
-          });
-        }
-      }
-
-      // Load check-ins
-      const { data: checkInData } = await supabase
-        .from('check_ins')
-        .select('*')
-        .eq('client_id', clientRow.id)
-        .order('date', { ascending: false });
-
-      if (checkInData) {
-        // Load photos for all check-ins
-        const checkInIds = checkInData.map(r => r.id);
-        const { data: photoData } = checkInIds.length > 0
-          ? await supabase.from('check_in_photos').select('*').in('check_in_id', checkInIds)
-          : { data: [] };
-
-        const photosByCheckIn: Record<string, { url: string; label: string }[]> = {};
-        for (const p of (photoData ?? [])) {
-          if (!photosByCheckIn[p.check_in_id]) photosByCheckIn[p.check_in_id] = [];
-          photosByCheckIn[p.check_in_id].push({ url: p.url, label: p.label ?? '' });
-        }
-
-        setCheckIns(checkInData.map(r => ({
-          id: r.id,
-          clientId: r.client_id,
-          clientName: clientRow.name,
-          date: r.date,
-          status: r.status,
-          weight: r.weight,
-          bodyFat: r.body_fat,
-          mood: r.mood,
-          energy: r.energy,
-          stress: r.stress,
-          sleepHours: r.sleep_hours,
-          steps: r.steps,
-          nutritionScore: r.nutrition_score,
-          notes: r.notes ?? '',
-          wins: r.wins ?? '',
-          challenges: r.challenges ?? '',
-          coachFeedback: r.coach_feedback ?? '',
-          reviewStatus: r.review_status,
-          flagReason: r.flag_reason ?? '',
-          photos: photosByCheckIn[r.id] ?? [],
-        })));
-      }
-
-      // Load messages
-      const { data: msgData } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('client_id', clientRow.id)
-        .order('timestamp');
-
-      if (msgData) {
+    if (msgData && msgData.length > 0) {
+      if (lastMsgTimestamp.current) {
+        // Append only new messages
+        setMessages(prev => [
+          ...prev,
+          ...msgData.map(r => ({
+            id: r.id,
+            clientId: r.client_id,
+            clientName: cu.name,
+            clientAvatar: '',
+            text: r.text,
+            timestamp: r.timestamp,
+            isRead: r.is_read,
+            isFromCoach: r.is_from_coach,
+            channel: r.channel,
+          })),
+        ]);
+      } else {
+        // First load — replace all
         setMessages(msgData.map(r => ({
           id: r.id,
           clientId: r.client_id,
-          clientName: clientRow.name,
+          clientName: cu.name,
           clientAvatar: '',
           text: r.text,
           timestamp: r.timestamp,
@@ -280,74 +448,9 @@ function App() {
           channel: r.channel,
         })));
       }
-
-      // Load workout logs
-      const { data: logData } = await supabase
-        .from('workout_logs')
-        .select('*')
-        .eq('client_id', clientRow.id)
-        .order('date', { ascending: false });
-
-      if (logData) {
-        setWorkoutLogs(logData.map(r => ({
-          id: r.id,
-          clientId: r.client_id,
-          clientName: clientRow.name,
-          type: r.type,
-          duration: r.duration ?? 0,
-          date: r.date,
-          completed: r.completed ?? false,
-        })));
-      }
-
-      // Load workout set logs
-      const { data: setLogData } = await supabase
-        .from('workout_set_logs')
-        .select('*')
-        .eq('client_id', clientRow.id)
-        .order('date', { ascending: false });
-
-      if (setLogData) {
-        setSetLogs(setLogData.map(r => ({
-          id: r.id,
-          date: r.date,
-          exerciseId: r.exercise_id,
-          exerciseName: r.exercise_name,
-          setNumber: r.set_number,
-          reps: r.reps,
-          weight: r.weight ?? '',
-          completed: r.completed ?? false,
-          rpe: r.rpe,
-        })));
-      }
-    };
-
-    setDataLoading(true);
-    loadData().finally(() => setDataLoading(false));
-  }, [isLoggedIn]);
-
-  // ── Poll messages every 10s when on messages page ──
-  const refreshMessages = useCallback(async () => {
-    if (!clientUser) return;
-    const { data: msgData } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('client_id', clientUser.id)
-      .order('timestamp');
-    if (msgData) {
-      setMessages(msgData.map(r => ({
-        id: r.id,
-        clientId: r.client_id,
-        clientName: clientUser.name,
-        clientAvatar: '',
-        text: r.text,
-        timestamp: r.timestamp,
-        isRead: r.is_read,
-        isFromCoach: r.is_from_coach,
-        channel: r.channel,
-      })));
+      lastMsgTimestamp.current = msgData[msgData.length - 1].timestamp;
     }
-  }, [clientUser]);
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn || currentPage !== 'messages') return;
@@ -375,6 +478,9 @@ function App() {
     if (error) {
       setMessages(prev => prev.filter(m => m.id !== msg.id));
       showError(t.errors?.messageFailed ?? 'Failed to send message');
+    } else {
+      // Update last message timestamp for delta fetching
+      lastMsgTimestamp.current = msg.timestamp;
     }
   };
 
@@ -409,7 +515,7 @@ function App() {
       return;
     }
 
-    // Upload photos to Supabase Storage and save URLs to check_in_photos
+    // Fix #1: Upload photos using signed URLs instead of public URLs
     const photosWithFiles = ci.photos.filter((p: { url: string; label: string; file?: File }) => p.file);
     for (const photo of photosWithFiles) {
       const file = (photo as { url: string; label: string; file: File }).file;
@@ -425,15 +531,18 @@ function App() {
         continue;
       }
 
-      const { data: urlData } = supabase.storage
+      // Use signed URL instead of public URL
+      const { data: signedData } = await supabase.storage
         .from('check-in-photos')
-        .getPublicUrl(path);
+        .createSignedUrl(path, 3600);
 
-      await supabase.from('check_in_photos').insert({
-        check_in_id: ci.id,
-        url: urlData.publicUrl,
-        label: photo.label,
-      });
+      if (signedData?.signedUrl) {
+        await supabase.from('check_in_photos').insert({
+          check_in_id: ci.id,
+          url: signedData.signedUrl,
+          label: photo.label,
+        });
+      }
     }
 
     // Notify coach via email (fire-and-forget)
@@ -455,8 +564,11 @@ function App() {
   };
 
   const handleLogSet = async (log: WorkoutSetLog) => {
+    if (!clientUser) {
+      showError(t.errors?.workoutLogFailed ?? 'Failed to save workout log');
+      return;
+    }
     setSetLogs(prev => [...prev, log]);
-    if (!clientUser) return;
     const { error } = await supabase.from('workout_set_logs').insert({
       id: log.id,
       client_id: clientUser.id,
@@ -477,16 +589,22 @@ function App() {
 
   const handleRemoveLog = async (exerciseId: string, setNumber: number, date: string) => {
     const toRemove = setLogs.find(l => l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date);
+    if (!toRemove) return;
     setSetLogs(prev => prev.filter(l => !(l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date)));
-    if (toRemove) {
-      await supabase.from('workout_set_logs').delete().eq('id', toRemove.id);
+    const { error } = await supabase.from('workout_set_logs').delete().eq('id', toRemove.id);
+    if (error) {
+      // Rollback on failure
+      setSetLogs(prev => [...prev, toRemove]);
+      showError(t.errors?.workoutLogFailed ?? 'Failed to remove workout log');
     }
   };
 
   const handleUpdateLog = async (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => {
     let updatedLog: WorkoutSetLog | null = null;
+    let originalLog: WorkoutSetLog | null = null;
     setSetLogs(prev => prev.map(l => {
       if (l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date) {
+        originalLog = l;
         updatedLog = { ...l, ...updates };
         return updatedLog;
       }
@@ -500,7 +618,13 @@ function App() {
         completed: u.completed,
         rpe: u.rpe ?? null,
       }).eq('id', u.id);
-      if (error) showError(t.errors?.workoutLogFailed ?? 'Failed to update workout log');
+      if (error) {
+        // Rollback on failure
+        if (originalLog) {
+          setSetLogs(prev => prev.map(l => l.id === u.id ? originalLog! : l));
+        }
+        showError(t.errors?.workoutLogFailed ?? 'Failed to update workout log');
+      }
     }
   };
 
@@ -563,10 +687,31 @@ function App() {
     }
   };
 
+  // Fix #21: Show retry button when data load fails
   if (authLoading || dataLoading) {
     return (
       <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
         <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>{dataLoading ? 'Loading data...' : 'Loading...'}</div>
+      </div>
+    );
+  }
+
+  if (loadError && !clientUser) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', background: 'var(--bg-primary)' }}>
+        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '16px' }}>Failed to load data</div>
+        <button
+          onClick={handleRetry}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '10px 20px', border: 'none', borderRadius: '10px',
+            background: 'var(--accent-primary)', color: '#07090e',
+            fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-display)',
+            cursor: 'pointer',
+          }}
+        >
+          <RefreshCw size={16} /> Retry
+        </button>
       </div>
     );
   }
@@ -577,9 +722,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-    {/* Password Reset Modal */}
+    {/* Password Reset Modal — Fix #19: overlay always closeable */}
     {showResetPassword && (
-      <div style={resetStyles.overlay} onClick={resetSuccess ? handleCloseResetModal : undefined}>
+      <div style={resetStyles.overlay} onClick={handleCloseResetModal}>
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -684,14 +829,17 @@ function App() {
       )}
     </div>
 
-    {/* Error toast */}
+    {/* Error toast — Fix #20: click to dismiss, 6s timeout */}
     {toastError && (
-      <div style={{
-        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-        background: '#dc2626', color: '#fff', padding: '12px 24px', borderRadius: 12,
-        fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4)', zIndex: 9999,
-      }}>
+      <div
+        onClick={() => setToastError(null)}
+        style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#dc2626', color: '#fff', padding: '12px 24px', borderRadius: 12,
+          fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.4)', zIndex: 9999, cursor: 'pointer',
+        }}
+      >
         {toastError}
       </div>
     )}
