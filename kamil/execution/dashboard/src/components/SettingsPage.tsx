@@ -101,18 +101,16 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Get coach row (need id + name)
+      // Get coach name for the email
       const { data: coachRow } = await supabase
         .from('coaches')
-        .select('id, name')
-        .eq('auth_user_id', user.id)
+        .select('name')
+        .eq('id', user.id)
         .single();
-
-      if (!coachRow) throw new Error('Coach profile not found');
 
       const { error: insertError } = await supabase.from('invite_codes').insert({
         code,
-        coach_id: coachRow.id,
+        coach_id: user.id,
         client_name: inviteName.trim(),
         client_email: inviteEmail.trim().toLowerCase(),
         plan: invitePlan,
