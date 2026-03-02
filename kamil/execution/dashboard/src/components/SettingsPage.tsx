@@ -98,8 +98,10 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
       const expires = new Date();
       expires.setDate(expires.getDate() + 7);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const user = session.user;
 
       // Get coach name for the email
       const { data: coachRow } = await supabase
@@ -121,20 +123,28 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
 
       const inviteLink = `https://client.fitcore.tech/join/${code}`;
 
-      // Call edge function to send email
-      const { error: fnError } = await supabase.functions.invoke('send-invite-email', {
-        body: {
-          code,
-          clientName: inviteName.trim(),
-          clientEmail: inviteEmail.trim().toLowerCase(),
-          plan: invitePlan,
-          coachName: coachRow?.name || 'Your Coach',
-        },
-      });
+      // Call edge function to send email (use raw fetch with JWT like invite-client)
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invite-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code,
+            clientName: inviteName.trim(),
+            clientEmail: inviteEmail.trim().toLowerCase(),
+            plan: invitePlan,
+            coachName: coachRow?.name || 'Your Coach',
+          }),
+        }
+      );
 
-      if (fnError) {
-        // Email failed but invite code was created — still show the link
-        console.warn('Email send failed:', fnError.message);
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.warn('Email send failed:', errBody.error || res.statusText);
       }
 
       setInviteResult({ success: true, link: inviteLink });
