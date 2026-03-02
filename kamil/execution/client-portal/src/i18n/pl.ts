@@ -208,6 +208,12 @@ export const pl: Translations = {
     tryAgain: 'Spróbuj ponownie',
   },
 
+  errors: {
+    messageFailed: 'Nie udało się wysłać wiadomości',
+    checkInFailed: 'Nie udało się zapisać check-inu',
+    workoutLogFailed: 'Nie udało się zapisać treningu',
+  },
+
   lang: {
     en: 'EN',
     pl: 'PL',

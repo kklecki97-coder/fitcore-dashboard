@@ -206,6 +206,12 @@ export const en = {
     tryAgain: 'Try Again',
   },
 
+  errors: {
+    messageFailed: 'Failed to send message',
+    checkInFailed: 'Failed to submit check-in',
+    workoutLogFailed: 'Failed to save workout log',
+  },
+
   lang: {
     en: 'EN',
     pl: 'PL',

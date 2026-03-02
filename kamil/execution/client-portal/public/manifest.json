@@ -1,0 +1,17 @@
+{
+  "name": "FitCore Client Portal",
+  "short_name": "FitCore",
+  "description": "Track your workouts, check-ins, and progress with FitCore.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07090e",
+  "theme_color": "#00e5c8",
+  "icons": [
+    {
+      "src": "/fitcore-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

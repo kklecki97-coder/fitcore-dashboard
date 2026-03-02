@@ -90,6 +90,8 @@ function App() {
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
   });
 
+  const [dataLoading, setDataLoading] = useState(false);
+
   // ── Data state (loaded from Supabase) ──
   const [clientUser, setClientUser] = useState<Client | null>(null);
   const [coachName, setCoachName] = useState('Your Coach');
@@ -98,6 +100,12 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [setLogs, setSetLogs] = useState<WorkoutSetLog[]>([]);
+  const [toastError, setToastError] = useState<string | null>(null);
+
+  const showError = (msg: string) => {
+    setToastError(msg);
+    setTimeout(() => setToastError(null), 4000);
+  };
 
   // ── Load all client data from Supabase on login ──
   useEffect(() => {
@@ -314,7 +322,8 @@ function App() {
       }
     };
 
-    loadData();
+    setDataLoading(true);
+    loadData().finally(() => setDataLoading(false));
   }, [isLoggedIn]);
 
   // ── Poll messages every 10s when on messages page ──
@@ -354,7 +363,7 @@ function App() {
   // ── Handlers ──
   const handleSendMessage = async (msg: Message) => {
     setMessages(prev => [...prev, msg]);
-    await supabase.from('messages').insert({
+    const { error } = await supabase.from('messages').insert({
       id: msg.id,
       client_id: msg.clientId,
       text: msg.text,
@@ -363,6 +372,10 @@ function App() {
       is_from_coach: msg.isFromCoach,
       channel: msg.channel,
     });
+    if (error) {
+      setMessages(prev => prev.filter(m => m.id !== msg.id));
+      showError(t.errors?.messageFailed ?? 'Failed to send message');
+    }
   };
 
   const handleSubmitCheckIn = async (ci: CheckIn) => {
@@ -391,6 +404,8 @@ function App() {
 
     if (error) {
       console.error('check_ins insert failed:', error);
+      setCheckIns(prev => prev.filter(c => c.id !== ci.id));
+      showError(t.errors?.checkInFailed ?? 'Failed to submit check-in');
       return;
     }
 
@@ -420,12 +435,29 @@ function App() {
         label: photo.label,
       });
     }
+
+    // Notify coach via email (fire-and-forget)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-checkin`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clientName: ci.clientName,
+          checkInDate: ci.date,
+        }),
+      }).catch(() => {}); // Silent — don't block check-in on email failure
+    });
   };
 
   const handleLogSet = async (log: WorkoutSetLog) => {
     setSetLogs(prev => [...prev, log]);
     if (!clientUser) return;
-    await supabase.from('workout_set_logs').insert({
+    const { error } = await supabase.from('workout_set_logs').insert({
       id: log.id,
       client_id: clientUser.id,
       exercise_id: log.exerciseId,
@@ -437,6 +469,10 @@ function App() {
       rpe: log.rpe ?? null,
       date: log.date,
     });
+    if (error) {
+      setSetLogs(prev => prev.filter(l => l.id !== log.id));
+      showError(t.errors?.workoutLogFailed ?? 'Failed to save workout log');
+    }
   };
 
   const handleRemoveLog = async (exerciseId: string, setNumber: number, date: string) => {
@@ -458,12 +494,13 @@ function App() {
     }));
     if (updatedLog) {
       const u = updatedLog as WorkoutSetLog;
-      await supabase.from('workout_set_logs').update({
+      const { error } = await supabase.from('workout_set_logs').update({
         reps: u.reps,
         weight: u.weight,
         completed: u.completed,
         rpe: u.rpe ?? null,
       }).eq('id', u.id);
+      if (error) showError(t.errors?.workoutLogFailed ?? 'Failed to update workout log');
     }
   };
 
@@ -526,10 +563,10 @@ function App() {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || dataLoading) {
     return (
       <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>Loading...</div>
+        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>{dataLoading ? 'Loading data...' : 'Loading...'}</div>
       </div>
     );
   }
@@ -646,6 +683,18 @@ function App() {
         <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={true} onLogout={handleLogout} />
       )}
     </div>
+
+    {/* Error toast */}
+    {toastError && (
+      <div style={{
+        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        background: '#dc2626', color: '#fff', padding: '12px 24px', borderRadius: 12,
+        fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)', zIndex: 9999,
+      }}>
+        {toastError}
+      </div>
+    )}
     </ErrorBoundary>
   );
 }

@@ -27,6 +27,7 @@ function App() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
 
   // ── Auth: listen to Supabase session ──
   useEffect(() => {
@@ -225,12 +226,15 @@ function App() {
       }
     };
 
+    setDataLoading(true);
     loadClients().then((clientsList) => {
-      loadMessages(clientsList);
-      loadInvoices(clientsList);
-      loadCheckIns(clientsList);
-      loadPrograms();
-      loadWorkoutLogs();
+      Promise.all([
+        loadMessages(clientsList),
+        loadInvoices(clientsList),
+        loadCheckIns(clientsList),
+        loadPrograms(),
+        loadWorkoutLogs(),
+      ]).finally(() => setDataLoading(false));
     });
   }, [isLoggedIn]);
 
@@ -459,8 +463,22 @@ function App() {
   };
 
   const handleDeleteClient = async (id: string) => {
+    const removed = allClients.find(c => c.id === id);
     setAllClients(prev => prev.filter(c => c.id !== id));
-    await supabase.from('clients').delete().eq('id', id);
+    // Clean up related records before deleting client
+    await supabase.from('workout_set_logs').delete().eq('client_id', id);
+    await supabase.from('check_in_photos').delete().in('check_in_id',
+      (await supabase.from('check_ins').select('id').eq('client_id', id)).data?.map(r => r.id) ?? []
+    );
+    await supabase.from('check_ins').delete().eq('client_id', id);
+    await supabase.from('messages').delete().eq('client_id', id);
+    await supabase.from('program_clients').delete().eq('client_id', id);
+    await supabase.from('client_metrics').delete().eq('client_id', id);
+    await supabase.from('invoices').delete().eq('client_id', id);
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error && removed) {
+      setAllClients(prev => [...prev, removed]);
+    }
   };
 
   const handleSendMessage = async (msg: Message) => {
@@ -765,10 +783,10 @@ function App() {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || dataLoading) {
     return (
       <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>Loading...</div>
+        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>{dataLoading ? 'Loading data...' : 'Loading...'}</div>
       </div>
     );
   }
