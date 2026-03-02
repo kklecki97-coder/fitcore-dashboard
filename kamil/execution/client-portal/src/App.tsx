@@ -216,6 +216,18 @@ function App() {
         .order('date', { ascending: false });
 
       if (checkInData) {
+        // Load photos for all check-ins
+        const checkInIds = checkInData.map(r => r.id);
+        const { data: photoData } = checkInIds.length > 0
+          ? await supabase.from('check_in_photos').select('*').in('check_in_id', checkInIds)
+          : { data: [] };
+
+        const photosByCheckIn: Record<string, { url: string; label: string }[]> = {};
+        for (const p of (photoData ?? [])) {
+          if (!photosByCheckIn[p.check_in_id]) photosByCheckIn[p.check_in_id] = [];
+          photosByCheckIn[p.check_in_id].push({ url: p.url, label: p.label ?? '' });
+        }
+
         setCheckIns(checkInData.map(r => ({
           id: r.id,
           clientId: r.client_id,
@@ -236,7 +248,7 @@ function App() {
           coachFeedback: r.coach_feedback ?? '',
           reviewStatus: r.review_status,
           flagReason: r.flag_reason ?? '',
-          photos: [],
+          photos: photosByCheckIn[r.id] ?? [],
         })));
       }
 
@@ -277,6 +289,27 @@ function App() {
           duration: r.duration ?? 0,
           date: r.date,
           completed: r.completed ?? false,
+        })));
+      }
+
+      // Load workout set logs
+      const { data: setLogData } = await supabase
+        .from('workout_set_logs')
+        .select('*')
+        .eq('client_id', clientRow.id)
+        .order('date', { ascending: false });
+
+      if (setLogData) {
+        setSetLogs(setLogData.map(r => ({
+          id: r.id,
+          date: r.date,
+          exerciseId: r.exercise_id,
+          exerciseName: r.exercise_name,
+          setNumber: r.set_number,
+          reps: r.reps,
+          weight: r.weight ?? '',
+          completed: r.completed ?? false,
+          rpe: r.rpe,
         })));
       }
     };
@@ -334,7 +367,8 @@ function App() {
 
   const handleSubmitCheckIn = async (ci: CheckIn) => {
     setCheckIns(prev => [...prev, ci]);
-    await supabase.from('check_ins').insert({
+
+    const { error } = await supabase.from('check_ins').insert({
       id: ci.id,
       client_id: ci.clientId,
       date: ci.date,
@@ -354,23 +388,83 @@ function App() {
       review_status: ci.reviewStatus,
       flag_reason: ci.flagReason,
     });
+
+    if (error) {
+      console.error('check_ins insert failed:', error);
+      return;
+    }
+
+    // Upload photos to Supabase Storage and save URLs to check_in_photos
+    const photosWithFiles = ci.photos.filter((p: { url: string; label: string; file?: File }) => p.file);
+    for (const photo of photosWithFiles) {
+      const file = (photo as { url: string; label: string; file: File }).file;
+      const ext = file.name.split('.').pop() ?? 'jpg';
+      const path = `${ci.clientId}/${ci.id}/${photo.label.replace(/\s+/g, '_')}.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from('check-in-photos')
+        .upload(path, file, { upsert: true });
+
+      if (uploadErr) {
+        console.error('Photo upload failed:', uploadErr);
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('check-in-photos')
+        .getPublicUrl(path);
+
+      await supabase.from('check_in_photos').insert({
+        check_in_id: ci.id,
+        url: urlData.publicUrl,
+        label: photo.label,
+      });
+    }
   };
 
-  // Set logs stay local (session-specific workout tracking)
-  const handleLogSet = (log: WorkoutSetLog) => {
+  const handleLogSet = async (log: WorkoutSetLog) => {
     setSetLogs(prev => [...prev, log]);
+    if (!clientUser) return;
+    await supabase.from('workout_set_logs').insert({
+      id: log.id,
+      client_id: clientUser.id,
+      exercise_id: log.exerciseId,
+      exercise_name: log.exerciseName,
+      set_number: log.setNumber,
+      reps: log.reps,
+      weight: log.weight,
+      completed: log.completed,
+      rpe: log.rpe ?? null,
+      date: log.date,
+    });
   };
 
-  const handleRemoveLog = (exerciseId: string, setNumber: number, date: string) => {
+  const handleRemoveLog = async (exerciseId: string, setNumber: number, date: string) => {
+    const toRemove = setLogs.find(l => l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date);
     setSetLogs(prev => prev.filter(l => !(l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date)));
+    if (toRemove) {
+      await supabase.from('workout_set_logs').delete().eq('id', toRemove.id);
+    }
   };
 
-  const handleUpdateLog = (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => {
-    setSetLogs(prev => prev.map(l =>
-      l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date
-        ? { ...l, ...updates }
-        : l
-    ));
+  const handleUpdateLog = async (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => {
+    let updatedLog: WorkoutSetLog | null = null;
+    setSetLogs(prev => prev.map(l => {
+      if (l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date) {
+        updatedLog = { ...l, ...updates };
+        return updatedLog;
+      }
+      return l;
+    }));
+    if (updatedLog) {
+      const u = updatedLog as WorkoutSetLog;
+      await supabase.from('workout_set_logs').update({
+        reps: u.reps,
+        weight: u.weight,
+        completed: u.completed,
+        rpe: u.rpe ?? null,
+      }).eq('id', u.id);
+    }
   };
 
   const renderPage = () => {
@@ -448,12 +542,13 @@ function App() {
     <ErrorBoundary>
     {/* Password Reset Modal */}
     {showResetPassword && (
-      <div style={resetStyles.overlay}>
+      <div style={resetStyles.overlay} onClick={resetSuccess ? handleCloseResetModal : undefined}>
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.3 }}
           style={resetStyles.card}
+          onClick={e => e.stopPropagation()}
         >
           {resetSuccess ? (
             <div style={{ textAlign: 'center' }}>

@@ -746,7 +746,16 @@ function App() {
             onThemeChange={setTheme}
             profileName={profileName}
             profileEmail={profileEmail}
-            onProfileChange={(name, email) => { setProfileName(name); setProfileEmail(email); }}
+            onProfileChange={async (name, email) => {
+              setProfileName(name);
+              setProfileEmail(email);
+              // Persist to Supabase Auth + coaches table
+              await supabase.auth.updateUser({ data: { name } });
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from('coaches').update({ name }).eq('id', user.id);
+              }
+            }}
             notifications={notifications}
             onNotificationsChange={setNotifications}
           />

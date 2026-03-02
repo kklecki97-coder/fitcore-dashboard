@@ -120,7 +120,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
     weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '',
     steps: '', nutritionScore: '', notes: '', wins: '', challenges: '',
   });
-  const [photos, setPhotos] = useState<{ url: string; label: string }[]>([]);
+  const [photos, setPhotos] = useState<{ url: string; label: string; file?: File }[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const fixedSlots: { label: string; key: string; displayLabel: string }[] = [
@@ -155,7 +155,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
     reader.onload = () => {
       setPhotos(prev => {
         const filtered = prev.filter(p => p.label !== label);
-        return [...filtered, { url: reader.result as string, label }];
+        return [...filtered, { url: reader.result as string, label, file }];
       });
     };
     reader.onerror = () => {
@@ -175,7 +175,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
     setIsSubmitting(true);
 
     const ci: CheckIn = {
-      id: `ci-new-${Date.now()}`,
+      id: crypto.randomUUID(),
       clientId,
       clientName,
       date: new Date().toISOString().split('T')[0],

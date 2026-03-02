@@ -878,11 +878,15 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                         }}>{t.settings.cancel}</button>
                         <button
                           style={{ ...styles.saveBtn, opacity: currentPassword && newPassword && confirmPassword ? 1 : 0.4 }}
-                          onClick={() => {
+                          onClick={async () => {
                             if (!currentPassword) { setPasswordError(t.settings.enterCurrentPasswordError); return; }
                             if (newPassword.length < 8) { setPasswordError(t.settings.newPasswordMinLength); return; }
                             if (newPassword !== confirmPassword) { setPasswordError(t.settings.passwordsDoNotMatch); return; }
-                            // TODO: Replace with API call
+                            const { error } = await supabase.auth.updateUser({ password: newPassword });
+                            if (error) {
+                              setPasswordError(error.message);
+                              return;
+                            }
                             setCurrentPassword('');
                             setNewPassword('');
                             setConfirmPassword('');

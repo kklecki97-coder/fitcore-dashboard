@@ -234,7 +234,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                                 if (completed) {
                                   onRemoveLog(exercise.id, setNum, todayStr);
                                 } else {
-                                  const logId = `sl-${exercise.id}-${setNum}-${Date.now()}`;
+                                  const logId = crypto.randomUUID();
                                   const parsedReps = parseInt(exercise.reps.split('-')[0]) || 10;
                                   onLogSet({
                                     id: logId,
