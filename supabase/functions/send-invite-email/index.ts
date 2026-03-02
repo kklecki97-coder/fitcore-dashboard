@@ -70,7 +70,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Verify invite code exists and belongs to this coach
+    // 3. Look up coach row for this auth user
+    const { data: coachRow } = await supabaseAdmin
+      .from("coaches")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    // 4. Verify invite code exists and belongs to this coach
     const { data: invite, error: inviteError } = await supabaseAdmin
       .from("invite_codes")
       .select("id, coach_id, used_by")
@@ -87,7 +94,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (invite.coach_id !== user.id) {
+    if (!coachRow || invite.coach_id !== coachRow.id) {
       return new Response(
         JSON.stringify({ error: "You don't own this invite code" }),
         {
