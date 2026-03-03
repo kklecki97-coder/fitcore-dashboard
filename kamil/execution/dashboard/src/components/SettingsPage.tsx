@@ -32,7 +32,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   // Profile editing state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState(profileName);
-  const [editEmail, setEditEmail] = useState(profileEmail);
 
   // Security modal state
   const [securityModal, setSecurityModal] = useState<'password' | '2fa' | 'delete' | null>(null);
@@ -184,13 +183,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   ];
 
   const handleSaveProfile = () => {
-    onProfileChange(editName, editEmail);
+    onProfileChange(editName, profileEmail);
     setIsEditingProfile(false);
   };
 
   const handleCancelEdit = () => {
     setEditName(profileName);
-    setEditEmail(profileEmail);
     setIsEditingProfile(false);
   };
 
@@ -308,12 +306,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               </div>
               <div style={styles.field}>
                 <label style={styles.fieldLabel}>{t.settings.email}</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  style={styles.fieldInput}
-                />
+                <div style={styles.fieldValue}>{profileEmail}</div>
               </div>
               <div style={styles.field}>
                 <label style={styles.fieldLabel}>{t.settings.plan}</label>
