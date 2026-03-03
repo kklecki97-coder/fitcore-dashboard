@@ -230,11 +230,6 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               ? t.clients.addFirstClient
               : t.clients.adjustFilters}
           </div>
-          {allClients.length === 0 && (
-            <button onClick={onAddClient} style={{ ...styles.addBtn, marginTop: '16px' }}>
-              <Plus size={16} /> {t.clients.addClient}
-            </button>
-          )}
         </div>
       ) : (
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))' }}>
