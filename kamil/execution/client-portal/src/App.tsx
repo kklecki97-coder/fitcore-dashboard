@@ -93,7 +93,17 @@ function App() {
     }
   };
 
-  const [currentPage, setCurrentPage] = useState<ClientPage>('home');
+  const [currentPage, _setCurrentPage] = useState<ClientPage>(() => {
+    try {
+      const saved = sessionStorage.getItem('fitcore-client-page');
+      if (saved) return saved as ClientPage;
+    } catch { /* ignore */ }
+    return 'home';
+  });
+  const setCurrentPage = (page: ClientPage) => {
+    _setCurrentPage(page);
+    try { sessionStorage.setItem('fitcore-client-page', page); } catch { /* ignore */ }
+  };
   const isMobile = useIsMobile();
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('fitcore-client-theme');

@@ -49,7 +49,17 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  const [currentPage, setCurrentPage] = useState<Page>('overview');
+  const [currentPage, _setCurrentPage] = useState<Page>(() => {
+    try {
+      const saved = sessionStorage.getItem('fitcore-page');
+      if (saved) return saved as Page;
+    } catch { /* ignore */ }
+    return 'overview';
+  });
+  const setCurrentPage = (page: Page) => {
+    _setCurrentPage(page);
+    try { sessionStorage.setItem('fitcore-page', page); } catch { /* ignore */ }
+  };
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [previousPage, setPreviousPage] = useState<Page>('clients');
