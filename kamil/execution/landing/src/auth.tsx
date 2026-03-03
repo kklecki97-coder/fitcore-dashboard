@@ -170,8 +170,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: error.message };
     }
 
-    // The DB trigger should auto-create the coach row, but verify it exists.
-    // If the trigger failed silently, insert the row manually as a fallback.
+    // If email confirmation is enabled, the user won't have an active session yet.
+    // The DB trigger (handle_new_user) will create the coach row when they confirm.
+    // We detect this by checking if the session is null (email not yet confirmed).
+    const session = signUpData.session;
+    if (!session) {
+      // Email confirmation required — just return success, skip coach row check
+      return { success: true };
+    }
+
+    // Session exists (email confirmation disabled) — verify coach row was created
     const userId = signUpData.user?.id;
     if (userId) {
       const { data: coach } = await supabase
