@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, User, Mail, Lock, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Mail, Lock, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -89,6 +89,8 @@ export default function RegisterPage() {
   const [clientCount, setClientCount] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ── Validation ──
   function validateStep1(): boolean {
@@ -353,14 +355,22 @@ export default function RegisterPage() {
                         <Lock size={16} />
                       </div>
                       <input
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         placeholder={ta.passwordPlaceholder}
-                        style={inputStyle}
+                        style={{ ...inputStyle, paddingRight: '44px' }}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(p => !p)}
+                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#525a6e', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
                   </div>
 
@@ -372,14 +382,22 @@ export default function RegisterPage() {
                         <Lock size={16} />
                       </div>
                       <input
-                        type="password"
+                        type={showConfirmPassword ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={e => setConfirmPassword(e.target.value)}
                         placeholder={ta.confirmPasswordPlaceholder}
-                        style={inputStyle}
+                        style={{ ...inputStyle, paddingRight: '44px' }}
                         onFocus={handleFocus}
                         onBlur={handleBlur}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(p => !p)}
+                        style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#525a6e', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }}
+                        tabIndex={-1}
+                      >
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
                     </div>
                   </div>
                 </div>

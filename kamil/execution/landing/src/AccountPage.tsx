@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Clock, ExternalLink, LogOut, Trash2, Edit3, Check, X, Dumbbell, Lock, ChevronLeft, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { User, Mail, Calendar, Clock, ExternalLink, LogOut, Trash2, Edit3, Check, X, Dumbbell, Lock, ChevronLeft, AlertTriangle, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -31,6 +31,9 @@ export default function AccountPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
@@ -704,40 +707,55 @@ export default function AccountPage() {
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#8b92a5', marginBottom: 6, display: 'block' }}>
                   {ta.currentPasswordLabel}
                 </label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={e => setCurrentPassword(e.target.value)}
-                  style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
-                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showCurrentPw ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                  />
+                  <button type="button" onClick={() => setShowCurrentPw(p => !p)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#525a6e', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }} tabIndex={-1}>
+                    {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#8b92a5', marginBottom: 6, display: 'block' }}>
                   {ta.newPasswordLabel}
                 </label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
-                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showNewPw ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                  />
+                  <button type="button" onClick={() => setShowNewPw(p => !p)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#525a6e', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }} tabIndex={-1}>
+                    {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: '#8b92a5', marginBottom: 6, display: 'block' }}>
                   {ta.confirmNewPasswordLabel}
                 </label>
-                <input
-                  type="password"
-                  value={confirmNewPassword}
-                  onChange={e => setConfirmNewPassword(e.target.value)}
-                  style={inputStyle}
-                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
-                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPw ? 'text' : 'password'}
+                    value={confirmNewPassword}
+                    onChange={e => setConfirmNewPassword(e.target.value)}
+                    style={inputStyle}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)')}
+                  />
+                  <button type="button" onClick={() => setShowConfirmPw(p => !p)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#525a6e', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }} tabIndex={-1}>
+                    {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               {passwordError && (

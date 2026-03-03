@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, User, Bell, Shield, Palette, X, Save, Plug, ExternalLink, CheckCircle, CreditCard, Camera, Trash2, Copy, AlertTriangle, UserPlus, Mail, Loader2, Check, Link } from 'lucide-react';
+import { Sun, Moon, User, Bell, Shield, Palette, X, Save, Plug, ExternalLink, CheckCircle, CreditCard, Camera, Trash2, Copy, AlertTriangle, UserPlus, Mail, Loader2, Check, Link, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import GlassCard from './GlassCard';
 import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
@@ -41,6 +41,9 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
   const [tfaStep, setTfaStep] = useState<'overview' | 'setup' | 'verify' | 'backup'>('overview');
   const [tfaCode, setTfaCode] = useState('');
@@ -840,33 +843,48 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       )}
                       <div style={styles.modalField}>
                         <label style={styles.fieldLabel}>{t.settings.currentPassword}</label>
-                        <input
-                          type="password"
-                          value={currentPassword}
-                          onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(''); }}
-                          placeholder={t.settings.currentPassword}
-                          style={styles.fieldInput}
-                        />
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type={showCurrentPw ? 'text' : 'password'}
+                            value={currentPassword}
+                            onChange={(e) => { setCurrentPassword(e.target.value); setPasswordError(''); }}
+                            placeholder={t.settings.currentPassword}
+                            style={styles.fieldInput}
+                          />
+                          <button type="button" onClick={() => setShowCurrentPw(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                            {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
                       </div>
                       <div style={styles.modalField}>
                         <label style={styles.fieldLabel}>{t.settings.newPassword}</label>
-                        <input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => { setNewPassword(e.target.value); setPasswordError(''); }}
-                          placeholder={t.settings.newPassword}
-                          style={styles.fieldInput}
-                        />
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type={showNewPw ? 'text' : 'password'}
+                            value={newPassword}
+                            onChange={(e) => { setNewPassword(e.target.value); setPasswordError(''); }}
+                            placeholder={t.settings.newPassword}
+                            style={styles.fieldInput}
+                          />
+                          <button type="button" onClick={() => setShowNewPw(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                            {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
                       </div>
                       <div style={styles.modalField}>
                         <label style={styles.fieldLabel}>{t.settings.confirmNewPassword}</label>
-                        <input
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
-                          placeholder={t.settings.confirmNewPassword}
-                          style={styles.fieldInput}
-                        />
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type={showConfirmPw ? 'text' : 'password'}
+                            value={confirmPassword}
+                            onChange={(e) => { setConfirmPassword(e.target.value); setPasswordError(''); }}
+                            placeholder={t.settings.confirmNewPassword}
+                            style={styles.fieldInput}
+                          />
+                          <button type="button" onClick={() => setShowConfirmPw(p => !p)} style={styles.eyeBtn} tabIndex={-1}>
+                            {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
                       </div>
                       <div style={styles.modalActions}>
                         <button style={styles.cancelBtn} onClick={() => {
@@ -1943,5 +1961,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     marginTop: '16px',
     transition: 'border-color 0.15s',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    padding: '4px',
   },
 };
