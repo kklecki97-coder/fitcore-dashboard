@@ -609,6 +609,7 @@ export const en = {
     type: 'Type',
     typeEmailToConfirm: 'Type your email to confirm',
     deleteMyAccount: 'Delete My Account',
+    yesDelete: 'Yes, Delete',
     deleting: 'Deleting...',
     deleteErrorGeneric: 'Failed to delete account. Please try again.',
     notConnected: 'Not connected — click Connect to set up',

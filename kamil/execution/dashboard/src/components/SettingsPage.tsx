@@ -49,7 +49,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [tfaCode, setTfaCode] = useState('');
   const [tfaError, setTfaError] = useState('');
   const [copiedBackup, setCopiedBackup] = useState(false);
-  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
@@ -788,7 +787,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               setTfaCode('');
               setTfaError('');
               setCopiedBackup(false);
-              setDeleteConfirmEmail('');
             }}
           >
             <motion.div
@@ -1110,7 +1108,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     <h3 style={{ ...styles.modalTitle, color: 'var(--accent-danger)' }}>{t.settings.deleteAccount}</h3>
                     <button style={styles.closeBtn} onClick={() => {
                       setSecurityModal(null);
-                      setDeleteConfirmEmail('');
                       setDeleteError('');
                     }}>
                       <X size={18} />
@@ -1128,19 +1125,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                         </div>
                       </div>
                     </div>
-                    <div style={styles.modalField}>
-                      <label style={styles.fieldLabel}>
-                        {t.settings.type} <strong>{profileEmail}</strong> {t.settings.typeToConfirm}
-                      </label>
-                      <input
-                        type="text"
-                        value={deleteConfirmEmail}
-                        onChange={(e) => { setDeleteConfirmEmail(e.target.value); setDeleteError(''); }}
-                        placeholder={profileEmail}
-                        style={styles.fieldInput}
-                        disabled={deleteLoading}
-                      />
-                    </div>
                     {deleteError && (
                       <div style={{ fontSize: '14px', color: 'var(--accent-danger)', fontWeight: 500 }}>
                         {deleteError}
@@ -1149,20 +1133,18 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     <div style={styles.modalActions}>
                       <button style={styles.cancelBtn} disabled={deleteLoading} onClick={() => {
                         setSecurityModal(null);
-                        setDeleteConfirmEmail('');
                         setDeleteError('');
                       }}>{t.settings.cancel}</button>
                       <button
                         style={{
                           ...styles.saveBtn,
                           background: 'var(--accent-danger)',
-                          opacity: (deleteConfirmEmail === profileEmail && !deleteLoading) ? 1 : 0.3,
-                          cursor: (deleteConfirmEmail === profileEmail && !deleteLoading) ? 'pointer' : 'not-allowed',
-                          boxShadow: (deleteConfirmEmail === profileEmail && !deleteLoading) ? '0 0 12px var(--accent-danger-dim)' : 'none',
+                          opacity: deleteLoading ? 0.5 : 1,
+                          cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                          boxShadow: deleteLoading ? 'none' : '0 0 12px var(--accent-danger-dim)',
                         }}
-                        disabled={deleteLoading || deleteConfirmEmail !== profileEmail}
+                        disabled={deleteLoading}
                         onClick={async () => {
-                          if (deleteConfirmEmail !== profileEmail) return;
                           setDeleteLoading(true);
                           setDeleteError('');
                           try {
@@ -1180,7 +1162,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                                   'Content-Type': 'application/json',
                                   'Authorization': `Bearer ${session.access_token}`,
                                 },
-                                body: JSON.stringify({ confirmEmail: deleteConfirmEmail }),
+                                body: JSON.stringify({ confirmEmail: profileEmail }),
                               }
                             );
                             const data = await res.json();
@@ -1203,7 +1185,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                         ) : (
                           <Trash2 size={14} />
                         )}
-                        {deleteLoading ? t.settings.deleting : t.settings.deleteMyAccount}
+                        {deleteLoading ? t.settings.deleting : t.settings.yesDelete}
                       </button>
                     </div>
                   </div>
