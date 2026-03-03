@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, User, Mail, Lock, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Mail, Lock, ChevronDown, CheckCircle } from 'lucide-react';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -73,12 +73,10 @@ const slideVariants = {
 export default function RegisterPage() {
   const { lang, t } = useLang();
   const { register } = useAuth();
-  const navigate = useNavigate();
   const ta = t.auth;
 
   const homeUrl = lang === 'pl' ? '/pl/' : '/';
   const loginUrl = lang === 'pl' ? '/pl/login' : '/login';
-  const accountUrl = lang === 'pl' ? '/pl/account' : '/account';
 
   // ── Form state ──
   const [step, setStep] = useState(1);
@@ -140,7 +138,8 @@ export default function RegisterPage() {
       });
 
       if (result.success) {
-        navigate(accountUrl);
+        setDirection('forward');
+        setStep(3);
       } else if (result.error === 'emailExists') {
         setError(ta.errorEmailExists);
       }
@@ -264,7 +263,12 @@ export default function RegisterPage() {
             }} />
             <div style={{
               width: 32, height: 4, borderRadius: 2,
-              background: step === 2 ? '#00e5c8' : 'rgba(255, 255, 255, 0.08)',
+              background: step >= 2 ? '#00e5c8' : 'rgba(255, 255, 255, 0.08)',
+              transition: 'background 0.3s',
+            }} />
+            <div style={{
+              width: 32, height: 4, borderRadius: 2,
+              background: step === 3 ? '#00e5c8' : 'rgba(255, 255, 255, 0.08)',
               transition: 'background 0.3s',
             }} />
           </div>
@@ -434,7 +438,7 @@ export default function RegisterPage() {
                   {ta.nextStep} <ArrowRight size={16} />
                 </button>
               </motion.div>
-            ) : (
+            ) : step === 2 ? (
               <motion.div
                 key="step2"
                 variants={slideVariants}
@@ -655,10 +659,73 @@ export default function RegisterPage() {
                   </div>
                 </div>
               </motion.div>
-            )}
+            ) : step === 3 ? (
+              <motion.div
+                key="step3"
+                variants={slideVariants}
+                initial="enterRight"
+                animate="center"
+                exit="exitLeft"
+                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                style={{ textAlign: 'center' }}
+              >
+                <CheckCircle size={56} color="#00e5c8" style={{ marginBottom: '20px' }} />
+                <h1 style={{
+                  fontSize: '24px',
+                  fontWeight: 800,
+                  letterSpacing: '-0.5px',
+                  marginBottom: '10px',
+                  color: '#f0f2f5',
+                  fontFamily: "'Outfit', sans-serif",
+                }}>
+                  {ta.accountCreated}
+                </h1>
+                <p style={{
+                  fontSize: '14px',
+                  color: '#8b92a5',
+                  lineHeight: 1.6,
+                  marginBottom: '28px',
+                }}>
+                  {ta.accountCreatedSub}
+                </p>
+                <a
+                  href="https://app.fitcore.tech"
+                  className="register-btn-primary"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '14px 24px',
+                    background: 'linear-gradient(135deg, #00e5c8, #00c4aa)',
+                    color: '#07090e',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    fontFamily: "'Outfit', sans-serif",
+                    cursor: 'pointer',
+                    textDecoration: 'none',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 229, 200, 0.3)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {ta.goToDashboardCta} <ArrowRight size={16} />
+                </a>
+              </motion.div>
+            ) : null}
           </AnimatePresence>
 
           {/* ── Divider ── */}
+          {step < 3 && (
           <div style={{
             marginTop: '24px',
             paddingTop: '20px',
@@ -682,6 +749,7 @@ export default function RegisterPage() {
               </Link>
             </span>
           </div>
+          )}
         </motion.div>
       </div>
 
