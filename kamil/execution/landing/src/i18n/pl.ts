@@ -267,7 +267,7 @@ export const pl: Translations = {
     loginButton: 'Zaloguj się',
     signingIn: 'Logowanie...',
     forgotPassword: 'Zapomniałeś hasła?',
-    forgotPasswordNote: 'Reset hasła nie jest dostępny w wersji demo. Utwórz nowe konto.',
+    forgotPasswordNote: 'Zapomniałeś hasła? Napisz do nas na Fitcorehq@gmail.com.',
     noAccount: 'Nie masz jeszcze konta?',
     signUpLink: 'Zacznij darmowy okres próbny',
     hasAccount: 'Masz już konto?',

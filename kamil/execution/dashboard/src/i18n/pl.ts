@@ -17,7 +17,6 @@ export const pl: Translations = {
     invalidCredentials: 'Nieprawidłowy e-mail lub hasło',
     signingIn: 'Logowanie...',
     signIn: 'Zaloguj się',
-    demoHint: 'Demo: kamil@fitcore.io / fitcore123',
   },
 
   nav: {
@@ -583,6 +582,7 @@ export const pl: Translations = {
     enterCurrentPasswordError: 'Proszę podać aktualne hasło.',
     newPasswordMinLength: 'Nowe hasło musi mieć co najmniej 8 znaków.',
     passwordsDoNotMatch: 'Hasła się nie zgadzają.',
+    currentPasswordWrong: 'Aktualne hasło jest nieprawidłowe.',
     updatePassword: 'Zaktualizuj Hasło',
     done: 'Gotowe',
     enable2FA: 'Włącz 2FA',

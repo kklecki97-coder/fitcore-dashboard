@@ -90,9 +90,12 @@ export default function AccountPage() {
     setIsEditing(true);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     const finalNiche = editNiche === otherLabel ? customNiche.trim() : editNiche;
-    updateProfile({ fullName: editName.trim() || user.fullName, coachingNiche: finalNiche || undefined });
+    const result = await updateProfile({ fullName: editName.trim() || user.fullName, coachingNiche: finalNiche || undefined });
+    if (!result.success) {
+      return; // Stay in edit mode so user can retry
+    }
     setIsEditing(false);
   };
 

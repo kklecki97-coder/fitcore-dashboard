@@ -15,7 +15,6 @@ export const en = {
     invalidCredentials: 'Invalid email or password',
     signingIn: 'Signing in...',
     signIn: 'Sign In',
-    demoHint: 'Demo: kamil@fitcore.io / fitcore123',
   },
 
   nav: {
@@ -581,6 +580,7 @@ export const en = {
     enterCurrentPasswordError: 'Please enter your current password.',
     newPasswordMinLength: 'New password must be at least 8 characters.',
     passwordsDoNotMatch: 'Passwords do not match.',
+    currentPasswordWrong: 'Current password is incorrect.',
     updatePassword: 'Update Password',
     done: 'Done',
     enable2FA: 'Enable 2FA',

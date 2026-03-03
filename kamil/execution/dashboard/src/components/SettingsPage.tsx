@@ -898,6 +898,15 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                             if (!currentPassword) { setPasswordError(t.settings.enterCurrentPasswordError); return; }
                             if (newPassword.length < 8) { setPasswordError(t.settings.newPasswordMinLength); return; }
                             if (newPassword !== confirmPassword) { setPasswordError(t.settings.passwordsDoNotMatch); return; }
+                            // Verify current password first
+                            const { error: verifyError } = await supabase.auth.signInWithPassword({
+                              email: profileEmail,
+                              password: currentPassword,
+                            });
+                            if (verifyError) {
+                              setPasswordError(t.settings.currentPasswordWrong);
+                              return;
+                            }
                             const { error } = await supabase.auth.updateUser({ password: newPassword });
                             if (error) {
                               setPasswordError(error.message);

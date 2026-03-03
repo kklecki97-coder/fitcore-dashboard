@@ -144,6 +144,8 @@ export default function RegisterPage() {
         setStep(3);
       } else if (result.error === 'emailExists') {
         setError(ta.errorEmailExists);
+      } else {
+        setError(ta.errorGeneric);
       }
     } catch {
       setError(ta.errorGeneric);

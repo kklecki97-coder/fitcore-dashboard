@@ -37,7 +37,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<AuthResult>;
   register: (data: RegisterData) => Promise<AuthResult>;
   logout: () => void;
-  updateProfile: (data: Partial<Pick<AuthUser, 'fullName' | 'coachingNiche' | 'clientCount'>>) => void;
+  updateProfile: (data: Partial<Pick<AuthUser, 'fullName' | 'coachingNiche' | 'clientCount'>>) => Promise<AuthResult>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
 }
 
@@ -220,14 +220,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback(async (data: Partial<Pick<AuthUser, 'fullName' | 'coachingNiche' | 'clientCount'>>) => {
-    if (!user) return;
+  const updateProfile = useCallback(async (data: Partial<Pick<AuthUser, 'fullName' | 'coachingNiche' | 'clientCount'>>): Promise<AuthResult> => {
+    if (!user) return { success: false, error: 'Not logged in' };
 
     // Update coach row in DB
     const updates: Record<string, unknown> = {};
     if (data.fullName !== undefined) updates.name = data.fullName;
     if (Object.keys(updates).length > 0) {
-      await supabase.from('coaches').update(updates).eq('id', user.id);
+      const { error: dbError } = await supabase.from('coaches').update(updates).eq('id', user.id);
+      if (dbError) return { success: false, error: dbError.message };
     }
 
     // Update user metadata
@@ -236,11 +237,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.coachingNiche !== undefined) metaUpdates.coaching_niche = data.coachingNiche;
     if (data.clientCount !== undefined) metaUpdates.client_count = data.clientCount;
     if (Object.keys(metaUpdates).length > 0) {
-      await supabase.auth.updateUser({ data: metaUpdates });
+      const { error: metaError } = await supabase.auth.updateUser({ data: metaUpdates });
+      if (metaError) return { success: false, error: metaError.message };
     }
 
     // Update local state
     setUser(prev => prev ? { ...prev, ...data } : null);
+    return { success: true };
   }, [user]);
 
   const changePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
@@ -255,7 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (verifyError) {
-      return { success: false, error: 'Current password is incorrect' };
+      return { success: false, error: 'wrongPassword' };
     }
 
     // Current password verified — now update to new password

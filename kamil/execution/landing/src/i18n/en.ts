@@ -265,7 +265,7 @@ export const en = {
     loginButton: 'Sign In',
     signingIn: 'Signing in...',
     forgotPassword: 'Forgot password?',
-    forgotPasswordNote: 'Password reset is not available in the demo. Please create a new account.',
+    forgotPasswordNote: 'Forgot your password? Contact support at Fitcorehq@gmail.com.',
     noAccount: "Don't have an account?",
     signUpLink: 'Start your free trial',
     hasAccount: 'Already have an account?',

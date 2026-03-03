@@ -46,6 +46,7 @@ function App() {
   };
 
   const handleLogout = async () => {
+    try { sessionStorage.removeItem('fitcore-page'); } catch { /* ignore */ }
     await supabase.auth.signOut();
   };
 
