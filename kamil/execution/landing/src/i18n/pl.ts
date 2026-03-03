@@ -258,9 +258,9 @@ export const pl: Translations = {
     skipForNow: 'Pomiń na razie',
     createAccount: 'Załóż konto',
     creatingAccount: 'Tworzenie konta...',
-    accountCreated: 'Konto Utworzone!',
-    accountCreatedSub: 'Twój panel jest gotowy. Zacznij dodawać klientów i tworzyć programy.',
-    goToDashboardCta: 'Przejdź do Panelu',
+    accountCreated: 'Sprawdź swoją skrzynkę',
+    accountCreatedSub: 'Wysłaliśmy link potwierdzający na Twój email. Kliknij go, aby zweryfikować konto, a następnie zaloguj się do panelu.',
+    goToDashboardCta: 'Przejdź do logowania',
     // Login
     loginTitle: 'Witaj ponownie',
     loginSubtitle: 'Zaloguj się do swojego konta FitCore.',

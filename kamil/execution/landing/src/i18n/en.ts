@@ -256,9 +256,9 @@ export const en = {
     skipForNow: 'Skip for now',
     createAccount: 'Create Account',
     creatingAccount: 'Creating account...',
-    accountCreated: 'Account Created!',
-    accountCreatedSub: 'Your dashboard is ready. Start adding clients and building programs.',
-    goToDashboardCta: 'Go to Dashboard',
+    accountCreated: 'Check Your Email',
+    accountCreatedSub: 'We sent a confirmation link to your email. Click it to verify your account, then log in to your dashboard.',
+    goToDashboardCta: 'Go to Login',
     // Login
     loginTitle: 'Welcome Back',
     loginSubtitle: 'Sign in to your FitCore account.',

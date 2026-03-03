@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, User, Mail, Lock, ChevronDown, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Mail, Lock, ChevronDown } from 'lucide-react';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -669,7 +669,7 @@ export default function RegisterPage() {
                 transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
                 style={{ textAlign: 'center' }}
               >
-                <CheckCircle size={56} color="#00e5c8" style={{ marginBottom: '20px' }} />
+                <Mail size={56} color="#00e5c8" style={{ marginBottom: '20px' }} />
                 <h1 style={{
                   fontSize: '24px',
                   fontWeight: 800,
