@@ -49,8 +49,10 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [tfaCode, setTfaCode] = useState('');
   const [tfaError, setTfaError] = useState('');
   const [copiedBackup, setCopiedBackup] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
 
   const DEMO_BACKUP_CODES = ['A7K2-M9X1', 'B3P5-R8L4', 'C6W0-T2N7', 'D1F8-Q5J3', 'E4H6-Y9V2', 'F0S3-U7G8'];
 
@@ -787,6 +789,9 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               setTfaCode('');
               setTfaError('');
               setCopiedBackup(false);
+              setDeleteConfirmEmail('');
+              setDeleteFinalConfirm(false);
+              setDeleteError('');
             }}
           >
             <motion.div
@@ -1108,87 +1113,136 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     <h3 style={{ ...styles.modalTitle, color: 'var(--accent-danger)' }}>{t.settings.deleteAccount}</h3>
                     <button style={styles.closeBtn} onClick={() => {
                       setSecurityModal(null);
+                      setDeleteConfirmEmail('');
                       setDeleteError('');
+                      setDeleteFinalConfirm(false);
                     }}>
                       <X size={18} />
                     </button>
                   </div>
                   <div style={styles.modalBody}>
-                    <div style={styles.deleteWarningBox}>
-                      <AlertTriangle size={20} color="var(--accent-danger)" />
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                          {t.settings.actionPermanent}
+                    {!deleteFinalConfirm ? (
+                      <>
+                        <div style={styles.deleteWarningBox}>
+                          <AlertTriangle size={20} color="var(--accent-danger)" />
+                          <div>
+                            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                              {t.settings.actionPermanent}
+                            </div>
+                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                              {t.settings.deleteWarningDesc}
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                          {t.settings.deleteWarningDesc}
+                        <div style={styles.modalField}>
+                          <label style={styles.fieldLabel}>
+                            {t.settings.type} <strong>{profileEmail}</strong> {t.settings.typeToConfirm}
+                          </label>
+                          <input
+                            type="text"
+                            value={deleteConfirmEmail}
+                            onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                            placeholder={profileEmail}
+                            style={styles.fieldInput}
+                          />
                         </div>
-                      </div>
-                    </div>
-                    {deleteError && (
-                      <div style={{ fontSize: '14px', color: 'var(--accent-danger)', fontWeight: 500 }}>
-                        {deleteError}
-                      </div>
-                    )}
-                    <div style={styles.modalActions}>
-                      <button style={styles.cancelBtn} disabled={deleteLoading} onClick={() => {
-                        setSecurityModal(null);
-                        setDeleteError('');
-                      }}>{t.settings.cancel}</button>
-                      <button
-                        style={{
-                          ...styles.saveBtn,
-                          background: 'var(--accent-danger)',
-                          opacity: deleteLoading ? 0.5 : 1,
-                          cursor: deleteLoading ? 'not-allowed' : 'pointer',
-                          boxShadow: deleteLoading ? 'none' : '0 0 12px var(--accent-danger-dim)',
-                        }}
-                        disabled={deleteLoading}
-                        onClick={async () => {
-                          setDeleteLoading(true);
-                          setDeleteError('');
-                          try {
-                            const { data: { session } } = await supabase.auth.getSession();
-                            if (!session) {
-                              setDeleteError(t.settings.deleteErrorGeneric);
-                              setDeleteLoading(false);
-                              return;
-                            }
-                            const res = await fetch(
-                              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
-                              {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${session.access_token}`,
-                                  'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-                                },
-                                body: JSON.stringify({ confirmEmail: profileEmail }),
-                              }
-                            );
-                            const data = await res.json();
-                            if (!res.ok || !data.success) {
-                              setDeleteError(data.error || t.settings.deleteErrorGeneric);
-                              setDeleteLoading(false);
-                              return;
-                            }
-                            // Account deleted — sign out and redirect to login
-                            await supabase.auth.signOut();
-                            window.location.href = '/';
-                          } catch {
-                            setDeleteError(t.settings.deleteErrorGeneric);
-                            setDeleteLoading(false);
-                          }
-                        }}
-                      >
-                        {deleteLoading ? (
-                          <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                        ) : (
-                          <Trash2 size={14} />
+                        <div style={styles.modalActions}>
+                          <button style={styles.cancelBtn} onClick={() => {
+                            setSecurityModal(null);
+                            setDeleteConfirmEmail('');
+                          }}>{t.settings.cancel}</button>
+                          <button
+                            style={{
+                              ...styles.saveBtn,
+                              background: 'var(--accent-danger)',
+                              opacity: deleteConfirmEmail === profileEmail ? 1 : 0.3,
+                              cursor: deleteConfirmEmail === profileEmail ? 'pointer' : 'not-allowed',
+                              boxShadow: deleteConfirmEmail === profileEmail ? '0 0 12px var(--accent-danger-dim)' : 'none',
+                            }}
+                            disabled={deleteConfirmEmail !== profileEmail}
+                            onClick={() => setDeleteFinalConfirm(true)}
+                          >
+                            <Trash2 size={14} />
+                            {t.settings.yesDelete}
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                          <AlertTriangle size={32} color="var(--accent-danger)" style={{ marginBottom: '12px' }} />
+                          <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                            {t.settings.areYouSure}
+                          </div>
+                          <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                            {t.settings.finalDeleteWarning}
+                          </div>
+                        </div>
+                        {deleteError && (
+                          <div style={{ fontSize: '14px', color: 'var(--accent-danger)', fontWeight: 500, textAlign: 'center' }}>
+                            {deleteError}
+                          </div>
                         )}
-                        {deleteLoading ? t.settings.deleting : t.settings.yesDelete}
-                      </button>
-                    </div>
+                        <div style={styles.modalActions}>
+                          <button style={styles.cancelBtn} disabled={deleteLoading} onClick={() => {
+                            setDeleteFinalConfirm(false);
+                            setDeleteError('');
+                          }}>{t.settings.goBack}</button>
+                          <button
+                            style={{
+                              ...styles.saveBtn,
+                              background: 'var(--accent-danger)',
+                              opacity: deleteLoading ? 0.5 : 1,
+                              cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                              boxShadow: deleteLoading ? 'none' : '0 0 12px var(--accent-danger-dim)',
+                            }}
+                            disabled={deleteLoading}
+                            onClick={async () => {
+                              setDeleteLoading(true);
+                              setDeleteError('');
+                              try {
+                                const { data: { session } } = await supabase.auth.getSession();
+                                if (!session) {
+                                  setDeleteError(t.settings.deleteErrorGeneric);
+                                  setDeleteLoading(false);
+                                  return;
+                                }
+                                const res = await fetch(
+                                  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+                                  {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': `Bearer ${session.access_token}`,
+                                      'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                                    },
+                                    body: JSON.stringify({ confirmEmail: profileEmail }),
+                                  }
+                                );
+                                const data = await res.json();
+                                if (!res.ok || !data.success) {
+                                  setDeleteError(data.error || t.settings.deleteErrorGeneric);
+                                  setDeleteLoading(false);
+                                  return;
+                                }
+                                await supabase.auth.signOut();
+                                window.location.href = '/';
+                              } catch {
+                                setDeleteError(t.settings.deleteErrorGeneric);
+                                setDeleteLoading(false);
+                              }
+                            }}
+                          >
+                            {deleteLoading ? (
+                              <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                            {deleteLoading ? t.settings.deleting : t.settings.deleteMyAccount}
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </>
               )}

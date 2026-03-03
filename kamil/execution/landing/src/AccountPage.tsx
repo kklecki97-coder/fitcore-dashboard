@@ -23,6 +23,8 @@ export default function AccountPage() {
   const [editNiche, setEditNiche] = useState('');
   const [customNiche, setCustomNiche] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
@@ -970,7 +972,7 @@ export default function AccountPage() {
         >
           {!showDeleteConfirm ? (
             <button
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={() => { setShowDeleteConfirm(true); setDeleteConfirmEmail(''); setDeleteFinalConfirm(false); setDeleteError(''); }}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 color: '#8b92a5', fontSize: 13, fontWeight: 500,
@@ -985,6 +987,76 @@ export default function AccountPage() {
               <Trash2 size={13} />
               {ta.deleteAccount}
             </button>
+          ) : !deleteFinalConfirm ? (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              style={{
+                display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+                background: 'rgba(239, 68, 68, 0.06)',
+                border: '1px solid rgba(239, 68, 68, 0.15)',
+                borderRadius: 12, padding: '20px 28px',
+                width: '100%', maxWidth: 400,
+              }}
+            >
+              <div style={{ fontSize: 13, color: '#f0f2f5', lineHeight: 1.5, maxWidth: 340 }}>
+                {ta.deleteAccountConfirm}
+              </div>
+              <div style={{ width: '100%' }}>
+                <label style={{ display: 'block', fontSize: 12, color: '#8b92a5', marginBottom: 6, textAlign: 'left' }}>
+                  {ta.typeEmailToConfirm}
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmEmail}
+                  onChange={e => setDeleteConfirmEmail(e.target.value)}
+                  placeholder={user?.email || ''}
+                  style={{
+                    width: '100%', padding: '10px 14px',
+                    background: 'rgba(22, 28, 42, 0.7)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: 8, color: '#f0f2f5', fontSize: 13,
+                    fontFamily: "'Outfit', sans-serif", outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => setDeleteFinalConfirm(true)}
+                  disabled={deleteConfirmEmail !== user?.email}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#ef4444', fontSize: 13, fontWeight: 600,
+                    cursor: deleteConfirmEmail === user?.email ? 'pointer' : 'not-allowed',
+                    opacity: deleteConfirmEmail === user?.email ? 1 : 0.3,
+                    padding: '8px 18px', borderRadius: 8,
+                    transition: 'all 0.2s',
+                    fontFamily: "'Outfit', sans-serif",
+                  }}
+                >
+                  <Trash2 size={13} />
+                  {ta.deleteAccountButton}
+                </button>
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmEmail(''); }}
+                  style={{
+                    background: 'none', border: '1px solid rgba(255, 255, 255, 0.08)',
+                    color: '#8b92a5', fontSize: 13, fontWeight: 500,
+                    cursor: 'pointer', padding: '8px 18px', borderRadius: 8,
+                    transition: 'color 0.2s',
+                    fontFamily: "'Outfit', sans-serif",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#f0f2f5')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#8b92a5')}
+                >
+                  {ta.cancelEdit}
+                </button>
+              </div>
+            </motion.div>
           ) : (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
@@ -997,8 +1069,12 @@ export default function AccountPage() {
                 borderRadius: 12, padding: '20px 28px',
               }}
             >
-              <div style={{ fontSize: 13, color: '#f0f2f5', lineHeight: 1.5, maxWidth: 340 }}>
-                {ta.deleteAccountConfirm}
+              <AlertTriangle size={28} color="#ef4444" />
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#f0f2f5' }}>
+                {ta.areYouSure}
+              </div>
+              <div style={{ fontSize: 13, color: '#8b92a5', lineHeight: 1.5, maxWidth: 340 }}>
+                {ta.finalDeleteWarning}
               </div>
               {deleteError && (
                 <div style={{ fontSize: 12, color: '#ef4444', lineHeight: 1.4, maxWidth: 340 }}>
@@ -1020,14 +1096,12 @@ export default function AccountPage() {
                     transition: 'all 0.2s',
                     fontFamily: "'Outfit', sans-serif",
                   }}
-                  onMouseEnter={e => { if (!deleteLoading) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)')}
                 >
                   <Trash2 size={13} />
-                  {deleteLoading ? ta.deleting : ta.deleteAccountButton}
+                  {deleteLoading ? ta.deleting : ta.deleteMyAccount}
                 </button>
                 <button
-                  onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }}
+                  onClick={() => { setDeleteFinalConfirm(false); setDeleteError(''); }}
                   disabled={deleteLoading}
                   style={{
                     background: 'none', border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -1039,7 +1113,7 @@ export default function AccountPage() {
                   onMouseEnter={e => (e.currentTarget.style.color = '#f0f2f5')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#8b92a5')}
                 >
-                  {ta.cancelEdit}
+                  {ta.goBack}
                 </button>
               </div>
             </motion.div>
