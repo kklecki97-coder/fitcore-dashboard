@@ -325,6 +325,8 @@ export const pl: Translations = {
     deleteAccount: 'Usuń konto',
     deleteAccountConfirm: 'Na pewno? To trwale usunie Twoje konto.',
     deleteAccountButton: 'Tak, usuń',
+    deleting: 'Usuwanie...',
+    deleteErrorGeneric: 'Nie udało się usunąć konta. Spróbuj ponownie.',
     memberSince: 'Członek od',
     coachingNicheLabel: 'Typ coachingu',
     clientCountDisplay: 'Klienci',

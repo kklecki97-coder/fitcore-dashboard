@@ -611,6 +611,8 @@ export const pl: Translations = {
     type: 'Wpisz',
     typeEmailToConfirm: 'Wpisz e-mail, aby potwierdzić',
     deleteMyAccount: 'Usuń Moje Konto',
+    deleting: 'Usuwanie...',
+    deleteErrorGeneric: 'Nie udało się usunąć konta. Spróbuj ponownie.',
     notConnected: 'Niepołączono — kliknij Połącz, aby skonfigurować',
     connected: 'Połączono',
     disconnected: 'Rozłączono',

@@ -323,6 +323,8 @@ export const en = {
     deleteAccount: 'Delete Account',
     deleteAccountConfirm: 'Are you sure? This will permanently delete your account.',
     deleteAccountButton: 'Yes, Delete',
+    deleting: 'Deleting...',
+    deleteErrorGeneric: 'Failed to delete account. Please try again.',
     memberSince: 'Member since',
     coachingNicheLabel: 'Coaching Niche',
     clientCountDisplay: 'Clients',

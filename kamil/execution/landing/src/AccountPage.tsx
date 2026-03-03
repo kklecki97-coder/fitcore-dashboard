@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Mail, Calendar, Clock, ExternalLink, LogOut, Trash2, Edit3, Check, X, Dumbbell, Lock, ChevronLeft, AlertTriangle, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
+import { supabase } from './lib/supabase';
 
 /* ═══════════════════════════════════════════════════════════
    FitCore Account Page — Dark luxe futuristic theme
@@ -22,6 +23,8 @@ export default function AccountPage() {
   const [editNiche, setEditNiche] = useState('');
   const [customNiche, setCustomNiche] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [welcomeDismissed, setWelcomeDismissed] = useState(() => {
     try { return localStorage.getItem('fitcore-welcome-dismissed') === 'true'; } catch { return false; }
   });
@@ -100,10 +103,40 @@ export default function AccountPage() {
     navigate(homeUrl);
   };
 
-  const handleDeleteAccount = () => {
-    // Account deletion requires admin privileges — just log out for now
-    logout();
-    navigate(homeUrl);
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setDeleteError(ta.deleteErrorGeneric);
+        setDeleteLoading(false);
+        return;
+      }
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ confirmEmail: user?.email }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setDeleteError(data.error || ta.deleteErrorGeneric);
+        setDeleteLoading(false);
+        return;
+      }
+      // Account deleted — sign out and go home
+      logout();
+      navigate(homeUrl);
+    } catch {
+      setDeleteError(ta.deleteErrorGeneric);
+      setDeleteLoading(false);
+    }
   };
 
   const dismissWelcome = () => {
@@ -966,26 +999,35 @@ export default function AccountPage() {
               <div style={{ fontSize: 13, color: '#f0f2f5', lineHeight: 1.5, maxWidth: 340 }}>
                 {ta.deleteAccountConfirm}
               </div>
+              {deleteError && (
+                <div style={{ fontSize: 12, color: '#ef4444', lineHeight: 1.4, maxWidth: 340 }}>
+                  {deleteError}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={handleDeleteAccount}
+                  disabled={deleteLoading}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 5,
                     background: 'rgba(239, 68, 68, 0.15)',
                     border: '1px solid rgba(239, 68, 68, 0.4)',
                     color: '#ef4444', fontSize: 13, fontWeight: 600,
-                    cursor: 'pointer', padding: '8px 18px', borderRadius: 8,
+                    cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                    opacity: deleteLoading ? 0.5 : 1,
+                    padding: '8px 18px', borderRadius: 8,
                     transition: 'all 0.2s',
                     fontFamily: "'Outfit', sans-serif",
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)')}
+                  onMouseEnter={e => { if (!deleteLoading) e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'; }}
                   onMouseLeave={e => (e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)')}
                 >
                   <Trash2 size={13} />
-                  {ta.deleteAccountButton}
+                  {deleteLoading ? ta.deleting : ta.deleteAccountButton}
                 </button>
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }}
+                  disabled={deleteLoading}
                   style={{
                     background: 'none', border: '1px solid rgba(255, 255, 255, 0.08)',
                     color: '#8b92a5', fontSize: 13, fontWeight: 500,
