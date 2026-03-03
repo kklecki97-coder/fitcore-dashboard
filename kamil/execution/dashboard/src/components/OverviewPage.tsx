@@ -42,7 +42,7 @@ interface OverviewPageProps {
   programs: WorkoutProgram[];
   invoices: Invoice[];
   onViewClient: (id: string) => void;
-  onNavigate: (page: 'messages') => void;
+  onNavigate: (page: 'messages' | 'clients') => void;
 }
 
 export default function OverviewPage({ clients, messages, programs, invoices, onViewClient, onNavigate }: OverviewPageProps) {
@@ -226,6 +226,63 @@ export default function OverviewPage({ clients, messages, programs, invoices, on
       dimColor: 'var(--accent-warm-dim)',
     },
   ];
+
+  // Welcome state for new coaches with zero clients
+  if (ready && clients.length === 0) {
+    return (
+      <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', alignItems: 'center', justifyContent: 'center' }}>
+        <motion.div
+          style={styles.quoteBar}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <div style={styles.quoteText}>"{dailyQuote.text}"</div>
+          <div style={styles.quoteAuthor}>— {dailyQuote.author}</div>
+        </motion.div>
+        <GlassCard delay={0.1}>
+          <div style={{ textAlign: 'center', padding: isMobile ? '32px 16px' : '48px 32px' }}>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <Users size={48} color="var(--accent-primary)" style={{ marginBottom: '16px' }} />
+            </motion.div>
+            <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+              {t.overview.welcomeTitle}
+            </h2>
+            <p style={{ fontSize: '16px', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 24px', lineHeight: 1.6 }}>
+              {t.overview.welcomeSub}
+            </p>
+            <motion.button
+              onClick={() => onNavigate('clients')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 24px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--accent-primary)',
+                border: 'none',
+                color: 'var(--text-on-accent)',
+                fontSize: '16px',
+                fontWeight: 600,
+                fontFamily: 'var(--font-display)',
+                cursor: 'pointer',
+                boxShadow: '0 0 20px var(--accent-primary-dim)',
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Users size={16} />
+              {t.overview.getStarted}
+            </motion.button>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
 
   if (!ready) {
     return (

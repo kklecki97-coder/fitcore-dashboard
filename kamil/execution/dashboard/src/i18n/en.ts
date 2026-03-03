@@ -108,6 +108,9 @@ export const en = {
     insightRevenueUp: (pct: number) => `Revenue up ${pct}% vs last month`,
     insightRevenueDown: (pct: number) => `Revenue down ${pct}% vs last month`,
     insightPrograms: (n: number) => `${n} active program${n === 1 ? '' : 's'} running`,
+    welcomeTitle: 'Welcome to FitCore',
+    welcomeSub: 'Add your first client to get started. Your dashboard will come alive with real data.',
+    getStarted: 'Add Your First Client',
   },
 
   clients: {
@@ -307,6 +310,8 @@ export const en = {
     onboarding: 'Onboarding',
     all: 'All',
     noConversationsFound: 'No conversations found',
+    noMessagesYet: 'No messages yet',
+    noMessagesSub: 'Messages from your clients will appear here.',
     tryDifferentSearch: 'Try a different search or channel filter',
     startConversation: 'Start the conversation',
     sendFirstMessage: (name: string) => `Send the first message to ${name}`,
@@ -485,6 +490,9 @@ export const en = {
     selectType: 'Select type...',
     sessionType: 'Session Type',
     addSessionAt: (time: string) => `Add Session at ${time}`,
+    noSessionsToday: 'No sessions scheduled today',
+    noSessionsSub: 'Click a time slot to add a session.',
+    noUpcomingCheckIns: 'No check-ins scheduled soon',
   },
 
   analytics: {
@@ -512,6 +520,8 @@ export const en = {
     checkInsLabel: 'Check-Ins',
     revenueLabel: 'Revenue',
     completion: 'Completion',
+    noDataYet: 'No analytics data yet',
+    noDataSub: 'Add clients and start tracking to see insights here.',
   },
 
   settings: {

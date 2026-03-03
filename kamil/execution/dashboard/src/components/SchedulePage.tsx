@@ -251,6 +251,16 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
               sessionsByHour[h].push(s);
             });
 
+            if (displaySessions.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-tertiary)' }}>
+                  <Clock size={32} color="var(--text-tertiary)" style={{ marginBottom: '12px' }} />
+                  <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>{t.schedule.noSessionsToday}</div>
+                  <div style={{ fontSize: '14px' }}>{t.schedule.noSessionsSub}</div>
+                </div>
+              );
+            }
+
             return (
               <div style={styles.timeGrid}>
                 {hours.map((hour, hi) => {
@@ -450,14 +460,24 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
               {(() => {
                 const nowMs = new Date().getTime();
                 const fiveDaysMs = 5 * 86400000;
-                return clients
+                const upcoming = clients
                   .filter(c => {
                     if (!c.nextCheckIn || c.nextCheckIn === '—') return false;
                     const diff = new Date(c.nextCheckIn).getTime() - nowMs;
                     return diff > 0 && diff <= fiveDaysMs;
                   })
-                  .sort((a, b) => a.nextCheckIn.localeCompare(b.nextCheckIn))
-                  .map((client, i) => {
+                  .sort((a, b) => a.nextCheckIn.localeCompare(b.nextCheckIn));
+
+                if (upcoming.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '24px 12px', color: 'var(--text-tertiary)' }}>
+                      <CheckCircle2 size={24} color="var(--text-tertiary)" style={{ marginBottom: '8px' }} />
+                      <div style={{ fontSize: '14px' }}>{t.schedule.noUpcomingCheckIns}</div>
+                    </div>
+                  );
+                }
+
+                return upcoming.map((client, i) => {
                     const daysLeft = Math.ceil((new Date(client.nextCheckIn).getTime() - nowMs) / 86400000);
                     return (
                       <motion.div

@@ -110,6 +110,9 @@ export const pl: Translations = {
     insightRevenueUp: (pct: number) => `Przychód wzrósł o ${pct}% vs ubiegły miesiąc`,
     insightRevenueDown: (pct: number) => `Przychód spadł o ${pct}% vs ubiegły miesiąc`,
     insightPrograms: (n: number) => `${n} aktywny${n === 1 ? '' : 'ch'} program${n === 1 ? '' : 'ów'}`,
+    welcomeTitle: 'Witaj w FitCore',
+    welcomeSub: 'Dodaj pierwszego klienta, aby rozpocząć. Dashboard ożyje z prawdziwymi danymi.',
+    getStarted: 'Dodaj pierwszego klienta',
   },
 
   clients: {
@@ -309,6 +312,8 @@ export const pl: Translations = {
     onboarding: 'Onboarding',
     all: 'Wszystkie',
     noConversationsFound: 'Nie znaleziono rozmów',
+    noMessagesYet: 'Brak wiadomości',
+    noMessagesSub: 'Wiadomości od klientów pojawią się tutaj.',
     tryDifferentSearch: 'Spróbuj innego wyszukiwania lub filtra kanału',
     startConversation: 'Rozpocznij rozmowę',
     sendFirstMessage: (name: string) => `Wyślij pierwszą wiadomość do ${name}`,
@@ -487,6 +492,9 @@ export const pl: Translations = {
     selectType: 'Wybierz typ...',
     sessionType: 'Typ Sesji',
     addSessionAt: (time: string) => `Dodaj Sesję o ${time}`,
+    noSessionsToday: 'Brak sesji na dziś',
+    noSessionsSub: 'Kliknij slot czasowy, aby dodać sesję.',
+    noUpcomingCheckIns: 'Brak zaplanowanych check-inów',
   },
 
   analytics: {
@@ -514,6 +522,8 @@ export const pl: Translations = {
     checkInsLabel: 'Check-Iny',
     revenueLabel: 'Przychód',
     completion: 'Ukończenie',
+    noDataYet: 'Brak danych analitycznych',
+    noDataSub: 'Dodaj klientów i zacznij śledzić, aby zobaczyć statystyki.',
   },
 
   settings: {

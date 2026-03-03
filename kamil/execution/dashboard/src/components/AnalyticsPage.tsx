@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import {
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
-  CreditCard, Target, Award, Dumbbell, ClipboardCheck, Activity,
+  CreditCard, Target, Award, Dumbbell, ClipboardCheck, Activity, BarChart3,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -185,6 +185,20 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
     fontSize: '18px',
   };
+
+  if (clients.length === 0) {
+    return (
+      <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', alignItems: 'center', justifyContent: 'center' }}>
+        <GlassCard delay={0.1}>
+          <div style={{ textAlign: 'center', padding: isMobile ? '32px 16px' : '48px 32px' }}>
+            <BarChart3 size={48} color="var(--accent-primary)" style={{ marginBottom: '16px' }} />
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{t.analytics.noDataYet}</h2>
+            <p style={{ fontSize: '15px', color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.6 }}>{t.analytics.noDataSub}</p>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>

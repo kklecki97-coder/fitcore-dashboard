@@ -298,7 +298,13 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
 
           {/* Conversation List */}
           <div style={styles.convList}>
-            {filteredConversations.length === 0 ? (
+            {messages.length === 0 ? (
+              <div style={styles.emptyState}>
+                <MessageSquare size={28} color="var(--text-tertiary)" />
+                <div style={styles.emptyTitle}>{t.messages.noMessagesYet}</div>
+                <div style={styles.emptySub}>{t.messages.noMessagesSub}</div>
+              </div>
+            ) : filteredConversations.length === 0 ? (
               <div style={styles.emptyState}>
                 <Search size={28} color="var(--text-tertiary)" />
                 <div style={styles.emptyTitle}>{t.messages.noConversationsFound}</div>
