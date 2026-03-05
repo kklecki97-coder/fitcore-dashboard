@@ -31,6 +31,9 @@ export default function RegisterPage() {
     if (!code) { setInvalidCode(true); setLoading(false); return; }
 
     const validate = async () => {
+      // Clear any stale session (e.g. from a previous failed registration)
+      await supabase.auth.signOut();
+
       const { data, error: fetchError } = await supabase
         .from('invite_codes')
         .select('coach_id, client_name, client_email, plan, used_by, expires_at')
