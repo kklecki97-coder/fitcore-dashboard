@@ -108,54 +108,54 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
     <div style={styles.page}>
       <h1 style={styles.pageTitle}>{s.title}</h1>
 
-      {/* ── Profile Card (full width) ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        style={{ ...styles.card, maxWidth: '600px', marginBottom: '20px' }}
-      >
-        <div style={styles.cardHeader}>
-          <User size={18} color="var(--accent-primary)" />
-          <span style={styles.cardTitle}>{s.profile}</span>
-        </div>
-
-        <div style={styles.field}>
-          <label style={styles.label}>{s.displayName}</label>
-          <input
-            type="text"
-            value={editName}
-            onChange={e => setEditName(e.target.value)}
-            style={styles.input}
-          />
-        </div>
-
-        <div style={styles.field}>
-          <label style={styles.label}>{s.email}</label>
-          <input
-            type="email"
-            value={client.email}
-            disabled
-            style={{ ...styles.input, opacity: 0.5, cursor: 'not-allowed' }}
-          />
-        </div>
-
-        <button
-          onClick={handleSaveProfile}
-          disabled={profileSaving || editName.trim() === client.name}
-          style={{
-            ...styles.btn,
-            opacity: (profileSaving || editName.trim() === client.name) ? 0.5 : 1,
-            cursor: (profileSaving || editName.trim() === client.name) ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {profileSaved ? (
-            <><CheckCircle size={14} /> {s.saved}</>
-          ) : profileSaving ? s.saving : s.save}
-        </button>
-      </motion.div>
-
       <div style={styles.grid}>
+        {/* ── Profile Card ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          style={styles.card}
+        >
+          <div style={styles.cardHeader}>
+            <User size={18} color="var(--accent-primary)" />
+            <span style={styles.cardTitle}>{s.profile}</span>
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>{s.displayName}</label>
+            <input
+              type="text"
+              value={editName}
+              onChange={e => setEditName(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>{s.email}</label>
+            <input
+              type="email"
+              value={client.email}
+              disabled
+              style={{ ...styles.input, opacity: 0.5, cursor: 'not-allowed' }}
+            />
+          </div>
+
+          <button
+            onClick={handleSaveProfile}
+            disabled={profileSaving || editName.trim() === client.name}
+            style={{
+              ...styles.btn,
+              opacity: (profileSaving || editName.trim() === client.name) ? 0.5 : 1,
+              cursor: (profileSaving || editName.trim() === client.name) ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {profileSaved ? (
+              <><CheckCircle size={14} /> {s.saved}</>
+            ) : profileSaving ? s.saving : s.save}
+          </button>
+        </motion.div>
+
         {/* ── Appearance Card ── */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -510,7 +510,7 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
 const styles: Record<string, React.CSSProperties> = {
   page: {
     padding: '28px 24px',
-    maxWidth: '900px',
+    maxWidth: '1100px',
   },
   pageTitle: {
     fontSize: '24px',
