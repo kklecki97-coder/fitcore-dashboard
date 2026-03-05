@@ -85,74 +85,56 @@ export default function RegisterPage() {
 
     setSubmitting(true);
 
-    // 1. Create auth user with role: client
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-      options: {
-        data: {
-          role: 'client',
-          name: name.trim(),
-        },
-      },
-    });
+    try {
+      // Call edge function to create auth user + client row (uses service role, bypasses RLS)
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/register-client`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            code,
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            password,
+          }),
+        }
+      );
 
-    if (signUpError) {
-      if (signUpError.message?.includes('already registered')) {
-        setError(t.register.emailExists);
-      } else {
-        setError(signUpError.message);
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        if (data.error === 'emailExists') {
+          setError(t.register.emailExists);
+        } else {
+          setError(data.error || t.register.genericError);
+        }
+        setSubmitting(false);
+        return;
       }
-      setSubmitting(false);
-      return;
-    }
 
-    const userId = signUpData.user?.id;
-    if (!userId) {
+      // Edge function created the user — now sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (signInError) {
+        setError(t.register.genericError);
+        setSubmitting(false);
+        return;
+      }
+
+      // Auto-login via onAuthStateChange — redirect to home
+      const prefix = lang === 'pl' ? '/pl' : '';
+      navigate(prefix + '/', { replace: true });
+    } catch {
       setError(t.register.genericError);
       setSubmitting(false);
-      return;
     }
-
-    // 2. Create client row linked to coach
-    const clientId = crypto.randomUUID();
-    const today = new Date().toISOString().split('T')[0];
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-
-    const { error: clientError } = await supabase.from('clients').insert({
-      id: clientId,
-      coach_id: invite.coach_id,
-      auth_user_id: userId,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      plan: invite.plan,
-      status: 'active',
-      start_date: today,
-      next_check_in: nextWeek.toISOString().split('T')[0],
-      monthly_rate: invite.plan === 'Elite' ? 299 : invite.plan === 'Premium' ? 199 : 99,
-      progress: 0,
-      streak: 0,
-      goals: [],
-      notes: '',
-    });
-
-    if (clientError) {
-      console.error('Failed to create client row:', clientError.message);
-      setError(t.register.genericError);
-      setSubmitting(false);
-      return;
-    }
-
-    // 3. Mark invite code as used
-    await supabase
-      .from('invite_codes')
-      .update({ used_by: clientId })
-      .eq('code', code);
-
-    // 4. Auto-login happens via onAuthStateChange — redirect to home
-    const prefix = lang === 'pl' ? '/pl' : '';
-    navigate(prefix + '/', { replace: true });
   };
 
   if (loading) {
