@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Palette, Shield, Moon, Sun, LogOut, CheckCircle, Lock } from 'lucide-react';
+import { User, Palette, Shield, Moon, Sun, LogOut, CheckCircle, Lock, Trash2, AlertTriangle, Loader2, X } from 'lucide-react';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 import type { Client, Theme } from '../types';
@@ -21,6 +21,13 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
   const [editName, setEditName] = useState(client.name);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
+
+  // Delete account
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Password
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -298,6 +305,20 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
 
           <div style={{ ...styles.divider, margin: '16px 0' }} />
 
+          {/* Delete Account */}
+          <div style={styles.deleteAccountRow}>
+            <div>
+              <div style={styles.deleteAccountLabel}>{s.deleteAccount}</div>
+              <div style={styles.deleteAccountDesc}>{s.deleteAccountDesc}</div>
+            </div>
+            <button style={styles.deleteAccountBtn} onClick={() => setShowDeleteModal(true)}>
+              <Trash2 size={13} />
+              {s.deleteAccount}
+            </button>
+          </div>
+
+          <div style={{ ...styles.divider, margin: '16px 0' }} />
+
           {/* Logout */}
           <div>
             <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
@@ -310,6 +331,178 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
           </div>
         </motion.div>
       </div>
+
+      {/* ── Delete Account Modal ── */}
+      {showDeleteModal && (
+        <div style={styles.modalOverlay}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            style={styles.modal}
+          >
+            <div style={styles.modalHeader}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--accent-danger)', margin: 0 }}>
+                {s.deleteAccount}
+              </h3>
+              <button
+                style={styles.closeBtn}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmEmail('');
+                  setDeleteError('');
+                  setDeleteFinalConfirm(false);
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={styles.modalBody}>
+              {!deleteFinalConfirm ? (
+                <>
+                  <div style={styles.deleteWarningBox}>
+                    <AlertTriangle size={20} color="var(--accent-danger)" />
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                        {s.actionPermanent}
+                      </div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        {s.deleteWarningDesc}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={styles.label}>
+                      {s.type} <strong>{client.email}</strong> {s.typeToConfirm}
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmEmail}
+                      onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                      placeholder={client.email}
+                      style={styles.input}
+                    />
+                  </div>
+
+                  <div style={styles.modalActions}>
+                    <button
+                      style={styles.btnGhost}
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setDeleteConfirmEmail('');
+                      }}
+                    >
+                      {s.cancel}
+                    </button>
+                    <button
+                      style={{
+                        ...styles.btn,
+                        background: 'var(--accent-danger)',
+                        opacity: deleteConfirmEmail === client.email ? 1 : 0.3,
+                        cursor: deleteConfirmEmail === client.email ? 'pointer' : 'not-allowed',
+                        boxShadow: deleteConfirmEmail === client.email ? '0 0 12px var(--accent-danger-dim)' : 'none',
+                      }}
+                      disabled={deleteConfirmEmail !== client.email}
+                      onClick={() => setDeleteFinalConfirm(true)}
+                    >
+                      <Trash2 size={14} />
+                      {s.yesDelete}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                    <AlertTriangle size={32} color="var(--accent-danger)" style={{ marginBottom: '12px' }} />
+                    <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                      {s.areYouSure}
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                      {s.finalDeleteWarning}
+                    </div>
+                  </div>
+
+                  {deleteError && (
+                    <div style={{ fontSize: '14px', color: 'var(--accent-danger)', fontWeight: 500, textAlign: 'center' }}>
+                      {deleteError}
+                    </div>
+                  )}
+
+                  <div style={styles.modalActions}>
+                    <button
+                      style={styles.btnGhost}
+                      disabled={deleteLoading}
+                      onClick={() => {
+                        setDeleteFinalConfirm(false);
+                        setDeleteError('');
+                      }}
+                    >
+                      {s.goBack}
+                    </button>
+                    <button
+                      style={{
+                        ...styles.btn,
+                        background: 'var(--accent-danger)',
+                        opacity: deleteLoading ? 0.5 : 1,
+                        cursor: deleteLoading ? 'not-allowed' : 'pointer',
+                        boxShadow: deleteLoading ? 'none' : '0 0 12px var(--accent-danger-dim)',
+                      }}
+                      disabled={deleteLoading}
+                      onClick={async () => {
+                        setDeleteLoading(true);
+                        setDeleteError('');
+                        try {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          if (!session) {
+                            setDeleteError(s.deleteErrorGeneric);
+                            setDeleteLoading(false);
+                            return;
+                          }
+
+                          const res = await fetch(
+                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-client-account`,
+                            {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${session.access_token}`,
+                                'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+                              },
+                              body: JSON.stringify({ confirmEmail: client.email }),
+                            }
+                          );
+
+                          const data = await res.json();
+                          if (!res.ok || !data.success) {
+                            setDeleteError(data.error || s.deleteErrorGeneric);
+                            setDeleteLoading(false);
+                            return;
+                          }
+
+                          await supabase.auth.signOut();
+                          window.location.href = '/';
+                        } catch {
+                          setDeleteError(s.deleteErrorGeneric);
+                          setDeleteLoading(false);
+                        }
+                      }}
+                    >
+                      {deleteLoading ? (
+                        <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                      ) : (
+                        <Trash2 size={14} />
+                      )}
+                      {deleteLoading ? s.deleting : s.deleteMyAccount}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
@@ -457,5 +650,94 @@ const styles: Record<string, React.CSSProperties> = {
   divider: {
     height: '1px',
     background: 'var(--glass-border)',
+  },
+  deleteAccountRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+  },
+  deleteAccountLabel: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'var(--accent-danger)',
+  },
+  deleteAccountDesc: {
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
+    marginTop: '2px',
+  },
+  deleteAccountBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(239,68,68,0.25)',
+    background: 'rgba(239,68,68,0.06)',
+    color: 'var(--accent-danger)',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 200,
+    padding: '20px',
+  },
+  modal: {
+    width: '100%',
+    maxWidth: '440px',
+    background: 'var(--bg-card)',
+    backdropFilter: 'blur(var(--glass-blur))',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-xl)',
+    boxShadow: 'var(--shadow-elevated)',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '20px 24px 0',
+  },
+  closeBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    border: 'none',
+    borderRadius: 'var(--radius-sm)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+  },
+  modalBody: {
+    padding: '20px 24px 24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  deleteWarningBox: {
+    display: 'flex',
+    gap: '12px',
+    padding: '14px',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--accent-danger-dim)',
+    border: '1px solid rgba(239,68,68,0.15)',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'flex-end',
+    marginTop: '4px',
   },
 };
