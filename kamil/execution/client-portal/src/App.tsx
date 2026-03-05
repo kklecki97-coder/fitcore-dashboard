@@ -10,6 +10,8 @@ import ProgramPage from './components/ProgramPage';
 import CheckInPage from './components/CheckInPage';
 import ProgressPage from './components/ProgressPage';
 import MessagesPage from './components/MessagesPage';
+import SettingsPage from './components/SettingsPage';
+import OnboardingPage from './components/OnboardingPage';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
@@ -183,10 +185,12 @@ function App() {
       monthlyRate: clientRow.monthly_rate ?? 0,
       progress: clientRow.progress ?? 0,
       metrics,
+      height: clientRow.height ?? null,
       goals: clientRow.goals ?? [],
       notes: clientRow.notes ?? '',
       lastActive: clientRow.last_active ?? '',
       streak: clientRow.streak ?? 0,
+      onboarded: clientRow.onboarded ?? false,
     };
     setClientUser(client);
 
@@ -693,6 +697,16 @@ function App() {
             clientName={clientUser.name}
           />
         );
+      case 'settings':
+        return (
+          <SettingsPage
+            client={clientUser}
+            theme={theme}
+            onThemeChange={setTheme}
+            onLogout={handleLogout}
+            onClientUpdate={(updates) => setClientUser(prev => prev ? { ...prev, ...updates } : null)}
+          />
+        );
       default:
         return null;
     }
@@ -729,6 +743,16 @@ function App() {
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={handleLogin} />;
+  }
+
+  // Show onboarding for first-time clients
+  if (clientUser && !clientUser.onboarded) {
+    return (
+      <OnboardingPage
+        client={clientUser}
+        onComplete={(updates) => setClientUser(prev => prev ? { ...prev, ...updates } : null)}
+      />
+    );
   }
 
   return (

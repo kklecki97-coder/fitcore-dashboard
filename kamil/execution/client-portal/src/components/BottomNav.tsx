@@ -1,4 +1,4 @@
-import { Home, Dumbbell, ClipboardCheck, TrendingUp, MessageSquare, LogOut } from 'lucide-react';
+import { Home, Dumbbell, ClipboardCheck, TrendingUp, MessageSquare, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
@@ -10,12 +10,13 @@ interface BottomNavProps {
   onLogout?: () => void;
 }
 
-const navIcons: Record<ClientPage, typeof Home> = {
+const navIcons: Record<string, typeof Home> = {
   home: Home,
   program: Dumbbell,
   'check-in': ClipboardCheck,
   progress: TrendingUp,
   messages: MessageSquare,
+  settings: Settings,
 };
 
 const navPages: ClientPage[] = ['home', 'program', 'check-in', 'progress', 'messages'];
@@ -23,12 +24,13 @@ const navPages: ClientPage[] = ['home', 'program', 'check-in', 'progress', 'mess
 export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout }: BottomNavProps) {
   const { t } = useLang();
 
-  const navLabels: Record<ClientPage, string> = {
+  const navLabels: Record<string, string> = {
     home: t.nav.home,
     program: t.nav.program,
     'check-in': t.nav.checkIn,
     progress: t.nav.progress,
     messages: t.nav.messages,
+    settings: t.nav.settings,
   };
 
   if (isMobile) {
@@ -64,9 +66,22 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
     );
   }
 
-  // Desktop: slim left sidebar
+  // Desktop: labeled left sidebar
   return (
     <nav style={styles.sideNav}>
+      {/* Logo */}
+      <div style={styles.logoWrap}>
+        <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 36, height: 36, borderRadius: '50%' }} />
+        <div>
+          <div style={styles.logoTitle}>FitCore</div>
+          <div style={styles.logoSub}>CLIENT PORTAL</div>
+        </div>
+      </div>
+
+      {/* Menu label */}
+      <div style={styles.menuLabel}>MENU</div>
+
+      {/* Nav items */}
       <div style={styles.sideNavItems}>
         {navPages.map((page) => {
           const active = currentPage === page;
@@ -75,14 +90,13 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
             <motion.button
               key={page}
               onClick={() => onNavigate(page)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.97 }}
               style={{
                 ...styles.sideItem,
                 color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
                 background: active ? 'var(--accent-primary-dim)' : 'transparent',
               }}
-              title={navLabels[page]}
             >
               {active && (
                 <motion.div
@@ -91,27 +105,62 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
-              <Icon size={20} />
+              <Icon size={20} style={{ opacity: active ? 1 : 0.5, flexShrink: 0 }} />
+              <span style={{ fontSize: '14px', fontWeight: active ? 600 : 500, opacity: active ? 1 : 0.6 }}>
+                {navLabels[page]}
+              </span>
             </motion.button>
           );
         })}
       </div>
 
-      {onLogout && (
+      {/* Bottom section: settings + logout */}
+      <div style={styles.bottomSection}>
+        <div style={styles.divider} />
+
+        {/* Settings */}
         <motion.button
-          onClick={onLogout}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
+          onClick={() => onNavigate('settings')}
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.97 }}
           style={{
             ...styles.sideItem,
-            color: 'var(--text-tertiary)',
-            background: 'transparent',
+            color: currentPage === 'settings' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            background: currentPage === 'settings' ? 'var(--accent-primary-dim)' : 'transparent',
           }}
-          title={t.nav.logOut}
         >
-          <LogOut size={18} />
+          {currentPage === 'settings' && (
+            <motion.div
+              layoutId="nav-indicator"
+              style={styles.activeBar}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <Settings size={20} style={{ opacity: currentPage === 'settings' ? 1 : 0.5, flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: currentPage === 'settings' ? 600 : 500, opacity: currentPage === 'settings' ? 1 : 0.6 }}>
+            {navLabels.settings}
+          </span>
         </motion.button>
-      )}
+
+        {/* Logout */}
+        {onLogout && (
+          <motion.button
+            onClick={onLogout}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              ...styles.sideItem,
+              color: 'var(--text-tertiary)',
+              background: 'transparent',
+            }}
+          >
+            <LogOut size={18} style={{ opacity: 0.5, flexShrink: 0 }} />
+            <span style={{ fontSize: '14px', fontWeight: 500, opacity: 0.6 }}>
+              {t.nav.logOut}
+            </span>
+          </motion.button>
+        )}
+      </div>
     </nav>
   );
 }
@@ -161,36 +210,63 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: '16px',
-    paddingBottom: '16px',
+    padding: '20px 12px 16px',
     background: 'var(--bg-secondary)',
     borderRight: '1px solid var(--glass-border)',
+  },
+  logoWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '0 8px',
+    marginBottom: '24px',
+  },
+  logoTitle: {
+    fontSize: '18px',
+    fontWeight: 700,
+    letterSpacing: '-0.5px',
+    color: 'var(--text-primary)',
+    lineHeight: 1.2,
+  },
+  logoSub: {
+    fontSize: '9px',
+    fontWeight: 600,
+    letterSpacing: '1.2px',
+    color: 'var(--accent-primary)',
+    textTransform: 'uppercase',
+  },
+  menuLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '1px',
+    color: 'var(--text-tertiary)',
+    padding: '0 8px',
+    marginBottom: '8px',
   },
   sideNavItems: {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    gap: '8px',
+    gap: '4px',
+    flex: 1,
   },
   sideItem: {
     position: 'relative',
-    width: '44px',
-    height: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 12px',
     borderRadius: 'var(--radius-md)',
     border: 'none',
     background: 'transparent',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     cursor: 'pointer',
     fontFamily: 'var(--font-display)',
     transition: 'all 0.15s',
+    textAlign: 'left',
+    width: '100%',
   },
   activeBar: {
     position: 'absolute',
-    left: '-2px',
+    left: '0px',
     top: '50%',
     transform: 'translateY(-50%)',
     width: '3px',
@@ -198,5 +274,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '0 3px 3px 0',
     background: 'var(--accent-primary)',
     boxShadow: '0 0 8px var(--accent-primary-glow)',
+  },
+  bottomSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  divider: {
+    height: '1px',
+    background: 'var(--glass-border)',
+    margin: '8px 0',
   },
 };

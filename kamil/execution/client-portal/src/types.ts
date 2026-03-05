@@ -16,10 +16,12 @@ export interface Client {
     squat: number[];
     deadlift: number[];
   };
+  height: number | null;
   goals: string[];
   notes: string;
   lastActive: string;
   streak: number;
+  onboarded: boolean;
 }
 
 export type MessageChannel = 'telegram' | 'whatsapp' | 'email' | 'instagram';
@@ -113,6 +115,6 @@ export interface WorkoutSetLog {
   rpe?: number | null;
 }
 
-export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages';
+export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings';
 
 export type Theme = 'dark' | 'light';

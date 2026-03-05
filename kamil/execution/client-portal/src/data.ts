@@ -19,10 +19,12 @@ export const clientUser: Client = {
     squat: [100, 105, 110, 115, 117.5, 120, 122.5],
     deadlift: [120, 125, 130, 135, 140, 142.5, 145],
   },
+  height: 178,
   goals: ['Drop to 80kg by April', 'Bench press 100kg', 'Improve sleep to 7+ hours', 'Run a 5K under 25 min'],
   notes: '',
   lastActive: '2 hours ago',
   streak: 12,
+  onboarded: true,
 };
 
 export const coachName = 'Coach Kamil';
