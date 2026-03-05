@@ -2,17 +2,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Save, Plus, Minus, Trash2, X, ChevronUp, ChevronDown,
-  Edit3, Clock, Users, Dumbbell, Check, Copy,
+  Edit3, Clock, Dumbbell, Check, Copy,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, WorkoutProgram, WorkoutDay, Exercise } from '../types';
+import type { WorkoutProgram, WorkoutDay, Exercise } from '../types';
 
 interface ProgramBuilderPageProps {
   program: WorkoutProgram | null;
-  clients: Client[];
   exerciseLibrary: string[];
   onSave: (program: WorkoutProgram) => void;
   onBack: () => void;
@@ -112,7 +110,7 @@ const emptyExercise = (): Exercise => ({
 });
 
 export default function ProgramBuilderPage({
-  program, clients, exerciseLibrary, onSave, onBack, backLabel,
+  program, exerciseLibrary, onSave, onBack, backLabel,
 }: ProgramBuilderPageProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
@@ -137,7 +135,6 @@ export default function ProgramBuilderPage({
   const [exerciseForm, setExerciseForm] = useState<Exercise>(emptyExercise());
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [assignModal, setAssignModal] = useState(false);
   const [renamingDay, setRenamingDay] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const suggestionsRef = useRef<HTMLDivElement>(null);
@@ -263,16 +260,6 @@ export default function ProgramBuilderPage({
     });
   };
 
-  // ── Client assignment ──
-  const toggleClient = (clientId: string) => {
-    setDraft(prev => ({
-      ...prev,
-      clientIds: prev.clientIds.includes(clientId)
-        ? prev.clientIds.filter(id => id !== clientId)
-        : [...prev.clientIds, clientId],
-    }));
-  };
-
   // ── Save ──
   const handleSave = () => {
     if (!draft.name.trim()) {
@@ -286,10 +273,6 @@ export default function ProgramBuilderPage({
   const filteredSuggestions = exerciseSearch.trim()
     ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(exerciseSearch.toLowerCase())).slice(0, 8)
     : [];
-
-  const assignedClients = draft.clientIds
-    .map(id => clients.find(c => c.id === id))
-    .filter(Boolean) as Client[];
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
@@ -341,26 +324,6 @@ export default function ProgramBuilderPage({
           </div>
         </div>
 
-        {/* Assigned Clients */}
-        <div style={styles.assignRow}>
-          <Users size={14} color="var(--text-tertiary)" />
-          {assignedClients.length > 0 ? (
-            <div style={styles.chipGroup}>
-              {assignedClients.map(c => (
-                <span key={c.id} style={styles.clientChip}>
-                  <span style={{ ...styles.chipAvatar, background: getAvatarColor(c.id) }}>{getInitials(c.name)}</span>
-                  {c.name}
-                  <button onClick={() => toggleClient(c.id)} style={styles.chipRemove}><X size={12} /></button>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span style={{ fontSize: '18px', color: 'var(--text-tertiary)' }}>No clients assigned</span>
-          )}
-          <button onClick={() => setAssignModal(true)} style={styles.assignBtn}>
-            <Plus size={13} /> {t.programBuilder.assignClients}
-          </button>
-        </div>
       </GlassCard>
 
       {/* Day Tabs */}
@@ -687,57 +650,6 @@ export default function ProgramBuilderPage({
         )}
       </AnimatePresence>
 
-      {/* ═══ Assign to Clients Modal ═══ */}
-      <AnimatePresence>
-        {assignModal && (
-          <motion.div style={styles.overlayCenter} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAssignModal(false)}>
-            <motion.div
-              style={{ ...styles.modalCentered, maxWidth: '440px' }}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>{t.programBuilder.assignClients}</h3>
-                <button onClick={() => setAssignModal(false)} style={styles.closeBtn}><X size={16} /></button>
-              </div>
-              <div style={{ ...styles.modalBody, maxHeight: '400px', overflowY: 'auto' }}>
-                {clients.filter(c => c.status === 'active').map(client => {
-                  const isAssigned = draft.clientIds.includes(client.id);
-                  return (
-                    <button
-                      key={client.id}
-                      onClick={() => toggleClient(client.id)}
-                      style={{
-                        ...styles.clientRow,
-                        background: isAssigned ? 'var(--accent-primary-dim)' : 'transparent',
-                        borderColor: isAssigned ? 'rgba(0, 229, 200, 0.15)' : 'var(--glass-border)',
-                      }}
-                    >
-                      <div style={{ ...styles.clientAvatar, background: getAvatarColor(client.id) }}>
-                        {getInitials(client.name)}
-                      </div>
-                      <div style={styles.clientInfo}>
-                        <span style={styles.clientName}>{client.name}</span>
-                        <span style={styles.clientPlan}>{client.plan}</span>
-                      </div>
-                      {isAssigned && (
-                        <div style={styles.checkCircle}><Check size={12} /></div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <div style={styles.modalActions}>
-                <button onClick={() => setAssignModal(false)} style={styles.primaryBtn}>
-                  Done
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

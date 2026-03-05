@@ -779,7 +779,6 @@ function App() {
         return (
           <ProgramBuilderPage
             program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : null}
-            clients={allClients}
             exerciseLibrary={exerciseLibrary}
             onSave={(program: WorkoutProgram) => {
               if (allPrograms.find(p => p.id === program.id)) {
