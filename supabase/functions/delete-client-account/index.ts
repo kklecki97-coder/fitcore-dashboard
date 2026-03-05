@@ -75,8 +75,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── 4. Delete the client's auth user ──
-    // DB cascades handle: clients row → check_ins, client_metrics, messages, etc.
+    // ── 4. Delete the clients row first ──
+    // auth_user_id FK is ON DELETE SET NULL, so we must delete the row explicitly.
+    // Child tables (check_ins, client_metrics, messages, etc.) cascade from clients.id.
+    const { error: rowDeleteError } = await supabaseAdmin
+      .from("clients")
+      .delete()
+      .eq("id", clientRow.id);
+
+    if (rowDeleteError) {
+      return new Response(JSON.stringify({ error: "Failed to delete client data: " + rowDeleteError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── 5. Delete the client's auth user ──
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(clientUser.id);
 
     if (deleteError) {
