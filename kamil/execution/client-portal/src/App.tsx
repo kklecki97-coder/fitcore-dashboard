@@ -15,7 +15,7 @@ import OnboardingPage from './components/OnboardingPage';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
-import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog } from './types';
+import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule } from './types';
 
 function App() {
   const { t } = useLang();
@@ -124,6 +124,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [setLogs, setSetLogs] = useState<WorkoutSetLog[]>([]);
+  const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
 
   // Fix #20: Longer toast duration (6s) and click-to-dismiss
@@ -382,6 +383,49 @@ function App() {
         completed: r.completed ?? false,
         rpe: r.rpe,
       })));
+    }
+
+    // Load weekly schedule
+    const nowDate = new Date();
+    const nowDow = nowDate.getDay(); // 0=Sun
+    const mondayOff = nowDow === 0 ? -6 : 1 - nowDow;
+    const thisMonday = new Date(nowDate);
+    thisMonday.setDate(nowDate.getDate() + mondayOff);
+    const weekStartStr = thisMonday.toISOString().split('T')[0];
+
+    const { data: schedRow } = await supabase
+      .from('weekly_schedule')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .eq('week_start', weekStartStr)
+      .maybeSingle();
+
+    if (schedRow) {
+      setWeeklySchedule({
+        id: schedRow.id,
+        clientId: schedRow.client_id,
+        weekStart: schedRow.week_start,
+        dayAssignments: schedRow.day_assignments ?? {},
+      });
+    } else {
+      // Try last week's schedule as default
+      const lastMonday = new Date(thisMonday);
+      lastMonday.setDate(thisMonday.getDate() - 7);
+      const lastWeekStr = lastMonday.toISOString().split('T')[0];
+
+      const { data: prevRow } = await supabase
+        .from('weekly_schedule')
+        .select('*')
+        .eq('client_id', clientRow.id)
+        .eq('week_start', lastWeekStr)
+        .maybeSingle();
+
+      setWeeklySchedule({
+        id: '',
+        clientId: clientRow.id,
+        weekStart: weekStartStr,
+        dayAssignments: prevRow?.day_assignments ?? {},
+      });
     }
 
     return true;
@@ -643,6 +687,82 @@ function App() {
     }
   };
 
+  const handleUpdateSchedule = async (assignments: Record<string, string>) => {
+    if (!clientUser) return;
+
+    // Compute this Monday
+    const nowDate = new Date();
+    const nowDow = nowDate.getDay();
+    const mondayOff = nowDow === 0 ? -6 : 1 - nowDow;
+    const thisMonday = new Date(nowDate);
+    thisMonday.setDate(nowDate.getDate() + mondayOff);
+    const weekStartStr = thisMonday.toISOString().split('T')[0];
+
+    // Optimistic update
+    const prev = weeklySchedule;
+    setWeeklySchedule(ws => ({
+      id: ws?.id ?? '',
+      clientId: clientUser.id,
+      weekStart: weekStartStr,
+      dayAssignments: assignments,
+    }));
+
+    const payload = {
+      client_id: clientUser.id,
+      week_start: weekStartStr,
+      day_assignments: assignments,
+    };
+
+    let data: any = null;
+    let error: any = null;
+
+    if (prev?.id) {
+      // Try update first
+      const res = await supabase
+        .from('weekly_schedule')
+        .update({ day_assignments: assignments })
+        .eq('id', prev.id)
+        .select()
+        .single();
+      data = res.data;
+      error = res.error;
+
+      // If update failed (row gone), fall back to insert
+      if (error) {
+        console.warn('weekly_schedule update failed, trying insert:', error);
+        const res2 = await supabase
+          .from('weekly_schedule')
+          .insert(payload)
+          .select()
+          .single();
+        data = res2.data;
+        error = res2.error;
+      }
+    } else {
+      // Insert new row
+      const res = await supabase
+        .from('weekly_schedule')
+        .insert(payload)
+        .select()
+        .single();
+      data = res.data;
+      error = res.error;
+    }
+
+    if (error) {
+      console.error('weekly_schedule save failed:', error);
+      setWeeklySchedule(prev);
+      showError('Failed to save schedule');
+    } else if (data) {
+      setWeeklySchedule({
+        id: data.id,
+        clientId: data.client_id,
+        weekStart: data.week_start,
+        dayAssignments: data.day_assignments ?? {},
+      });
+    }
+  };
+
   const renderPage = () => {
     if (!clientUser) return null;
 
@@ -657,6 +777,8 @@ function App() {
             messages={messages}
             coachName={coachName}
             onNavigate={setCurrentPage}
+            weeklySchedule={weeklySchedule}
+            onUpdateSchedule={handleUpdateSchedule}
           />
         );
       case 'program':
@@ -668,6 +790,7 @@ function App() {
             onRemoveLog={handleRemoveLog}
             onUpdateLog={handleUpdateLog}
             workoutLogs={workoutLogs}
+            weeklySchedule={weeklySchedule}
           />
         );
       case 'check-in':

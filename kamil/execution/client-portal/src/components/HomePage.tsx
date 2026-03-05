@@ -1,8 +1,9 @@
-import { Flame, Calendar, TrendingDown, Dumbbell, MessageSquare, ArrowRight, Send, ClipboardCheck, Target } from 'lucide-react';
+import { useState } from 'react';
+import { Flame, Calendar, TrendingDown, Dumbbell, MessageSquare, ArrowRight, Send, ClipboardCheck, Target, X, Check } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage } from '../types';
+import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage, WeeklySchedule } from '../types';
 
 interface HomePageProps {
   client: Client;
@@ -12,21 +13,27 @@ interface HomePageProps {
   messages: Message[];
   coachName: string;
   onNavigate: (page: ClientPage) => void;
+  weeklySchedule: WeeklySchedule | null;
+  onUpdateSchedule: (assignments: Record<string, string>) => void;
 }
 
-export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate }: HomePageProps) {
+export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule }: HomePageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
 
-  // ── Today's workout day (based on day-of-week, not completion count) ──
-  const todayDayIndex = (() => {
-    if (!program || program.days.length === 0) return 0;
-    const dayOfWeek = new Date().getDay(); // 0=Sun,1=Mon...6=Sat
-    // Map Mon–Sat to program days, Sunday = rest
-    const mondayBased = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon...6=Sun
-    return mondayBased % program.days.length;
+  // ── Day picker state ──
+  const [pickerDay, setPickerDay] = useState<number | null>(null);
+
+  // ── Today's workout day (schedule-aware) ──
+  const dayAssignments = weeklySchedule?.dayAssignments ?? {};
+  const todayMondayBased = (() => {
+    const dow = new Date().getDay(); // 0=Sun
+    return dow === 0 ? 6 : dow - 1; // 0=Mon...6=Sun
   })();
-  const todayWorkout = program?.days[todayDayIndex];
+  const todayAssignedId = dayAssignments[String(todayMondayBased)];
+  const todayWorkout = todayAssignedId && program
+    ? program.days.find(d => d.id === todayAssignedId) ?? null
+    : null;
 
   // ── Next check-in ──
   const nextCheckIn = checkIns.find(ci => ci.status === 'scheduled');
@@ -55,9 +62,19 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   monday.setDate(today.getDate() + mondayOffset);
   monday.setHours(0, 0, 0, 0);
 
-  // Build a schedule preview: for today & future, show the next workout name
   const todayStr = today.toISOString().split('T')[0];
-  let upcomingDayIdx = todayDayIndex;
+
+  // Assign or clear a workout for a calendar day
+  const handleAssignDay = (dayIdx: number, workoutDayId: string | null) => {
+    const updated = { ...dayAssignments };
+    if (workoutDayId) {
+      updated[String(dayIdx)] = workoutDayId;
+    } else {
+      delete updated[String(dayIdx)];
+    }
+    onUpdateSchedule(updated);
+    setPickerDay(null);
+  };
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
@@ -67,20 +84,17 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
     const isToday = dateStr === todayStr;
     const isPast = d < today && !isToday;
     const isFuture = d > today;
+    const assignedId = dayAssignments[String(i)];
+    const assignedDay = assignedId && program ? program.days.find(dd => dd.id === assignedId) : null;
 
-    // Show scheduled workout name for today and future days
     let scheduledName = '';
-    if ((isToday || isFuture) && program && program.days.length > 0 && !log) {
-      scheduledName = program.days[upcomingDayIdx % program.days.length].name
+    if (assignedDay) {
+      scheduledName = assignedDay.name
         .replace('Upper Body ', 'Upper ')
         .replace('Lower Body ', 'Lower ');
-      upcomingDayIdx++;
-    } else if (log) {
-      // If there's already a log for today, advance the index
-      if (isToday || isFuture) upcomingDayIdx++;
     }
 
-    return { day: t.home.weekDays[i], date: d.getDate(), dateStr, log, isToday, isPast, isFuture, scheduledName };
+    return { day: t.home.weekDays[i], date: d.getDate(), dateStr, log, isToday, isPast, isFuture, scheduledName, isTraining: !!assignedDay, dayIdx: i };
   });
 
   // ── Goal progress (parse from goal strings) ──
@@ -211,28 +225,39 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         </button>
       </div>
 
-      {/* ── Weekly Training Calendar ── */}
+      {/* ── Weekly Training Calendar (tap to assign) ── */}
       <GlassCard delay={0.1}>
+        {Object.keys(dayAssignments).length === 0 && program && (
+          <div style={styles.planPrompt}>{t.home.planYourWeek}</div>
+        )}
         <div style={styles.weekRow}>
           {weekDays.map(wd => {
             const completed = wd.log?.completed;
             const missed = wd.log && !wd.log.completed;
             const workoutLabel = wd.scheduledName || (wd.log ? wd.log.type.replace('Upper Body ', 'Upper ').replace('Lower Body ', 'Lower ') : '');
+            const isRest = !wd.isTraining && !wd.log;
 
             return (
-              <div key={wd.dateStr} style={{
-                ...styles.weekDay,
-                ...(wd.isToday ? styles.weekDayToday : {}),
-                ...(completed ? styles.weekDayDone : {}),
-                ...(missed ? styles.weekDayFail : {}),
-                opacity: wd.isPast && !wd.log ? 0.4 : 1,
-              }}>
+              <div
+                key={wd.dateStr}
+                onClick={() => program && setPickerDay(pickerDay === wd.dayIdx ? null : wd.dayIdx)}
+                style={{
+                  ...styles.weekDay,
+                  ...(wd.isTraining ? styles.weekDayTraining : {}),
+                  ...(wd.isToday ? styles.weekDayToday : {}),
+                  ...(completed ? styles.weekDayDone : {}),
+                  ...(missed ? styles.weekDayFail : {}),
+                  ...(pickerDay === wd.dayIdx ? { border: '1px solid var(--accent-primary)', boxShadow: '0 0 12px var(--accent-primary-dim)' } : {}),
+                  opacity: isRest && wd.isPast ? 0.3 : isRest ? 0.5 : 1,
+                  cursor: program ? 'pointer' : 'default',
+                }}
+              >
                 {/* Status bar top edge */}
                 <div style={{
                   ...styles.weekStatusBar,
                   background: completed ? 'var(--accent-success)' :
                               missed ? 'var(--accent-danger)' :
-                              wd.isToday ? 'var(--accent-primary)' : 'transparent',
+                              wd.isToday && wd.isTraining ? 'var(--accent-primary)' : 'transparent',
                 }} />
 
                 <div style={styles.weekDayLabel}>{wd.day}</div>
@@ -242,26 +267,72 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                   color: wd.isToday ? 'var(--accent-primary)' :
                          completed ? 'var(--accent-success)' :
                          missed ? 'var(--accent-danger)' :
-                         'var(--text-secondary)',
+                         wd.isTraining ? 'var(--text-primary)' :
+                         'var(--text-tertiary)',
                 }}>
                   {wd.date}
                 </div>
 
-                {/* Workout name tag */}
-                {workoutLabel && (
-                  <div style={{
-                    ...styles.weekWorkoutTag,
-                    color: completed ? 'var(--accent-success)' :
-                           wd.isToday ? 'var(--accent-primary)' :
-                           'var(--text-tertiary)',
-                  }}>
-                    {workoutLabel}
-                  </div>
-                )}
+                {/* Workout name tag or Rest */}
+                <div style={{
+                  ...styles.weekWorkoutTag,
+                  color: completed ? 'var(--accent-success)' :
+                         wd.isToday && wd.isTraining ? 'var(--accent-primary)' :
+                         wd.isTraining ? 'var(--text-secondary)' :
+                         'var(--text-tertiary)',
+                }}>
+                  {workoutLabel || (isRest ? t.home.rest : '')}
+                </div>
               </div>
             );
           })}
         </div>
+
+        {/* ── Workout picker dropdown ── */}
+        {pickerDay !== null && program && (
+          <div style={styles.pickerWrap}>
+            <div style={styles.pickerHeader}>
+              <span style={styles.pickerTitle}>{t.home.weekDays[pickerDay]}</span>
+              <button style={styles.pickerClose} onClick={() => setPickerDay(null)}>
+                <X size={14} />
+              </button>
+            </div>
+            <div style={styles.pickerOptions}>
+              {program.days.map(d => {
+                const isActive = dayAssignments[String(pickerDay)] === d.id;
+                const assignedElsewhere = !isActive && Object.values(dayAssignments).includes(d.id);
+                return (
+                  <button
+                    key={d.id}
+                    onClick={(e) => { e.stopPropagation(); handleAssignDay(pickerDay, isActive ? null : d.id); }}
+                    style={{
+                      ...styles.pickerOption,
+                      background: isActive ? 'var(--accent-primary)' : 'var(--bg-subtle)',
+                      color: isActive ? '#07090e' : 'var(--text-primary)',
+                      border: isActive ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+                    }}
+                  >
+                    {assignedElsewhere ? <Check size={12} strokeWidth={3} style={{ color: 'var(--accent-success)' }} /> : <Dumbbell size={12} />}
+                    {d.name.replace('Upper Body ', 'Upper ').replace('Lower Body ', 'Lower ')}
+                  </button>
+                );
+              })}
+              {dayAssignments[String(pickerDay)] && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAssignDay(pickerDay, null); }}
+                  style={{
+                    ...styles.pickerOption,
+                    color: 'var(--text-tertiary)',
+                    background: 'transparent',
+                    border: '1px solid var(--glass-border)',
+                  }}
+                >
+                  {t.home.rest}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </GlassCard>
 
       {/* ── Goal Progress ── */}
@@ -528,6 +599,10 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
     transition: 'all 0.2s',
   },
+  weekDayTraining: {
+    background: 'rgba(0,229,200,0.04)',
+    border: '1px solid rgba(0,229,200,0.15)',
+  },
   weekDayToday: {
     background: 'rgba(0,229,200,0.08)',
     border: '1px solid rgba(0,229,200,0.25)',
@@ -560,6 +635,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-mono)',
     lineHeight: 1,
   },
+  planPrompt: {
+    fontSize: '12px',
+    fontWeight: 500,
+    color: 'var(--accent-primary)',
+    textAlign: 'center',
+    marginBottom: '10px',
+    opacity: 0.8,
+  },
   weekWorkoutTag: {
     fontSize: '9px',
     fontWeight: 600,
@@ -571,6 +654,54 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
     letterSpacing: '0.2px',
     textTransform: 'uppercase',
+  },
+  pickerWrap: {
+    marginTop: '12px',
+    padding: '12px',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--bg-subtle)',
+    border: '1px solid var(--glass-border)',
+  },
+  pickerHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '10px',
+  },
+  pickerTitle: {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  pickerClose: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '24px',
+    height: '24px',
+    border: 'none',
+    borderRadius: 'var(--radius-sm)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+  },
+  pickerOptions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+  },
+  pickerOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    borderRadius: 'var(--radius-sm)',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    whiteSpace: 'nowrap',
   },
 
   // ── Stats Row ──

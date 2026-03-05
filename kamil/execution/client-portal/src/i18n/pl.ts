@@ -98,6 +98,8 @@ export const pl: Translations = {
     yesterday: 'Wczoraj',
     dAgo: (d: number) => `${d} dn. temu`,
     weekDays: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'] as readonly string[],
+    planYourWeek: 'Wybierz dni treningowe na ten tydzień',
+    rest: 'Odpoczynek',
   },
 
   program: {

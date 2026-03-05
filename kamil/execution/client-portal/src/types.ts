@@ -115,6 +115,13 @@ export interface WorkoutSetLog {
   rpe?: number | null;
 }
 
+export interface WeeklySchedule {
+  id: string;
+  clientId: string;
+  weekStart: string;       // YYYY-MM-DD (Monday)
+  dayAssignments: Record<string, string>;  // { "0": "workout-day-id", "2": "workout-day-id" } — key is 0=Mon..6=Sun
+}
+
 export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings';
 
 export type Theme = 'dark' | 'light';

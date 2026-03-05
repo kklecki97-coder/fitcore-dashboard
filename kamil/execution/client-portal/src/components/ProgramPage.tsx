@@ -3,7 +3,7 @@ import { CheckCircle2, Circle, Clock, Dumbbell, ChevronDown, ChevronUp, Timer, Z
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { WorkoutProgram, WorkoutSetLog, WorkoutLog } from '../types';
+import type { WorkoutProgram, WorkoutSetLog, WorkoutLog, WeeklySchedule } from '../types';
 
 interface ProgramPageProps {
   program: WorkoutProgram | null;
@@ -12,18 +12,26 @@ interface ProgramPageProps {
   onRemoveLog: (exerciseId: string, setNumber: number, date: string) => void;
   onUpdateLog: (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => void;
   workoutLogs: WorkoutLog[];
+  weeklySchedule: WeeklySchedule | null;
 }
 
-export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs: _workoutLogs }: ProgramPageProps) {
+export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs: _workoutLogs, weeklySchedule }: ProgramPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
 
-  // ── Compute today's workout day index (based on day-of-week, not completion count) ──
+  // ── Compute today's workout day index (schedule-aware) ──
+  const dayAssignments = weeklySchedule?.dayAssignments ?? {};
   const todayDayIndex = (() => {
     if (!program || program.days.length === 0) return 0;
-    const dayOfWeek = new Date().getDay(); // 0=Sun,1=Mon...6=Sat
+    const dayOfWeek = new Date().getDay(); // 0=Sun
     const mondayBased = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon...6=Sun
-    return mondayBased % program.days.length;
+    const assignedId = dayAssignments[String(mondayBased)];
+    if (assignedId) {
+      const idx = program.days.findIndex(d => d.id === assignedId);
+      if (idx >= 0) return idx;
+    }
+    // No assignment for today — default to first program day
+    return 0;
   })();
 
   const [selectedDay, setSelectedDay] = useState(todayDayIndex);
@@ -61,6 +69,13 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
 
   const day = program.days[selectedDay];
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // Can only log sets for today's assigned workout
+  const isTodaysWorkout = selectedDay === todayDayIndex && (() => {
+    const dow = new Date().getDay();
+    const mondayBased = dow === 0 ? 6 : dow - 1;
+    return !!dayAssignments[String(mondayBased)];
+  })();
 
   // Fix #12: Guard against undefined day
   if (!day) {
@@ -243,13 +258,17 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                             <span style={styles.setLabel}>{t.program.set(setNum)}</span>
                             <span style={styles.setTarget}>{exercise.reps} × {exercise.weight}</span>
                             <button
+                              disabled={!isTodaysWorkout}
                               style={{
                                 ...styles.setCheckBtn,
                                 background: completed ? 'var(--accent-success-dim)' : 'transparent',
                                 borderColor: completed ? 'var(--accent-success)' : 'var(--glass-border)',
                                 color: completed ? 'var(--accent-success)' : 'var(--text-tertiary)',
+                                opacity: isTodaysWorkout ? 1 : 0.3,
+                                cursor: isTodaysWorkout ? 'pointer' : 'not-allowed',
                               }}
                               onClick={() => {
+                                if (!isTodaysWorkout) return;
                                 if (completed) {
                                   onRemoveLog(exercise.id, setNum, todayStr);
                                 } else {
@@ -291,6 +310,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                                   return (
                                     <button
                                       key={val}
+                                      disabled={!isTodaysWorkout}
                                       style={{
                                         ...styles.rpePill,
                                         background: isSelected
@@ -302,10 +322,15 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                                         color: isSelected
                                           ? val >= 9 ? 'var(--accent-danger)' : 'var(--accent-primary)'
                                           : 'var(--text-tertiary)',
+                                        opacity: isTodaysWorkout ? 1 : 0.3,
+                                        cursor: isTodaysWorkout ? 'pointer' : 'not-allowed',
                                       }}
-                                      onClick={() => onUpdateLog(exercise.id, setNum, todayStr, {
-                                        rpe: isSelected ? null : val,
-                                      })}
+                                      onClick={() => {
+                                        if (!isTodaysWorkout) return;
+                                        onUpdateLog(exercise.id, setNum, todayStr, {
+                                          rpe: isSelected ? null : val,
+                                        });
+                                      }}
                                     >
                                       {val}
                                     </button>
