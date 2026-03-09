@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, CheckCheck } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { Message } from '../types';
 
@@ -15,14 +15,13 @@ interface MessagesPageProps {
 export default function MessagesPage({ messages, onSendMessage, coachName, clientId, clientName }: MessagesPageProps) {
   const { t, lang } = useLang();
   const [newMessage, setNewMessage] = useState('');
-  const [isCoachTyping, setIsCoachTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const sorted = [...messages].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, isCoachTyping]);
+  }, [messages.length]);
 
   const handleSend = () => {
     if (!newMessage.trim()) return;
@@ -39,9 +38,6 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
     };
     onSendMessage(msg);
     setNewMessage('');
-    // Simulate coach typing indicator briefly
-    setTimeout(() => setIsCoachTyping(true), 1200);
-    setTimeout(() => setIsCoachTyping(false), 3500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -134,28 +130,6 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
             ))}
           </div>
         ))}
-        {/* Typing indicator */}
-        <AnimatePresence>
-          {isCoachTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              style={{ ...styles.msgRow, justifyContent: 'flex-start' }}
-            >
-              <div style={{ ...styles.msgBubble, background: 'var(--bg-elevated)', borderColor: 'var(--glass-border)', padding: '12px 18px' }}>
-                <div style={styles.typingDots}>
-                  {[0, 1, 2].map(i => (
-                    <span key={i} style={{
-                      ...styles.typingDot,
-                      animationDelay: `${i * 0.15}s`,
-                    }} />
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
 

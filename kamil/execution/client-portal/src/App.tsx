@@ -57,6 +57,15 @@ function App() {
 
   const handleLogout = async () => {
     try { sessionStorage.removeItem('fitcore-client-page'); } catch { /* ignore */ }
+    // Clear all data state so stale data doesn't flash on next login
+    setClientUser(null);
+    setCoachName('');
+    setMyProgram(null);
+    setSetLogs([]);
+    setWorkoutLogs([]);
+    setCheckIns([]);
+    setMessages([]);
+    setWeeklySchedule(null);
     await supabase.auth.signOut();
   };
 
