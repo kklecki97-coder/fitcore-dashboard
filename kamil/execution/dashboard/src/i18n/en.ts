@@ -443,6 +443,8 @@ export const en = {
     paid: 'Paid',
     createInvoice: 'Create Invoice',
     markAsPaid: 'Mark as Paid',
+    paymentLink: 'Pay Link',
+    linkCopied: 'Copied!',
     sendReminder: 'Send Reminder',
     remind: 'Remind',
     newInvoice: 'New Invoice',

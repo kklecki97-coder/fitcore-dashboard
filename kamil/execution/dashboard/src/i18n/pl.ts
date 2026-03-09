@@ -445,6 +445,8 @@ export const pl: Translations = {
     paid: 'Opłacona',
     createInvoice: 'Utwórz Fakturę',
     markAsPaid: 'Oznacz jako Opłacone',
+    paymentLink: 'Link do płatności',
+    linkCopied: 'Skopiowano!',
     sendReminder: 'Wyślij Przypomnienie',
     remind: 'Przypomnij',
     newInvoice: 'Nowa Faktura',

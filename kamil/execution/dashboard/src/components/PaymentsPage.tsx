@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, CheckCircle2, Clock, AlertTriangle,
   Search, Filter, Send, X, ChevronDown, ChevronUp, MessageSquare,
-  TrendingUp, TrendingDown,
+  TrendingUp, TrendingDown, ExternalLink, Loader2, Copy, Check,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
@@ -92,6 +92,37 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
 
   const handleMarkPaid = (id: string) => {
     onUpdateInvoice(id, { status: 'paid', paidDate: new Date().toISOString().split('T')[0] });
+  };
+
+  const [paymentLinkLoading, setPaymentLinkLoading] = useState<string | null>(null);
+  const [paymentLinkUrl, setPaymentLinkUrl] = useState<{ id: string; url: string } | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleGetPaymentLink = async (inv: Invoice) => {
+    setPaymentLinkLoading(inv.id);
+    try {
+      const res = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoiceId: inv.id,
+          amount: inv.amount,
+          clientName: inv.clientName,
+          plan: inv.plan,
+          period: inv.period,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        setPaymentLinkUrl({ id: inv.id, url: data.url });
+        navigator.clipboard.writeText(data.url).catch(() => {});
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 3000);
+      }
+    } catch (err) {
+      console.error('Payment link error:', err);
+    }
+    setPaymentLinkLoading(null);
   };
 
   const handleCreateInvoice = () => {
@@ -305,20 +336,46 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                       </div>
                     </div>
                     {inv.status !== 'paid' && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {inv.status === 'overdue' && (
-                          <button
-                            onClick={() => setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id })}
-                            style={{ ...styles.markPaidBtn, background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.15)', color: 'var(--accent-danger)', flex: 1 }}
-                          >
-                            <MessageSquare size={13} />
-                            {t.payments.remind}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {inv.status === 'overdue' && (
+                            <button
+                              onClick={() => setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id })}
+                              style={{ ...styles.markPaidBtn, background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.15)', color: 'var(--accent-danger)', flex: 1 }}
+                            >
+                              <MessageSquare size={13} />
+                              {t.payments.remind}
+                            </button>
+                          )}
+                          <button onClick={() => handleMarkPaid(inv.id)} style={{ ...styles.markPaidBtn, flex: 1 }}>
+                            <CheckCircle2 size={13} />
+                            {t.payments.markAsPaid}
                           </button>
-                        )}
-                        <button onClick={() => handleMarkPaid(inv.id)} style={{ ...styles.markPaidBtn, flex: 1 }}>
-                          <CheckCircle2 size={13} />
-                          {t.payments.markAsPaid}
+                        </div>
+                        <button
+                          onClick={() => handleGetPaymentLink(inv)}
+                          disabled={paymentLinkLoading === inv.id}
+                          style={{ ...styles.markPaidBtn, background: 'rgba(0,229,200,0.08)', borderColor: 'rgba(0,229,200,0.15)', color: 'var(--accent-primary)' }}
+                        >
+                          {paymentLinkLoading === inv.id ? <Loader2 size={13} className="spin" /> : <ExternalLink size={13} />}
+                          {t.payments.paymentLink ?? 'Payment Link'}
                         </button>
+                        {paymentLinkUrl?.id === inv.id && (
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <input
+                              readOnly
+                              value={paymentLinkUrl.url}
+                              style={{ ...styles.searchInput, flex: 1, fontSize: '11px', padding: '6px 8px' }}
+                              onClick={(e) => (e.target as HTMLInputElement).select()}
+                            />
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(paymentLinkUrl.url); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}
+                              style={{ ...styles.markPaidBtn, padding: '6px 10px' }}
+                            >
+                              {linkCopied ? <Check size={12} /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -360,10 +417,20 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                         </button>
                       )}
                       {inv.status !== 'paid' ? (
-                        <button onClick={(e) => { e.stopPropagation(); handleMarkPaid(inv.id); }} style={styles.markPaidBtnSmall}>
-                          <CheckCircle2 size={12} />
-                          {t.payments.markAsPaid}
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleGetPaymentLink(inv); }}
+                            disabled={paymentLinkLoading === inv.id}
+                            style={{ ...styles.markPaidBtnSmall, color: 'var(--accent-primary)', borderColor: 'rgba(0,229,200,0.2)' }}
+                          >
+                            {paymentLinkLoading === inv.id ? <Loader2 size={12} className="spin" /> : <ExternalLink size={12} />}
+                            {t.payments.paymentLink ?? 'Pay Link'}
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); handleMarkPaid(inv.id); }} style={styles.markPaidBtnSmall}>
+                            <CheckCircle2 size={12} />
+                            {t.payments.markAsPaid}
+                          </button>
+                        </>
                       ) : (
                         <span style={styles.paidDateLabel}>
                           <CheckCircle2 size={12} />
