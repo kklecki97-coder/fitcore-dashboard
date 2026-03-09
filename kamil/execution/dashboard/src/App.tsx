@@ -28,21 +28,36 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
+  const [needsMfa, setNeedsMfa] = useState(false);
+
+  // Check if session meets AAL requirements (MFA verified if enrolled)
+  const checkAal = async (hasSession: boolean) => {
+    if (!hasSession) { setIsLoggedIn(false); setNeedsMfa(false); return; }
+    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (data && data.currentLevel === 'aal1' && data.nextLevel === 'aal2') {
+      // MFA enrolled but not yet verified this session
+      setIsLoggedIn(false);
+      setNeedsMfa(true);
+    } else {
+      setIsLoggedIn(hasSession);
+      setNeedsMfa(false);
+    }
+  };
 
   // ── Auth: listen to Supabase session ──
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session);
-      setAuthLoading(false);
+      checkAal(!!session).then(() => setAuthLoading(false));
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
+      checkAal(!!session);
     });
     return () => subscription.unsubscribe();
   }, []);
 
   const handleLogin = (_remember: boolean) => {
-    // Session is handled by Supabase — onAuthStateChange fires automatically
+    // Re-check AAL after login/MFA verification
+    checkAal(true);
   };
 
   const handleLogout = async () => {
@@ -83,11 +98,14 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    // Load profile from auth user
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Load profile from auth user + coaches table
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setProfileEmail(user.email ?? '');
         setProfileName(user.user_metadata?.name ?? user.email?.split('@')[0] ?? '');
+        // Load avatar from coaches table
+        const { data: coach } = await supabase.from('coaches').select('avatar_url').eq('id', user.id).maybeSingle();
+        if (coach?.avatar_url) setProfilePhoto(coach.avatar_url);
       }
     });
 
@@ -297,6 +315,7 @@ function App() {
   // Settings state — loaded from Supabase auth user
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [notifications, setNotifications] = useState({
     messages: true,
     checkins: true,
@@ -727,7 +746,7 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
       case 'clients':
         return (
           <ClientsPage
@@ -832,12 +851,24 @@ function App() {
                 await supabase.from('coaches').update({ name }).eq('id', user.id);
               }
             }}
+            profilePhoto={profilePhoto}
+            onPhotoChange={async (file: File) => {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user) return;
+              const path = `avatars/${user.id}`;
+              const { error: uploadErr } = await supabase.storage.from('coach-avatars').upload(path, file, { upsert: true });
+              if (uploadErr) { console.error('Photo upload failed:', uploadErr); return; }
+              const { data: urlData } = supabase.storage.from('coach-avatars').getPublicUrl(path);
+              const url = urlData.publicUrl + '?t=' + Date.now(); // cache-bust
+              await supabase.from('coaches').update({ avatar_url: url }).eq('id', user.id);
+              setProfilePhoto(url);
+            }}
             notifications={notifications}
             onNotificationsChange={setNotifications}
           />
         );
       default:
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
     }
   };
 

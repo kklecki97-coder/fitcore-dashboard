@@ -21,11 +21,13 @@ interface SettingsPageProps {
   profileName: string;
   profileEmail: string;
   onProfileChange: (name: string, email: string) => void;
+  profilePhoto: string | null;
+  onPhotoChange: (file: File) => void;
   notifications: Notifications;
   onNotificationsChange: (n: Notifications) => void;
 }
 
-export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, notifications, onNotificationsChange }: SettingsPageProps) {
+export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, notifications, onNotificationsChange }: SettingsPageProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
 
@@ -43,27 +45,36 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true);
-  const [tfaStep, setTfaStep] = useState<'overview' | 'setup' | 'verify' | 'backup'>('overview');
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [tfaStep, setTfaStep] = useState<'overview' | 'setup' | 'verify'>('overview');
   const [tfaCode, setTfaCode] = useState('');
   const [tfaError, setTfaError] = useState('');
-  const [copiedBackup, setCopiedBackup] = useState(false);
+  const [tfaLoading, setTfaLoading] = useState(false);
+  const [tfaQrSvg, setTfaQrSvg] = useState('');
+  const [tfaSecret, setTfaSecret] = useState('');
+  const [tfaFactorId, setTfaFactorId] = useState('');
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
 
-  const DEMO_BACKUP_CODES = ['A7K2-M9X1', 'B3P5-R8L4', 'C6W0-T2N7', 'D1F8-Q5J3', 'E4H6-Y9V2', 'F0S3-U7G8'];
-
-  // Profile photo state
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  // Load real MFA status on mount
+  useState(() => {
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      if (data?.totp && data.totp.length > 0) {
+        const verified = data.totp.find(f => f.status === 'verified');
+        if (verified) {
+          setTwoFactorEnabled(true);
+          setTfaFactorId(verified.id);
+        }
+      }
+    });
+  });
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setProfilePhoto(reader.result as string);
-    reader.readAsDataURL(file);
+    onPhotoChange(file);
   };
 
   // Integrations state
@@ -962,29 +973,42 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                         </p>
                         <div style={styles.modalActions}>
                           {twoFactorEnabled ? (
-                            <>
-                              <button style={styles.cancelBtn} onClick={() => setTfaStep('backup')}>
-                                {t.settings.viewBackupCodes}
-                              </button>
-                              <button
-                                style={{ ...styles.saveBtn, background: 'var(--accent-danger)', boxShadow: '0 0 12px var(--accent-danger-dim)' }}
-                                onClick={() => {
-                                  setTwoFactorEnabled(false);
-                                  setSecurityModal(null);
-                                  setTfaStep('overview');
-                                }}
-                              >
-                                {t.settings.disable2FA}
-                              </button>
-                            </>
+                            <button
+                              style={{ ...styles.saveBtn, background: 'var(--accent-danger)', boxShadow: '0 0 12px var(--accent-danger-dim)' }}
+                              disabled={tfaLoading}
+                              onClick={async () => {
+                                if (!tfaFactorId) return;
+                                setTfaLoading(true);
+                                const { error } = await supabase.auth.mfa.unenroll({ factorId: tfaFactorId });
+                                setTfaLoading(false);
+                                if (error) { setTfaError(error.message); return; }
+                                setTwoFactorEnabled(false);
+                                setTfaFactorId('');
+                                setSecurityModal(null);
+                                setTfaStep('overview');
+                              }}
+                            >
+                              {tfaLoading ? <Loader2 size={14} className="spin" /> : t.settings.disable2FA}
+                            </button>
                           ) : (
                             <>
                               <button style={styles.cancelBtn} onClick={() => setSecurityModal(null)}>{t.settings.cancel}</button>
                               <button
                                 style={{ ...styles.saveBtn, background: 'var(--accent-success)', boxShadow: '0 0 12px var(--accent-success-dim)' }}
-                                onClick={() => setTfaStep('setup')}
+                                disabled={tfaLoading}
+                                onClick={async () => {
+                                  setTfaLoading(true);
+                                  setTfaError('');
+                                  const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+                                  setTfaLoading(false);
+                                  if (error || !data) { setTfaError(error?.message ?? 'Enrollment failed'); return; }
+                                  setTfaFactorId(data.id);
+                                  setTfaQrSvg(data.totp.qr_code);
+                                  setTfaSecret(data.totp.secret);
+                                  setTfaStep('setup');
+                                }}
                               >
-                                {t.settings.enable2FA}
+                                {tfaLoading ? <Loader2 size={14} className="spin" /> : t.settings.enable2FA}
                               </button>
                             </>
                           )}
@@ -999,24 +1023,13 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           {t.settings.scanQrCode}
                         </p>
                         <div style={styles.qrPlaceholder}>
-                          <div style={styles.qrGrid}>
-                            {Array.from({ length: 64 }).map((_, i) => (
-                              <div key={i} style={{
-                                width: '8px', height: '8px',
-                                background: [0,1,2,5,6,7,8,15,16,23,24,31,32,39,40,47,48,55,56,57,58,61,62,63,
-                                  3,11,19,27,35,43,51,4,12,20,28,36,44,52,9,17,25,33,41,49,
-                                  14,22,30,38,46,54,10,18,26,34,42,50,13,21,29,37,45,53].includes(i)
-                                  ? 'var(--text-primary)' : 'transparent',
-                                borderRadius: '1px',
-                              }} />
-                            ))}
-                          </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
-                            FITC-DEMO-XXXX-XXXX
+                          <img src={tfaQrSvg} alt="QR Code" style={{ width: '180px', height: '180px', borderRadius: '8px' }} />
+                          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '8px', fontFamily: 'var(--font-mono)', wordBreak: 'break-all', textAlign: 'center' }}>
+                            {tfaSecret}
                           </div>
                         </div>
                         <div style={styles.modalActions}>
-                          <button style={styles.cancelBtn} onClick={() => setTfaStep('overview')}>{t.settings.back}</button>
+                          <button style={styles.cancelBtn} onClick={() => { setTfaStep('overview'); setTfaQrSvg(''); setTfaSecret(''); }}>{t.settings.back}</button>
                           <button style={styles.saveBtn} onClick={() => setTfaStep('verify')}>
                             {t.settings.nextVerifyCode}
                           </button>
@@ -1055,51 +1068,28 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           <button style={styles.cancelBtn} onClick={() => { setTfaStep('setup'); setTfaCode(''); setTfaError(''); }}>{t.settings.back}</button>
                           <button
                             style={{ ...styles.saveBtn, opacity: tfaCode.length === 6 ? 1 : 0.4 }}
-                            onClick={() => {
+                            disabled={tfaLoading || tfaCode.length !== 6}
+                            onClick={async () => {
                               if (tfaCode.length !== 6) { setTfaError(t.settings.enter6DigitError); return; }
-                              // TODO: Replace with API verification
+                              setTfaLoading(true);
+                              const challenge = await supabase.auth.mfa.challenge({ factorId: tfaFactorId });
+                              if (challenge.error) { setTfaError(challenge.error.message); setTfaLoading(false); return; }
+                              const verify = await supabase.auth.mfa.verify({
+                                factorId: tfaFactorId,
+                                challengeId: challenge.data.id,
+                                code: tfaCode,
+                              });
+                              setTfaLoading(false);
+                              if (verify.error) { setTfaError(t.settings.invalidCode ?? 'Invalid code. Please try again.'); return; }
                               setTwoFactorEnabled(true);
                               setTfaCode('');
-                              setTfaStep('backup');
+                              setTfaQrSvg('');
+                              setTfaSecret('');
+                              setSecurityModal(null);
+                              setTfaStep('overview');
                             }}
                           >
-                            {t.settings.verifyAndEnable}
-                          </button>
-                        </div>
-                      </>
-                    )}
-
-                    {/* Step 4: Backup Codes */}
-                    {tfaStep === 'backup' && (
-                      <>
-                        <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
-                          {t.settings.saveBackupCodesDesc}
-                        </p>
-                        <div style={styles.backupCodesBox}>
-                          <div style={styles.backupCodesGrid}>
-                            {DEMO_BACKUP_CODES.map((code) => (
-                              <div key={code} style={styles.backupCode}>{code}</div>
-                            ))}
-                          </div>
-                          <button
-                            style={styles.copyCodesBtn}
-                            onClick={() => {
-                              navigator.clipboard.writeText(DEMO_BACKUP_CODES.join('\n'));
-                              setCopiedBackup(true);
-                              setTimeout(() => setCopiedBackup(false), 2000);
-                            }}
-                          >
-                            <Copy size={13} />
-                            {copiedBackup ? t.settings.copied : t.settings.copyAll}
-                          </button>
-                        </div>
-                        <div style={styles.modalActions}>
-                          <button style={styles.saveBtn} onClick={() => {
-                            setSecurityModal(null);
-                            setTfaStep('overview');
-                            setCopiedBackup(false);
-                          }}>
-                            {t.settings.done}
+                            {tfaLoading ? <Loader2 size={14} className="spin" /> : t.settings.verifyAndEnable}
                           </button>
                         </div>
                       </>

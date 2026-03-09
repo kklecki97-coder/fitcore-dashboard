@@ -21,7 +21,7 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, Message, WorkoutProgram, Invoice } from '../types';
+import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, CheckIn } from '../types';
 
 const QUOTE_AUTHORS = [
   'Unknown',
@@ -41,11 +41,13 @@ interface OverviewPageProps {
   messages: Message[];
   programs: WorkoutProgram[];
   invoices: Invoice[];
+  workoutLogs: WorkoutLog[];
+  checkIns: CheckIn[];
   onViewClient: (id: string) => void;
   onNavigate: (page: 'messages' | 'clients') => void;
 }
 
-export default function OverviewPage({ clients, messages, programs, invoices, onViewClient, onNavigate }: OverviewPageProps) {
+export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const [ready, setReady] = useState(false);
@@ -87,10 +89,24 @@ export default function OverviewPage({ clients, messages, programs, invoices, on
     ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100)
     : 0;
 
-  // At-risk: paused, streak dropped to 0, or progress below 30%
-  const atRiskClients = clients.filter(c =>
-    c.status === 'paused' || c.streak === 0 || c.progress < 30
-  );
+  // At-risk: based on real data — paused, no workouts in 7 days, or overdue check-in
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+  const atRiskClients = clients.filter(c => {
+    if (c.status === 'paused') return true;
+    // No workouts logged in last 7 days
+    const recentWorkouts = workoutLogs.filter(w => w.clientId === c.id && w.date >= sevenDaysAgoStr);
+    if (recentWorkouts.length === 0) return true;
+    // Overdue check-in
+    if (c.nextCheckIn && c.nextCheckIn !== '—') {
+      const checkInDate = new Date(c.nextCheckIn);
+      checkInDate.setHours(0, 0, 0, 0);
+      if (checkInDate < today) return true;
+    }
+    return false;
+  });
 
   // Pending check-ins: next check-in is today or overdue (not "—")
   const today = new Date();
@@ -484,8 +500,13 @@ export default function OverviewPage({ clients, messages, programs, invoices, on
               atRiskClients.map((client, i) => {
                 const reasons: string[] = [];
                 if (client.status === 'paused') reasons.push(t.overview.paused);
-                if (client.streak === 0) reasons.push(t.overview.noStreak);
-                if (client.progress < 30) reasons.push(t.overview.progress(client.progress));
+                const clientRecentWorkouts = workoutLogs.filter(w => w.clientId === client.id && w.date >= sevenDaysAgoStr);
+                if (clientRecentWorkouts.length === 0 && client.status !== 'paused') reasons.push(t.overview.noStreak);
+                if (client.nextCheckIn && client.nextCheckIn !== '—') {
+                  const ciDate = new Date(client.nextCheckIn);
+                  ciDate.setHours(0, 0, 0, 0);
+                  if (ciDate < today) reasons.push(t.overview.overdueCheckIn ?? 'Overdue check-in');
+                }
                 return (
                   <motion.div
                     key={client.id}

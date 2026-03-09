@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LogIn, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Eye, EyeOff, Shield } from 'lucide-react';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 
@@ -16,6 +16,11 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // MFA step
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaFactorId, setMfaFactorId] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,9 +41,42 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     if (authError) {
       setError(t.login.invalidCredentials);
       setLoading(false);
-    } else {
-      onLogin(rememberMe);
+      return;
     }
+
+    // Check if MFA is required
+    const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aalData && aalData.currentLevel === 'aal1' && aalData.nextLevel === 'aal2') {
+      // MFA enrolled — need verification
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const totp = factors?.totp?.find(f => f.status === 'verified');
+      if (totp) {
+        setMfaFactorId(totp.id);
+        setMfaStep(true);
+        setLoading(false);
+        return;
+      }
+    }
+
+    setLoading(false);
+    onLogin(rememberMe);
+  };
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (mfaCode.length !== 6) { setError(t.login.mfaEnterCode ?? 'Enter the 6-digit code'); return; }
+    setLoading(true);
+    const challenge = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+    if (challenge.error) { setError(challenge.error.message); setLoading(false); return; }
+    const verify = await supabase.auth.mfa.verify({
+      factorId: mfaFactorId,
+      challengeId: challenge.data.id,
+      code: mfaCode,
+    });
+    setLoading(false);
+    if (verify.error) { setError(t.login.mfaInvalidCode ?? 'Invalid code. Try again.'); return; }
+    onLogin(rememberMe);
   };
 
   return (
@@ -58,88 +96,134 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
         </div>
 
-        <p style={styles.subtitle}>{t.login.subtitle}</p>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.field}>
-            <label style={styles.label}>{t.login.email}</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              style={styles.input}
-              autoFocus
-              autoComplete="email"
-            />
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>{t.login.password}</label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                style={styles.input}
-                autoComplete="current-password"
-              />
+        {mfaStep ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Shield size={20} color="var(--accent-primary)" />
+              <span style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {t.login.mfaTitle ?? 'Two-Factor Authentication'}
+              </span>
+            </div>
+            <p style={styles.subtitle}>{t.login.mfaSubtitle ?? 'Enter the code from your authenticator app'}</p>
+            <form onSubmit={handleMfaVerify} style={styles.form}>
+              <div style={styles.field}>
+                <input
+                  type="text"
+                  value={mfaCode}
+                  onChange={(e) => { setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(''); }}
+                  placeholder="000000"
+                  maxLength={6}
+                  style={{ ...styles.input, letterSpacing: '6px', fontSize: '22px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}
+                  autoFocus
+                />
+              </div>
+              {error && (
+                <motion.div style={styles.error} initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}>
+                  {error}
+                </motion.div>
+              )}
               <button
-                type="button"
-                onClick={() => setShowPassword(p => !p)}
-                style={styles.eyeBtn}
-                tabIndex={-1}
+                type="submit"
+                disabled={loading || mfaCode.length !== 6}
+                style={{
+                  ...styles.submitBtn,
+                  opacity: loading || mfaCode.length !== 6 ? 0.5 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {loading ? <span>{t.login.signingIn}</span> : (
+                  <>
+                    <Shield size={16} />
+                    {t.login.mfaVerify ?? 'Verify'}
+                  </>
+                )}
               </button>
-            </div>
-          </div>
+            </form>
+          </>
+        ) : (
+          <>
+            <p style={styles.subtitle}>{t.login.subtitle}</p>
+            <form onSubmit={handleSubmit} style={styles.form}>
+              <div style={styles.field}>
+                <label style={styles.label}>{t.login.email}</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  style={styles.input}
+                  autoFocus
+                  autoComplete="email"
+                />
+              </div>
 
-          <label style={styles.rememberRow}>
-            <div
-              onClick={() => setRememberMe(r => !r)}
-              style={{
-                ...styles.checkbox,
-                background: rememberMe ? 'var(--accent-primary)' : 'transparent',
-                borderColor: rememberMe ? 'var(--accent-primary)' : 'var(--glass-border)',
-              }}
-            >
-              {rememberMe && <span style={styles.checkmark}>&#10003;</span>}
-            </div>
-            <span style={styles.rememberText}>{t.login.rememberMe}</span>
-          </label>
+              <div style={styles.field}>
+                <label style={styles.label}>{t.login.password}</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    style={styles.input}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(p => !p)}
+                    style={styles.eyeBtn}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
 
-          {error && (
-            <motion.div
-              style={styles.error}
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              {error}
-            </motion.div>
-          )}
+              <label style={styles.rememberRow}>
+                <div
+                  onClick={() => setRememberMe(r => !r)}
+                  style={{
+                    ...styles.checkbox,
+                    background: rememberMe ? 'var(--accent-primary)' : 'transparent',
+                    borderColor: rememberMe ? 'var(--accent-primary)' : 'var(--glass-border)',
+                  }}
+                >
+                  {rememberMe && <span style={styles.checkmark}>&#10003;</span>}
+                </div>
+                <span style={styles.rememberText}>{t.login.rememberMe}</span>
+              </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.submitBtn,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {loading ? (
-              <span>{t.login.signingIn}</span>
-            ) : (
-              <>
-                <LogIn size={16} />
-                {t.login.signIn}
-              </>
-            )}
-          </button>
-        </form>
+              {error && (
+                <motion.div
+                  style={styles.error}
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  {error}
+                </motion.div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  ...styles.submitBtn,
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loading ? (
+                  <span>{t.login.signingIn}</span>
+                ) : (
+                  <>
+                    <LogIn size={16} />
+                    {t.login.signIn}
+                  </>
+                )}
+              </button>
+            </form>
+          </>
+        )}
 
       </motion.div>
     </div>
