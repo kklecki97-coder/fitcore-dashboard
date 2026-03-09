@@ -96,7 +96,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, on
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const pendingCheckIns = clients.filter(c => {
-    if (c.nextCheckIn === '—') return false;
+    if (!c.nextCheckIn || c.nextCheckIn === '—') return false;
     const checkInDate = new Date(c.nextCheckIn);
     checkInDate.setHours(0, 0, 0, 0);
     return checkInDate <= today;

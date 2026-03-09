@@ -73,7 +73,7 @@ interface MessagesPageProps {
 export default function MessagesPage({ isMobile = false, clients, messages, onSendMessage }: MessagesPageProps) {
   const { lang, t } = useLang();
 
-  const [selectedClient, setSelectedClient] = useState<string>('c1');
+  const [selectedClient, setSelectedClient] = useState<string>(clients[0]?.id ?? '');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [channelFilter, setChannelFilter] = useState<'all' | MessageChannel>('all');
