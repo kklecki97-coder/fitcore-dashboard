@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Target, Award, Flame, Dumbbell, BarChart3 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Target, Scale, Droplets, Camera, X } from 'lucide-react';
+import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { Client, WorkoutLog, CheckIn } from '../types';
+
+type TimePeriod = '1m' | '3m' | '6m' | 'all';
 
 interface ProgressPageProps {
   client: Client;
@@ -17,88 +18,68 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const [chartsReady, setChartsReady] = useState(false);
+  const [bodyTab, setBodyTab] = useState<'weight' | 'bodyFat'>('weight');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
+  const [photoPose, setPhotoPose] = useState<'front' | 'side' | 'back'>('front');
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setChartsReady(true), 400);
+    const timer = setTimeout(() => setChartsReady(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
   const { metrics } = client;
-  // Dynamic month labels based on client start date
+  const weights = metrics.weight;
+  const startWeight = weights[0];
+  const currentWeight = weights[weights.length - 1];
+  const weightDiff = currentWeight - startWeight;
+
   const monthNames = lang === 'pl'
     ? ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const startMonth = new Date(client.startDate).getMonth();
-  const months = metrics.weight.map((_, i) => monthNames[(startMonth + i) % 12]);
-  const weights = metrics.weight;
+  const months = weights.map((_, i) => monthNames[(startMonth + i) % 12]);
+  const startMonthLabel = months[0];
+  const currentMonthLabel = months[months.length - 1];
 
-  const weightData = metrics.weight.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));
-  const bodyFatData = metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
+  const allWeightData = weights.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));
+  const allBodyFatData = metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
 
-  // PRs
-  const lifts = [
-    { name: 'Bench Press', values: metrics.benchPress, unit: 'kg', icon: '🏋️' },
-    { name: 'Squat', values: metrics.squat, unit: 'kg', icon: '🦵' },
-    { name: 'Deadlift', values: metrics.deadlift, unit: 'kg', icon: '💪' },
+  // Filter data by time period
+  const sliceByPeriod = <T,>(data: T[]): T[] => {
+    if (timePeriod === 'all') return data;
+    const count = timePeriod === '1m' ? 1 : timePeriod === '3m' ? 3 : 6;
+    return data.slice(-count);
+  };
+
+  const weightData = sliceByPeriod(allWeightData);
+  const bodyFatData = sliceByPeriod(allBodyFatData);
+
+  // Recalculate trend for visible range
+  const visibleWeights = sliceByPeriod(weights);
+  const visibleBodyFat = sliceByPeriod(metrics.bodyFat);
+  const visibleWeightDiff = visibleWeights[visibleWeights.length - 1] - visibleWeights[0];
+  const visibleBfDiff = visibleBodyFat[visibleBodyFat.length - 1] - visibleBodyFat[0];
+  const visibleStartLabel = weightData[0]?.month ?? startMonthLabel;
+  const visibleEndLabel = weightData[weightData.length - 1]?.month ?? currentMonthLabel;
+
+  // Progress photos — before/after comparison
+  const photoSrc = (period: 'week1' | 'week12', pose: string) =>
+    `/photos/${period}-${pose}.jpg`;
+  const poses: Array<{ key: 'front' | 'side' | 'back'; label: string }> = [
+    { key: 'front', label: 'Front' },
+    { key: 'side', label: 'Side' },
+    { key: 'back', label: 'Back' },
   ];
 
-  // Calendar palette — cyan-green & soft coral (on-brand, not generic traffic lights)
-  const calDone = '#20dba4';
-  const calMiss = '#e8637a';
+  // ── Lift PRs ──
+  const lifts = [
+    { name: 'Bench Press', values: metrics.benchPress, unit: 'kg' },
+    { name: 'Squat', values: metrics.squat, unit: 'kg' },
+    { name: 'Deadlift', values: metrics.deadlift, unit: 'kg' },
+  ];
 
-  // Training calendar (last 4 weeks / this month)
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-  const logByDate = new Map(workoutLogs.map(w => [w.date, w]));
-
-  const startDate = new Date(today);
-  startDate.setDate(startDate.getDate() - 28);
-  startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7)); // Start on Monday
-
-  interface CalDay {
-    date: Date;
-    dateStr: string;
-    log: WorkoutLog | undefined;
-    isCompleted: boolean;
-    isMissed: boolean;
-    isFuture: boolean;
-    isToday: boolean;
-  }
-
-  const calWeeks: CalDay[][] = [];
-  for (let w = 0; w < 4; w++) {
-    const week: CalDay[] = [];
-    for (let d = 0; d < 7; d++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + w * 7 + d);
-      const dateStr = date.toISOString().split('T')[0];
-      const log = logByDate.get(dateStr);
-      week.push({
-        date,
-        dateStr,
-        log,
-        isCompleted: log?.completed === true,
-        isMissed: log?.completed === false,
-        isFuture: dateStr > todayStr,
-        isToday: dateStr === todayStr,
-      });
-    }
-    calWeeks.push(week);
-  }
-
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const selectedLog = selectedDay ? logByDate.get(selectedDay) : undefined;
-
-  const totalSessions = workoutLogs.filter(w => w.completed).length;
-  const totalScheduled = workoutLogs.length;
-  const completionRate = totalScheduled > 0 ? Math.round((totalSessions / totalScheduled) * 100) : 0;
-  const ringRadius = 18;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const ringOffset = ringCircumference - (completionRate / 100) * ringCircumference;
-
-  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
-
-  // ── Goal progress (data-driven from metrics + check-ins) ──
+  // ── Goal progress ──
   const parseTarget = (text: string): number | null => {
     const match = text.match(/(\d+(?:\.\d+)?)\s*kg/i) || text.match(/(\d+(?:\.\d+)?)/);
     return match ? parseFloat(match[1]) : null;
@@ -106,435 +87,585 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
 
   const goalProgress = client.goals.map(goal => {
     const g = goal.toLowerCase();
-
-    // Weight / body composition goals (contains "kg" or "weight" and references a target)
     if ((g.includes('weight') || g.includes('drop') || g.includes('cut') || g.includes('lean')) && !g.includes('bench') && !g.includes('squat') && !g.includes('dead')) {
       const target = parseTarget(goal) ?? 80;
-      const start = weights[0];
       const current = weights[weights.length - 1];
-      if (start === target) return { goal, progress: 100, label: `${current}kg → ${target}kg` };
-      const pct = Math.min(100, Math.round(((start - current) / (start - target)) * 100));
+      if (startWeight === target) return { goal, progress: 100, label: `${current}kg → ${target}kg` };
+      const pct = Math.min(100, Math.round(((startWeight - current) / (startWeight - target)) * 100));
       return { goal, progress: Math.max(0, pct), label: `${current}kg → ${target}kg` };
     }
-
-    // Bench press goal
     if (g.includes('bench')) {
       const target = parseTarget(goal) ?? 100;
       const current = metrics.benchPress[metrics.benchPress.length - 1];
-      const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current}kg / ${target}kg` };
+      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` };
     }
-
-    // Squat goal
     if (g.includes('squat')) {
       const target = parseTarget(goal) ?? 140;
       const current = metrics.squat[metrics.squat.length - 1];
-      const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current}kg / ${target}kg` };
+      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` };
     }
-
-    // Deadlift goal
     if (g.includes('deadlift') || g.includes('dead lift')) {
       const target = parseTarget(goal) ?? 180;
       const current = metrics.deadlift[metrics.deadlift.length - 1];
-      const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current}kg / ${target}kg` };
+      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` };
     }
-
-    // Sleep goal
-    if (g.includes('sleep')) {
-      const targetMatch = goal.match(/(\d+(?:\.\d+)?)\s*(?:\+|\s*hour|h)/i);
-      const target = targetMatch ? parseFloat(targetMatch[1]) : 7;
-      const latestCI = checkIns.filter(ci => ci.sleepHours !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
-      const current = latestCI?.sleepHours ?? 0;
-      const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current}h / ${target}h` };
+    if (g.includes('body fat') || g.includes('bodyfat') || g.includes('bf')) {
+      const targetMatch = goal.match(/(\d+(?:\.\d+)?)\s*%/);
+      const target = targetMatch ? parseFloat(targetMatch[1]) : 15;
+      const startBf = metrics.bodyFat[0];
+      const currentBf = metrics.bodyFat[metrics.bodyFat.length - 1];
+      if (startBf === target) return { goal, progress: 100, label: `${currentBf}% → ${target}%` };
+      const pct = Math.min(100, Math.round(((startBf - currentBf) / (startBf - target)) * 100));
+      return { goal, progress: Math.max(0, pct), label: `${currentBf}% → ${target}%` };
     }
-
-    // Steps goal
     if (g.includes('step')) {
       const target = parseTarget(goal) ?? 10000;
       const latestCI = checkIns.filter(ci => ci.steps !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
       const current = latestCI?.steps ?? 0;
-      const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current.toLocaleString()} / ${target.toLocaleString()} ${t.checkIn.steps}` };
+      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current.toLocaleString()} / ${target.toLocaleString()}` };
     }
-
-    // Cardio / running goal — derive from overall training consistency as proxy
-    if (g.includes('5k') || g.includes('run') || g.includes('cardio')) {
-      const pct = Math.min(100, Math.round(completionRate * 0.72));
-      return { goal, progress: Math.max(0, pct), label: t.progress.basedOnConsistency };
-    }
-
-    // Fallback — use overall client progress
     return { goal, progress: Math.round(client.progress * 0.7), label: t.progress.inProgress };
   });
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px 12px 80px' : '24px 24px 80px' }}>
-      <h2 style={styles.title}>{t.progress.yourProgress}</h2>
+    <div style={{ ...styles.page, padding: isMobile ? '20px 16px 100px' : '24px 24px 80px' }}>
 
-      {/* Top row: Goals + Weight + Body Fat — horizontal on desktop, stacked on mobile */}
-      <div style={{ ...styles.topRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '12px' : '10px' }}>
-        {/* Goals */}
-        <GlassCard delay={0.05} style={styles.topCard}>
-          <div style={styles.sectionHeader}>
-            <Target size={16} color="var(--accent-primary)" />
-            <span style={styles.sectionTitle}>{t.progress.goals}</span>
-            <span style={styles.goalCount}>{goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}</span>
+      {/* ── 1. STRENGTH ── */}
+      <div style={styles.strengthSection}>
+        <div style={styles.strengthLabel}>Strength</div>
+        <div style={styles.liftRow}>
+          {lifts.map((lift, i) => {
+            const current = lift.values[lift.values.length - 1];
+            const startVal = lift.values[0];
+            const totalGain = current - startVal;
+            return (
+              <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={styles.liftCard}>
+                <div style={styles.liftName}>{lift.name}</div>
+                <div style={styles.liftValue}>
+                  {current}<span style={styles.liftUnit}>{lift.unit}</span>
+                </div>
+                {totalGain > 0 && (
+                  <div style={styles.liftGain}>
+                    <TrendingUp size={11} />
+                    +{totalGain}{lift.unit}
+                  </div>
+                )}
+              </GlassCard>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── 2. BODY COMPOSITION ── */}
+      <GlassCard delay={0.2}>
+        <div style={styles.bodyHeader}>
+          <div style={styles.bodyTabs}>
+            <button
+              onClick={() => setBodyTab('weight')}
+              style={{
+                ...styles.bodyTab,
+                ...(bodyTab === 'weight' ? styles.bodyTabActive : {}),
+              }}
+            >
+              <Scale size={13} />
+              Weight
+            </button>
+            <button
+              onClick={() => setBodyTab('bodyFat')}
+              style={{
+                ...styles.bodyTab,
+                ...(bodyTab === 'bodyFat' ? styles.bodyTabActive : {}),
+              }}
+            >
+              <Droplets size={13} />
+              Body Fat
+            </button>
           </div>
-          <div style={styles.goalProgressList}>
-            {goalProgress.map((g, i) => (
-              <div key={i} style={styles.goalProgressItem}>
-                <div style={styles.goalProgressTop}>
-                  <div style={styles.goalProgressName}>{g.goal}</div>
-                  <div style={{
-                    ...styles.goalProgressPct,
-                    color: g.progress >= 90 ? 'var(--accent-success)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-                  }}>{g.progress}%</div>
+          <button
+            onClick={() => setTimePeriod(p => p === '1m' ? '3m' : p === '3m' ? '6m' : p === '6m' ? 'all' : '1m')}
+            style={styles.timeCycleBtn}
+          >
+            {timePeriod === '1m' ? '1M' : timePeriod === '3m' ? '3M' : timePeriod === '6m' ? '6M' : 'All'}
+          </button>
+        </div>
+
+        {/* Chart */}
+        <div style={styles.chartWrap}>
+          {!chartsReady ? (
+            <div style={styles.skeleton} />
+          ) : bodyTab === 'weight' && weightData.length >= 2 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={weightData} margin={{ top: 8, right: 8, bottom: 0, left: -10 }}>
+                <defs>
+                  <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontSize: '12px', color: 'var(--text-primary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+                  formatter={(val) => [`${val} kg`, 'Weight']}
+                />
+                <Area type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2.5} fill="url(#weightGrad)" dot={{ fill: 'var(--accent-primary)', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: 'var(--accent-primary)', stroke: 'var(--bg-card)', strokeWidth: 2 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : bodyTab === 'bodyFat' && bodyFatData.length >= 2 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={bodyFatData} margin={{ top: 8, right: 8, bottom: 0, left: -10 }}>
+                <defs>
+                  <linearGradient id="bfGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--accent-secondary)" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="var(--accent-secondary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontSize: '12px', color: 'var(--text-primary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
+                  formatter={(val) => [`${val}%`, 'Body Fat']}
+                />
+                <Area type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2.5} fill="url(#bfGrad)" dot={{ fill: 'var(--accent-secondary)', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: 'var(--accent-secondary)', stroke: 'var(--bg-card)', strokeWidth: 2 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={styles.emptyChart}>
+              <span style={styles.emptyText}>Not enough data yet</span>
+            </div>
+          )}
+        </div>
+      </GlassCard>
+
+      {/* ── 3. GOALS ── */}
+      {goalProgress.length > 0 && (
+        <GlassCard delay={0.3}>
+          <div style={styles.goalsHeader}>
+            <Target size={16} color="var(--accent-primary)" />
+            <span style={styles.goalsTitle}>Goals</span>
+            <span style={styles.goalsCount}>
+              {goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}
+            </span>
+          </div>
+          <div style={styles.goalsList}>
+            {goalProgress.map((g, i) => {
+              const gl = g.goal.toLowerCase();
+              const isBfGoal = gl.includes('body fat') || gl.includes('bodyfat') || gl.includes('bf');
+              const color = g.progress >= 100 ? 'var(--accent-success)' : isBfGoal ? 'var(--accent-secondary)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)';
+              return (
+                <div key={i} style={styles.goalItem}>
+                  <div style={styles.goalTop}>
+                    <div style={styles.goalName}>{g.goal}</div>
+                    <div style={{ ...styles.goalPct, color }}>{g.progress}%</div>
+                  </div>
+                  <div style={styles.goalBarBg}>
+                    <div style={{ ...styles.goalBarFill, width: `${g.progress}%`, background: color }} />
+                  </div>
+                  <div style={styles.goalLabel}>{g.label}</div>
                 </div>
-                <div style={styles.goalProgressBarBg}>
-                  <div style={{
-                    ...styles.goalProgressBarFill,
-                    width: `${g.progress}%`,
-                    background: g.progress >= 90 ? 'var(--accent-success)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-                  }} />
-                </div>
-                <div style={styles.goalProgressLabel}>{g.label}</div>
-              </div>
+              );
+            })}
+          </div>
+        </GlassCard>
+      )}
+
+      {/* ── 4. PROGRESS PHOTOS — Before / After ── */}
+      <GlassCard delay={0.35}>
+        <div style={styles.photosHeader}>
+          <Camera size={16} color="var(--accent-primary)" />
+          <span style={styles.photosTitle}>Progress Photos</span>
+          <div style={styles.poseTabs}>
+            {poses.map(p => (
+              <button
+                key={p.key}
+                onClick={() => setPhotoPose(p.key)}
+                style={{
+                  ...styles.poseTab,
+                  ...(photoPose === p.key ? styles.poseTabActive : {}),
+                }}
+              >
+                {p.label}
+              </button>
             ))}
           </div>
-        </GlassCard>
-
-        {/* Weight Chart */}
-        <GlassCard delay={0.1} style={styles.topCard}>
-          <div style={styles.chartHeaderCompact}>
-            <div style={styles.chartTitle}>{t.progress.weight}</div>
-            {weightData.length >= 2 && (
-              <div style={{
-                ...styles.trendBadge,
-                background: 'var(--accent-success-dim)',
-                color: 'var(--accent-success)',
-              }}>
-                <TrendingDown size={12} />
-                {(metrics.weight[0] - metrics.weight[metrics.weight.length - 1]).toFixed(1)}kg
-              </div>
-            )}
-          </div>
-          {!chartsReady ? (
-            <div style={{ ...styles.skeleton, flex: 1, minHeight: isMobile ? '180px' : '80px' }} />
-          ) : weightData.length >= 2 ? (
-            <div style={styles.chartWrap}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={weightData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                  <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} width={isMobile ? 36 : 32} />
-                  <Tooltip
-                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary)' }}
-                    formatter={(val) => [`${val} kg`, t.progress.weight]}
-                  />
-                  <Line type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2} dot={{ fill: 'var(--accent-primary)', r: 2.5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div style={{ ...styles.emptyState, flex: 1, padding: '16px 12px' }}>
-              <BarChart3 size={24} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-              <span style={styles.emptyStateText}>{t.progress.weighInNext}</span>
-            </div>
-          )}
-        </GlassCard>
-
-        {/* Body Fat Chart */}
-        <GlassCard delay={0.15} style={styles.topCard}>
-          <div style={styles.chartHeaderCompact}>
-            <div style={styles.chartTitle}>{t.progress.bodyFatPct}</div>
-            {bodyFatData.length >= 2 && (
-              <div style={{
-                ...styles.trendBadge,
-                background: 'var(--accent-success-dim)',
-                color: 'var(--accent-success)',
-              }}>
-                <TrendingDown size={12} />
-                {(metrics.bodyFat[0] - metrics.bodyFat[metrics.bodyFat.length - 1]).toFixed(1)}%
-              </div>
-            )}
-          </div>
-          {!chartsReady ? (
-            <div style={{ ...styles.skeleton, flex: 1, minHeight: isMobile ? '180px' : '80px' }} />
-          ) : bodyFatData.length >= 2 ? (
-            <div style={styles.chartWrap}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={bodyFatData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                  <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 11 : 9 }} axisLine={false} tickLine={false} width={isMobile ? 36 : 32} />
-                  <Tooltip
-                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary)' }}
-                    formatter={(val) => [`${val}%`, t.progress.bodyFatPct]}
-                  />
-                  <Line type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2} dot={{ fill: 'var(--accent-secondary)', r: 2.5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div style={{ ...styles.emptyState, flex: 1, padding: '16px 12px' }}>
-              <BarChart3 size={24} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-              <span style={styles.emptyStateText}>{t.progress.bodyFatAfterCheckIns}</span>
-            </div>
-          )}
-        </GlassCard>
-      </div>
-
-      {/* Lift PRs */}
-      <div style={{ ...styles.prRow, gap: isMobile ? '8px' : '10px' }}>
-        {lifts.map((lift, i) => {
-          const current = lift.values[lift.values.length - 1];
-          const prev = lift.values[lift.values.length - 2];
-          const diff = current - prev;
-          return (
-            <GlassCard key={lift.name} delay={0.2 + i * 0.05} style={{ ...styles.prCard, padding: isMobile ? '12px 8px' : '16px' }}>
-              <div style={styles.prEmoji}>{lift.icon}</div>
-              <div style={styles.prName}>{lift.name}</div>
-              <div style={styles.prValue}>{current}<span style={styles.prUnit}>{lift.unit}</span></div>
-              <div style={{
-                ...styles.prDiff,
-                color: diff >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
-              }}>
-                {diff >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {diff >= 0 ? '+' : ''}{diff.toFixed(1)}
-              </div>
-            </GlassCard>
-          );
-        })}
-      </div>
-
-      {/* Training Consistency */}
-      <GlassCard delay={0.35}>
-        <div style={styles.sectionHeader}>
-          <Flame size={18} color="var(--accent-warm)" />
-          <span style={styles.sectionTitle}>{t.progress.trainingConsistency}</span>
         </div>
-
-        {workoutLogs.length === 0 ? (
-          <div style={styles.emptyState}>
-            <Dumbbell size={28} color="var(--text-tertiary)" style={{ opacity: 0.5 }} />
-            <span style={styles.emptyStateText}>{t.progress.completeFirstWorkout}</span>
-          </div>
-        ) : <>
-        {/* Stats row — 3 mini cards */}
-        <div style={styles.statsRow}>
-          <div style={styles.statCard}>
-            <Dumbbell size={16} color="var(--accent-primary)" />
-            <span style={styles.statValue}>{totalSessions}</span>
-            <span style={styles.statLabel}>{t.progress.sessions}</span>
-          </div>
-          <div style={styles.statCard}>
-            <svg width="44" height="44" viewBox="0 0 44 44" style={{ marginTop: '-2px', marginBottom: '-2px' }}>
-              <circle cx="22" cy="22" r={ringRadius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-              <circle
-                cx="22" cy="22" r={ringRadius}
-                fill="none"
-                stroke={completionRate >= 80 ? calDone : completionRate >= 50 ? 'var(--accent-warm)' : calMiss}
-                strokeWidth="3" strokeLinecap="round"
-                strokeDasharray={ringCircumference}
-                strokeDashoffset={ringOffset}
-                transform="rotate(-90 22 22)"
-              />
-              <text x="22" y="23" textAnchor="middle" dominantBaseline="middle"
-                fill="var(--text-primary)" fontSize="11" fontWeight="700" fontFamily="var(--font-mono)">
-                {completionRate}
-              </text>
-            </svg>
-            <span style={styles.statLabel}>{t.progress.completionPct}</span>
-          </div>
-          <div style={styles.statCard}>
-            <Flame size={16} color="var(--accent-warm)" />
-            <span style={styles.statValue}>{client.streak}</span>
-            <span style={styles.statLabel}>{t.progress.dayStreak}</span>
-          </div>
-        </div>
-
-        {/* Calendar — day header */}
-        <div style={styles.calGrid}>
-          {t.progress.calendarDays.map((d, i) => (
-            <div key={i} style={styles.calDayHeader}>{d}</div>
+        <div style={styles.photoCompare}>
+          {(['week1', 'week12'] as const).map((period) => (
+            <div key={period} style={styles.photoSide}>
+              <div style={styles.photoDateLabel}>{period === 'week1' ? 'Week 1' : 'Week 12'}</div>
+              <div style={styles.photoFrame} onClick={() => setLightboxSrc(photoSrc(period, photoPose))}>
+                <img
+                  key={`${period}-${photoPose}`}
+                  src={photoSrc(period, photoPose)}
+                  alt={`${period} ${photoPose}`}
+                  style={styles.photoImg}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.removeAttribute('style'); }}
+                />
+                <div key={`fb-${period}-${photoPose}`} style={{ ...styles.photoFallback, display: 'none' }}>
+                  <Camera size={24} color="var(--text-tertiary)" style={{ opacity: 0.3 }} />
+                  <span style={styles.photoFallbackText}>No photo</span>
+                </div>
+              </div>
+              <div style={styles.photoMeta}>{period === 'week1' ? 'Dec · 92kg' : 'Mar · 88.1kg'}</div>
+            </div>
           ))}
         </div>
-
-        {/* Calendar — 4 week rows */}
-        {calWeeks.map((week, wi) => (
-          <div key={wi} style={styles.calGrid}>
-            {week.map(day => {
-                const shortType = day.log?.type
-                  .replace('Upper Body ', 'Upper ')
-                  .replace('Lower Body ', 'Lower ') ?? '';
-                return (
-                  <div
-                    key={day.dateStr}
-                    onClick={() => day.log && setSelectedDay(prev => prev === day.dateStr ? null : day.dateStr)}
-                    style={{
-                      ...styles.calCell,
-                      cursor: day.log ? 'pointer' : 'default',
-                      ...(day.isToday ? {
-                        background: 'rgba(0,229,200,0.08)',
-                        border: '1px solid rgba(0,229,200,0.25)',
-                        boxShadow: '0 0 8px rgba(0,229,200,0.1)',
-                      } : day.isCompleted ? {
-                        background: `${calDone}0F`,
-                        border: `1px solid ${calDone}1F`,
-                      } : day.isMissed ? {
-                        background: `${calMiss}0D`,
-                        border: `1px solid ${calMiss}1A`,
-                      } : day.isFuture ? {
-                        background: 'transparent',
-                        border: '1px solid rgba(255,255,255,0.02)',
-                        opacity: 0.4,
-                      } : {
-                        background: 'rgba(255,255,255,0.03)',
-                        border: '1px solid transparent',
-                      }),
-                      ...(selectedDay === day.dateStr ? {
-                        boxShadow: '0 0 0 1.5px var(--accent-primary)',
-                      } : {}),
-                    }}
-                  >
-                    {/* Status bar */}
-                    <div style={{
-                      ...styles.calStatusBar,
-                      background: day.isCompleted ? calDone
-                        : day.isMissed ? calMiss
-                        : day.isToday ? 'var(--accent-primary)'
-                        : 'transparent',
-                    }} />
-                    <div style={{
-                      ...styles.calDateNum,
-                      color: day.isToday ? 'var(--accent-primary)'
-                        : day.isCompleted ? calDone
-                        : day.isMissed ? calMiss
-                        : 'var(--text-secondary)',
-                    }}>
-                      {day.date.getDate()}
-                    </div>
-                    {day.log && (
-                      <div style={{
-                        ...styles.calWorkoutTag,
-                        color: day.isCompleted ? calDone : calMiss,
-                      }}>
-                        {shortType}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        ))}
-
-        {/* Detail panel */}
-        <AnimatePresence>
-          {selectedDay && selectedLog && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              style={{ overflow: 'hidden' }}
-            >
-              <div style={styles.dayDetail}>
-                <div style={{
-                  ...styles.dayDetailBar,
-                  background: selectedLog.completed ? calDone : calMiss,
-                }} />
-                <div style={{ flex: 1 }}>
-                  <div style={styles.dayDetailDate}>
-                    {new Date(selectedDay + 'T12:00:00').toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </div>
-                  <div style={styles.dayDetailType}>{selectedLog.type}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={styles.dayDetailDuration}>{selectedLog.duration} {t.progress.min}</div>
-                  <div style={{
-                    ...styles.dayDetailStatus,
-                    color: selectedLog.completed ? calDone : calMiss,
-                  }}>
-                    {selectedLog.completed ? t.progress.completed : t.progress.missed}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Legend */}
-        <div style={styles.calLegend}>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calDone }} /> {t.progress.completed}</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: calMiss }} /> {t.progress.missed}</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'var(--accent-primary)' }} /> {t.progress.today}</span>
-          <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: 'rgba(255,255,255,0.03)' }} /> {t.progress.rest}</span>
-        </div>
-        </>}
       </GlassCard>
 
-      {/* Award */}
-      <GlassCard delay={0.4} style={styles.awardCard}>
-        <Award size={24} color="var(--accent-warm)" />
-        <div>
-          <div style={styles.awardTitle}>{t.progress.keepItUp}</div>
-          <div style={styles.awardSub}>{t.progress.trainingForDays(Math.round((today.getTime() - new Date(client.startDate).getTime()) / 86400000))}</div>
+      {/* ── LIGHTBOX ── */}
+      {lightboxSrc && (
+        <div style={styles.lightboxOverlay} onClick={() => setLightboxSrc(null)}>
+          <button style={styles.lightboxClose} onClick={() => setLightboxSrc(null)}>
+            <X size={24} />
+          </button>
+          <img
+            src={lightboxSrc}
+            alt="Progress photo"
+            style={styles.lightboxImg}
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
-      </GlassCard>
+      )}
+
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '100%', paddingBottom: '80px' },
-  title: { fontSize: '22px', fontWeight: 700, letterSpacing: '-0.5px', color: 'var(--text-primary)' },
-  topRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' },
-  topCard: { display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' },
-  chartWrap: { width: '100%', flex: 1, minWidth: 0, minHeight: 0 },
-  chartHeaderCompact: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexShrink: 0 },
-  chartTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
-  trendBadge: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, padding: '4px 8px', borderRadius: '8px' },
-  prRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' },
-  prCard: { padding: '16px', textAlign: 'center' },
-  prEmoji: { fontSize: '20px', marginBottom: '6px' },
-  prName: { fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' },
-  prValue: { fontSize: '22px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', marginTop: '4px' },
-  prUnit: { fontSize: '12px', fontWeight: 400, color: 'var(--text-secondary)' },
-  prDiff: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px', fontSize: '12px', fontWeight: 600, marginTop: '4px' },
-  sectionHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' },
-  sectionTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
-  goalCount: { fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-primary)', background: 'var(--accent-primary-dim)', padding: '2px 8px', borderRadius: '10px', marginLeft: 'auto' },
-  goalProgressList: { display: 'flex', flexDirection: 'column', gap: '14px' },
-  goalProgressItem: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  goalProgressTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  goalProgressName: { fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.3 },
-  goalProgressPct: { fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-mono)', flexShrink: 0 },
-  goalProgressBarBg: { height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
-  goalProgressBarFill: { height: '100%', borderRadius: '3px', transition: 'width 0.8s ease' },
-  goalProgressLabel: { fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' },
-  statsRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' },
-  statCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '12px 6px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)' },
-  statValue: { fontSize: '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', lineHeight: 1 },
-  statLabel: { fontSize: '10px', fontWeight: 500, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' },
-  calGrid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', marginBottom: '4px' },
-  calDayHeader: { fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', textAlign: 'center', padding: '4px 0' },
-  calCell: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', minHeight: '50px', borderRadius: '8px', padding: '0 2px 5px', position: 'relative', overflow: 'hidden', transition: 'all 0.15s ease' },
-  calStatusBar: { width: '100%', height: '2.5px', borderRadius: '0 0 1px 1px', marginBottom: '4px', flexShrink: 0 },
-  calDateNum: { fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-mono)', lineHeight: 1 },
-  calWorkoutTag: { fontSize: '8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.2px', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '3px', lineHeight: 1.2 },
-  dayDetail: { display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '10px 14px', marginTop: '10px' },
-  dayDetailBar: { width: '3px', height: '32px', borderRadius: '2px', flexShrink: 0 },
-  dayDetailDate: { fontSize: '11px', color: 'var(--text-secondary)' },
-  dayDetailType: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' },
-  dayDetailDuration: { fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
-  dayDetailStatus: { fontSize: '11px', fontWeight: 600, marginTop: '2px' },
-  calLegend: { display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '12px' },
-  legendItem: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: 'var(--text-tertiary)' },
-  legendDot: { width: '8px', height: '8px', borderRadius: '2px', display: 'inline-block' },
-  skeleton: { width: '100%', height: '180px', borderRadius: '8px', background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite ease-in-out' },
-  emptyState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '32px 16px' },
-  emptyStateText: { fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.5 },
-  awardCard: { display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' },
-  awardTitle: { fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' },
-  awardSub: { fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' },
+  page: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    minHeight: '100%',
+  },
+
+  // ── Strength ──
+  strengthSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  strengthLabel: {
+    fontSize: '20px',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    letterSpacing: '-0.3px',
+  },
+  liftRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '10px',
+  },
+  liftCard: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px 8px',
+    textAlign: 'center',
+  },
+  liftName: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    marginBottom: '8px',
+  },
+  liftValue: {
+    fontSize: '28px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--text-primary)',
+    lineHeight: 1,
+  },
+  liftUnit: {
+    fontSize: '13px',
+    fontWeight: 400,
+    color: 'var(--text-secondary)',
+  },
+  liftGain: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '12px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--accent-success)',
+    marginTop: '8px',
+  },
+
+  // ── Time period cycle button ──
+  timeCycleBtn: {
+    padding: '4px 12px',
+    borderRadius: '6px',
+    border: '1px solid rgba(0,229,200,0.25)',
+    background: 'var(--accent-primary-dim)',
+    color: 'var(--accent-primary)',
+    fontSize: '11px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    letterSpacing: '0.3px',
+    minWidth: '36px',
+    textAlign: 'center',
+  },
+
+  // ── Body Composition ──
+  bodyHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '14px',
+    flexWrap: 'wrap',
+    gap: '8px',
+  },
+  bodyTabs: {
+    display: 'flex',
+    gap: '4px',
+  },
+  bodyTab: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    borderRadius: '8px',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  bodyTabActive: {
+    background: 'var(--accent-primary-dim)',
+    color: 'var(--accent-primary)',
+    borderColor: 'rgba(0,229,200,0.25)',
+  },
+  bodyTrend: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-mono)',
+  },
+  bodyTrendRange: {
+    fontSize: '11px',
+    fontWeight: 500,
+    color: 'var(--text-tertiary)',
+    marginLeft: '2px',
+  },
+  chartWrap: {
+    width: '100%',
+    minHeight: '180px',
+  },
+  skeleton: {
+    width: '100%',
+    height: '180px',
+    borderRadius: '8px',
+    background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%)',
+    backgroundSize: '200% 100%',
+    animation: 'shimmer 1.5s infinite ease-in-out',
+  },
+  emptyChart: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '180px',
+  },
+  emptyText: {
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+  },
+
+  // ── Goals ──
+  goalsHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '16px',
+  },
+  goalsTitle: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  goalsCount: {
+    fontSize: '11px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--accent-primary)',
+    background: 'var(--accent-primary-dim)',
+    padding: '2px 8px',
+    borderRadius: '10px',
+    marginLeft: 'auto',
+  },
+  goalsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  },
+  goalItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '5px',
+  },
+  goalTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  goalName: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
+  },
+  goalPct: {
+    fontSize: '14px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    flexShrink: 0,
+  },
+  goalBarBg: {
+    height: '6px',
+    borderRadius: '3px',
+    background: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  goalBarFill: {
+    height: '100%',
+    borderRadius: '3px',
+    transition: 'width 0.8s ease',
+  },
+  goalLabel: {
+    fontSize: '11px',
+    color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-mono)',
+  },
+
+  // ── Progress Photos ──
+  photosHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '16px',
+  },
+  photosTitle: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  poseTabs: {
+    display: 'flex',
+    gap: '4px',
+    marginLeft: 'auto',
+  },
+  poseTab: {
+    padding: '4px 10px',
+    borderRadius: '6px',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    fontSize: '11px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  poseTabActive: {
+    background: 'var(--accent-primary-dim)',
+    color: 'var(--accent-primary)',
+    borderColor: 'rgba(0,229,200,0.25)',
+  },
+  photoCompare: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+  },
+  photoSide: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    alignItems: 'center',
+  },
+  photoDateLabel: {
+    fontSize: '12px',
+    fontWeight: 700,
+    color: 'var(--text-secondary)',
+    letterSpacing: '0.3px',
+  },
+  photoFrame: {
+    width: '100%',
+    aspectRatio: '3 / 4',
+    borderRadius: '10px',
+    overflow: 'hidden',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid var(--glass-border)',
+    position: 'relative',
+    cursor: 'pointer',
+  },
+  photoImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  photoFallback: {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+  },
+  photoFallbackText: {
+    fontSize: '11px',
+    color: 'var(--text-tertiary)',
+    fontWeight: 500,
+  },
+  photoMeta: {
+    fontSize: '11px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--text-tertiary)',
+  },
+
+  // ── Lightbox ──
+  lightboxOverlay: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 100,
+    background: 'rgba(0,0,0,0.9)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
+  lightboxClose: {
+    position: 'absolute',
+    top: '16px',
+    right: '16px',
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    border: '1px solid rgba(255,255,255,0.2)',
+    background: 'rgba(255,255,255,0.1)',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    zIndex: 101,
+  },
+  lightboxImg: {
+    maxWidth: '90vw',
+    maxHeight: '85vh',
+    objectFit: 'contain',
+    borderRadius: '12px',
+    cursor: 'default',
+  },
 };

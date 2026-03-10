@@ -1,4 +1,4 @@
-import { Home, Dumbbell, ClipboardCheck, TrendingUp, MessageSquare, Settings, LogOut } from 'lucide-react';
+import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
@@ -8,25 +8,28 @@ interface BottomNavProps {
   onNavigate: (page: ClientPage) => void;
   isMobile: boolean;
   onLogout?: () => void;
+  unreadCount?: number;
 }
 
 const navIcons: Record<string, typeof Home> = {
   home: Home,
-  program: Dumbbell,
+  program: Zap,
+  calendar: CalendarDays,
   'check-in': ClipboardCheck,
   progress: TrendingUp,
   messages: MessageSquare,
   settings: Settings,
 };
 
-const navPages: ClientPage[] = ['home', 'program', 'check-in', 'progress', 'messages'];
+const navPages: ClientPage[] = ['home', 'calendar', 'program', 'progress', 'messages'];
 
-export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout }: BottomNavProps) {
+export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout, unreadCount = 0 }: BottomNavProps) {
   const { t } = useLang();
 
   const navLabels: Record<string, string> = {
     home: t.nav.home,
     program: t.nav.program,
+    calendar: t.nav.calendar,
     'check-in': t.nav.checkIn,
     progress: t.nav.progress,
     messages: t.nav.messages,
@@ -39,6 +42,20 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
         {navPages.map((page) => {
           const active = currentPage === page;
           const Icon = navIcons[page];
+          const isCenter = page === 'program';
+
+          if (isCenter) {
+            return (
+              <button
+                key={page}
+                onClick={() => onNavigate(page)}
+                style={styles.centerBtn}
+              >
+                <Icon size={24} />
+              </button>
+            );
+          }
+
           return (
             <button
               key={page}
@@ -48,7 +65,12 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
                 color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
               }}
             >
-              <Icon size={20} />
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <Icon size={20} />
+                {page === 'messages' && unreadCount > 0 && (
+                  <span style={styles.unreadBadge}>{unreadCount}</span>
+                )}
+              </div>
               <span
                 style={{
                   ...styles.bottomLabel,
@@ -105,7 +127,12 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
-              <Icon size={20} style={{ opacity: active ? 1 : 0.5, flexShrink: 0 }} />
+              <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+                <Icon size={20} style={{ opacity: active ? 1 : 0.5 }} />
+                {page === 'messages' && unreadCount > 0 && (
+                  <span style={styles.unreadBadge}>{unreadCount}</span>
+                )}
+              </div>
               <span style={{ fontSize: '14px', fontWeight: active ? 600 : 500, opacity: active ? 1 : 0.6 }}>
                 {navLabels[page]}
               </span>
@@ -202,6 +229,20 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
     overflow: 'hidden',
   },
+  centerBtn: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '14px',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 0 16px rgba(0,229,200,0.3)',
+    flexShrink: 0,
+  },
 
   // Desktop side nav
   sideNav: {
@@ -284,5 +325,23 @@ const styles: Record<string, React.CSSProperties> = {
     height: '1px',
     background: 'var(--glass-border)',
     margin: '8px 0',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: '-6px',
+    right: '-8px',
+    minWidth: '18px',
+    height: '18px',
+    borderRadius: '9px',
+    background: 'var(--accent-danger)',
+    color: '#fff',
+    fontSize: '11px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 4px',
+    lineHeight: 1,
   },
 };

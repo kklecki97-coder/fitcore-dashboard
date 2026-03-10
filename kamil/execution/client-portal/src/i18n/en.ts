@@ -59,6 +59,7 @@ export const en = {
     progress: 'Progress',
     messages: 'Messages',
     settings: 'Settings',
+    calendar: 'Calendar',
     logOut: 'Log out',
   },
 

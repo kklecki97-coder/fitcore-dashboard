@@ -73,8 +73,8 @@ const stepperStyles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
   },
   btn: {
-    width: '36px',
-    height: '40px',
+    width: '40px',
+    height: '44px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -88,11 +88,11 @@ const stepperStyles: Record<string, React.CSSProperties> = {
   input: {
     flex: 1,
     minWidth: 0,
-    padding: '10px 4px',
+    padding: '12px 4px',
     border: 'none',
     background: 'transparent',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '16px',
     fontFamily: 'var(--font-mono)',
     textAlign: 'center',
     outline: 'none',
@@ -104,7 +104,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   const { t } = useLang();
   const [tab, setTab] = useState<'submit' | 'history'>('submit');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [selfReportOpen, setSelfReportOpen] = useState(false);
+  const [moreDetailsOpen, setMoreDetailsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const moodIcons: Record<number, { icon: typeof Smile; color: string; label: string }> = {
@@ -205,7 +205,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   };
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
       {/* Tabs */}
       <div style={styles.tabs}>
         <button
@@ -224,96 +224,94 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
 
       {tab === 'submit' ? (
         <div style={styles.formWrap}>
-          {/* Body Metrics */}
+          {/* Essentials: Weight + Mood (always visible) */}
           <GlassCard delay={0.05}>
-            <div style={styles.sectionTitle}>{t.checkIn.bodyMetrics}</div>
             <div style={styles.fieldRow}>
-              <div style={styles.field}>
+              <div style={{ ...styles.field, flex: 1 }}>
                 <label style={styles.label}>{t.checkIn.weightKg}</label>
                 <NumberStepper value={form.weight} onChange={v => setForm({ ...form, weight: v })} step={0.1} min={30} max={250} placeholder="83.5" />
               </div>
-              <div style={styles.field}>
-                <label style={styles.label}>{t.checkIn.bodyFatPct}</label>
-                <NumberStepper value={form.bodyFat} onChange={v => setForm({ ...form, bodyFat: v })} step={0.1} min={3} max={60} placeholder="18.5" />
+            </div>
+            <div style={{ marginTop: '4px' }}>
+              <label style={styles.label}>{t.checkIn.mood}</label>
+              <div style={styles.moodRow}>
+                {([1, 2, 3, 4, 5] as const).map(val => {
+                  const m = moodIcons[val];
+                  const Icon = m.icon;
+                  const active = form.mood === val;
+                  return (
+                    <button
+                      key={val}
+                      onClick={() => setForm({ ...form, mood: val })}
+                      style={{
+                        ...styles.moodBtn,
+                        background: active ? `${m.color}20` : 'transparent',
+                        borderColor: active ? m.color : 'var(--glass-border)',
+                        color: active ? m.color : 'var(--text-tertiary)',
+                      }}
+                      title={m.label}
+                    >
+                      <Icon size={20} />
+                    </button>
+                  );
+                })}
               </div>
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>{t.checkIn.notes}</label>
+              <textarea style={styles.textarea} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder={t.checkIn.notesPlaceholder} rows={2} />
             </div>
           </GlassCard>
 
-          {/* Wellness */}
+          {/* More Details (collapsed by default) */}
           <GlassCard delay={0.1}>
-            <div style={styles.sectionTitle}>{t.checkIn.wellness}</div>
-            <div style={styles.label}>{t.checkIn.mood}</div>
-            <div style={styles.moodRow}>
-              {([1, 2, 3, 4, 5] as const).map(val => {
-                const m = moodIcons[val];
-                const Icon = m.icon;
-                const active = form.mood === val;
-                return (
-                  <button
-                    key={val}
-                    onClick={() => setForm({ ...form, mood: val })}
-                    style={{
-                      ...styles.moodBtn,
-                      background: active ? `${m.color}20` : 'transparent',
-                      borderColor: active ? m.color : 'var(--glass-border)',
-                      color: active ? m.color : 'var(--text-tertiary)',
-                    }}
-                    title={m.label}
-                  >
-                    <Icon size={20} />
-                  </button>
-                );
-              })}
-            </div>
-            <div style={styles.fieldRow}>
-              <div style={styles.field}>
-                <label style={styles.label}>{t.checkIn.energy}</label>
-                <NumberStepper value={form.energy} onChange={v => setForm({ ...form, energy: v })} min={1} max={10} placeholder="7" />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>{t.checkIn.stress}</label>
-                <NumberStepper value={form.stress} onChange={v => setForm({ ...form, stress: v })} min={1} max={10} placeholder="4" />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>{t.checkIn.sleepHrs}</label>
-                <NumberStepper value={form.sleepHours} onChange={v => setForm({ ...form, sleepHours: v })} step={0.5} min={0} max={16} placeholder="7.5" />
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* Compliance */}
-          <GlassCard delay={0.15}>
-            <div style={styles.sectionTitle}>{t.checkIn.compliance}</div>
-            <div style={styles.fieldRow}>
-              <div style={styles.field}>
-                <label style={styles.label}>{t.checkIn.stepsDailyAvg}</label>
-                <NumberStepper value={form.steps} onChange={v => setForm({ ...form, steps: v })} min={0} max={50000} step={500} placeholder="8000" />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>{t.checkIn.nutrition}</label>
-                <NumberStepper value={form.nutritionScore} onChange={v => setForm({ ...form, nutritionScore: v })} min={1} max={10} placeholder="8" />
-              </div>
-            </div>
-          </GlassCard>
-
-          {/* Self-Report */}
-          <GlassCard delay={0.2}>
             <div
               style={styles.sectionToggle}
-              onClick={() => setSelfReportOpen(prev => !prev)}
+              onClick={() => setMoreDetailsOpen(prev => !prev)}
             >
-              <div style={{ ...styles.sectionTitle, marginBottom: 0 }}>{t.checkIn.selfReport}</div>
+              <div style={{ ...styles.sectionTitle, marginBottom: 0 }}>{t.checkIn.moreDetails ?? 'More Details'}</div>
               <div style={styles.sectionToggleRight}>
                 <span style={styles.optionalBadge}>{t.checkIn.optional}</span>
-                {selfReportOpen ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
+                {moreDetailsOpen ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
               </div>
             </div>
-            {selfReportOpen && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ marginTop: '12px' }}>
+            {moreDetailsOpen && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Body Fat */}
                 <div style={styles.field}>
-                  <label style={styles.label}>{t.checkIn.notes}</label>
-                  <textarea style={styles.textarea} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder={t.checkIn.notesPlaceholder} rows={2} />
+                  <label style={styles.label}>{t.checkIn.bodyFatPct}</label>
+                  <NumberStepper value={form.bodyFat} onChange={v => setForm({ ...form, bodyFat: v })} step={0.1} min={3} max={60} placeholder="18.5" />
                 </div>
+
+                {/* Wellness */}
+                <div style={styles.fieldRow}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>{t.checkIn.energy}</label>
+                    <NumberStepper value={form.energy} onChange={v => setForm({ ...form, energy: v })} min={1} max={10} placeholder="7" />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>{t.checkIn.stress}</label>
+                    <NumberStepper value={form.stress} onChange={v => setForm({ ...form, stress: v })} min={1} max={10} placeholder="4" />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>{t.checkIn.sleepHrs}</label>
+                    <NumberStepper value={form.sleepHours} onChange={v => setForm({ ...form, sleepHours: v })} step={0.5} min={0} max={16} placeholder="7.5" />
+                  </div>
+                </div>
+
+                {/* Compliance */}
+                <div style={styles.fieldRow}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>{t.checkIn.stepsDailyAvg}</label>
+                    <NumberStepper value={form.steps} onChange={v => setForm({ ...form, steps: v })} min={0} max={50000} step={500} placeholder="8000" />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>{t.checkIn.nutrition}</label>
+                    <NumberStepper value={form.nutritionScore} onChange={v => setForm({ ...form, nutritionScore: v })} min={1} max={10} placeholder="8" />
+                  </div>
+                </div>
+
+                {/* Self-Report */}
                 <div style={styles.field}>
                   <label style={styles.label}>{t.checkIn.winsThisWeek}</label>
                   <textarea style={styles.textarea} value={form.wins} onChange={e => setForm({ ...form, wins: e.target.value })} placeholder={t.checkIn.winsPlaceholder} rows={2} />
@@ -322,48 +320,48 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                   <label style={styles.label}>{t.checkIn.challenges}</label>
                   <textarea style={styles.textarea} value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} placeholder={t.checkIn.challengesPlaceholder} rows={2} />
                 </div>
+
+                {/* Progress Photos */}
+                <div>
+                  <div style={{ ...styles.sectionTitle, marginBottom: '8px' }}>{t.checkIn.progressPhotos}</div>
+                  <div style={styles.photoSlots}>
+                    {photoSlots.map(slot => {
+                      const existing = photos.find(p => p.label === slot.label);
+                      return (
+                        <div key={slot.key} style={styles.photoSlot}>
+                          <input
+                            ref={el => { fileInputRefs.current[slot.key] = el; }}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={e => handlePhotoUpload(slot.key, slot.label, e)}
+                          />
+                          {existing ? (
+                            <div style={styles.photoPreview}>
+                              <img src={existing.url} alt={slot.label} style={styles.photoImg} />
+                              <button
+                                style={styles.photoRemoveBtn}
+                                onClick={() => setPhotos(prev => prev.filter(p => p.label !== slot.label))}
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div
+                              style={styles.photoUploadBox}
+                              onClick={() => fileInputRefs.current[slot.key]?.click()}
+                            >
+                              <Camera size={20} color="var(--text-tertiary)" />
+                            </div>
+                          )}
+                          <div style={styles.photoSlotLabel}>{slot.displayLabel}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </motion.div>
             )}
-          </GlassCard>
-
-          {/* Progress Photos */}
-          <GlassCard delay={0.25}>
-            <div style={styles.sectionTitle}>{t.checkIn.progressPhotos}</div>
-            <div style={styles.photoSlots}>
-              {photoSlots.map(slot => {
-                const existing = photos.find(p => p.label === slot.label);
-                return (
-                  <div key={slot.key} style={styles.photoSlot}>
-                    <input
-                      ref={el => { fileInputRefs.current[slot.key] = el; }}
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={e => handlePhotoUpload(slot.key, slot.label, e)}
-                    />
-                    {existing ? (
-                      <div style={styles.photoPreview}>
-                        <img src={existing.url} alt={slot.label} style={styles.photoImg} />
-                        <button
-                          style={styles.photoRemoveBtn}
-                          onClick={() => setPhotos(prev => prev.filter(p => p.label !== slot.label))}
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        style={styles.photoUploadBox}
-                        onClick={() => fileInputRefs.current[slot.key]?.click()}
-                      >
-                        <Camera size={20} color="var(--text-tertiary)" />
-                      </div>
-                    )}
-                    <div style={styles.photoSlotLabel}>{slot.displayLabel}</div>
-                  </div>
-                );
-              })}
-            </div>
           </GlassCard>
 
           <button
@@ -384,31 +382,67 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
               <p style={styles.emptyText}>{t.checkIn.noCheckIns}</p>
             </GlassCard>
           ) : (
-            completed.map((ci, i) => {
-              const isExpanded = expandedId === ci.id;
-              const mood = ci.mood ? moodIcons[ci.mood] : null;
-              const MoodIcon = mood?.icon;
-              return (
-                <GlassCard key={ci.id} delay={i * 0.05}>
-                  <div
-                    style={styles.historyHeader}
-                    onClick={() => setExpandedId(isExpanded ? null : ci.id)}
-                  >
-                    <div style={styles.historyLeft}>
-                      <div style={styles.historyDate}>{ci.date}</div>
-                      <div style={styles.historyChips}>
-                        {ci.weight && <span style={styles.chip}>{ci.weight}kg</span>}
-                        {ci.steps != null && <span style={styles.chip}>{ci.steps.toLocaleString()} {t.checkIn.steps}</span>}
-                        {MoodIcon && <MoodIcon size={14} color={mood?.color} />}
-                        {ci.photos?.length > 0 && (
-                          <span style={{ ...styles.chip, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            <ImageIcon size={10} /> {ci.photos.length}
-                          </span>
-                        )}
+            <>
+              {/* Weight trend summary */}
+              {(() => {
+                const weights = completed.filter(ci => ci.weight != null).map(ci => ci.weight!);
+                if (weights.length < 2) return null;
+                const latest = weights[0];
+                const oldest = weights[weights.length - 1];
+                const diff = latest - oldest;
+                const avgMood = completed.filter(ci => ci.mood != null).reduce((sum, ci) => sum + ci.mood!, 0) / completed.filter(ci => ci.mood != null).length;
+                return (
+                  <GlassCard delay={0}>
+                    <div style={styles.trendRow}>
+                      <div style={styles.trendItem}>
+                        <div style={styles.trendLabel}>Weight trend</div>
+                        <div style={{ ...styles.trendValue, color: diff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                          {diff <= 0 ? '\u2193' : '\u2191'} {Math.abs(diff).toFixed(1)}kg
+                        </div>
+                        <div style={styles.trendSub}>{oldest}kg → {latest}kg</div>
+                      </div>
+                      <div style={styles.trendDivider} />
+                      <div style={styles.trendItem}>
+                        <div style={styles.trendLabel}>Avg mood</div>
+                        <div style={styles.trendValue}>{avgMood ? avgMood.toFixed(1) : '-'}/5</div>
+                        <div style={styles.trendSub}>{completed.length} check-ins</div>
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
-                  </div>
+                  </GlassCard>
+                );
+              })()}
+              {completed.map((ci, i) => {
+                const isExpanded = expandedId === ci.id;
+                const mood = ci.mood ? moodIcons[ci.mood] : null;
+                const MoodIcon = mood?.icon;
+                // Weight change vs previous check-in
+                const prevCi = completed[i + 1];
+                const weightDiff = ci.weight && prevCi?.weight ? ci.weight - prevCi.weight : null;
+                return (
+                  <GlassCard key={ci.id} delay={(i + 1) * 0.05}>
+                    <div
+                      style={styles.historyHeader}
+                      onClick={() => setExpandedId(isExpanded ? null : ci.id)}
+                    >
+                      <div style={styles.historyLeft}>
+                        <div style={styles.historyDate}>{ci.date}</div>
+                        <div style={styles.historyChips}>
+                          {ci.weight && (
+                            <span style={styles.chip}>
+                              {ci.weight}kg
+                              {weightDiff != null && (
+                                <span style={{ color: weightDiff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)', marginLeft: '3px', fontSize: '10px' }}>
+                                  {weightDiff <= 0 ? '\u2193' : '\u2191'}{Math.abs(weightDiff).toFixed(1)}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                          {MoodIcon && <MoodIcon size={14} color={mood?.color} />}
+                          {ci.coachFeedback && <span style={{ ...styles.chip, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>Reviewed</span>}
+                        </div>
+                      </div>
+                      {isExpanded ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
+                    </div>
 
                   {isExpanded && (
                     <motion.div
@@ -448,7 +482,8 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                   )}
                 </GlassCard>
               );
-            })
+            })}
+            </>
           )}
         </div>
       )}
@@ -457,46 +492,52 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', minHeight: '100%' },
+  page: { padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', minHeight: '100%' },
   tabs: { display: 'flex', gap: '8px' },
-  tab: { flex: 1, padding: '10px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.15s' },
+  tab: { flex: 1, padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.15s' },
   tabActive: { background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' },
-  formWrap: { display: 'flex', flexDirection: 'column', gap: '14px' },
-  sectionTitle: { fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' },
+  formWrap: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  sectionTitle: { fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' },
   sectionToggle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: '0' },
   sectionToggleRight: { display: 'flex', alignItems: 'center', gap: '8px' },
-  optionalBadge: { fontSize: '10px', fontWeight: 600, color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '10px', padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.3px' },
+  optionalBadge: { fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '10px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.3px' },
   fieldRow: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
   field: { flex: 1, minWidth: '80px', marginBottom: '8px' },
-  label: { display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.3px' },
-  input: { width: '100%', padding: '10px 12px', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none' },
-  textarea: { width: '100%', padding: '10px 12px', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: 'var(--font-display)', outline: 'none', resize: 'vertical', lineHeight: 1.5 },
+  label: { display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.3px' },
+  input: { width: '100%', padding: '12px 14px', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '15px', fontFamily: 'var(--font-mono)', outline: 'none' },
+  textarea: { width: '100%', padding: '12px 14px', border: '1px solid var(--glass-border)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '15px', fontFamily: 'var(--font-display)', outline: 'none', resize: 'vertical', lineHeight: 1.5 },
   moodRow: { display: 'flex', gap: '8px', marginBottom: '14px' },
-  moodBtn: { width: '44px', height: '44px', borderRadius: 'var(--radius-md)', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' },
-  submitBtn: { width: '100%', padding: '14px', border: 'none', borderRadius: 'var(--radius-md)', background: 'var(--accent-primary)', color: '#07090e', fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 0 16px var(--accent-primary-dim)', marginBottom: '24px' },
+  moodBtn: { width: '48px', height: '48px', borderRadius: 'var(--radius-md)', border: '1px solid', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.15s' },
+  submitBtn: { width: '100%', padding: '16px', border: 'none', borderRadius: 'var(--radius-md)', background: 'var(--accent-primary)', color: '#07090e', fontSize: '16px', fontWeight: 600, fontFamily: 'var(--font-display)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 0 16px var(--accent-primary-dim)', marginBottom: '24px' },
+  trendRow: { display: 'flex', alignItems: 'center', gap: '16px' },
+  trendItem: { flex: 1, textAlign: 'center' },
+  trendLabel: { fontSize: '12px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
+  trendValue: { fontSize: '24px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
+  trendSub: { fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' },
+  trendDivider: { width: '1px', height: '40px', background: 'var(--glass-border)' },
   historyList: { display: 'flex', flexDirection: 'column', gap: '10px' },
   historyHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' },
   historyLeft: { display: 'flex', alignItems: 'center', gap: '12px' },
-  historyDate: { fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
+  historyDate: { fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
   historyChips: { display: 'flex', alignItems: 'center', gap: '6px' },
-  chip: { fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '8px', background: 'var(--bg-elevated)', color: 'var(--text-secondary)' },
+  chip: { fontSize: '13px', fontWeight: 600, padding: '3px 10px', borderRadius: '8px', background: 'var(--bg-elevated)', color: 'var(--text-secondary)' },
   historyDetail: { marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '10px' },
   detailGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' },
   detailItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  detailLabel: { fontSize: '10px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  detailValue: { fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
-  detailText: { fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 },
+  detailLabel: { fontSize: '12px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  detailValue: { fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' },
+  detailText: { fontSize: '15px', color: 'var(--text-secondary)', lineHeight: 1.5 },
   feedbackBox: { background: 'var(--accent-primary-dim)', borderLeft: '3px solid var(--accent-primary)', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0', padding: '12px', marginTop: '4px' },
-  feedbackLabel: { fontSize: '10px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' },
-  feedbackText: { fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.5 },
-  emptyText: { textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px', padding: '20px' },
+  feedbackLabel: { fontSize: '12px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' },
+  feedbackText: { fontSize: '15px', color: 'var(--text-primary)', lineHeight: 1.5 },
+  emptyText: { textAlign: 'center', color: 'var(--text-secondary)', fontSize: '15px', padding: '20px' },
   photoSlots: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: '12px' },
   photoSlot: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' },
   photoUploadBox: { width: '72px', height: '72px', border: '2px dashed var(--glass-border)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'border-color 0.15s, background 0.15s', background: 'rgba(255,255,255,0.02)' },
   photoPreview: { width: '72px', height: '72px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', position: 'relative', border: '1px solid var(--glass-border)' },
   photoImg: { width: '100%', height: '100%', objectFit: 'cover' },
   photoRemoveBtn: { position: 'absolute', top: '4px', right: '4px', width: '22px', height: '22px', borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.7)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
-  photoSlotLabel: { fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' },
+  photoSlotLabel: { fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px' },
   historyPhotos: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '6px' },
   historyPhotoCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
   historyPhotoImg: { width: '72px', height: '96px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)' },

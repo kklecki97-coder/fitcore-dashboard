@@ -88,13 +88,15 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     deadlift: client.metrics.deadlift[i],
   }));
 
-  const latestWeight = client.metrics.weight[client.metrics.weight.length - 1];
-  const prevWeight = client.metrics.weight[client.metrics.weight.length - 2] || latestWeight;
-  const weightChange = latestWeight - prevWeight;
+  const hasWeight = client.metrics.weight.length > 0;
+  const latestWeight = hasWeight ? client.metrics.weight[client.metrics.weight.length - 1] : null;
+  const prevWeight = hasWeight ? (client.metrics.weight[client.metrics.weight.length - 2] ?? latestWeight) : null;
+  const weightChange = latestWeight != null && prevWeight != null ? latestWeight - prevWeight : 0;
 
-  const latestBF = client.metrics.bodyFat[client.metrics.bodyFat.length - 1];
-  const prevBF = client.metrics.bodyFat[client.metrics.bodyFat.length - 2] || latestBF;
-  const bfChange = latestBF - prevBF;
+  const hasBF = client.metrics.bodyFat.length > 0;
+  const latestBF = hasBF ? client.metrics.bodyFat[client.metrics.bodyFat.length - 1] : null;
+  const prevBF = hasBF ? (client.metrics.bodyFat[client.metrics.bodyFat.length - 2] ?? latestBF) : null;
+  const bfChange = latestBF != null && prevBF != null ? latestBF - prevBF : 0;
 
   // Deterministic radar values derived from client data
   const enduranceScore = Math.min(100, 60 + (client.progress * 0.3) + (client.streak * 0.5));
@@ -497,22 +499,26 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         <GlassCard delay={0.1} style={{ flex: 1 }}>
           <div style={styles.metricLabel}>{t.clientDetail.weight}</div>
           <div style={styles.metricValue}>
-            {latestWeight} <span style={styles.metricUnit}>kg</span>
+            {latestWeight != null ? latestWeight : '—'} <span style={styles.metricUnit}>kg</span>
           </div>
+          {hasWeight && (
           <div style={{ ...styles.metricChange, color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
             {weightChange <= 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
             {Math.abs(weightChange).toFixed(1)} kg
           </div>
+          )}
         </GlassCard>
         <GlassCard delay={0.12} style={{ flex: 1 }}>
           <div style={styles.metricLabel}>{t.clientDetail.bodyFat}</div>
           <div style={styles.metricValue}>
-            {latestBF} <span style={styles.metricUnit}>%</span>
+            {latestBF != null ? latestBF : '—'} <span style={styles.metricUnit}>%</span>
           </div>
+          {hasBF && (
           <div style={{ ...styles.metricChange, color: bfChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
             {bfChange <= 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
             {Math.abs(bfChange).toFixed(1)}%
           </div>
+          )}
         </GlassCard>
         <GlassCard delay={0.14} style={{ flex: 1 }}>
           <div style={styles.metricLabel}>Monthly Rate</div>

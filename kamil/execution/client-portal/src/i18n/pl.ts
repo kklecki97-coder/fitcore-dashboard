@@ -61,6 +61,7 @@ export const pl: Translations = {
     progress: 'Postępy',
     messages: 'Wiadomości',
     settings: 'Ustawienia',
+    calendar: 'Kalendarz',
     logOut: 'Wyloguj',
   },
 

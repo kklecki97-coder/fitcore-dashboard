@@ -8,14 +8,19 @@ import LoginPage from './components/LoginPage';
 import HomePage from './components/HomePage';
 import ProgramPage from './components/ProgramPage';
 import CheckInPage from './components/CheckInPage';
-import ProgressPage from './components/ProgressPage';
 import MessagesPage from './components/MessagesPage';
+import CalendarPage from './components/CalendarPage';
+import ProgressPage from './components/ProgressPage';
 import SettingsPage from './components/SettingsPage';
 import OnboardingPage from './components/OnboardingPage';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
+import { mockClient, mockCoachName, mockProgram, mockWorkoutLogs, mockCheckIns, mockMessages, mockSetLogs, mockWeeklySchedule } from './mockData';
 import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule } from './types';
+
+// Toggle this to true to bypass auth and use mock data for UI development
+const USE_MOCK_DATA = true;
 
 function App() {
   const { t } = useLang();
@@ -32,6 +37,11 @@ function App() {
 
   // ── Auth: listen to Supabase session ──
   useEffect(() => {
+    if (USE_MOCK_DATA) {
+      setIsLoggedIn(true);
+      setAuthLoading(false);
+      return;
+    }
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) console.error('getSession failed:', error);
       setIsLoggedIn(!!session);
@@ -115,6 +125,14 @@ function App() {
   const setCurrentPage = (page: ClientPage) => {
     _setCurrentPage(page);
     try { sessionStorage.setItem('fitcore-client-page', page); } catch { /* ignore */ }
+    // Mark unread coach messages as read when opening messages
+    if (page === 'messages') {
+      const unreadIds = messages.filter(m => m.isFromCoach && !m.isRead).map(m => m.id);
+      if (unreadIds.length > 0) {
+        setMessages(prev => prev.map(m => unreadIds.includes(m.id) ? { ...m, isRead: true } : m));
+        supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then();
+      }
+    }
   };
   const isMobile = useIsMobile();
   const [theme, setTheme] = useState<Theme>(() => {
@@ -442,6 +460,17 @@ function App() {
 
   useEffect(() => {
     if (!isLoggedIn) return;
+    if (USE_MOCK_DATA) {
+      setClientUser(mockClient);
+      setCoachName(mockCoachName);
+      setMyProgram(mockProgram);
+      setWorkoutLogs(mockWorkoutLogs);
+      setCheckIns(mockCheckIns);
+      setMessages(mockMessages);
+      setSetLogs(mockSetLogs);
+      setWeeklySchedule(mockWeeklySchedule);
+      return;
+    }
     setDataLoading(true);
     setLoadError(false);
     loadData().then((success) => {
@@ -637,6 +666,7 @@ function App() {
       return;
     }
     setSetLogs(prev => [...prev, log]);
+    if (USE_MOCK_DATA) return;
     const { error } = await supabase.from('workout_set_logs').insert({
       id: log.id,
       client_id: clientUser.id,
@@ -659,9 +689,9 @@ function App() {
     const toRemove = setLogs.find(l => l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date);
     if (!toRemove) return;
     setSetLogs(prev => prev.filter(l => !(l.exerciseId === exerciseId && l.setNumber === setNumber && l.date === date)));
+    if (USE_MOCK_DATA) return;
     const { error } = await supabase.from('workout_set_logs').delete().eq('id', toRemove.id);
     if (error) {
-      // Rollback on failure
       setSetLogs(prev => [...prev, toRemove]);
       showError(t.errors?.workoutLogFailed ?? 'Failed to remove workout log');
     }
@@ -678,6 +708,7 @@ function App() {
       }
       return l;
     }));
+    if (USE_MOCK_DATA || !updatedLog) return;
     if (updatedLog) {
       const u = updatedLog as WorkoutSetLog;
       const { error } = await supabase.from('workout_set_logs').update({
@@ -687,7 +718,6 @@ function App() {
         rpe: u.rpe ?? null,
       }).eq('id', u.id);
       if (error) {
-        // Rollback on failure
         if (originalLog) {
           setSetLogs(prev => prev.map(l => l.id === u.id ? originalLog! : l));
         }
@@ -811,14 +841,6 @@ function App() {
             clientName={clientUser.name}
           />
         );
-      case 'progress':
-        return (
-          <ProgressPage
-            client={clientUser}
-            workoutLogs={workoutLogs}
-            checkIns={checkIns}
-          />
-        );
       case 'messages':
         return (
           <MessagesPage
@@ -827,6 +849,22 @@ function App() {
             coachName={coachName}
             clientId={clientUser.id}
             clientName={clientUser.name}
+          />
+        );
+      case 'calendar':
+        return (
+          <CalendarPage
+            program={myProgram}
+            workoutLogs={workoutLogs}
+            weeklySchedule={weeklySchedule}
+          />
+        );
+      case 'progress':
+        return (
+          <ProgressPage
+            client={clientUser}
+            workoutLogs={workoutLogs}
+            checkIns={checkIns}
           />
         );
       case 'settings':
@@ -967,11 +1005,11 @@ function App() {
     <div style={styles.app}>
       {/* Desktop side nav */}
       {!isMobile && (
-        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={false} onLogout={handleLogout} />
+        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={false} onLogout={handleLogout} unreadCount={messages.filter(m => m.isFromCoach && !m.isRead).length} />
       )}
 
       <div style={styles.main}>
-        <Header clientName={clientUser?.name ?? ''} theme={theme} onThemeChange={setTheme} />
+        <Header clientName={clientUser?.name ?? ''} onNavigate={setCurrentPage} />
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -992,7 +1030,7 @@ function App() {
 
       {/* Mobile bottom nav */}
       {isMobile && (
-        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={true} onLogout={handleLogout} />
+        <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={true} onLogout={handleLogout} unreadCount={messages.filter(m => m.isFromCoach && !m.isRead).length} />
       )}
     </div>
 

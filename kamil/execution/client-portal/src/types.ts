@@ -36,6 +36,14 @@ export interface Message {
   isRead: boolean;
   isFromCoach: boolean;
   channel?: MessageChannel;
+  type?: 'text' | 'workout-complete';
+  workoutSummary?: {
+    dayName: string;
+    duration: string;
+    exercises: number;
+    sets: string;
+    volume?: string;
+  };
 }
 
 export interface WorkoutLog {
@@ -122,6 +130,6 @@ export interface WeeklySchedule {
   dayAssignments: Record<string, string>;  // { "0": "workout-day-id", "2": "workout-day-id" } — key is 0=Mon..6=Sun
 }
 
-export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings';
+export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar';
 
 export type Theme = 'dark' | 'light';

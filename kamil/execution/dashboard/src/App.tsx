@@ -113,6 +113,28 @@ function App() {
       const { data, error } = await supabase.from('clients').select('*').order('created_at');
       if (error) { console.error('loadClients failed:', error); return []; }
       if (data) {
+        // Load client_metrics time-series data
+        const clientIds = data.map(r => r.id);
+        const { data: metricsRows } = await supabase
+          .from('client_metrics')
+          .select('*')
+          .in('client_id', clientIds)
+          .order('recorded_at');
+
+        // Group metrics by client_id
+        const metricsMap = new Map<string, { weight: number[]; bodyFat: number[]; benchPress: number[]; squat: number[]; deadlift: number[] }>();
+        for (const m of metricsRows ?? []) {
+          if (!metricsMap.has(m.client_id)) {
+            metricsMap.set(m.client_id, { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] });
+          }
+          const entry = metricsMap.get(m.client_id)!;
+          if (m.weight != null) entry.weight.push(Number(m.weight));
+          if (m.body_fat != null) entry.bodyFat.push(Number(m.body_fat));
+          if (m.bench_press != null) entry.benchPress.push(Number(m.bench_press));
+          if (m.squat != null) entry.squat.push(Number(m.squat));
+          if (m.deadlift != null) entry.deadlift.push(Number(m.deadlift));
+        }
+
         const clients = data.map(r => ({
           id: r.id,
           name: r.name,
@@ -128,7 +150,7 @@ function App() {
           streak: r.streak ?? 0,
           goals: r.goals ?? [],
           notes: r.notes ?? '',
-          metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+          metrics: metricsMap.get(r.id) ?? { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
           notesHistory: [],
           activityLog: [],
           lastActive: r.last_active ?? '',

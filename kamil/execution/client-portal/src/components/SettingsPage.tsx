@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Palette, Shield, Moon, Sun, LogOut, CheckCircle, Lock, Trash2, AlertTriangle, Loader2, X } from 'lucide-react';
+import { User, Moon, Sun, LogOut, CheckCircle, Lock, Trash2, AlertTriangle, Loader2, X } from 'lucide-react';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 import type { Client, Theme } from '../types';
@@ -108,229 +108,195 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
     <div style={styles.page}>
       <h1 style={styles.pageTitle}>{s.title}</h1>
 
-      <div style={styles.grid}>
-        {/* ── Profile Card ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          style={styles.card}
+      {/* ── Account Card (Profile + Password) ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        style={styles.card}
+      >
+        <div style={styles.cardHeader}>
+          <User size={18} color="var(--accent-primary)" />
+          <span style={styles.cardTitle}>{s.profile}</span>
+        </div>
+
+        <div style={styles.field}>
+          <label style={styles.label}>{s.displayName}</label>
+          <input
+            type="text"
+            value={editName}
+            onChange={e => setEditName(e.target.value)}
+            style={styles.input}
+          />
+        </div>
+
+        <div style={styles.field}>
+          <label style={styles.label}>{s.email}</label>
+          <input
+            type="email"
+            value={client.email}
+            disabled
+            style={{ ...styles.input, opacity: 0.5, cursor: 'not-allowed' }}
+          />
+        </div>
+
+        <button
+          onClick={handleSaveProfile}
+          disabled={profileSaving || editName.trim() === client.name}
+          style={{
+            ...styles.btn,
+            opacity: (profileSaving || editName.trim() === client.name) ? 0.5 : 1,
+            cursor: (profileSaving || editName.trim() === client.name) ? 'not-allowed' : 'pointer',
+          }}
         >
-          <div style={styles.cardHeader}>
-            <User size={18} color="var(--accent-primary)" />
-            <span style={styles.cardTitle}>{s.profile}</span>
-          </div>
+          {profileSaved ? (
+            <><CheckCircle size={14} /> {s.saved}</>
+          ) : profileSaving ? s.saving : s.save}
+        </button>
 
-          <div style={styles.field}>
-            <label style={styles.label}>{s.displayName}</label>
-            <input
-              type="text"
-              value={editName}
-              onChange={e => setEditName(e.target.value)}
-              style={styles.input}
-            />
-          </div>
+        <div style={styles.divider} />
 
-          <div style={styles.field}>
-            <label style={styles.label}>{s.email}</label>
-            <input
-              type="email"
-              value={client.email}
-              disabled
-              style={{ ...styles.input, opacity: 0.5, cursor: 'not-allowed' }}
-            />
-          </div>
-
+        {!showPasswordForm ? (
           <button
-            onClick={handleSaveProfile}
-            disabled={profileSaving || editName.trim() === client.name}
-            style={{
-              ...styles.btn,
-              opacity: (profileSaving || editName.trim() === client.name) ? 0.5 : 1,
-              cursor: (profileSaving || editName.trim() === client.name) ? 'not-allowed' : 'pointer',
-            }}
+            onClick={() => setShowPasswordForm(true)}
+            style={styles.inlineAction}
           >
-            {profileSaved ? (
-              <><CheckCircle size={14} /> {s.saved}</>
-            ) : profileSaving ? s.saving : s.save}
+            <Lock size={15} color="var(--text-secondary)" />
+            <span>{s.changePassword}</span>
           </button>
-        </motion.div>
+        ) : (
+          <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={styles.field}>
+              <label style={styles.label}>{s.currentPassword}</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                placeholder="••••••••"
+                style={styles.input}
+                required
+                autoFocus
+              />
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>{s.newPassword}</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                style={styles.input}
+                required
+              />
+            </div>
+            <div style={styles.field}>
+              <label style={styles.label}>{s.confirmPassword}</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                style={styles.input}
+                required
+              />
+            </div>
 
-        {/* ── Appearance Card ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.05 }}
-          style={styles.card}
-        >
-          <div style={styles.cardHeader}>
-            <Palette size={18} color="var(--accent-primary)" />
+            {passwordError && (
+              <div style={{ color: 'var(--accent-danger)', fontSize: '13px', fontWeight: 500 }}>
+                {passwordError}
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div style={{ color: 'var(--accent-success)', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle size={14} /> {s.passwordUpdated}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="submit"
+                disabled={passwordUpdating}
+                style={{
+                  ...styles.btn,
+                  flex: 1,
+                  opacity: passwordUpdating ? 0.6 : 1,
+                }}
+              >
+                {passwordUpdating ? s.updatingPassword : s.updatePassword}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasswordForm(false);
+                  setPasswordError('');
+                  setCurrentPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                }}
+                style={styles.btnGhost}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </motion.div>
+
+      {/* ── Appearance (compact toggle) ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+        style={{ ...styles.card, marginTop: '16px' }}
+      >
+        <div style={styles.themeRow}>
+          <div style={styles.themeRowLeft}>
+            {theme === 'dark' ? (
+              <Moon size={18} color="var(--accent-primary)" />
+            ) : (
+              <Sun size={18} color="var(--accent-primary)" />
+            )}
             <span style={styles.cardTitle}>{s.appearance}</span>
           </div>
-
-          <div style={styles.themeOptions}>
+          <div style={styles.themeToggle}>
             <button
               onClick={() => onThemeChange('dark')}
               style={{
-                ...styles.themeCard,
-                borderColor: theme === 'dark' ? 'var(--accent-primary)' : 'var(--glass-border)',
-                boxShadow: theme === 'dark' ? '0 0 12px var(--accent-primary-dim)' : 'none',
+                ...styles.themeToggleBtn,
+                ...(theme === 'dark' ? styles.themeToggleBtnActive : {}),
               }}
             >
-              <Moon size={20} color={theme === 'dark' ? 'var(--accent-primary)' : 'var(--text-tertiary)'} />
-              <span style={{ fontWeight: 600, fontSize: '13px', color: theme === 'dark' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                {s.darkMode}
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', lineHeight: 1.4 }}>
-                {s.darkModeDesc}
-              </span>
+              <Moon size={14} />
+              {s.darkMode}
             </button>
-
             <button
               onClick={() => onThemeChange('light')}
               style={{
-                ...styles.themeCard,
-                borderColor: theme === 'light' ? 'var(--accent-primary)' : 'var(--glass-border)',
-                boxShadow: theme === 'light' ? '0 0 12px var(--accent-primary-dim)' : 'none',
+                ...styles.themeToggleBtn,
+                ...(theme === 'light' ? styles.themeToggleBtnActive : {}),
               }}
             >
-              <Sun size={20} color={theme === 'light' ? 'var(--accent-primary)' : 'var(--text-tertiary)'} />
-              <span style={{ fontWeight: 600, fontSize: '13px', color: theme === 'light' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                {s.lightMode}
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', lineHeight: 1.4 }}>
-                {s.lightModeDesc}
-              </span>
+              <Sun size={14} />
+              {s.lightMode}
             </button>
           </div>
-        </motion.div>
+        </div>
+      </motion.div>
 
-        {/* ── Security Card ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          style={styles.card}
-        >
-          <div style={styles.cardHeader}>
-            <Shield size={18} color="var(--accent-primary)" />
-            <span style={styles.cardTitle}>{s.security}</span>
-          </div>
+      {/* ── Log Out ── */}
+      <button onClick={onLogout} style={styles.logoutBtn}>
+        <LogOut size={16} />
+        {s.logout}
+      </button>
 
-          {!showPasswordForm ? (
-            <button
-              onClick={() => setShowPasswordForm(true)}
-              style={styles.btnOutline}
-            >
-              <Lock size={14} />
-              {s.changePassword}
-            </button>
-          ) : (
-            <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={styles.field}>
-                <label style={styles.label}>{s.currentPassword}</label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={e => setCurrentPassword(e.target.value)}
-                  placeholder="••••••••"
-                  style={styles.input}
-                  required
-                  autoFocus
-                />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>{s.newPassword}</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                  style={styles.input}
-                  required
-                />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.label}>{s.confirmPassword}</label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  style={styles.input}
-                  required
-                />
-              </div>
-
-              {passwordError && (
-                <div style={{ color: 'var(--accent-danger)', fontSize: '13px', fontWeight: 500 }}>
-                  {passwordError}
-                </div>
-              )}
-
-              {passwordSuccess && (
-                <div style={{ color: 'var(--accent-success)', fontSize: '13px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle size={14} /> {s.passwordUpdated}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="submit"
-                  disabled={passwordUpdating}
-                  style={{
-                    ...styles.btn,
-                    flex: 1,
-                    opacity: passwordUpdating ? 0.6 : 1,
-                  }}
-                >
-                  {passwordUpdating ? s.updatingPassword : s.updatePassword}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPasswordForm(false);
-                    setPasswordError('');
-                    setCurrentPassword('');
-                    setNewPassword('');
-                    setConfirmPassword('');
-                  }}
-                  style={styles.btnGhost}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div style={{ ...styles.divider, margin: '16px 0' }} />
-
-          {/* Delete Account */}
-          <div style={styles.deleteAccountRow}>
-            <div>
-              <div style={styles.deleteAccountLabel}>{s.deleteAccount}</div>
-              <div style={styles.deleteAccountDesc}>{s.deleteAccountDesc}</div>
-            </div>
-            <button style={styles.deleteAccountBtn} onClick={() => setShowDeleteModal(true)}>
-              <Trash2 size={13} />
-              {s.deleteAccount}
-            </button>
-          </div>
-
-          <div style={{ ...styles.divider, margin: '16px 0' }} />
-
-          {/* Logout */}
-          <div>
-            <p style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
-              {s.logoutDesc}
-            </p>
-            <button onClick={onLogout} style={styles.btnDanger}>
-              <LogOut size={14} />
-              {s.logout}
-            </button>
-          </div>
-        </motion.div>
-      </div>
+      {/* ── Delete Account (subtle) ── */}
+      <button
+        onClick={() => setShowDeleteModal(true)}
+        style={styles.deleteLink}
+      >
+        {s.deleteAccount}
+      </button>
 
       {/* ── Delete Account Modal ── */}
       {showDeleteModal && (
@@ -513,16 +479,11 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '1100px',
   },
   pageTitle: {
-    fontSize: '24px',
+    fontSize: '28px',
     fontWeight: 700,
     color: 'var(--text-primary)',
     marginBottom: '24px',
     letterSpacing: '-0.5px',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '20px',
   },
   card: {
     background: 'var(--bg-card)',
@@ -541,7 +502,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '4px',
   },
   cardTitle: {
-    fontSize: '16px',
+    fontSize: '18px',
     fontWeight: 700,
     color: 'var(--text-primary)',
     letterSpacing: '-0.3px',
@@ -552,7 +513,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
   },
   label: {
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -560,12 +521,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   input: {
     width: '100%',
-    padding: '10px 14px',
+    padding: '12px 14px',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-sm)',
     background: 'rgba(255,255,255,0.03)',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '15px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
     transition: 'border-color 0.15s',
@@ -575,112 +536,114 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '10px 16px',
+    padding: '12px 18px',
     border: 'none',
     borderRadius: 'var(--radius-md)',
     background: 'var(--accent-primary)',
     color: '#07090e',
-    fontSize: '13px',
+    fontSize: '15px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     transition: 'opacity 0.15s',
   },
-  btnOutline: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 16px',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-md)',
-    background: 'transparent',
-    color: 'var(--text-primary)',
-    fontSize: '13px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-  },
-  btnGhost: {
-    padding: '10px 16px',
-    border: '1px solid var(--glass-border)',
-    borderRadius: 'var(--radius-md)',
-    background: 'transparent',
-    color: 'var(--text-secondary)',
-    fontSize: '13px',
-    fontWeight: 500,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-  },
-  btnDanger: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 16px',
-    border: '1px solid var(--accent-danger-dim)',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--accent-danger-dim)',
-    color: 'var(--accent-danger)',
-    fontSize: '13px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
-  },
-  themeOptions: {
-    display: 'flex',
-    gap: '12px',
-  },
-  themeCard: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '16px 12px',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--glass-border)',
-    background: 'rgba(255,255,255,0.02)',
-    cursor: 'pointer',
-    fontFamily: 'var(--font-display)',
-    textAlign: 'center',
-    transition: 'all 0.2s',
-  },
   divider: {
     height: '1px',
     background: 'var(--glass-border)',
   },
-  deleteAccountRow: {
+  inlineAction: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '0',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '15px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'opacity 0.15s',
+  },
+  btnGhost: {
+    padding: '12px 18px',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-md)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '15px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  logoutBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    width: '100%',
+    padding: '14px 18px',
+    marginTop: '28px',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-md)',
+    background: 'transparent',
+    color: 'var(--text-primary)',
+    fontSize: '15px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  deleteLink: {
+    display: 'block',
+    margin: '16px auto 0',
+    padding: '8px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    fontSize: '13px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    textUnderlineOffset: '2px',
+  },
+  themeRow: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '12px',
+    gap: '16px',
+    flexWrap: 'wrap',
   },
-  deleteAccountLabel: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: 'var(--accent-danger)',
-  },
-  deleteAccountDesc: {
-    fontSize: '13px',
-    color: 'var(--text-tertiary)',
-    marginTop: '2px',
-  },
-  deleteAccountBtn: {
+  themeRowLeft: {
     display: 'flex',
     alignItems: 'center',
-    gap: '5px',
-    padding: '6px 12px',
+    gap: '10px',
+  },
+  themeToggle: {
+    display: 'flex',
     borderRadius: 'var(--radius-sm)',
-    border: '1px solid rgba(239,68,68,0.25)',
-    background: 'rgba(239,68,68,0.06)',
-    color: 'var(--accent-danger)',
+    border: '1px solid var(--glass-border)',
+    overflow: 'hidden',
+  },
+  themeToggleBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
     fontSize: '13px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
-    flexShrink: 0,
+    transition: 'all 0.15s',
+  },
+  themeToggleBtnActive: {
+    background: 'var(--accent-primary)',
+    color: '#07090e',
   },
   modalOverlay: {
     position: 'fixed',
