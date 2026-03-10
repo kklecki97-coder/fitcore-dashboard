@@ -20,7 +20,7 @@ import { mockClient, mockCoachName, mockProgram, mockWorkoutLogs, mockCheckIns, 
 import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule } from './types';
 
 // Toggle this to true to bypass auth and use mock data for UI development
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 function App() {
   const { t } = useLang();
