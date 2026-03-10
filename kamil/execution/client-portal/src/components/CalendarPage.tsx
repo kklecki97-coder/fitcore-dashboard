@@ -31,7 +31,7 @@ const localDateStr = (d: Date) => {
 };
 
 // DEV ONLY: set to monday-based day index (0=Mon..6=Sun) to pretend today is that day, or null for real date
-const DEV_DAY_OVERRIDE: number | null = 4; // 4 = Friday
+const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
 
 export default function CalendarPage({ program, workoutLogs, weeklySchedule }: CalendarPageProps) {
   const isMobile = useIsMobile();

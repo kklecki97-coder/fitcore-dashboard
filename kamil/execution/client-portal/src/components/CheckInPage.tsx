@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry, Minus, Plus, Camera, X, Image as ImageIcon } from 'lucide-react';
+import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry, Minus, Plus, Camera, X } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
@@ -269,7 +269,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
               style={styles.sectionToggle}
               onClick={() => setMoreDetailsOpen(prev => !prev)}
             >
-              <div style={{ ...styles.sectionTitle, marginBottom: 0 }}>{t.checkIn.moreDetails ?? 'More Details'}</div>
+              <div style={{ ...styles.sectionTitle, marginBottom: 0 }}>{'More Details'}</div>
               <div style={styles.sectionToggleRight}>
                 <span style={styles.optionalBadge}>{t.checkIn.optional}</span>
                 {moreDetailsOpen ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}

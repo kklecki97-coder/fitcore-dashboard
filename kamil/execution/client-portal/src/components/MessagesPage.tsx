@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, CheckCheck, Trophy } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { Message } from '../types';
 

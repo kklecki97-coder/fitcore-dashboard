@@ -14,7 +14,7 @@ interface ProgressPageProps {
   checkIns: CheckIn[];
 }
 
-export default function ProgressPage({ client, workoutLogs, checkIns }: ProgressPageProps) {
+export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkIns }: ProgressPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const [chartsReady, setChartsReady] = useState(false);
@@ -31,17 +31,12 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const { metrics } = client;
   const weights = metrics.weight;
   const startWeight = weights[0];
-  const currentWeight = weights[weights.length - 1];
-  const weightDiff = currentWeight - startWeight;
 
   const monthNames = lang === 'pl'
     ? ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const startMonth = new Date(client.startDate).getMonth();
   const months = weights.map((_, i) => monthNames[(startMonth + i) % 12]);
-  const startMonthLabel = months[0];
-  const currentMonthLabel = months[months.length - 1];
-
   const allWeightData = weights.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));
   const allBodyFatData = metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
 
@@ -55,13 +50,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const weightData = sliceByPeriod(allWeightData);
   const bodyFatData = sliceByPeriod(allBodyFatData);
 
-  // Recalculate trend for visible range
-  const visibleWeights = sliceByPeriod(weights);
-  const visibleBodyFat = sliceByPeriod(metrics.bodyFat);
-  const visibleWeightDiff = visibleWeights[visibleWeights.length - 1] - visibleWeights[0];
-  const visibleBfDiff = visibleBodyFat[visibleBodyFat.length - 1] - visibleBodyFat[0];
-  const visibleStartLabel = weightData[0]?.month ?? startMonthLabel;
-  const visibleEndLabel = weightData[weightData.length - 1]?.month ?? currentMonthLabel;
+  // Recalculate trend for visible range (reserved for future chart enhancements)
 
   // Progress photos — before/after comparison
   const photoSrc = (period: 'week1' | 'week12', pose: string) =>
