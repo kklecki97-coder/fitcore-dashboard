@@ -2,20 +2,19 @@ import { useState, useRef, useEffect, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Send, ArrowLeft, X, MessageSquare, Check } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
 import { getInitials, getAvatarColor } from '../data';
 import { useLang } from '../i18n';
-import type { Client, Message, MessageChannel } from '../types';
+import type { Client, Message } from '../types';
 
 // ── Delivery status checkmarks ──
-const DeliveryCheck = ({ status, channelColor }: { status?: Message['deliveryStatus']; channelColor?: string }) => {
+const DeliveryCheck = ({ status }: { status?: Message['deliveryStatus'] }) => {
   if (!status || status === 'sending') {
     return <span style={{ display: 'flex', alignItems: 'center', opacity: 0.4 }}><Check size={12} /></span>;
   }
   if (status === 'sent') {
     return <span style={{ display: 'flex', alignItems: 'center', color: 'var(--text-tertiary)' }}><Check size={12} /></span>;
   }
-  const color = status === 'read' ? (channelColor || 'var(--accent-primary)') : 'var(--text-tertiary)';
+  const color = status === 'read' ? 'var(--accent-primary)' : 'var(--text-tertiary)';
   return (
     <span style={{ display: 'flex', alignItems: 'center', color, marginLeft: '-4px' }}>
       <Check size={12} style={{ marginRight: '-6px' }} />
@@ -51,17 +50,6 @@ interface MessageTemplate {
   category: 'motivation' | 'checkin' | 'reminder' | 'onboarding';
 }
 
-// ── Helpers ──
-function getConversationChannel(msgs: Message[]): MessageChannel {
-  for (let i = msgs.length - 1; i >= 0; i--) {
-    if (!msgs[i].isFromCoach && msgs[i].channel) return msgs[i].channel!;
-  }
-  for (let i = msgs.length - 1; i >= 0; i--) {
-    if (msgs[i].channel) return msgs[i].channel!;
-  }
-  return 'telegram';
-}
-
 // ── Component ──
 interface MessagesPageProps {
   isMobile?: boolean;
@@ -76,9 +64,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   const [selectedClient, setSelectedClient] = useState<string>(clients[0]?.id ?? '');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [channelFilter, setChannelFilter] = useState<'all' | MessageChannel>('all');
   const [showChat, setShowChat] = useState(false);
-  const [replyChannel, setReplyChannel] = useState<MessageChannel>('telegram');
   const [templateCategory, setTemplateCategory] = useState<'all' | MessageTemplate['category']>('all');
   const [isClientTyping, setIsClientTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -148,12 +134,6 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
 
   const activeConversation = messages.filter(m => m.clientId === selectedClient);
   const activeClient = clients.find(c => c.id === selectedClient);
-  const activeChannel = getConversationChannel(activeConversation);
-
-  // Sync reply channel when switching conversations
-  useEffect(() => {
-    setReplyChannel(activeChannel);
-  }, [selectedClient, activeChannel]);
 
   // Auto-scroll on conversation switch or new message
   useEffect(() => {
@@ -179,19 +159,11 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     const clientMessages = messages.filter(m => m.clientId === id);
     const lastMsg = clientMessages[clientMessages.length - 1];
     const unread = clientMessages.filter(m => !m.isRead && !m.isFromCoach).length;
-    const channel = getConversationChannel(clientMessages);
-    return { ...client, lastMessage: lastMsg, unreadCount: unread, channel };
+    return { ...client, lastMessage: lastMsg, unreadCount: unread };
   }).sort((a, b) => new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime());
 
   const filteredConversations = conversationClients
-    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter(c => channelFilter === 'all' || c.channel === channelFilter);
-
-  // Channel counts for filter tabs
-  const channelCounts: Record<string, number> = { all: conversationClients.length };
-  for (const conv of conversationClients) {
-    channelCounts[conv.channel] = (channelCounts[conv.channel] || 0) + 1;
-  }
+    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleSend = () => {
     if (!newMessage.trim() || !activeClient) return;
@@ -204,7 +176,6 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
       timestamp: new Date().toISOString(),
       isRead: true,
       isFromCoach: true,
-      channel: replyChannel,
       deliveryStatus: 'sent',
     };
     onSendMessage(msg);
@@ -215,14 +186,6 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     setSelectedClient(id);
     if (isMobile) setShowChat(true);
   };
-
-  const filterTabs: { key: 'all' | MessageChannel; label: string }[] = [
-    { key: 'all', label: t.messages.allChannels },
-    { key: 'telegram', label: t.messages.telegram },
-    { key: 'whatsapp', label: t.messages.whatsapp },
-    { key: 'email', label: t.messages.email },
-    { key: 'instagram', label: t.messages.instagram },
-  ];
 
   // Online status
   const isRecentlyActive = activeClient?.lastActive?.includes('hour') ||
@@ -249,34 +212,6 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
           <div style={styles.sidebarHeader}>
             <h3 style={styles.sidebarTitle}>{t.messages.messagesTitle}</h3>
             <span style={styles.convCount}>{filteredConversations.length}</span>
-          </div>
-
-          {/* Channel Filter Tabs */}
-          <div
-            style={styles.filterRow}
-            onWheel={(e) => { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); }}
-          >
-            {filterTabs.map(tab => {
-              const isActive = channelFilter === tab.key;
-              const count = channelCounts[tab.key] || 0;
-              const tabColor = tab.key !== 'all' ? CHANNEL_COLORS[tab.key] : undefined;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setChannelFilter(tab.key)}
-                  style={{
-                    ...styles.filterTab,
-                    background: isActive ? (tabColor ? `${tabColor}15` : 'var(--accent-primary-dim)') : 'transparent',
-                    color: isActive ? (tabColor || 'var(--accent-primary)') : 'var(--text-tertiary)',
-                    borderColor: isActive ? (tabColor ? `${tabColor}30` : 'rgba(0,229,200,0.15)') : 'transparent',
-                  }}
-                >
-                  {tab.key !== 'all' && <ChannelIcon channel={tab.key} size={11} />}
-                  {tab.label}
-                  <span style={{ fontSize: '12px', opacity: 0.6 }}>({count})</span>
-                </button>
-              );
-            })}
           </div>
 
           {/* Search */}
@@ -329,28 +264,12 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                     transition={{ delay: i * 0.03 }}
                     whileHover={{ background: isSelected ? 'var(--accent-primary-dim)' : 'var(--bg-subtle)' }}
                   >
-                    <div style={{ position: 'relative' }}>
-                      <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
-                        {getInitials(conv.name)}
-                      </div>
-                      {conv.channel && (
-                        <div style={{
-                          ...styles.channelDot,
-                          background: CHANNEL_COLORS[conv.channel],
-                          boxShadow: `0 0 6px ${CHANNEL_COLORS[conv.channel]}40`,
-                        }}>
-                          <ChannelIcon channel={conv.channel} size={10} />
-                        </div>
-                      )}
+                    <div style={{ ...styles.convAvatar, background: getAvatarColor(conv.id) }}>
+                      {getInitials(conv.name)}
                     </div>
                     <div style={styles.convInfo}>
                       <div style={styles.convNameRow}>
                         <span style={{ ...styles.convName, fontWeight: isUnread ? 700 : 600 }}>{conv.name}</span>
-                        {conv.channel && (
-                          <span style={{ ...styles.channelBadge, color: CHANNEL_COLORS[conv.channel] }}>
-                            <ChannelIcon channel={conv.channel} size={12} />
-                          </span>
-                        )}
                       </div>
                       <div style={{ ...styles.convPreview, color: isUnread ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: isUnread ? 500 : 400 }}>
                         {conv.lastMessage.isFromCoach && <span style={{ color: 'var(--accent-primary)' }}>{t.messages.you}</span>}
@@ -423,7 +342,6 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                 const msgDate = formatDateLabel(msg.timestamp);
                 const showSeparator = msgDate !== lastDateLabel;
                 lastDateLabel = msgDate;
-                const msgChannel = msg.channel;
 
                 return (
                   <Fragment key={msg.id}>
@@ -456,14 +374,9 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                       }}>
                         <p style={styles.msgText}>{msg.text}</p>
                         <div style={styles.msgMeta}>
-                          {msgChannel && (
-                            <span style={{ ...styles.msgChannelTag, color: CHANNEL_COLORS[msgChannel] }}>
-                              <ChannelIcon channel={msgChannel} size={10} />
-                            </span>
-                          )}
                           <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
                           {msg.isFromCoach && (
-                            <DeliveryCheck status={msg.deliveryStatus} channelColor={msgChannel ? CHANNEL_COLORS[msgChannel] : undefined} />
+                            <DeliveryCheck status={msg.deliveryStatus} />
                           )}
                         </div>
                       </div>
@@ -479,32 +392,6 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
 
         {/* Input Area */}
         <div style={styles.inputArea}>
-          {/* Channel Switcher */}
-          <div style={styles.channelSwitcher}>
-            <div style={styles.channelSwitchRow}>
-              {(['telegram', 'whatsapp', 'email', 'instagram'] as MessageChannel[]).map(ch => {
-                const isActive = replyChannel === ch;
-                return (
-                  <button
-                    key={ch}
-                    onClick={() => setReplyChannel(ch)}
-                    style={{
-                      ...styles.channelSwitchBtn,
-                      background: isActive ? `${CHANNEL_COLORS[ch]}15` : 'transparent',
-                      borderColor: isActive ? `${CHANNEL_COLORS[ch]}40` : 'var(--glass-border)',
-                    }}
-                    title={`Reply via ${CHANNEL_LABELS[ch]}`}
-                  >
-                    <ChannelIcon channel={ch} size={14} />
-                  </button>
-                );
-              })}
-            </div>
-            <span style={{ ...styles.replyHint, color: CHANNEL_COLORS[replyChannel] }}>
-              {t.messages.replyingVia} {CHANNEL_LABELS[replyChannel]}
-            </span>
-          </div>
-
           {/* Suggested template */}
           {suggestedTemplate && (
             <motion.div
@@ -581,13 +468,6 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
             <MessageSquare size={48} color="var(--text-tertiary)" />
             <div style={styles.emptyTitle}>{t.messages.selectConversation}</div>
             <div style={styles.emptySub}>{t.messages.chooseClient}</div>
-            <div style={styles.emptyChannelRow}>
-              {(['telegram', 'whatsapp', 'email', 'instagram'] as MessageChannel[]).map(ch => (
-                <span key={ch} style={{ ...styles.emptyChannelIcon, color: CHANNEL_COLORS[ch] }}>
-                  <ChannelIcon channel={ch} size={16} />
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       ) : null}
@@ -633,27 +513,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-subtle-hover)',
     padding: '2px 8px',
     borderRadius: '10px',
-  },
-  filterRow: {
-    display: 'flex',
-    gap: '4px',
-    padding: '0 16px',
-    marginBottom: '12px',
-    overflowX: 'auto',
-  },
-  filterTab: {
-    padding: '4px 10px',
-    borderRadius: '16px',
-    border: '1px solid transparent',
-    fontSize: '12px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    transition: 'all 0.15s',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
   },
   searchBox: {
     display: 'flex',
@@ -719,18 +578,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-on-accent)',
     flexShrink: 0,
   },
-  channelDot: {
-    position: 'absolute',
-    bottom: '-2px',
-    right: '-2px',
-    width: '16px',
-    height: '16px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '2px solid var(--bg-card)',
-  },
   convInfo: {
     flex: 1,
     minWidth: 0,
@@ -743,10 +590,6 @@ const styles: Record<string, React.CSSProperties> = {
   convName: {
     fontSize: '14px',
     fontWeight: 600,
-  },
-  channelBadge: {
-    display: 'flex',
-    alignItems: 'center',
   },
   convPreview: {
     fontSize: '13px',
@@ -907,10 +750,6 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '5px',
     marginTop: '4px',
   },
-  msgChannelTag: {
-    display: 'flex',
-    alignItems: 'center',
-  },
   msgTime: {
     fontSize: '14px',
     color: 'var(--text-tertiary)',
@@ -947,35 +786,6 @@ const styles: Record<string, React.CSSProperties> = {
   inputArea: {
     padding: '12px 24px 16px',
     borderTop: '1px solid var(--glass-border)',
-  },
-  channelSwitcher: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '8px',
-  },
-  channelSwitchRow: {
-    display: 'flex',
-    gap: '4px',
-  },
-  channelSwitchBtn: {
-    width: '32px',
-    height: '28px',
-    borderRadius: '8px',
-    border: '1px solid var(--glass-border)',
-    background: 'transparent',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.15s',
-  },
-  replyHint: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '14px',
-    fontWeight: 500,
   },
   suggestedRow: {
     display: 'flex',
@@ -1108,20 +918,5 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     maxWidth: '280px',
     lineHeight: 1.5,
-  },
-  emptyChannelRow: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '12px',
-  },
-  emptyChannelIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    background: 'var(--bg-subtle)',
-    border: '1px solid var(--glass-border)',
   },
 };

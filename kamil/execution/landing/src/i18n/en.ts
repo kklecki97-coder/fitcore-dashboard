@@ -52,7 +52,7 @@ export const en = {
       'Revenue, clients, check-ins, smart alerts \u2014 all at a glance',
       "Every client's progress, plan, and status in one roster",
       'Build and assign programs with sets, reps, RPE, and tempo',
-      'Telegram, WhatsApp, Instagram, Email \u2014 one conversation feed',
+      'Chat with every client in one place \u2014 templates, read receipts, suggestions',
       'Revenue trends, retention rates, client value, plan breakdown',
     ],
   },
@@ -93,9 +93,9 @@ export const en = {
       cta: 'Get started',
     },
     inbox: {
-      badge: 'Unified Inbox',
+      badge: 'Built-in Messaging',
       heading: 'Every conversation, one feed',
-      body: 'Telegram, WhatsApp, Instagram, Email \u2014 all in one inbox. Quick-reply templates, read receipts, and smart suggestions. No more switching between apps.',
+      body: 'Chat with every client directly inside FitCore \u2014 no switching apps, no lost threads. Quick-reply templates, read receipts, and contextual suggestions based on what your client just said.',
       cta: 'Get started',
     },
     workouts: {
@@ -156,7 +156,7 @@ export const en = {
       'Full coaching platform \u2014 ready to use from day one',
       'Full client management \u2014 roster, streaks, revenue',
       'Workout program builder with 50+ exercises',
-      'Unified inbox \u2014 Telegram, WhatsApp, IG, Email',
+      'Built-in client messaging with templates & read receipts',
       'Analytics & revenue tracking',
       'Weekly check-in system for every client',
       'Smart alerts for at-risk clients',
@@ -204,7 +204,7 @@ export const en = {
     included: [
       { label: 'Full client management', desc: 'Roster, streaks, revenue, status \u2014 all in one view' },
       { label: 'Workout program builder', desc: '50+ exercises, templates, drag-and-drop scheduling' },
-      { label: 'Unified inbox', desc: 'Telegram, WhatsApp, Instagram, Email \u2014 one thread per client' },
+      { label: 'Built-in messaging', desc: 'Chat with every client in one place \u2014 templates, read receipts, smart suggestions' },
       { label: 'Analytics & revenue tracking', desc: 'See which clients drive revenue and who needs attention' },
       { label: 'Weekly check-in system', desc: 'Automated reminders, mood/sleep/nutrition tracking' },
       { label: 'Smart alerts for at-risk clients', desc: 'Know before they churn \u2014 missed check-ins, dropped streaks' },
