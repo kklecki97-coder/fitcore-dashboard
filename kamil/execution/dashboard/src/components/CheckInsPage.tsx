@@ -12,13 +12,14 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, CheckIn, Page } from '../types';
+import type { Client, CheckIn, Message, Page } from '../types';
 
 interface CheckInsPageProps {
   clients: Client[];
   checkIns: CheckIn[];
   onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
   onViewClient: (id: string) => void;
+  onSendMessage: (msg: Message) => void;
   onNavigate?: (page: Page) => void; // kept for future use
 }
 
@@ -83,7 +84,7 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
   );
 }
 
-export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onNavigate: _onNavigate }: CheckInsPageProps) {
+export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onSendMessage, onNavigate: _onNavigate }: CheckInsPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
   const [filter, setFilter] = useState<FilterTab>('pending');
@@ -95,6 +96,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   const [messageModal, setMessageModal] = useState<{ clientId: string; clientName: string } | null>(null);
   const [messageDraft, setMessageDraft] = useState('');
   const [messageSent, setMessageSent] = useState(false);
+  const [showFlagInput, setShowFlagInput] = useState<string | null>(null);
 
   const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
 
@@ -108,7 +110,6 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
 
   // ── Computed data ──
   const completedCheckIns = checkIns.filter(ci => ci.status === 'completed');
-  const scheduledCheckIns = checkIns.filter(ci => ci.status === 'scheduled');
   const pendingReview = completedCheckIns.filter(ci => ci.reviewStatus === 'pending');
   const flagged = completedCheckIns.filter(ci => ci.reviewStatus === 'flagged');
   const reviewed = completedCheckIns.filter(ci => ci.reviewStatus === 'reviewed');
@@ -124,26 +125,6 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
     const now = new Date();
     return Math.floor((now.getTime() - lastDate.getTime()) / 86400000);
   };
-
-  // Point 3: Upcoming check-ins with client names and due dates
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dayAfterTomorrow = new Date(today);
-  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-  const dueToday = scheduledCheckIns.filter(ci => {
-    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
-    return d.getTime() === today.getTime();
-  });
-  const dueTomorrow = scheduledCheckIns.filter(ci => {
-    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
-    return d.getTime() === tomorrow.getTime();
-  });
-  const dueLater = scheduledCheckIns.filter(ci => {
-    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
-    return d.getTime() >= dayAfterTomorrow.getTime();
-  });
 
   // Filter the list
   const filtered = (() => {
@@ -242,81 +223,6 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
 
   return (
     <div style={styles.page}>
-      {/* Summary Cards */}
-      <div style={{ ...styles.summaryRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
-        <GlassCard delay={0}>
-          <div style={styles.summaryLabel}>{t.checkIns.pending}</div>
-          <div style={{ ...styles.summaryValue, color: pendingReview.length > 0 ? 'var(--accent-warm)' : 'var(--text-primary)' }}>
-            {pendingReview.length}
-          </div>
-          <div style={styles.summaryHint}>{t.checkIns.checkInsWaiting}</div>
-        </GlassCard>
-        <GlassCard delay={0.05}>
-          <div style={styles.summaryLabel}>{t.checkIns.flagged}</div>
-          <div style={{ ...styles.summaryValue, color: flagged.length > 0 ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
-            {flagged.length}
-          </div>
-          <div style={styles.summaryHint}>{t.checkIns.needIntervention}</div>
-        </GlassCard>
-        <GlassCard delay={0.1}>
-          <div style={styles.summaryLabel}>{t.checkIns.steps}</div>
-          <div style={styles.summaryValue}>
-            {completedCheckIns.length > 0
-              ? Math.round(completedCheckIns.filter(ci => ci.steps != null).reduce((s, ci) => s + (ci.steps || 0), 0) / completedCheckIns.filter(ci => ci.steps != null).length).toLocaleString()
-              : 0}
-          </div>
-          <div style={styles.summaryHint}>{t.checkIns.dailyAvg}</div>
-        </GlassCard>
-        <GlassCard delay={0.15}>
-          <div style={styles.summaryLabel}>{t.checkIns.upcoming}</div>
-          <div style={styles.summaryValue}>{scheduledCheckIns.length}</div>
-          <div style={styles.upcomingDetails}>
-            {dueToday.length > 0 && (
-              <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: 'var(--text-on-accent)' }}>{dueToday.length} {t.checkIns.dueToday.toLowerCase()}</span>
-                <span style={styles.upcomingNames}>
-                  {dueToday.map((ci, i) => (
-                    <span key={ci.id}>
-                      {i > 0 && ', '}
-                      <span
-                        onClick={() => onViewClient(ci.clientId)}
-                        style={styles.upcomingNameLink}
-                      >
-                        {ci.clientName.split(' ')[0]}
-                      </span>
-                    </span>
-                  ))}
-                </span>
-              </div>
-            )}
-            {dueTomorrow.length > 0 && (
-              <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: 'var(--text-on-accent)' }}>{dueTomorrow.length} {t.checkIns.dueTomorrow.toLowerCase()}</span>
-                <span style={styles.upcomingNames}>
-                  {dueTomorrow.map((ci, i) => (
-                    <span key={ci.id}>
-                      {i > 0 && ', '}
-                      <span
-                        onClick={() => onViewClient(ci.clientId)}
-                        style={styles.upcomingNameLink}
-                      >
-                        {ci.clientName.split(' ')[0]}
-                      </span>
-                    </span>
-                  ))}
-                </span>
-              </div>
-            )}
-            {dueLater.length > 0 && (
-              <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--bg-subtle-hover)', color: 'var(--text-secondary)' }}>{dueLater.length} {t.checkIns.dueLater.toLowerCase()}</span>
-              </div>
-            )}
-            {scheduledCheckIns.length === 0 && <span style={styles.summaryHint}>{t.checkIns.noneScheduled}</span>}
-          </div>
-        </GlassCard>
-      </div>
-
       {/* Main Queue */}
       <GlassCard delay={0.2}>
         {/* Header with tabs */}
@@ -762,28 +668,31 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 style={styles.feedbackInput}
                                 rows={2}
                               />
-                              {/* Point 4: Flag input now full width above buttons */}
-                              <div style={styles.flagRow}>
-                                <Flag size={13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <input
-                                  value={flagDrafts[ci.id] || ''}
-                                  onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                  placeholder={t.checkIns.flagReasonPlaceholder}
-                                  style={styles.flagInput}
-                                />
-                                <button
-                                  onClick={() => handleFlag(ci.id)}
-                                  style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5 }}
-                                  disabled={!flagDrafts[ci.id]?.trim()}
-                                >
-                                  {t.checkIns.flag}
-                                </button>
-                              </div>
+                              {/* Flag input — only shown when toggled */}
+                              {showFlagInput === ci.id && (
+                                <div style={styles.flagRow}>
+                                  <Flag size={13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                  <input
+                                    value={flagDrafts[ci.id] || ''}
+                                    onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                    placeholder={t.checkIns.flagReasonPlaceholder}
+                                    style={styles.flagInput}
+                                    autoFocus
+                                    onKeyDown={e => { if (e.key === 'Enter' && flagDrafts[ci.id]?.trim()) handleFlag(ci.id); if (e.key === 'Escape') setShowFlagInput(null); }}
+                                  />
+                                  <button
+                                    onClick={() => handleFlag(ci.id)}
+                                    style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5 }}
+                                    disabled={!flagDrafts[ci.id]?.trim()}
+                                  >
+                                    {t.checkIns.flag}
+                                  </button>
+                                </div>
+                              )}
                               <div style={styles.actionButtons}>
                                 <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
                                   {t.checkIns.viewProfile}
                                 </button>
-                                {/* Point 2: Send Message shortcut */}
                                 <button
                                   onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })}
                                   style={styles.actionBtnMessage}
@@ -791,6 +700,15 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   <MessageSquare size={13} />
                                   {t.checkIns.sendMessage}
                                 </button>
+                                {showFlagInput !== ci.id && (
+                                  <button
+                                    onClick={() => setShowFlagInput(ci.id)}
+                                    style={styles.actionBtnDanger}
+                                  >
+                                    <Flag size={13} />
+                                    {t.checkIns.flag}
+                                  </button>
+                                )}
                                 <div style={{ flex: 1 }} />
                                 <button
                                   onClick={() => handleMarkReviewed(ci.id)}
@@ -932,6 +850,17 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         }}
                         disabled={!messageDraft.trim()}
                         onClick={() => {
+                          const msg: Message = {
+                            id: crypto.randomUUID(),
+                            clientId: messageModal.clientId,
+                            clientName: messageModal.clientName,
+                            clientAvatar: '',
+                            text: messageDraft.trim(),
+                            timestamp: new Date().toISOString(),
+                            isRead: true,
+                            isFromCoach: true,
+                          };
+                          onSendMessage(msg);
                           setMessageSent(true);
                           setMessageDraft('');
                           setTimeout(() => {
@@ -963,29 +892,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
-  },
-  summaryRow: {
-    display: 'grid',
-    gap: '16px',
-  },
-  summaryLabel: {
-    fontSize: '15px',
-    fontWeight: 600,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  summaryValue: {
-    fontSize: '39px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-display)',
-    color: 'var(--text-primary)',
-    marginTop: '4px',
-  },
-  summaryHint: {
-    fontSize: '15px',
-    color: 'var(--text-tertiary)',
-    marginTop: '2px',
   },
   queueHeader: {
     display: 'flex',
@@ -1376,37 +1282,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     transition: 'background 0.15s',
-  },
-  // Point 3: Upcoming card details
-  upcomingDetails: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    marginTop: '6px',
-  },
-  upcomingLine: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  upcomingBadge: {
-    fontSize: '12px',
-    fontWeight: 700,
-    padding: '2px 8px',
-    borderRadius: '8px',
-    flexShrink: 0,
-  },
-  upcomingNames: {
-    fontSize: '14px',
-    color: 'var(--text-secondary)',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  upcomingNameLink: {
-    color: 'var(--accent-primary)',
-    cursor: 'pointer',
-    transition: 'opacity 0.15s',
   },
   // Point 5: Progress photos
   photosRow: {

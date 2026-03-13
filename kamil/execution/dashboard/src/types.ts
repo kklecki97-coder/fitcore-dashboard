@@ -25,8 +25,6 @@ export interface Client {
   streak: number;
 }
 
-export type MessageChannel = 'telegram' | 'whatsapp' | 'email' | 'instagram';
-
 export interface Message {
   id: string;
   clientId: string;
@@ -36,7 +34,6 @@ export interface Message {
   timestamp: string;
   isRead: boolean;
   isFromCoach: boolean;
-  channel?: MessageChannel;
   deliveryStatus?: 'sending' | 'sent' | 'delivered' | 'read';
 }
 
@@ -129,7 +126,7 @@ export interface CheckIn {
   followUpNotes: { text: string; date: string }[];
 }
 
-export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';
+export type Page = 'overview' | 'clients' | 'client-detail' | 'messages' | 'analytics' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';
 
 export type Theme = 'dark' | 'light';
 

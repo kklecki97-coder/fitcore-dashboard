@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Dumbbell, Timer, Play, X, ChevronRight, Trophy, Menu } from 'lucide-react';
+import { CheckCircle2, Circle, Dumbbell, Timer, Minus, Plus, Play, X, ChevronRight, Trophy, Menu } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
@@ -22,7 +22,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _
   // ── Compute today's workout day index (schedule-aware) ──
   // DEV OVERRIDE: pretend today is Friday (mondayBased=4) so we can demo all 3 workout types
   // Remove this override before deploying!
-  const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 for demo, null for real date
+  const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
   const dayAssignments = weeklySchedule?.dayAssignments ?? {};
   const todayDayIndex = (() => {
     if (!program || program.days.length === 0) return 0;
@@ -37,6 +37,8 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _
   })();
 
   const selectedDay = todayDayIndex;
+  // @ts-ignore — scaffolded for exercise expand/collapse UI
+  const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
 
   // ── Workout Mode state ──
   const [workoutActive, setWorkoutActive] = useState(false);
@@ -164,6 +166,8 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _
   const completedSets = day.exercises.reduce((sum, ex) => {
     return sum + Array.from({ length: ex.sets }, (_, i) => getSetCompleted(ex.id, i + 1)).filter(Boolean).length;
   }, 0);
+  // @ts-ignore — scaffolded for progress bar UI
+  const progressPct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
   const allDone = completedSets === totalSets;
 
   const formatTime = (s: number) => {
@@ -198,6 +202,14 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _
     }
   };
 
+  // @ts-ignore — scaffolded for workout mode navigation
+  const goPrevExercise = () => {
+    if (workoutExerciseIdx > 0) {
+      setWorkoutExerciseIdx(prev => prev - 1);
+      setRestTimer(null);
+    }
+  };
+
   // Calculate total volume for summary
   const getTotalVolume = () => {
     let volume = 0;
@@ -211,6 +223,171 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _
       }
     });
     return Math.round(volume);
+  };
+
+  // ── Render set logging (shared between overview expanded and workout mode) ──
+  // @ts-ignore — scaffolded for detailed set logging UI
+  const renderSetRow = (exercise: typeof day.exercises[0], setNum: number, compact: boolean = false) => {
+    const completed = getSetCompleted(exercise.id, setNum);
+    const log = getSetLog(exercise.id, setNum);
+    const lastSession = getLastSession(exercise.id, setNum);
+    const loggedRpe = log?.rpe;
+    const editVals = getEditValues(exercise.id, setNum, exercise);
+
+    return (
+      <div key={setNum} style={{
+        ...styles.setBlock,
+        opacity: completed ? 0.55 : 1,
+        background: completed ? 'rgba(0,229,200,0.04)' : 'transparent',
+        padding: compact ? '10px 8px' : '8px 4px',
+      }}>
+        <div style={{
+          ...styles.setRow,
+          gridTemplateColumns: compact ? '32px 1fr 1fr 44px' : '36px 1fr 1fr 44px 44px',
+        }}>
+          <span style={{
+            ...styles.setLabel,
+            color: completed ? 'var(--accent-success)' : 'var(--text-secondary)',
+            fontSize: compact ? '16px' : '15px',
+          }}>
+            {setNum}
+          </span>
+
+          {/* Reps */}
+          {completed ? (
+            <span style={{ ...styles.setValueCompleted, fontSize: compact ? '17px' : '15px' }}>{log?.reps ?? editVals.reps}</span>
+          ) : (
+            <div style={styles.editableGroup}>
+              <button
+                style={{ ...styles.stepBtn, width: compact ? '34px' : '28px', height: compact ? '34px' : '28px' }}
+                onClick={() => updateEditValue(exercise.id, setNum, 'reps', Math.max(1, editVals.reps - 1))}
+                disabled={!isTodaysWorkout}
+              >
+                <Minus size={compact ? 14 : 12} />
+              </button>
+              <span style={{ ...styles.editableValue, fontSize: compact ? '18px' : '16px' }}>{editVals.reps}</span>
+              <button
+                style={{ ...styles.stepBtn, width: compact ? '34px' : '28px', height: compact ? '34px' : '28px' }}
+                onClick={() => updateEditValue(exercise.id, setNum, 'reps', editVals.reps + 1)}
+                disabled={!isTodaysWorkout}
+              >
+                <Plus size={compact ? 14 : 12} />
+              </button>
+            </div>
+          )}
+
+          {/* Weight */}
+          {completed ? (
+            <span style={{ ...styles.setValueCompleted, fontSize: compact ? '17px' : '15px' }}>{log?.weight ?? editVals.weight}</span>
+          ) : (
+            <input
+              type="text"
+              value={editVals.weight}
+              onChange={(e) => updateEditValue(exercise.id, setNum, 'weight', e.target.value)}
+              style={{ ...styles.weightInput, padding: compact ? '8px' : '6px 8px', fontSize: compact ? '15px' : '14px' }}
+              disabled={!isTodaysWorkout}
+            />
+          )}
+
+          {/* RPE badge (only in non-compact / overview mode) */}
+          {!compact && (
+            completed ? (
+              <span style={{
+                ...styles.rpeBadge,
+                color: (loggedRpe ?? 0) >= 9 ? 'var(--accent-danger)' : 'var(--accent-primary)',
+                background: (loggedRpe ?? 0) >= 9 ? 'var(--accent-danger-dim)' : 'var(--accent-primary-dim)',
+              }}>
+                {loggedRpe ?? '-'}
+              </span>
+            ) : (
+              <span style={styles.rpeTarget}>{exercise.rpe ?? '-'}</span>
+            )
+          )}
+
+          {/* Complete button */}
+          <button
+            disabled={!isTodaysWorkout}
+            style={{
+              ...styles.setCheckBtn,
+              width: compact ? '50px' : '44px',
+              height: compact ? '50px' : '44px',
+              background: completed ? 'var(--accent-success)' : 'transparent',
+              borderColor: completed ? 'var(--accent-success)' : 'var(--glass-border)',
+              color: completed ? '#07090e' : 'var(--text-tertiary)',
+              opacity: isTodaysWorkout ? 1 : 0.3,
+              cursor: isTodaysWorkout ? 'pointer' : 'not-allowed',
+            }}
+            onClick={() => {
+              if (!isTodaysWorkout) return;
+              if (completed) {
+                onRemoveLog(exercise.id, setNum, todayStr);
+              } else {
+                const vals = getEditValues(exercise.id, setNum, exercise);
+                onLogSet({
+                  id: crypto.randomUUID(),
+                  date: todayStr,
+                  exerciseId: exercise.id,
+                  exerciseName: exercise.name,
+                  setNumber: setNum,
+                  reps: vals.reps,
+                  weight: vals.weight,
+                  completed: true,
+                  rpe: null,
+                });
+                if (exercise.restSeconds && setNum < exercise.sets) {
+                  setRestTimer({
+                    exerciseId: exercise.id,
+                    seconds: exercise.restSeconds,
+                    total: exercise.restSeconds,
+                  });
+                }
+              }
+            }}
+          >
+            {completed ? <CheckCircle2 size={compact ? 20 : 16} /> : <Circle size={compact ? 20 : 16} />}
+          </button>
+        </div>
+
+        {/* RPE selector after completing (only if no RPE logged yet) */}
+        {completed && !loggedRpe && (
+          <div style={styles.rpeRow}>
+            <span style={styles.rpeLabel}>How hard?</span>
+            <div style={styles.rpePills}>
+              {[6, 7, 8, 9, 10].map(val => (
+                <button
+                  key={val}
+                  disabled={!isTodaysWorkout}
+                  style={{
+                    ...styles.rpePill,
+                    width: compact ? '38px' : '34px',
+                    height: compact ? '34px' : '30px',
+                    background: 'transparent',
+                    borderColor: 'var(--glass-border)',
+                    color: 'var(--text-tertiary)',
+                    opacity: isTodaysWorkout ? 1 : 0.3,
+                    cursor: isTodaysWorkout ? 'pointer' : 'not-allowed',
+                  }}
+                  onClick={() => {
+                    if (!isTodaysWorkout) return;
+                    onUpdateLog(exercise.id, setNum, todayStr, { rpe: val });
+                  }}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Last session hint */}
+        {!completed && lastSession && (
+          <div style={styles.lastSession}>
+            Last: {lastSession.weight} × {lastSession.reps}
+            {lastSession.rpe ? ` @ RPE ${lastSession.rpe}` : ''}
+          </div>
+        )}
+      </div>
+    );
   };
 
   // ═══════════════════════════════════════════════════
@@ -317,6 +494,10 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _
     const exAllDone = Array.from({ length: currentExercise.sets }, (_, i) =>
       getSetCompleted(currentExercise.id, i + 1)
     ).every(Boolean);
+    // @ts-ignore — scaffolded for workout mode progress display
+    const exCompletedCount = Array.from({ length: currentExercise.sets }, (_, i) =>
+      getSetCompleted(currentExercise.id, i + 1)
+    ).filter(Boolean).length;
 
     const isResting = restTimer && restTimer.exerciseId === currentExercise.id;
     const lastSession = getLastSession(currentExercise.id, currentSetNum);

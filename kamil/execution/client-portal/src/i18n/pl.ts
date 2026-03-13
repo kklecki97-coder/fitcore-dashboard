@@ -146,6 +146,7 @@ export const pl: Translations = {
     nutrition: 'Odżywianie (1-10)',
     selfReport: 'Raport Własny',
     optional: 'Opcjonalnie',
+    moreDetails: 'Więcej Szczegółów',
     notes: 'Notatki',
     notesPlaceholder: 'Jak minął Twój tydzień?',
     winsThisWeek: 'Sukcesy tego tygodnia',

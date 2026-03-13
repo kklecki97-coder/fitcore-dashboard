@@ -125,7 +125,6 @@ export const mockMessages: Message[] = [
     timestamp: new Date(now.getTime() - 2 * 3600000).toISOString(),
     isRead: false,
     isFromCoach: true,
-    channel: 'whatsapp',
   },
   {
     id: 'msg2',
@@ -136,7 +135,6 @@ export const mockMessages: Message[] = [
     timestamp: new Date(now.getTime() - 1.5 * 3600000).toISOString(),
     isRead: true,
     isFromCoach: false,
-    channel: 'whatsapp',
   },
   {
     id: 'msg3',
@@ -147,6 +145,65 @@ export const mockMessages: Message[] = [
     timestamp: new Date(now.getTime() - 1 * 3600000).toISOString(),
     isRead: false,
     isFromCoach: true,
-    channel: 'whatsapp',
+  },
+  {
+    id: 'msg4',
+    clientId: 'mock-client-1',
+    clientName: 'Kuba Mika',
+    clientAvatar: '',
+    text: 'Also, I updated your program — added face pulls on pull day. Your shoulders will thank you later.',
+    timestamp: new Date(now.getTime() - 2 * 3600000).toISOString(),
+    isRead: false,
+    isFromCoach: true,
+  },
+  {
+    id: 'msg5',
+    clientId: 'mock-client-1',
+    clientName: 'Kuba Mika',
+    clientAvatar: '',
+    text: 'Got it, makes sense. Will aim for 4x10 at 80. And thanks for the face pulls — my rear delts definitely need the work!',
+    timestamp: new Date(now.getTime() - 1.5 * 3600000).toISOString(),
+    isRead: true,
+    isFromCoach: false,
+  },
+  // Workout completion notification
+  {
+    id: 'msg-workout-1',
+    clientId: 'mock-client-1',
+    clientName: 'Kuba Mika',
+    clientAvatar: '',
+    text: '',
+    timestamp: new Date(now.getTime() - 0.5 * 3600000).toISOString(), // 30 min ago
+    isRead: false,
+    isFromCoach: false,
+    type: 'workout-complete',
+    workoutSummary: {
+      dayName: 'Upper Body Pull',
+      duration: '48:32',
+      exercises: 5,
+      sets: '15/15',
+      volume: '4,280',
+    },
+  },
+  // Older messages
+  {
+    id: 'msg6',
+    clientId: 'mock-client-1',
+    clientName: 'Kuba Mika',
+    clientAvatar: '',
+    text: 'Quick question — is it okay to do cardio on rest days? Thinking of adding 20min walks.',
+    timestamp: new Date(now.getTime() - 48 * 3600000).toISOString(), // 2 days ago
+    isRead: true,
+    isFromCoach: false,
+  },
+  {
+    id: 'msg7',
+    clientId: 'mock-client-1',
+    clientName: 'Kuba Mika',
+    clientAvatar: '',
+    text: 'Absolutely! Walking is perfect for rest days. Low impact, helps recovery, and keeps your step count up. Aim for 8-10k steps on those days.',
+    timestamp: new Date(now.getTime() - 47 * 3600000).toISOString(),
+    isRead: true,
+    isFromCoach: true,
   },
 ];

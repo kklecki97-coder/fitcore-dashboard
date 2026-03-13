@@ -2,17 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Plus, MoreHorizontal, Copy, BookmarkPlus, Trash2, X,
-  Clock, Users, Dumbbell, Eye,
+  Clock, Dumbbell, Eye,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, WorkoutProgram } from '../types';
+import type { WorkoutProgram } from '../types';
 
 interface WorkoutProgramsPageProps {
   programs: WorkoutProgram[];
-  clients: Client[];
   onViewProgram: (id: string) => void;
   onAddProgram: () => void;
   onDeleteProgram: (id: string) => void;
@@ -21,7 +19,7 @@ interface WorkoutProgramsPageProps {
 }
 
 export default function WorkoutProgramsPage({
-  programs, clients, onViewProgram, onAddProgram,
+  programs, onViewProgram, onAddProgram,
   onDeleteProgram, onDuplicateProgram, onUpdateProgram,
 }: WorkoutProgramsPageProps) {
   const { t } = useLang();
@@ -52,9 +50,6 @@ export default function WorkoutProgramsPage({
   const activeCount = programs.filter(p => p.status === 'active').length;
   const draftCount = programs.filter(p => p.status === 'draft').length;
   const templateCount = programs.filter(p => p.isTemplate).length;
-
-  const getClientNames = (ids: string[]) =>
-    ids.map(id => clients.find(c => c.id === id)).filter(Boolean) as Client[];
 
   const handleSaveAsTemplate = (id: string) => {
     onDuplicateProgram(id);
@@ -135,7 +130,6 @@ export default function WorkoutProgramsPage({
       {/* Program Cards Grid */}
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))' }}>
         {filtered.map((program, i) => {
-          const assignedClients = getClientNames(program.clientIds);
           return (
             <GlassCard key={program.id} delay={i * 0.04} hover onClick={() => onViewProgram(program.id)}>
               <div style={styles.cardInner}>
@@ -190,29 +184,6 @@ export default function WorkoutProgramsPage({
                     <span style={{ ...styles.badge, color: 'var(--accent-warm)', background: 'var(--accent-warm-dim)' }}>
                       {t.programs.template}
                     </span>
-                  )}
-                </div>
-
-                {/* Assigned Clients */}
-                <div style={styles.clientsRow}>
-                  <Users size={13} color="var(--text-tertiary)" />
-                  {assignedClients.length > 0 ? (
-                    <div style={styles.avatarGroup}>
-                      {assignedClients.slice(0, 4).map(c => (
-                        <div key={c.id} style={{ ...styles.miniAvatar, background: getAvatarColor(c.id) }}>
-                          {getInitials(c.name)}
-                        </div>
-                      ))}
-                      {assignedClients.length > 4 && (
-                        <span style={styles.moreClients}>+{assignedClients.length - 4}</span>
-                      )}
-                      <span style={styles.clientNames}>
-                        {assignedClients.slice(0, 2).map(c => c.name.split(' ')[0]).join(', ')}
-                        {assignedClients.length > 2 ? ` +${assignedClients.length - 2}` : ''}
-                      </span>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>{t.programs.unassigned}</span>
                   )}
                 </div>
 
@@ -448,37 +419,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '3px 10px',
     borderRadius: '20px',
     textTransform: 'capitalize',
-  },
-  clientsRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  avatarGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-  },
-  miniAvatar: {
-    width: '24px',
-    height: '24px',
-    borderRadius: '6px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '13px',
-    fontWeight: 700,
-    color: 'var(--text-on-accent)',
-  },
-  moreClients: {
-    fontSize: '15px',
-    color: 'var(--text-tertiary)',
-    marginLeft: '2px',
-  },
-  clientNames: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
-    marginLeft: '4px',
   },
   summaryRow: {
     display: 'flex',

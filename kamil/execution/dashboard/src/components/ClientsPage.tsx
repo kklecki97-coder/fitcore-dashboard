@@ -4,24 +4,25 @@ import {
   Search, Plus, Filter, ArrowUpDown,
   Flame, Pause, Sparkles, MoreHorizontal,
   User, MessageSquare, Edit3, Play, Trash2, X, Save, Dumbbell, Star,
+  Mail, Copy, Check, Link, Loader2, CheckCircle, UserPlus,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { supabase } from '../lib/supabase';
 import type { Client, WorkoutProgram } from '../types';
 
 interface ClientsPageProps {
   clients: Client[];
   programs: WorkoutProgram[];
   onViewClient: (id: string) => void;
-  onAddClient: () => void;
   onNavigate?: (page: 'messages') => void;
   onUpdateClient: (id: string, updates: Partial<Client>) => void;
   onDeleteClient: (id: string) => void;
 }
 
-export default function ClientsPage({ clients: allClients, programs, onViewClient, onAddClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
+export default function ClientsPage({ clients: allClients, programs, onViewClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +35,103 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
   const [editModal, setEditModal] = useState<{ clientId: string; plan: Client['plan']; status: Client['status'] } | null>(null);
   // Delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  // Invite modal
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePlan, setInvitePlan] = useState<'Basic' | 'Premium' | 'Elite'>('Basic');
+  const [inviteGenerating, setInviteGenerating] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ success: boolean; link?: string; error?: string } | null>(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
+  const generateInviteCode = () => {
+    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes).map(b => charset[b % charset.length]).join('');
+  };
+
+  const handleSendInvite = async () => {
+    if (!inviteName.trim() || !inviteEmail.trim()) return;
+    setInviteGenerating(true);
+    setInviteResult(null);
+
+    try {
+      const code = generateInviteCode();
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 7);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const user = session.user;
+      const { data: coachRow } = await supabase
+        .from('coaches')
+        .select('name')
+        .eq('id', user.id)
+        .single();
+
+      const { error: insertError } = await supabase.from('invite_codes').insert({
+        code,
+        coach_id: user.id,
+        client_name: inviteName.trim(),
+        client_email: inviteEmail.trim().toLowerCase(),
+        plan: invitePlan,
+        expires_at: expires.toISOString(),
+      });
+
+      if (insertError) throw insertError;
+
+      const inviteLink = `https://client.fitcore.tech/join/${code}`;
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invite-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code,
+            clientName: inviteName.trim(),
+            clientEmail: inviteEmail.trim().toLowerCase(),
+            plan: invitePlan,
+            coachName: coachRow?.name || 'Your Coach',
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        console.warn('Email send failed:', errBody.error || res.statusText);
+      }
+
+      setInviteResult({ success: true, link: inviteLink });
+    } catch (err) {
+      setInviteResult({ success: false, error: err instanceof Error ? err.message : t.settings.inviteError });
+    } finally {
+      setInviteGenerating(false);
+    }
+  };
+
+  const handleCopyInvite = () => {
+    if (inviteResult?.link) {
+      navigator.clipboard.writeText(inviteResult.link);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    }
+  };
+
+  const handleCloseInvite = () => {
+    setShowInviteModal(false);
+    setInviteName('');
+    setInviteEmail('');
+    setInvitePlan('Basic');
+    setInviteResult(null);
+    setInviteCopied(false);
+  };
 
   // Close dropdown when clicking anywhere
   const closeMenu = useCallback(() => setOpenMenuId(null), []);
@@ -188,7 +286,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
           </div>
         </div>
 
-        <button onClick={onAddClient} style={{ ...styles.addBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
+        <button onClick={() => setShowInviteModal(true)} style={{ ...styles.addBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
           <Plus size={16} />
           {t.clients.addClient}
         </button>
@@ -517,6 +615,167 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                   {t.clients.delete}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Invite Client Modal */}
+      <AnimatePresence>
+        {showInviteModal && (
+          <motion.div
+            key="invite-overlay"
+            style={styles.inviteOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleCloseInvite}
+          >
+            <motion.div
+              key="invite-modal"
+              style={{ ...styles.inviteModal, width: isMobile ? '90vw' : '440px' }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={styles.inviteModalHeader}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={styles.inviteIconWrap}>
+                    <UserPlus size={18} color="var(--accent-primary)" />
+                  </div>
+                  <div>
+                    <h3 style={styles.inviteModalTitle}>{t.settings.clientInvites}</h3>
+                    <p style={styles.inviteModalSub}>{t.settings.clientInvitesSub}</p>
+                  </div>
+                </div>
+                <button style={styles.inviteCloseBtn} onClick={handleCloseInvite}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div style={styles.inviteDivider} />
+
+              {inviteResult?.success ? (
+                <div style={{ textAlign: 'center', padding: '8px 0' }}>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <CheckCircle size={40} color="var(--accent-success)" style={{ marginBottom: 12 }} />
+                  </motion.div>
+                  <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
+                    {t.settings.inviteSentTitle}
+                  </div>
+                  <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>
+                    {t.settings.inviteSentTo(inviteEmail)}
+                  </div>
+
+                  {inviteResult.link && (
+                    <div style={styles.inviteLinkBox}>
+                      <Link size={14} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
+                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' as const }}>
+                        {inviteResult.link}
+                      </span>
+                      <button onClick={handleCopyInvite} style={styles.inviteCopyBtn}>
+                        {inviteCopied ? <Check size={14} /> : <Copy size={14} />}
+                        {inviteCopied ? t.settings.inviteLinkCopied : t.settings.inviteLinkCopy}
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: 10 }}>
+                    {t.settings.inviteExpiry}
+                  </div>
+
+                  <button onClick={handleCloseInvite} style={styles.inviteDoneBtn}>
+                    {t.clients.done || 'Done'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={styles.inviteField}>
+                    <label style={styles.inviteFieldLabel}>{t.settings.inviteClientName}</label>
+                    <input
+                      type="text"
+                      value={inviteName}
+                      onChange={(e) => setInviteName(e.target.value)}
+                      placeholder={t.settings.inviteNamePlaceholder}
+                      style={styles.inviteFieldInput}
+                    />
+                  </div>
+                  <div style={styles.inviteField}>
+                    <label style={styles.inviteFieldLabel}>{t.settings.inviteClientEmail}</label>
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder={t.settings.inviteEmailPlaceholder}
+                      style={styles.inviteFieldInput}
+                    />
+                  </div>
+                  <div style={styles.inviteField}>
+                    <label style={styles.inviteFieldLabel}>{t.settings.invitePlan}</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {(['Basic', 'Premium', 'Elite'] as const).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => setInvitePlan(p)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 12px',
+                            borderRadius: 'var(--radius-sm)',
+                            border: `1.5px solid ${invitePlan === p ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
+                            background: invitePlan === p ? 'rgba(0,229,200,0.08)' : 'transparent',
+                            color: invitePlan === p ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            fontFamily: 'var(--font-display)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {inviteResult?.error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      style={{ fontSize: '13px', color: 'var(--accent-danger)', textAlign: 'center' }}
+                    >
+                      {inviteResult.error}
+                    </motion.div>
+                  )}
+
+                  <button
+                    onClick={handleSendInvite}
+                    disabled={inviteGenerating || !inviteName.trim() || !inviteEmail.trim()}
+                    style={{
+                      ...styles.inviteSendBtn,
+                      opacity: inviteGenerating || !inviteName.trim() || !inviteEmail.trim() ? 0.5 : 1,
+                      cursor: inviteGenerating || !inviteName.trim() || !inviteEmail.trim() ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {inviteGenerating ? (
+                      <>
+                        <Loader2 size={15} className="spin" />
+                        {t.settings.sendingInvite}
+                      </>
+                    ) : (
+                      <>
+                        <Mail size={15} />
+                        {t.settings.sendInvite}
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -911,5 +1170,148 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'center',
     maxWidth: '280px',
     lineHeight: 1.5,
+  },
+  inviteOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0, 0, 0, 0.6)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  inviteModal: {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: 'var(--radius-lg, 16px)',
+    padding: '24px',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
+  },
+  inviteModalHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: '12px',
+  },
+  inviteIconWrap: {
+    width: '36px',
+    height: '36px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(0, 229, 200, 0.08)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  inviteModalTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+    margin: 0,
+  },
+  inviteModalSub: {
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    margin: '2px 0 0',
+  },
+  inviteCloseBtn: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  inviteDivider: {
+    height: '1px',
+    background: 'var(--glass-border)',
+    margin: '16px 0',
+  },
+  inviteField: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  inviteFieldLabel: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase',
+  },
+  inviteFieldInput: {
+    padding: '10px 12px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--glass-border)',
+    color: 'var(--text-primary)',
+    fontSize: '15px',
+    fontFamily: 'var(--font-display)',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  },
+  inviteSendBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '12px',
+    border: 'none',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    boxShadow: '0 0 16px var(--accent-primary-dim)',
+    transition: 'opacity 0.15s',
+  },
+  inviteLinkBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 14px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.02)',
+    marginBottom: '4px',
+  },
+  inviteCopyBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '6px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--accent-primary)',
+    background: 'rgba(0,229,200,0.08)',
+    color: 'var(--accent-primary)',
+    fontSize: '12px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
+  inviteDoneBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '10px 24px',
+    borderRadius: 'var(--radius-md)',
+    border: 'none',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    marginTop: '16px',
+    boxShadow: '0 0 16px var(--accent-primary-dim)',
   },
 };

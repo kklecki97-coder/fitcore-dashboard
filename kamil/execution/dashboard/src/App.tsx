@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
@@ -8,9 +8,7 @@ import ClientsPage from './components/ClientsPage';
 import ClientDetailPage from './components/ClientDetailPage';
 import MessagesPage from './components/MessagesPage';
 import AnalyticsPage from './components/AnalyticsPage';
-import SchedulePage from './components/SchedulePage';
 import SettingsPage from './components/SettingsPage';
-import AddClientPage from './components/AddClientPage';
 import WorkoutProgramsPage from './components/WorkoutProgramsPage';
 import ProgramBuilderPage from './components/ProgramBuilderPage';
 import PaymentsPage from './components/PaymentsPage';
@@ -28,6 +26,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
+  // @ts-ignore — scaffolded for MFA verification UI (blocks login via checkAal, UI prompt coming)
   const [needsMfa, setNeedsMfa] = useState(false);
 
   // Check if session meets AAL requirements (MFA verified if enrolled)
@@ -176,7 +175,6 @@ function App() {
           timestamp: r.timestamp,
           isRead: r.is_read,
           isFromCoach: r.is_from_coach,
-          channel: r.channel,
           deliveryStatus: r.delivery_status,
         })));
       }
@@ -299,40 +297,52 @@ function App() {
     });
   }, [isLoggedIn]);
 
-  // ── Poll messages every 10s when on messages/client-detail page ──
+  // ── Realtime messages — subscribe to INSERT/UPDATE on messages table ──
   const clientsRef = useRef<Client[]>([]);
   useEffect(() => { clientsRef.current = allClients; }, [allClients]);
 
-  const refreshMessages = useCallback(async () => {
-    const { data, error } = await supabase.from('messages').select('*').order('timestamp');
-    if (error) { console.error('refreshMessages failed:', error); return; }
-    if (data) {
-      const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
-      setAllMessages(data.map(r => ({
-        id: r.id,
-        clientId: r.client_id,
-        clientName: nameMap.get(r.client_id) ?? '',
-        clientAvatar: '',
-        text: r.text,
-        timestamp: r.timestamp,
-        isRead: r.is_read,
-        isFromCoach: r.is_from_coach,
-        channel: r.channel,
-        deliveryStatus: r.delivery_status,
-      })));
-    }
-  }, []);
-
   useEffect(() => {
     if (!isLoggedIn) return;
-    if (currentPage !== 'messages' && currentPage !== 'client-detail') return;
-    const interval = setInterval(refreshMessages, 10000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn, currentPage, refreshMessages]);
 
-  // @ts-ignore — scaffolded for schedule features
-  const todayKey = new Date().toISOString().split('T')[0];
-  const [sessionsByDate, setSessionsByDate] = useState<Record<string, { time: string; client: string; type: string; status: 'completed' | 'upcoming' | 'current'; duration: number }[]>>({});
+    const channel = supabase
+      .channel('coach-messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
+          const msg: Message = {
+            id: r.id as string,
+            clientId: r.client_id as string,
+            clientName: nameMap.get(r.client_id as string) ?? '',
+            clientAvatar: '',
+            text: r.text as string,
+            timestamp: r.timestamp as string,
+            isRead: r.is_read as boolean,
+            isFromCoach: r.is_from_coach as boolean,
+            deliveryStatus: r.delivery_status as Message['deliveryStatus'],
+          };
+          // Only append if we don't already have it (avoids duplicating optimistic inserts)
+          setAllMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages' },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          setAllMessages(prev => prev.map(m =>
+            m.id === r.id
+              ? { ...m, isRead: r.is_read as boolean, deliveryStatus: r.delivery_status as Message['deliveryStatus'] }
+              : m
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn]);
 
   // Settings state — loaded from Supabase auth user
   const [profileName, setProfileName] = useState('');
@@ -440,75 +450,6 @@ function App() {
     setSelectedClientId('');
   };
 
-  const handleAddClient = () => {
-    setCurrentPage('add-client');
-  };
-
-  const handleSaveNewClient = async (client: Client): Promise<{ tempPassword?: string; error?: string }> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'Not authenticated' };
-
-    // 1. Insert client row
-    const { error: insertError } = await supabase.from('clients').insert({
-      id: client.id,
-      coach_id: user.id,
-      name: client.name,
-      email: client.email,
-      plan: client.plan,
-      status: client.status,
-      start_date: client.startDate || null,
-      next_check_in: client.nextCheckIn || null,
-      monthly_rate: client.monthlyRate,
-      progress: client.progress,
-      height: client.height,
-      streak: client.streak,
-      goals: client.goals,
-      notes: client.notes,
-    });
-
-    if (insertError) return { error: insertError.message };
-
-    // 2. Call Edge Function to create auth user for client
-    if (client.email) {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        try {
-          const res = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-client`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                clientId: client.id,
-                email: client.email,
-                name: client.name,
-              }),
-            }
-          );
-          const result = await res.json();
-          if (result.success) {
-            // Only add to state after both DB insert and Edge Function succeed
-            setAllClients(prev => [...prev, client]);
-            return { tempPassword: result.tempPassword };
-          }
-          // Edge Function failed — rollback the client row
-          await supabase.from('clients').delete().eq('id', client.id);
-          return { error: result.error || 'Failed to create login credentials' };
-        } catch {
-          // Network error — rollback the client row
-          await supabase.from('clients').delete().eq('id', client.id);
-          return { error: 'Failed to connect to invitation service' };
-        }
-      }
-    }
-
-    // No email — client saved without auth account, add to state
-    setAllClients(prev => [...prev, client]);
-    return {};
-  };
 
   const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
     setAllClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
@@ -562,7 +503,6 @@ function App() {
       timestamp: msg.timestamp,
       is_read: msg.isRead,
       is_from_coach: msg.isFromCoach,
-      channel: msg.channel,
       delivery_status: msg.deliveryStatus,
     });
     if (error) {
@@ -775,14 +715,11 @@ function App() {
             clients={allClients}
             programs={allPrograms}
             onViewClient={handleViewClient}
-            onAddClient={handleAddClient}
             onNavigate={handleNavigate}
             onUpdateClient={handleUpdateClient}
             onDeleteClient={handleDeleteClient}
           />
         );
-      case 'add-client':
-        return <AddClientPage onBack={() => setCurrentPage('clients')} onSave={handleSaveNewClient} />;
       case 'client-detail':
         return (
           <ClientDetailPage
@@ -808,7 +745,6 @@ function App() {
         return (
           <WorkoutProgramsPage
             programs={allPrograms}
-            clients={allClients}
             onViewProgram={handleViewProgram}
             onAddProgram={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
             onDeleteProgram={handleDeleteProgram}
@@ -851,11 +787,10 @@ function App() {
             checkIns={allCheckIns}
             onUpdateCheckIn={handleUpdateCheckIn}
             onViewClient={handleViewClient}
+            onSendMessage={handleSendMessage}
             onNavigate={handleNavigate}
           />
         );
-      case 'schedule':
-        return <SchedulePage clients={allClients} programs={allPrograms} sessionsByDate={sessionsByDate} onSessionsChange={setSessionsByDate} onViewClient={handleViewClient} />;
       case 'settings':
         return (
           <SettingsPage
@@ -930,7 +865,6 @@ function App() {
         <Sidebar
           currentPage={currentPage}
           onNavigate={handleNavigate}
-          profileName={profileName}
           onLogout={handleLogout}
         />
       </div>

@@ -47,6 +47,7 @@ interface OverviewPageProps {
   onNavigate: (page: 'messages' | 'clients') => void;
 }
 
+// @ts-ignore — checkIns prop scaffolded for upcoming overview widgets
 export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
@@ -253,8 +254,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div style={styles.quoteText}>"{dailyQuote.text}"</div>
-          <div style={styles.quoteAuthor}>— {dailyQuote.author}</div>
+          <span style={styles.quoteText}>"{dailyQuote.text}"</span>
+          <span style={styles.quoteAuthor}> — {dailyQuote.author}</span>
         </motion.div>
         <GlassCard delay={0.1}>
           <div style={{ textAlign: 'center', padding: isMobile ? '32px 16px' : '48px 32px' }}>
@@ -354,8 +355,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div style={styles.quoteText}>"{dailyQuote.text}"</div>
-        <div style={styles.quoteAuthor}>— {dailyQuote.author}</div>
+        <span style={styles.quoteText}>"{dailyQuote.text}"</span>
+        <span style={styles.quoteAuthor}> — {dailyQuote.author}</span>
       </motion.div>
 
       {/* Stat Cards Row */}
@@ -887,23 +888,25 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 500,
   },
   quoteBar: {
-    textAlign: 'center',
-    padding: '16px 20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: '4px',
+    padding: '10px 20px',
     borderRadius: 'var(--radius-md)',
     background: 'var(--bg-card)',
     border: '1px solid var(--glass-border)',
   },
   quoteText: {
-    fontSize: '21px',
+    fontSize: '14px',
     fontWeight: 500,
-    color: 'var(--text-primary)',
-    lineHeight: 1.6,
+    color: 'var(--text-secondary)',
     fontStyle: 'italic',
   },
   quoteAuthor: {
-    fontSize: '17px',
+    fontSize: '13px',
     color: 'var(--text-tertiary)',
-    marginTop: '6px',
     fontWeight: 500,
   },
 };

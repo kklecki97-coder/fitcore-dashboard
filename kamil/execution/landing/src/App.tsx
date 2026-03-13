@@ -507,16 +507,16 @@ export default function App() {
             gap: 20,
           }} className="pain-cards-grid">
             {/* Card 1 — The Admin Trap */}
-            <GlassCard delay={0} style={{ padding: '32px' }}>
+            <GlassCard delay={0} style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column' }}>
               <div style={{
-                width: 48, height: 48, borderRadius: 'var(--radius-md)',
+                width: 52, height: 52, borderRadius: 'var(--radius-md)',
                 background: 'rgba(239, 68, 68, 0.12)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 20,
+                marginBottom: 20, flexShrink: 0,
               }}>
-                <Clock size={22} style={{ color: 'var(--accent-danger)' }} />
+                <Clock size={24} style={{ color: 'var(--accent-danger)' }} />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: 'var(--text-primary)' }}>
+              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--accent-danger)', minHeight: '66px', display: 'flex', alignItems: 'flex-start' }}>
                 {t.pain.card1Title}
               </h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
@@ -529,16 +529,17 @@ export default function App() {
               padding: '36px 32px',
               border: '1px solid rgba(245, 158, 11, 0.2)',
               background: 'linear-gradient(160deg, rgba(245, 158, 11, 0.04) 0%, var(--bg-card) 60%)',
+              display: 'flex', flexDirection: 'column',
             }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 'var(--radius-md)',
                 background: 'rgba(245, 158, 11, 0.12)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 20,
+                marginBottom: 20, flexShrink: 0,
               }}>
                 <Eye size={24} style={{ color: 'var(--accent-warm)' }} />
               </div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--accent-warm)' }}>
+              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--accent-warm)', minHeight: '66px', display: 'flex', alignItems: 'flex-start' }}>
                 {t.pain.card2Title}
               </h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
@@ -552,16 +553,17 @@ export default function App() {
               border: '1px solid rgba(99, 102, 241, 0.3)',
               background: 'linear-gradient(160deg, rgba(99, 102, 241, 0.07) 0%, var(--bg-card) 60%)',
               boxShadow: '0 4px 32px rgba(99, 102, 241, 0.1), 0 0 0 1px rgba(99, 102, 241, 0.15)',
+              display: 'flex', flexDirection: 'column',
             }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 'var(--radius-md)',
                 background: 'rgba(99, 102, 241, 0.15)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: 20,
+                marginBottom: 20, flexShrink: 0,
               }}>
                 <TrendingUp size={24} style={{ color: 'var(--accent-secondary)' }} />
               </div>
-              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--accent-secondary)' }}>
+              <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 12, color: 'var(--accent-secondary)', minHeight: '66px', display: 'flex', alignItems: 'flex-start' }}>
                 {t.pain.card3Title}
               </h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>

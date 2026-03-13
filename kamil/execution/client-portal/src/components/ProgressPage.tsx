@@ -14,7 +14,8 @@ interface ProgressPageProps {
   checkIns: CheckIn[];
 }
 
-export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkIns }: ProgressPageProps) {
+// @ts-ignore — workoutLogs scaffolded for future workout-based progress metrics
+export default function ProgressPage({ client, workoutLogs, checkIns }: ProgressPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const [chartsReady, setChartsReady] = useState(false);
@@ -31,6 +32,9 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
   const { metrics } = client;
   const weights = metrics.weight;
   const startWeight = weights[0];
+  const currentWeight = weights[weights.length - 1];
+  // @ts-ignore — scaffolded for progress summary cards
+  const weightDiff = currentWeight - startWeight;
 
   const monthNames = lang === 'pl'
     ? ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru']
@@ -50,11 +54,38 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
   const weightData = sliceByPeriod(allWeightData);
   const bodyFatData = sliceByPeriod(allBodyFatData);
 
-  // Recalculate trend for visible range (reserved for future chart enhancements)
+  // Recalculate trend for visible range — scaffolded for progress summary cards
+  const visibleWeights = sliceByPeriod(weights);
+  const visibleBodyFat = sliceByPeriod(metrics.bodyFat);
+  // @ts-ignore — scaffolded
+  const visibleWeightDiff = visibleWeights[visibleWeights.length - 1] - visibleWeights[0];
+  // @ts-ignore — scaffolded
+  const visibleBfDiff = visibleBodyFat[visibleBodyFat.length - 1] - visibleBodyFat[0];
+  // @ts-ignore — scaffolded
+  const visibleStartLabel = weightData[0]?.month ?? startMonthLabel;
+  // @ts-ignore — scaffolded
+  const visibleEndLabel = weightData[weightData.length - 1]?.month ?? currentMonthLabel;
 
-  // Progress photos — before/after comparison
-  const photoSrc = (period: 'week1' | 'week12', pose: string) =>
-    `/photos/${period}-${pose}.jpg`;
+  // Progress photos — pull from check-in photos (earliest vs latest)
+  const checkInsWithPhotos = checkIns
+    .filter(ci => ci.photos && ci.photos.length > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const earliestPhotoCI = checkInsWithPhotos[0] || null;
+  const latestPhotoCI = checkInsWithPhotos.length > 1 ? checkInsWithPhotos[checkInsWithPhotos.length - 1] : null;
+
+  const getPhotoUrl = (ci: CheckIn | null, pose: string): string | null => {
+    if (!ci) return null;
+    const photo = ci.photos.find(p => p.label.toLowerCase() === pose.toLowerCase());
+    return photo?.url || null;
+  };
+
+  const formatPhotoMeta = (ci: CheckIn | null): string => {
+    if (!ci) return '';
+    const d = new Date(ci.date);
+    const m = monthNames[d.getMonth()];
+    return ci.weight ? `${m} · ${ci.weight}kg` : m;
+  };
+
   const poses: Array<{ key: 'front' | 'side' | 'back'; label: string }> = [
     { key: 'front', label: 'Front' },
     { key: 'side', label: 'Side' },
@@ -259,6 +290,7 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
       )}
 
       {/* ── 4. PROGRESS PHOTOS — Before / After ── */}
+      {checkInsWithPhotos.length > 0 && (
       <GlassCard delay={0.35}>
         <div style={styles.photosHeader}>
           <Camera size={16} color="var(--accent-primary)" />
@@ -279,27 +311,36 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
           </div>
         </div>
         <div style={styles.photoCompare}>
-          {(['week1', 'week12'] as const).map((period) => (
-            <div key={period} style={styles.photoSide}>
-              <div style={styles.photoDateLabel}>{period === 'week1' ? 'Week 1' : 'Week 12'}</div>
-              <div style={styles.photoFrame} onClick={() => setLightboxSrc(photoSrc(period, photoPose))}>
-                <img
-                  key={`${period}-${photoPose}`}
-                  src={photoSrc(period, photoPose)}
-                  alt={`${period} ${photoPose}`}
-                  style={styles.photoImg}
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.removeAttribute('style'); }}
-                />
-                <div key={`fb-${period}-${photoPose}`} style={{ ...styles.photoFallback, display: 'none' }}>
-                  <Camera size={24} color="var(--text-tertiary)" style={{ opacity: 0.3 }} />
-                  <span style={styles.photoFallbackText}>No photo</span>
+          {([
+            { ci: earliestPhotoCI, label: 'Before' },
+            { ci: latestPhotoCI ?? earliestPhotoCI, label: latestPhotoCI ? 'After' : 'Latest' },
+          ] as const).map(({ ci, label }) => {
+            const url = getPhotoUrl(ci, photoPose);
+            return (
+              <div key={label} style={styles.photoSide}>
+                <div style={styles.photoDateLabel}>{label}</div>
+                <div style={styles.photoFrame} onClick={() => url && setLightboxSrc(url)}>
+                  {url ? (
+                    <img
+                      key={`${label}-${photoPose}`}
+                      src={url}
+                      alt={`${label} ${photoPose}`}
+                      style={styles.photoImg}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.removeAttribute('style'); }}
+                    />
+                  ) : null}
+                  <div style={{ ...styles.photoFallback, display: url ? 'none' : undefined }}>
+                    <Camera size={24} color="var(--text-tertiary)" style={{ opacity: 0.3 }} />
+                    <span style={styles.photoFallbackText}>No photo</span>
+                  </div>
                 </div>
+                <div style={styles.photoMeta}>{formatPhotoMeta(ci)}</div>
               </div>
-              <div style={styles.photoMeta}>{period === 'week1' ? 'Dec · 92kg' : 'Mar · 88.1kg'}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </GlassCard>
+      )}
 
       {/* ── LIGHTBOX ── */}
       {lightboxSrc && (

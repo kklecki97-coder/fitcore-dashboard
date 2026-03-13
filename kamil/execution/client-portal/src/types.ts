@@ -24,8 +24,6 @@ export interface Client {
   onboarded: boolean;
 }
 
-export type MessageChannel = 'telegram' | 'whatsapp' | 'email' | 'instagram';
-
 export interface Message {
   id: string;
   clientId: string;
@@ -35,7 +33,6 @@ export interface Message {
   timestamp: string;
   isRead: boolean;
   isFromCoach: boolean;
-  channel?: MessageChannel;
   type?: 'text' | 'workout-complete';
   workoutSummary?: {
     dayName: string;

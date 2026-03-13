@@ -347,150 +347,150 @@ export const clients: Client[] = [
 ];
 
 export const messages: Message[] = [
-  // Marcus Chen — bench PR conversation (via Telegram)
+  // Marcus Chen — bench PR conversation
   {
     id: 'm1a', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'How did the bench session feel today? You were due for a heavy single.',
-    timestamp: '2026-02-20T13:00:00', isRead: true, isFromCoach: true, channel: 'telegram', deliveryStatus: 'read',
+    timestamp: '2026-02-20T13:00:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
   {
     id: 'm1b', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'Felt amazing honestly. Warm-ups were flying.',
-    timestamp: '2026-02-20T13:45:00', isRead: true, isFromCoach: false, channel: 'telegram',
+    timestamp: '2026-02-20T13:45:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm1', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '',
     text: 'Hit a new PR on bench today! 102.5kg for 2 reps. Feeling strong.',
-    timestamp: '2026-02-20T14:30:00', isRead: false, isFromCoach: false, channel: 'telegram',
+    timestamp: '2026-02-20T14:30:00', isRead: false, isFromCoach: false,
   },
-  // Jake Morrison — deload question (via WhatsApp)
+  // Jake Morrison — deload question
   {
     id: 'm2a', clientId: 'c3', clientName: 'Jake Morrison', clientAvatar: '',
     text: 'Squats felt heavy yesterday, RPE was way higher than usual.',
-    timestamp: '2026-02-20T12:00:00', isRead: true, isFromCoach: false, channel: 'whatsapp',
+    timestamp: '2026-02-20T12:00:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm2', clientId: 'c3', clientName: 'Jake Morrison', clientAvatar: '',
     text: 'Coach, should I deload this week before peak? Feeling a bit beat up.',
-    timestamp: '2026-02-20T13:15:00', isRead: false, isFromCoach: false, channel: 'whatsapp',
+    timestamp: '2026-02-20T13:15:00', isRead: false, isFromCoach: false,
   },
-  // Emma Rodriguez — first workout (via WhatsApp)
+  // Emma Rodriguez — first workout
   {
     id: 'm3', clientId: 'c4', clientName: 'Emma Rodriguez', clientAvatar: '',
     text: "Had my first workout today — it was tough but I loved it! Thanks for the program.",
-    timestamp: '2026-02-20T11:45:00', isRead: false, isFromCoach: false, channel: 'whatsapp',
+    timestamp: '2026-02-20T11:45:00', isRead: false, isFromCoach: false,
   },
-  // Sarah Williams — knee rehab conversation (via WhatsApp)
+  // Sarah Williams — knee rehab conversation
   {
     id: 'm4a', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
     text: "How's the knee feeling with the modified squats?",
-    timestamp: '2026-02-20T09:30:00', isRead: true, isFromCoach: true, channel: 'whatsapp', deliveryStatus: 'read',
+    timestamp: '2026-02-20T09:30:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
   {
     id: 'm4', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
     text: "My knee felt great during today's session. The modified program is working!",
-    timestamp: '2026-02-20T10:00:00', isRead: true, isFromCoach: false, channel: 'whatsapp',
+    timestamp: '2026-02-20T10:00:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm5', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
     text: "Great to hear! Let's test some deeper range next week if it stays comfortable.",
-    timestamp: '2026-02-20T10:15:00', isRead: true, isFromCoach: true, channel: 'whatsapp', deliveryStatus: 'read',
+    timestamp: '2026-02-20T10:15:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
   {
     id: 'm5a', clientId: 'c2', clientName: 'Sarah Williams', clientAvatar: '',
     text: "Sounds good! I'm excited to push a bit further.",
-    timestamp: '2026-02-20T10:20:00', isRead: true, isFromCoach: false, channel: 'whatsapp',
+    timestamp: '2026-02-20T10:20:00', isRead: true, isFromCoach: false,
   },
-  // David Park — missed session (via Email)
+  // David Park — missed session
   {
     id: 'm6', clientId: 'c5', clientName: 'David Park', clientAvatar: '',
     text: 'Missed yesterday — double shift at work. Will make it up tomorrow morning.',
-    timestamp: '2026-02-19T22:30:00', isRead: true, isFromCoach: false, channel: 'email',
+    timestamp: '2026-02-19T22:30:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm6a', clientId: 'c5', clientName: 'David Park', clientAvatar: '',
     text: "No worries, life happens. Just don't skip two in a row — keep the momentum going.",
-    timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true, channel: 'email', deliveryStatus: 'read',
+    timestamp: '2026-02-19T22:45:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
-  // Tom Bradley — weight milestone (via Telegram)
+  // Tom Bradley — weight milestone
   {
     id: 'm7', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: 'Weighed in at 95.8kg this morning! First time under 96 in years.',
-    timestamp: '2026-02-19T08:00:00', isRead: true, isFromCoach: false, channel: 'telegram',
+    timestamp: '2026-02-19T08:00:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm8', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Incredible progress Tom! That's 9kg down. Let's celebrate that win.",
-    timestamp: '2026-02-19T09:30:00', isRead: true, isFromCoach: true, channel: 'telegram', deliveryStatus: 'read',
+    timestamp: '2026-02-19T09:30:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
   {
     id: 'm8a', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Thanks coach! Couldn't have done it without the accountability. What's next?",
-    timestamp: '2026-02-19T09:45:00', isRead: true, isFromCoach: false, channel: 'telegram',
+    timestamp: '2026-02-19T09:45:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm8b', clientId: 'c7', clientName: 'Tom Bradley', clientAvatar: '',
     text: "Next target: 93kg by end of March. We'll bump cardio slightly and keep protein high.",
-    timestamp: '2026-02-19T10:00:00', isRead: true, isFromCoach: true, channel: 'telegram', deliveryStatus: 'read',
+    timestamp: '2026-02-19T10:00:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
-  // Aisha Patel — program request (via Instagram)
+  // Aisha Patel — program request
   {
     id: 'm9', clientId: 'c8', clientName: 'Aisha Patel', clientAvatar: '',
     text: 'Can we add a glute day? I feel like I need more lower body focus.',
-    timestamp: '2026-02-19T16:00:00', isRead: true, isFromCoach: false, channel: 'instagram',
+    timestamp: '2026-02-19T16:00:00', isRead: true, isFromCoach: false,
   },
   {
     id: 'm9a', clientId: 'c8', clientName: 'Aisha Patel', clientAvatar: '',
     text: "Absolutely. I'll swap Friday's session to a glute/hamstring focus. Check your program tomorrow.",
-    timestamp: '2026-02-19T16:30:00', isRead: true, isFromCoach: true, channel: 'instagram', deliveryStatus: 'read',
+    timestamp: '2026-02-19T16:30:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
-  // Ryan Kowalski — potential client inquiry (via Email)
+  // Ryan Kowalski — potential client inquiry
   {
     id: 'm10', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
     text: "Hi Coach Kamil, I found you on Instagram and I'm really interested in your coaching. I'm 32, about 105kg and want to lose weight properly this time. I've tried diets before but nothing sticks. Do you offer online coaching? What are your rates?",
-    timestamp: '2026-02-20T08:15:00', isRead: false, isFromCoach: false, channel: 'email',
+    timestamp: '2026-02-20T08:15:00', isRead: false, isFromCoach: false,
   },
   {
     id: 'm10a', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
     text: "Hey Ryan! Thanks for reaching out. I totally understand the frustration with yo-yo dieting. My approach is sustainable — we build habits, not just meal plans. I offer 3 tiers starting at $99/mo. Want to book a free 15-min discovery call this week?",
-    timestamp: '2026-02-20T10:00:00', isRead: true, isFromCoach: true, channel: 'email', deliveryStatus: 'read',
+    timestamp: '2026-02-20T10:00:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
   {
     id: 'm10b', clientId: 'c9', clientName: 'Ryan Kowalski', clientAvatar: '',
     text: "That sounds great! I'm free Thursday afternoon or Friday morning. Also, do you provide meal plans or just training?",
-    timestamp: '2026-02-20T14:20:00', isRead: false, isFromCoach: false, channel: 'email',
+    timestamp: '2026-02-20T14:20:00', isRead: false, isFromCoach: false,
   },
-  // Natalie Souza — referral from Marcus (via Email)
+  // Natalie Souza — referral from Marcus
   {
     id: 'm11', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
     text: "Hi! Marcus Chen referred me to you. I've been lifting for 4 years and I'm looking to do my first bikini competition later this year. I need a coach who understands periodization and peak week. Do you have experience with contest prep?",
-    timestamp: '2026-02-21T07:30:00', isRead: false, isFromCoach: false, channel: 'email',
+    timestamp: '2026-02-21T07:30:00', isRead: false, isFromCoach: false,
   },
   {
     id: 'm11a', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
     text: "Marcus is a great client — glad he sent you my way! I've coached 3 competitors through their preps. For comp prep I'd recommend the Elite tier ($299/mo) which includes daily check-ins, posing feedback, and peak week protocol. When's your target show date?",
-    timestamp: '2026-02-21T09:00:00', isRead: true, isFromCoach: true, channel: 'email', deliveryStatus: 'read',
+    timestamp: '2026-02-21T09:00:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
   {
     id: 'm11b', clientId: 'c10', clientName: 'Natalie Souza', clientAvatar: '',
     text: "I'm looking at a show in late September — so about 7 months out. That gives us plenty of time for a proper off-season into prep. Can we set up a video call to discuss the plan?",
-    timestamp: '2026-02-21T11:45:00', isRead: false, isFromCoach: false, channel: 'email',
+    timestamp: '2026-02-21T11:45:00', isRead: false, isFromCoach: false,
   },
-  // Jordan Miles — Instagram DM lead
+  // Jordan Miles — new lead
   {
     id: 'm12', clientId: 'c11', clientName: 'Jordan Miles', clientAvatar: '',
     text: "Hey! Love your transformation posts. I'm a former college athlete who's been out of the gym for 2 years and want to get back into shape. Do you take on new clients?",
-    timestamp: '2026-02-21T10:00:00', isRead: false, isFromCoach: false, channel: 'instagram',
+    timestamp: '2026-02-21T10:00:00', isRead: false, isFromCoach: false,
   },
   {
     id: 'm12a', clientId: 'c11', clientName: 'Jordan Miles', clientAvatar: '',
     text: "Hey Jordan! Thanks for the kind words. Absolutely — I'd love to help you get back at it. With your athletic background we can ramp up fast. DM me your goals and I'll send you a free assessment form.",
-    timestamp: '2026-02-21T11:30:00', isRead: true, isFromCoach: true, channel: 'instagram', deliveryStatus: 'read',
+    timestamp: '2026-02-21T11:30:00', isRead: true, isFromCoach: true, deliveryStatus: 'read',
   },
   {
     id: 'm12b', clientId: 'c11', clientName: 'Jordan Miles', clientAvatar: '',
     text: "Main goals: get back to 85kg lean, rebuild my squat (used to hit 180kg), and feel athletic again. Also interested in some conditioning work. Send me that form!",
-    timestamp: '2026-02-21T13:15:00', isRead: false, isFromCoach: false, channel: 'instagram',
+    timestamp: '2026-02-21T13:15:00', isRead: false, isFromCoach: false,
   },
 ];
 
@@ -638,15 +638,6 @@ export const workoutLogs: WorkoutLog[] = [
   { id: 'w8-09', clientId: 'c8', clientName: 'Aisha Patel', type: 'Full Body', duration: 50, date: '2026-02-01', completed: true },
   { id: 'w8-10', clientId: 'c8', clientName: 'Aisha Patel', type: 'Upper Body', duration: 45, date: '2026-01-29', completed: true },
   { id: 'w8-11', clientId: 'c8', clientName: 'Aisha Patel', type: 'Lower Body', duration: 48, date: '2026-01-27', completed: true },
-];
-
-export const scheduleToday = [
-  { time: '07:00', client: 'Jake Morrison', type: 'Squat Day', status: 'completed' as const, duration: 60 },
-  { time: '09:00', client: 'Marcus Chen', type: 'Upper Body', status: 'completed' as const, duration: 45 },
-  { time: '11:00', client: 'Sarah Williams', type: 'Lower Body', status: 'completed' as const, duration: 60 },
-  { time: '14:00', client: 'Tom Bradley', type: 'Full Body', status: 'current' as const, duration: 90 },
-  { time: '16:00', client: 'David Park', type: 'Push Day', status: 'upcoming' as const, duration: 60 },
-  { time: '18:00', client: 'Aisha Patel', type: 'Upper Body', status: 'upcoming' as const, duration: 45 },
 ];
 
 export const exerciseLibrary: string[] = [

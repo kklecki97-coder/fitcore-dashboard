@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, User, Bell, Shield, Palette, X, Save, Plug, ExternalLink, CheckCircle, CreditCard, Camera, Trash2, Copy, AlertTriangle, UserPlus, Mail, Loader2, Check, Link, Eye, EyeOff } from 'lucide-react';
+import { Sun, Moon, User, Bell, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import GlassCard from './GlassCard';
-import { ChannelIcon, CHANNEL_COLORS, CHANNEL_LABELS } from './ChannelIcons';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Theme, MessageChannel } from '../types';
+import type { Theme } from '../types';
 
 interface Notifications {
   messages: boolean;
@@ -53,13 +52,15 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [tfaQrSvg, setTfaQrSvg] = useState('');
   const [tfaSecret, setTfaSecret] = useState('');
   const [tfaFactorId, setTfaFactorId] = useState('');
+  // @ts-ignore — scaffolded for "Copied!" indicator on backup codes button
+  const [copiedBackup, setCopiedBackup] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
 
   // Load real MFA status on mount
-  useState(() => {
+  useEffect(() => {
     supabase.auth.mfa.listFactors().then(({ data }) => {
       if (data?.totp && data.totp.length > 0) {
         const verified = data.totp.find(f => f.status === 'verified');
@@ -69,123 +70,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
         }
       }
     });
-  });
+  }, []);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     onPhotoChange(file);
-  };
-
-  // Integrations state
-  const [integrations, setIntegrations] = useState<Record<MessageChannel, { connected: boolean; handle: string }>>({
-    telegram: { connected: true, handle: '@fitcore_coach' },
-    whatsapp: { connected: true, handle: '+1 (555) 012-3456' },
-    email: { connected: false, handle: '' },
-    instagram: { connected: false, handle: '' },
-  });
-  const [integrationModal, setIntegrationModal] = useState<MessageChannel | null>(null);
-  const [integrationInput, setIntegrationInput] = useState('');
-  const [connectingChannel, setConnectingChannel] = useState(false);
-
-  // Invite state
-  const [inviteName, setInviteName] = useState('');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [invitePlan, setInvitePlan] = useState<'Basic' | 'Premium' | 'Elite'>('Basic');
-  const [inviteGenerating, setInviteGenerating] = useState(false);
-  const [inviteResult, setInviteResult] = useState<{ success: boolean; link?: string; error?: string } | null>(null);
-  const [inviteCopied, setInviteCopied] = useState(false);
-
-  const generateInviteCode = () => {
-    const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const bytes = new Uint8Array(8);
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes).map(b => charset[b % charset.length]).join('');
-  };
-
-  const handleSendInvite = async () => {
-    if (!inviteName.trim()) return;
-    if (!inviteEmail.trim()) return;
-    setInviteGenerating(true);
-    setInviteResult(null);
-
-    try {
-      const code = generateInviteCode();
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7);
-
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const user = session.user;
-
-      // Get coach name for the email
-      const { data: coachRow } = await supabase
-        .from('coaches')
-        .select('name')
-        .eq('id', user.id)
-        .single();
-
-      const { error: insertError } = await supabase.from('invite_codes').insert({
-        code,
-        coach_id: user.id,
-        client_name: inviteName.trim(),
-        client_email: inviteEmail.trim().toLowerCase(),
-        plan: invitePlan,
-        expires_at: expires.toISOString(),
-      });
-
-      if (insertError) throw insertError;
-
-      const inviteLink = `https://client.fitcore.tech/join/${code}`;
-
-      // Call edge function to send email (use raw fetch with JWT like invite-client)
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-invite-email`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code,
-            clientName: inviteName.trim(),
-            clientEmail: inviteEmail.trim().toLowerCase(),
-            plan: invitePlan,
-            coachName: coachRow?.name || 'Your Coach',
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        console.warn('Email send failed:', errBody.error || res.statusText);
-      }
-
-      setInviteResult({ success: true, link: inviteLink });
-    } catch (err) {
-      setInviteResult({ success: false, error: err instanceof Error ? err.message : t.settings.inviteError });
-    } finally {
-      setInviteGenerating(false);
-    }
-  };
-
-  const handleCopyInvite = () => {
-    if (inviteResult?.link) {
-      navigator.clipboard.writeText(inviteResult.link);
-      setInviteCopied(true);
-      setTimeout(() => setInviteCopied(false), 2000);
-    }
-  };
-
-  const handleResetInvite = () => {
-    setInviteName('');
-    setInviteEmail('');
-    setInvitePlan('Basic');
-    setInviteResult(null);
-    setInviteCopied(false);
   };
 
   const themeOptions: { value: Theme; label: string; description: string; icon: typeof Sun }[] = [
@@ -214,55 +104,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
     { key: 'weekly' as const, label: t.settings.weeklySummary, desc: t.settings.weeklySummarySub },
   ];
 
-  const channelConfig: Record<MessageChannel, { instruction: string; placeholder: string; inputLabel: string; helpUrl: string }> = {
-    telegram: {
-      instruction: t.settings.telegramInstruction,
-      placeholder: '123456789:ABCdefGHIjklMNOpqrsTUVwxyz',
-      inputLabel: t.settings.botToken,
-      helpUrl: 'https://core.telegram.org/bots#botfather',
-    },
-    whatsapp: {
-      instruction: t.settings.whatsappInstruction,
-      placeholder: '+1 (555) 012-3456',
-      inputLabel: t.settings.phoneNumber,
-      helpUrl: 'https://business.whatsapp.com/',
-    },
-    email: {
-      instruction: t.settings.emailInstruction,
-      placeholder: 'you@example.com',
-      inputLabel: t.settings.emailAddress,
-      helpUrl: '',
-    },
-    instagram: {
-      instruction: t.settings.instagramInstruction,
-      placeholder: '@your.username',
-      inputLabel: t.settings.instagramHandle,
-      helpUrl: 'https://business.instagram.com/',
-    },
-  };
-
-  const handleConnect = (channel: MessageChannel) => {
-    if (!integrationInput.trim()) return;
-    setConnectingChannel(true);
-    // Simulate connection delay
-    setTimeout(() => {
-      setIntegrations(prev => ({
-        ...prev,
-        [channel]: { connected: true, handle: integrationInput.trim() },
-      }));
-      setIntegrationInput('');
-      setConnectingChannel(false);
-      setIntegrationModal(null);
-    }, 1200);
-  };
-
-  const handleDisconnect = (channel: MessageChannel) => {
-    setIntegrations(prev => ({
-      ...prev,
-      [channel]: { connected: false, handle: '' },
-    }));
-  };
-
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
@@ -278,25 +119,32 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             </div>
           </div>
           <div style={styles.divider} />
-          <div style={styles.profileRow}>
-            <div style={styles.avatarWrapper}>
-              {profilePhoto ? (
-                <img src={profilePhoto} alt="Profile" style={styles.profileAvatarImg} />
-              ) : (
-                <div style={styles.profileAvatar}>{profileName.charAt(0).toUpperCase()}</div>
-              )}
-              <label style={styles.avatarUploadBtn}>
-                <Camera size={12} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  style={{ display: 'none' }}
-                />
-              </label>
+
+          {/* Profile hero — avatar + identity */}
+          <div style={styles.profileHero}>
+            <div style={styles.avatarRing}>
+              <div style={styles.avatarWrapper}>
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" style={styles.profileAvatarImg} />
+                ) : (
+                  <div style={styles.profileAvatar}>{profileName.charAt(0).toUpperCase()}</div>
+                )}
+                <label style={styles.avatarUploadBtn}>
+                  <Camera size={14} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
             </div>
-            <div>
-              <div style={styles.profileName}>{profileName}</div>
+            <div style={styles.profileIdentity}>
+              <div style={styles.profileNameRow}>
+                <div style={styles.profileName}>{profileName}</div>
+                <span style={styles.planBadge}>{t.settings.proPlan}</span>
+              </div>
               <div style={styles.profileEmail}>{profileEmail}</div>
             </div>
             {!isEditingProfile && (
@@ -317,11 +165,10 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               </div>
               <div style={styles.field}>
                 <label style={styles.fieldLabel}>{t.settings.email}</label>
-                <div style={styles.fieldValue}>{profileEmail}</div>
-              </div>
-              <div style={styles.field}>
-                <label style={styles.fieldLabel}>{t.settings.plan}</label>
-                <div style={{ ...styles.fieldValue, color: 'var(--accent-primary)' }}>{t.settings.proPlan}</div>
+                <div style={styles.profileEmailReadonly}>
+                  <Mail size={14} color="var(--text-tertiary)" />
+                  {profileEmail}
+                </div>
               </div>
               <div style={styles.profileActions}>
                 <button style={styles.cancelBtn} onClick={handleCancelEdit}>{t.settings.cancel}</button>
@@ -332,18 +179,14 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               </div>
             </div>
           ) : (
-            <div style={styles.fieldGroup}>
-              <div style={styles.field}>
-                <label style={styles.fieldLabel}>{t.settings.displayName}</label>
-                <div style={styles.fieldValue}>{profileName}</div>
+            <div style={styles.profileDetailsGrid}>
+              <div style={styles.profileDetailItem}>
+                <div style={styles.profileDetailLabel}>{t.settings.displayName}</div>
+                <div style={styles.profileDetailValue}>{profileName}</div>
               </div>
-              <div style={styles.field}>
-                <label style={styles.fieldLabel}>{t.settings.email}</label>
-                <div style={styles.fieldValue}>{profileEmail}</div>
-              </div>
-              <div style={styles.field}>
-                <label style={styles.fieldLabel}>{t.settings.plan}</label>
-                <div style={{ ...styles.fieldValue, color: 'var(--accent-primary)' }}>{t.settings.proPlan}</div>
+              <div style={styles.profileDetailItem}>
+                <div style={styles.profileDetailLabel}>{t.settings.email}</div>
+                <div style={styles.profileDetailValue}>{profileEmail}</div>
               </div>
             </div>
           )}
@@ -518,84 +361,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Integrations — Row 2, Col 2 */}
-        <GlassCard delay={0.25}>
-          <div style={styles.sectionHeader}>
-            <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
-              <Plug size={18} color="var(--accent-primary)" />
-            </div>
-            <div>
-              <h3 style={styles.sectionTitle}>{t.settings.integrations}</h3>
-              <p style={styles.sectionSub}>{t.settings.integrationsSubAlt}</p>
-            </div>
-          </div>
-          <div style={styles.divider} />
-          {(['telegram', 'whatsapp', 'email', 'instagram'] as MessageChannel[]).map((channel, idx) => {
-            const { connected, handle } = integrations[channel];
-            const isLast = idx === 3;
-            return (
-              <div key={channel} style={{ ...styles.integrationRow, borderBottom: isLast ? 'none' : '1px solid var(--glass-border)' }}>
-                <div style={styles.integrationInfo}>
-                  <div style={{
-                    ...styles.integrationIcon,
-                    background: connected ? `${CHANNEL_COLORS[channel]}15` : 'var(--bg-elevated)',
-                    border: connected ? `1px solid ${CHANNEL_COLORS[channel]}30` : '1px solid var(--glass-border)',
-                  }}>
-                    <ChannelIcon channel={channel} size={18} />
-                  </div>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={styles.settingLabel}>{CHANNEL_LABELS[channel]}</span>
-                      {connected && (
-                        <span style={{
-                          ...styles.statusBadge,
-                          color: 'var(--accent-success)',
-                          background: 'var(--accent-success-dim)',
-                          borderColor: 'var(--accent-success)',
-                          fontSize: '12px',
-                          padding: '2px 8px',
-                        }}>
-                          <CheckCircle size={10} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                          {t.settings.connected}
-                        </span>
-                      )}
-                    </div>
-                    <div style={styles.settingDesc}>
-                      {connected ? handle : t.settings.notConnected}
-                    </div>
-                  </div>
-                </div>
-                <div style={styles.integrationActions}>
-                  {connected ? (
-                    <button
-                      style={styles.disconnectBtn}
-                      onClick={() => handleDisconnect(channel)}
-                    >
-                      {t.settings.disconnect}
-                    </button>
-                  ) : (
-                    <button
-                      style={{
-                        ...styles.connectBtn,
-                        borderColor: CHANNEL_COLORS[channel],
-                        color: CHANNEL_COLORS[channel],
-                      }}
-                      onClick={() => {
-                        setIntegrationInput('');
-                        setIntegrationModal(channel);
-                      }}
-                    >
-                      <Plug size={14} />
-                      {t.settings.connect}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </GlassCard>
-
-        {/* Stripe Payments — Row 2, Col 3 */}
+        {/* Stripe Payments — Row 2, Col 2 */}
         <GlassCard delay={0.3}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'rgba(99, 91, 255, 0.08)' }}>
@@ -639,142 +405,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Client Invites — Row 3, spans 2 cols */}
-        <div style={{ gridColumn: isMobile ? undefined : 'span 2' }}>
-        <GlassCard delay={0.35}>
-          <div style={styles.sectionHeader}>
-            <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
-              <UserPlus size={18} color="var(--accent-primary)" />
-            </div>
-            <div>
-              <h3 style={styles.sectionTitle}>{t.settings.clientInvites}</h3>
-              <p style={styles.sectionSub}>{t.settings.clientInvitesSub}</p>
-            </div>
-          </div>
-          <div style={styles.divider} />
-
-          {inviteResult?.success ? (
-            <div style={{ textAlign: 'center', padding: '8px 0' }}>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              >
-                <CheckCircle size={40} color="var(--accent-success)" style={{ marginBottom: 12 }} />
-              </motion.div>
-              <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
-                {t.settings.inviteSentTitle}
-              </div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>
-                {t.settings.inviteSentTo(inviteEmail)}
-              </div>
-
-              {inviteResult.link && (
-                <div style={styles.inviteLinkBox}>
-                  <Link size={14} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>
-                    {inviteResult.link}
-                  </span>
-                  <button onClick={handleCopyInvite} style={styles.inviteCopyBtn}>
-                    {inviteCopied ? <Check size={14} /> : <Copy size={14} />}
-                    {inviteCopied ? t.settings.inviteLinkCopied : t.settings.inviteLinkCopy}
-                  </button>
-                </div>
-              )}
-
-              <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: 10 }}>
-                {t.settings.inviteExpiry}
-              </div>
-
-              <button onClick={handleResetInvite} style={styles.inviteSendAnotherBtn}>
-                <Mail size={14} />
-                {t.settings.sendAnother}
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={styles.field}>
-                <label style={styles.fieldLabel}>{t.settings.inviteClientName}</label>
-                <input
-                  type="text"
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                  placeholder={t.settings.inviteNamePlaceholder}
-                  style={styles.fieldInput}
-                />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.fieldLabel}>{t.settings.inviteClientEmail}</label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder={t.settings.inviteEmailPlaceholder}
-                  style={styles.fieldInput}
-                />
-              </div>
-              <div style={styles.field}>
-                <label style={styles.fieldLabel}>{t.settings.invitePlan}</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(['Basic', 'Premium', 'Elite'] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setInvitePlan(p)}
-                      style={{
-                        flex: 1,
-                        padding: '10px 12px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: `1.5px solid ${invitePlan === p ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
-                        background: invitePlan === p ? 'rgba(0,229,200,0.08)' : 'transparent',
-                        color: invitePlan === p ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        fontFamily: 'var(--font-display)',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {inviteResult?.error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{ fontSize: '13px', color: 'var(--accent-danger)', textAlign: 'center' }}
-                >
-                  {inviteResult.error}
-                </motion.div>
-              )}
-
-              <button
-                onClick={handleSendInvite}
-                disabled={inviteGenerating || !inviteName.trim() || !inviteEmail.trim()}
-                style={{
-                  ...styles.inviteSendBtn,
-                  opacity: inviteGenerating || !inviteName.trim() || !inviteEmail.trim() ? 0.5 : 1,
-                  cursor: inviteGenerating || !inviteName.trim() || !inviteEmail.trim() ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {inviteGenerating ? (
-                  <>
-                    <Loader2 size={15} className="spin" />
-                    {t.settings.sendingInvite}
-                  </>
-                ) : (
-                  <>
-                    <Mail size={15} />
-                    {t.settings.sendInvite}
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </GlassCard>
-        </div>
       </div>
 
       {/* Security Modals — Password / 2FA / Delete */}
@@ -1243,120 +873,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
         )}
       </AnimatePresence>
 
-      {/* Integration Connect Modal */}
-      <AnimatePresence>
-        {integrationModal && (
-          <motion.div
-            style={styles.modalOverlay}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}
-          >
-            <motion.div
-              style={styles.modal}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div style={styles.modalHeader}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: `${CHANNEL_COLORS[integrationModal]}15`,
-                    border: `1px solid ${CHANNEL_COLORS[integrationModal]}30`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <ChannelIcon channel={integrationModal} size={18} />
-                  </div>
-                  <h3 style={styles.modalTitle}>
-                    {t.settings.connectChannel(CHANNEL_LABELS[integrationModal])}
-                  </h3>
-                </div>
-                <button style={styles.closeBtn} onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}>
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div style={styles.modalBody}>
-                <p style={{ fontSize: '16px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                  {channelConfig[integrationModal].instruction}
-                </p>
-
-                {channelConfig[integrationModal].helpUrl && (
-                  <a
-                    href={channelConfig[integrationModal].helpUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={styles.helpLink}
-                  >
-                    <ExternalLink size={13} />
-                    {t.settings.viewSetupGuide}
-                  </a>
-                )}
-
-                <div style={styles.modalField}>
-                  <label style={styles.fieldLabel}>{channelConfig[integrationModal].inputLabel}</label>
-                  <input
-                    type="text"
-                    value={integrationInput}
-                    onChange={(e) => setIntegrationInput(e.target.value)}
-                    placeholder={channelConfig[integrationModal].placeholder}
-                    style={{
-                      ...styles.fieldInput,
-                      borderColor: integrationInput.trim() ? CHANNEL_COLORS[integrationModal] : 'var(--glass-border)',
-                    }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleConnect(integrationModal); }}
-                    autoFocus
-                  />
-                </div>
-
-                <div style={styles.modalActions}>
-                  <button
-                    style={styles.cancelBtn}
-                    onClick={() => { if (!connectingChannel) setIntegrationModal(null); }}
-                    disabled={connectingChannel}
-                  >
-                    {t.settings.cancel}
-                  </button>
-                  <button
-                    style={{
-                      ...styles.saveBtn,
-                      background: CHANNEL_COLORS[integrationModal],
-                      boxShadow: `0 0 16px ${CHANNEL_COLORS[integrationModal]}40`,
-                      opacity: integrationInput.trim() && !connectingChannel ? 1 : 0.4,
-                      cursor: integrationInput.trim() && !connectingChannel ? 'pointer' : 'not-allowed',
-                    }}
-                    onClick={() => handleConnect(integrationModal)}
-                    disabled={!integrationInput.trim() || connectingChannel}
-                  >
-                    {connectingChannel ? (
-                      <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                          style={{ width: '14px', height: '14px', border: '2px solid rgba(7,9,14,0.3)', borderTopColor: 'var(--text-on-accent)', borderRadius: '50%' }}
-                        />
-                        {t.settings.connecting}
-                      </>
-                    ) : (
-                      <>
-                        <Plug size={14} />
-                        {t.settings.connectChannel(CHANNEL_LABELS[integrationModal])}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -1494,32 +1010,97 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  profileRow: {
+  profileHero: {
     display: 'flex',
     alignItems: 'center',
-    gap: '14px',
-    marginBottom: '18px',
+    gap: '16px',
+    marginBottom: '20px',
+  },
+  avatarRing: {
+    padding: '3px',
+    borderRadius: '16px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    flexShrink: 0,
   },
   profileAvatar: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    width: '68px',
+    height: '68px',
+    borderRadius: '13px',
+    background: 'var(--bg-secondary)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '25px',
+    fontSize: '28px',
     fontWeight: 700,
-    color: '#fff',
+    color: 'var(--accent-primary)',
     flexShrink: 0,
   },
+  profileIdentity: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    flex: 1,
+    minWidth: 0,
+  },
+  profileNameRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    flexWrap: 'wrap',
+  },
   profileName: {
-    fontSize: '21px',
+    fontSize: '22px',
     fontWeight: 600,
   },
+  planBadge: {
+    fontSize: '11px',
+    fontWeight: 700,
+    letterSpacing: '0.8px',
+    textTransform: 'uppercase' as const,
+    padding: '3px 10px',
+    borderRadius: '20px',
+    background: 'var(--accent-primary-dim)',
+    color: 'var(--accent-primary)',
+    border: '1px solid rgba(0,229,200,0.2)',
+  },
   profileEmail: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+  },
+  profileEmailReadonly: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '15px',
+    color: 'var(--text-tertiary)',
+    padding: '10px 12px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--glass-border)',
+  },
+  profileDetailsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '16px',
+    padding: '14px 0 0',
+    borderTop: '1px solid var(--glass-border)',
+  },
+  profileDetailItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  profileDetailLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    color: 'var(--text-tertiary)',
+    letterSpacing: '0.5px',
+    textTransform: 'uppercase' as const,
+  },
+  profileDetailValue: {
+    fontSize: '15px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
   },
   editBtn: {
     background: 'var(--bg-elevated)',
@@ -1784,32 +1365,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(239,68,68,0.06)',
     border: '1px solid rgba(239,68,68,0.15)',
   },
-  integrationRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '14px 0',
-    borderBottom: '1px solid var(--glass-border)',
-  },
-  integrationInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-  },
-  integrationIcon: {
-    width: '40px',
-    height: '40px',
-    borderRadius: 'var(--radius-sm)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  integrationActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-  },
   statusBadge: {
     fontSize: '14px',
     fontWeight: 600,
@@ -1817,35 +1372,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '20px',
     border: '1px solid',
     letterSpacing: '0.3px',
-  },
-  connectBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 18px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid',
-    background: 'transparent',
-    fontSize: '15px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    transition: 'background 0.15s, opacity 0.15s',
-  },
-  disconnectBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 18px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid var(--accent-danger)',
-    background: 'var(--accent-danger-dim)',
-    color: 'var(--accent-danger)',
-    fontSize: '15px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    transition: 'background 0.15s, border-color 0.15s',
   },
   helpLink: {
     display: 'inline-flex',
@@ -1922,17 +1448,17 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   profileAvatarImg: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
+    width: '68px',
+    height: '68px',
+    borderRadius: '13px',
     objectFit: 'cover' as const,
   },
   avatarUploadBtn: {
     position: 'absolute',
-    bottom: '-4px',
-    right: '-4px',
-    width: '22px',
-    height: '22px',
+    bottom: '-2px',
+    right: '-2px',
+    width: '26px',
+    height: '26px',
     borderRadius: '50%',
     background: 'var(--accent-primary)',
     color: 'var(--text-on-accent)',
@@ -1976,65 +1502,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     flexShrink: 0,
-  },
-  // Invite styles
-  inviteSendBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '12px',
-    border: 'none',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--accent-primary)',
-    color: '#07090e',
-    fontSize: '14px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    boxShadow: '0 0 16px var(--accent-primary-dim)',
-    transition: 'opacity 0.15s',
-  },
-  inviteLinkBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px 14px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid var(--glass-border)',
-    background: 'rgba(255,255,255,0.02)',
-    marginBottom: '4px',
-  },
-  inviteCopyBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '5px',
-    padding: '6px 12px',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid var(--accent-primary)',
-    background: 'rgba(0,229,200,0.08)',
-    color: 'var(--accent-primary)',
-    fontSize: '12px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-  },
-  inviteSendAnotherBtn: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '10px 20px',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--glass-border)',
-    background: 'transparent',
-    color: 'var(--text-secondary)',
-    fontSize: '13px',
-    fontWeight: 500,
-    fontFamily: 'var(--font-display)',
-    cursor: 'pointer',
-    marginTop: '16px',
-    transition: 'border-color 0.15s',
   },
   eyeBtn: {
     position: 'absolute',

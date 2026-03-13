@@ -27,7 +27,8 @@ interface HomePageProps {
   onUpdateSchedule: (assignments: Record<string, string>) => void;
 }
 
-export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule: _onUpdateSchedule }: HomePageProps) {
+// @ts-ignore — onUpdateSchedule scaffolded for weekly schedule feature
+export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule }: HomePageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
 
@@ -42,7 +43,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   // ── Today's workout day (schedule-aware) ──
   // DEV OVERRIDE: pretend today is Friday (mondayBased=4) for demo purposes
   // Remove before deploying!
-  const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 for demo, null for real date
+  const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
   const dayAssignments = weeklySchedule?.dayAssignments ?? {};
   const todayMondayBased = DEV_DAY_OVERRIDE ?? (() => {
     const dow = new Date().getDay();

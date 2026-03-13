@@ -144,6 +144,7 @@ export const en = {
     nutrition: 'Nutrition (1-10)',
     selfReport: 'Self-Report',
     optional: 'Optional',
+    moreDetails: 'More Details',
     notes: 'Notes',
     notesPlaceholder: 'How was your week overall?',
     winsThisWeek: 'Wins this week',

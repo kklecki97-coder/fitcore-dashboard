@@ -10,7 +10,15 @@
       "Bash(git rm:*)",
       "Bash(git status:*)",
       "Bash(git pull:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebFetch(domain:www.fitcore.tech)",
+      "Bash(npm run dev:*)",
+      "Bash(git push origin main)",
+      "Bash(git push kamil main)",
+      "Bash(netstat -ano)",
+      "Bash(npx vite --port 5175)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
     ]
   }
 }

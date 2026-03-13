@@ -34,7 +34,6 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
       timestamp: new Date().toISOString(),
       isRead: false,
       isFromCoach: false,
-      channel: 'whatsapp',
     };
     onSendMessage(msg);
     setNewMessage('');

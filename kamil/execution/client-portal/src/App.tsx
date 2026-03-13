@@ -160,8 +160,6 @@ function App() {
     setTimeout(() => setToastError(null), 6000);
   };
 
-  // Track latest message timestamp for delta fetching (Fix #22)
-  const lastMsgTimestamp = useRef<string | null>(null);
 
   // ── Load all client data from Supabase on login ──
   const loadData = useCallback(async () => {
@@ -360,12 +358,8 @@ function App() {
         timestamp: r.timestamp,
         isRead: r.is_read,
         isFromCoach: r.is_from_coach,
-        channel: r.channel,
       })));
-      // Track last message timestamp for delta fetching
-      if (msgData.length > 0) {
-        lastMsgTimestamp.current = msgData[msgData.length - 1].timestamp;
-      }
+      // Messages loaded — Realtime subscription handles new messages
     }
 
     // Load workout logs
@@ -491,69 +485,59 @@ function App() {
     }).finally(() => setDataLoading(false));
   };
 
-  // ── Poll messages every 10s when on messages page ──
-  // Fix #10: Use ref for callback to avoid stale closures
+  // ── Realtime messages — subscribe to INSERT/UPDATE on messages for this client ──
   const clientUserRef = useRef(clientUser);
   useEffect(() => { clientUserRef.current = clientUser; }, [clientUser]);
 
-  const refreshMessages = useCallback(async () => {
-    const cu = clientUserRef.current;
-    if (!cu) return;
-
-    // Fix #22: Delta fetching — only get messages newer than last known
-    let query = supabase
-      .from('messages')
-      .select('*')
-      .eq('client_id', cu.id)
-      .order('timestamp');
-
-    if (lastMsgTimestamp.current) {
-      query = query.gt('timestamp', lastMsgTimestamp.current);
-    }
-
-    const { data: msgData, error } = await query;
-    if (error) return;
-
-    if (msgData && msgData.length > 0) {
-      if (lastMsgTimestamp.current) {
-        // Append only new messages
-        setMessages(prev => [
-          ...prev,
-          ...msgData.map(r => ({
-            id: r.id,
-            clientId: r.client_id,
-            clientName: cu.name,
-            clientAvatar: '',
-            text: r.text,
-            timestamp: r.timestamp,
-            isRead: r.is_read,
-            isFromCoach: r.is_from_coach,
-            channel: r.channel,
-          })),
-        ]);
-      } else {
-        // First load — replace all
-        setMessages(msgData.map(r => ({
-          id: r.id,
-          clientId: r.client_id,
-          clientName: cu.name,
-          clientAvatar: '',
-          text: r.text,
-          timestamp: r.timestamp,
-          isRead: r.is_read,
-          isFromCoach: r.is_from_coach,
-          channel: r.channel,
-        })));
-      }
-      lastMsgTimestamp.current = msgData[msgData.length - 1].timestamp;
-    }
-  }, []);
-
   useEffect(() => {
-    if (!isLoggedIn || currentPage !== 'messages') return;
-    const interval = setInterval(refreshMessages, 10000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn, currentPage, refreshMessages]);
+    if (!isLoggedIn || !clientUser) return;
+
+    const channel = supabase
+      .channel('client-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `client_id=eq.${clientUser.id}`,
+        },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          const cu = clientUserRef.current;
+          const msg: Message = {
+            id: r.id as string,
+            clientId: r.client_id as string,
+            clientName: cu?.name ?? '',
+            clientAvatar: '',
+            text: r.text as string,
+            timestamp: r.timestamp as string,
+            isRead: r.is_read as boolean,
+            isFromCoach: r.is_from_coach as boolean,
+          };
+          // Only append if we don't already have it (avoids duplicating optimistic inserts)
+          setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `client_id=eq.${clientUser.id}`,
+        },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          setMessages(prev => prev.map(m =>
+            m.id === r.id ? { ...m, isRead: r.is_read as boolean } : m
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn, clientUser]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -570,14 +554,10 @@ function App() {
       timestamp: msg.timestamp,
       is_read: msg.isRead,
       is_from_coach: msg.isFromCoach,
-      channel: msg.channel,
     });
     if (error) {
       setMessages(prev => prev.filter(m => m.id !== msg.id));
       showError(t.errors?.messageFailed ?? 'Failed to send message');
-    } else {
-      // Update last message timestamp for delta fetching
-      lastMsgTimestamp.current = msg.timestamp;
     }
   };
 

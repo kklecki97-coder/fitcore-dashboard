@@ -5,7 +5,6 @@ import {
   Dumbbell,
   MessageSquare,
   BarChart3,
-  CalendarDays,
   Settings,
   LogOut,
   CreditCard,
@@ -18,7 +17,6 @@ import type { Page } from '../types';
 interface SidebarProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
-  profileName?: string;
   onLogout?: () => void;
 }
 
@@ -30,10 +28,9 @@ const navPages: { icon: typeof LayoutDashboard; page: Page }[] = [
   { icon: ClipboardCheck, page: 'check-ins' },
   { icon: CreditCard, page: 'payments' },
   { icon: BarChart3, page: 'analytics' },
-  { icon: CalendarDays, page: 'schedule' },
 ];
 
-const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'messages' | 'checkIns' | 'payments' | 'analytics' | 'schedule'> = {
+const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'messages' | 'checkIns' | 'payments' | 'analytics'> = {
   'overview': 'overview',
   'clients': 'clients',
   'programs': 'programs',
@@ -41,10 +38,9 @@ const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'messag
   'check-ins': 'checkIns',
   'payments': 'payments',
   'analytics': 'analytics',
-  'schedule': 'schedule',
 };
 
-export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach Kamil', onLogout }: SidebarProps) {
+export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
   const { lang, t, switchLang } = useLang();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -143,14 +139,6 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
           <span style={{ opacity: 0.6 }}>{t.nav.logOut}</span>
         </button>
 
-        {/* Coach Profile */}
-        <div style={styles.coachCard}>
-          <div style={styles.coachAvatar}>{profileName.charAt(0).toUpperCase()}</div>
-          <div>
-            <div style={styles.coachName}>{profileName}</div>
-            <div style={styles.coachPlan}>{t.nav.proPlan}</div>
-          </div>
-        </div>
       </div>
     </aside>
   );
@@ -272,36 +260,5 @@ const styles: Record<string, React.CSSProperties> = {
     marginLeft: '12px',
     marginBottom: '8px',
     transition: 'background 0.15s',
-  },
-  coachCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px',
-    marginTop: '12px',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--glass-border)',
-  },
-  coachAvatar: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    fontWeight: 700,
-    color: '#fff',
-  },
-  coachName: {
-    fontSize: '18px',
-    fontWeight: 600,
-    color: 'var(--text-primary)',
-  },
-  coachPlan: {
-    fontSize: '15px',
-    color: 'var(--text-secondary)',
   },
 };
