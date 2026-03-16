@@ -141,7 +141,7 @@ export default function AccountPage() {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({ confirmEmail: user?.email }),
         }
@@ -211,7 +211,7 @@ export default function AccountPage() {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
         }
       );
@@ -235,7 +235,7 @@ export default function AccountPage() {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
         }
       );
