@@ -12,6 +12,40 @@ interface CalendarPageProps {
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+// Extract a short label from a workout day name like "Monday - Boxing + Jiu-Jitsu" → "BJJ + Box"
+const extractLabel = (name: string): string => {
+  const n = name.toLowerCase();
+  // Strip leading day-of-week prefix (e.g. "Monday - ", "Wed - ")
+  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–—:]\s*/i, '');
+  const s = stripped.toLowerCase();
+
+  // Keyword matching for common workout types
+  if (s.includes('push')) return 'Push';
+  if (s.includes('pull')) return 'Pull';
+  if (s.includes('upper')) return 'Upper';
+  if (s.includes('lower')) return 'Lower';
+  if (s.includes('legs') || s.includes('leg day')) return 'Legs';
+
+  // Martial arts / combat
+  const hasBjj = s.includes('jiu') || s.includes('bjj') || s.includes('grappling');
+  const hasBoxing = s.includes('box');
+  const hasMma = s.includes('mma');
+  if (hasBjj && hasBoxing) return 'BJJ + Box';
+  if (hasBjj && hasMma) return 'BJJ + MMA';
+  if (hasBjj) return 'BJJ';
+  if (hasBoxing) return 'Boxing';
+  if (hasMma) return 'MMA';
+
+  // Strength / gym
+  if (s.includes('strength') || s.includes('full body') || s.includes('gym')) return 'Gym';
+  if (s.includes('cardio')) return 'Cardio';
+  if (s.includes('hiit')) return 'HIIT';
+  if (s.includes('yoga') || s.includes('stretch')) return 'Yoga';
+
+  // Fallback: use the stripped name (without day prefix), truncated
+  return stripped.length > 8 ? stripped.slice(0, 8) : stripped;
+};
+
 // Color palette for workout types (up to 6 distinct workouts)
 const WORKOUT_COLORS = [
   { r: 59, g: 130, b: 246 },   // blue
@@ -41,10 +75,19 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
   const programWeeks = program?.durationWeeks ?? 0;
   const programStart = program ? new Date(program.createdAt) : new Date();
 
-  // Map each program day ID to a color index
+  // Map each program day ID to a color index — days with the same label share the same color
   const dayColorMap: Record<string, number> = {};
   if (program) {
-    program.days.forEach((d, i) => { dayColorMap[d.id] = i % WORKOUT_COLORS.length; });
+    const labelToColor: Record<string, number> = {};
+    let nextColor = 0;
+    program.days.forEach((d) => {
+      const label = extractLabel(d.name);
+      if (!(label in labelToColor)) {
+        labelToColor[label] = nextColor % WORKOUT_COLORS.length;
+        nextColor++;
+      }
+      dayColorMap[d.id] = labelToColor[label];
+    });
   }
 
   // Get Monday of the program start week
@@ -69,8 +112,9 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
   todayMonday.setDate(todayMonday.getDate() - (todayDow === 0 ? 6 : todayDow - 1));
   todayMonday.setHours(0, 0, 0, 0);
 
-  const weeksElapsed = Math.max(1, Math.ceil((today.getTime() - startMonday.getTime()) / (7 * 86400000)));
-  const currentWeekNum = Math.min(weeksElapsed, programWeeks);
+  const msFromStart = today.getTime() - startMonday.getTime();
+  const weeksElapsed = msFromStart > 0 ? Math.ceil(msFromStart / (7 * 86400000)) : 0;
+  const currentWeekNum = Math.min(Math.max(weeksElapsed, 0), programWeeks);
 
   // Build all weeks
   const weeks = Array.from({ length: programWeeks }, (_, i) => {
@@ -93,16 +137,7 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
       const missed = isPast && !!assignedDay && !log;
 
       // Short label
-      let shortLabel = '';
-      if (assignedDay) {
-        const n = assignedDay.name.toLowerCase();
-        if (n.includes('push')) shortLabel = 'Push';
-        else if (n.includes('pull')) shortLabel = 'Pull';
-        else if (n.includes('upper')) shortLabel = 'Upper';
-        else if (n.includes('lower')) shortLabel = 'Lower';
-        else if (n.includes('legs')) shortLabel = 'Legs';
-        else shortLabel = assignedDay.name.slice(0, 5);
-      }
+      const shortLabel = assignedDay ? extractLabel(assignedDay.name) : '';
 
       const colorIdx = assignedId ? (dayColorMap[assignedId] ?? -1) : -1;
 
@@ -144,27 +179,26 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
         <div style={styles.headerRow}>
           <span style={styles.subtitle}>{programWeeks} weeks</span>
           <div style={styles.legend}>
-            {program.days.map((d, i) => {
-              const c = WORKOUT_COLORS[i % WORKOUT_COLORS.length];
-              const n = d.name.toLowerCase();
-              let label = d.name.slice(0, 5);
-              if (n.includes('push')) label = 'Push';
-              else if (n.includes('pull')) label = 'Pull';
-              else if (n.includes('upper')) label = 'Upper';
-              else if (n.includes('lower')) label = 'Lower';
-              else if (n.includes('legs')) label = 'Legs';
-              return (
-                <div key={d.id} style={styles.legendItem}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: `rgb(${c.r},${c.g},${c.b})`,
-                  }} />
-                  <span style={styles.legendText}>{label}</span>
-                </div>
-              );
-            })}
+            {(() => {
+              const seen = new Set<string>();
+              return program.days.map((d) => {
+                const label = extractLabel(d.name);
+                if (seen.has(label)) return null;
+                seen.add(label);
+                const c = WORKOUT_COLORS[dayColorMap[d.id] ?? 0];
+                return (
+                  <div key={d.id} style={styles.legendItem}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: `rgb(${c.r},${c.g},${c.b})`,
+                    }} />
+                    <span style={styles.legendText}>{label}</span>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       </div>
@@ -225,15 +259,14 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
               cellBg = `rgba(${rgb},0.08)`;
               cellBorder = `1px solid rgba(${rgb},0.15)`;
               cellOpacity = 0.45;
-            } else if (day.isFuture && day.isTraining && c) {
-              cellBg = `rgba(${rgb},0.06)`;
-              cellBorder = `1px solid rgba(${rgb},0.12)`;
+            } else if (day.isTraining && c) {
+              // Upcoming training day — subtle tint, no text
+              cellBg = `rgba(${rgb},0.08)`;
+              cellBorder = `1px solid rgba(${rgb},0.15)`;
             }
 
             if (!day.isTraining && !day.completed) {
-              cellOpacity = day.isFuture ? 0.2 : 0.35;
-            } else if (day.isFuture && !day.isToday) {
-              cellOpacity = 0.5;
+              cellOpacity = day.isFuture ? 0.25 : 0.4;
             }
 
             return (
@@ -257,9 +290,6 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
                 </span>
                 {day.completed && <Check size={12} color={c ? `rgb(${rgb})` : 'var(--accent-success)'} strokeWidth={3} />}
                 {day.missed && <X size={10} color={c ? `rgba(${rgb},0.7)` : 'rgba(239,68,68,0.6)'} strokeWidth={2.5} />}
-                {day.isToday && !day.completed && !day.missed && day.isTraining && (
-                  <span style={{ fontSize: '8px', fontWeight: 700, color: 'rgb(0,229,200)', textTransform: 'uppercase' as const, letterSpacing: '0.3px', lineHeight: 1 }}>{day.shortLabel}</span>
-                )}
               </div>
             );
           })}
@@ -359,7 +389,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 0 12px rgba(0,229,200,0.08)',
   },
   weekRowFuture: {
-    opacity: 0.5,
+    // no row-level opacity — handled per cell so training days stay visible
   },
   weekInfo: {
     display: 'flex',

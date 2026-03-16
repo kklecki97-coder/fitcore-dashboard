@@ -126,7 +126,7 @@ export interface CheckIn {
   followUpNotes: { text: string; date: string }[];
 }
 
-export type Page = 'overview' | 'clients' | 'client-detail' | 'messages' | 'analytics' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';
+export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'program-create-chooser' | 'ai-program-creator' | 'payments' | 'check-ins';
 
 export type Theme = 'dark' | 'light';
 
