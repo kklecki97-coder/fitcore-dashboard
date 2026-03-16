@@ -19,8 +19,8 @@ export const pl: Translations = {
 
   hero: {
     badge: 'Twój coaching zasługuje na więcej',
-    title1: 'Twoi klienci osiągają wyniki.',
-    title2: 'Twój biznes powinien też.',
+    title1: 'Klienci, programy, przychody.',
+    title2: 'Jeden dashboard. Zero chaosu.',
     subtitle: 'Wysyłasz treningi przez WhatsApp i trzymasz dane w arkuszach. Twoi klienci to widzą. I wyceniają Cię na tej podstawie.',
     ctaPrimary: 'Zobacz co dostajesz',
     ctaSecondary: 'Umów rozmowę',
