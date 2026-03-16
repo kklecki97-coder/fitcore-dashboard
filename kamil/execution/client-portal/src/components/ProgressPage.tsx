@@ -36,7 +36,6 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const startWeight = weights.length > 0 ? weights[0] : null;
   const currentWeight = weights.length > 0 ? weights[weights.length - 1] : null;
 
-  const hasLifts = metrics.benchPress.length > 0 || metrics.squat.length > 0 || metrics.deadlift.length > 0;
 
   const monthNames = lang === 'pl'
     ? ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru']
@@ -75,13 +74,12 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     { key: 'back', label: 'Back' },
   ];
 
-  // ── Lift PRs — only lifts with data ──
+  // ── Lift PRs ──
   const allLifts = [
     { name: 'Bench Press', values: metrics.benchPress, unit: 'kg' },
     { name: 'Squat', values: metrics.squat, unit: 'kg' },
     { name: 'Deadlift', values: metrics.deadlift, unit: 'kg' },
   ];
-  const lifts = allLifts.filter(l => l.values.length > 0);
 
   // ── Goal progress — handle empty data gracefully ──
   const parseTarget = (text: string): number | null => {
