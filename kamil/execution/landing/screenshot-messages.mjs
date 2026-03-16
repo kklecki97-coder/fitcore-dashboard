@@ -43,6 +43,11 @@ async function run() {
 
   console.log('Logged in.');
 
+  // Switch dashboard language to English and reload
+  await page.evaluate(() => localStorage.setItem('fitcore-lang', 'en'));
+  await page.goto('https://app.fitcore.tech/en/', { waitUntil: 'networkidle2', timeout: 20000 });
+  await new Promise(r => setTimeout(r, 2000));
+
   // Take debug screenshot to see current state
   await page.screenshot({ path: OUT.replace('4-messages', '4-messages-debug'), type: 'png' });
   console.log('Debug screenshot taken');
