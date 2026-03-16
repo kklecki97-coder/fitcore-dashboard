@@ -15,7 +15,7 @@ interface ProgramPageProps {
   weeklySchedule: WeeklySchedule | null;
 }
 
-export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _onRemoveLog, onUpdateLog: _onUpdateLog, workoutLogs: _workoutLogs, weeklySchedule }: ProgramPageProps) {
+export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs: _workoutLogs, weeklySchedule }: ProgramPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
 
@@ -50,7 +50,15 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog: _
   const [countdown, setCountdown] = useState<number | null>(null);
 
   // ── Editable set state ──
-  const [editingSet] = useState<Record<string, { reps: number; weight: string }>>({});
+  const [editingSet, setEditingSet] = useState<Record<string, { reps: number; weight: string }>>({});
+
+  const updateEditValue = (exerciseId: string, setNum: number, field: 'reps' | 'weight', value: number | string) => {
+    const key = `${exerciseId}-${setNum}`;
+    setEditingSet(prev => ({
+      ...prev,
+      [key]: { ...getEditValues(exerciseId, setNum, { reps: '10', weight: '0' }), [field]: value },
+    }));
+  };
 
   // ── Rest timer state ──
   const [restTimer, setRestTimer] = useState<{ exerciseId: string; seconds: number; total: number } | null>(null);
