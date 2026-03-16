@@ -202,21 +202,9 @@ export default function AccountPage() {
   const handleUpgrade = async () => {
     setUpgradeLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setUpgradeLoading(false); return; }
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-        }
-      );
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      const { data, error } = await supabase.functions.invoke('create-checkout-session');
+      if (error) { console.error('Checkout error:', error); setUpgradeLoading(false); return; }
+      if (data?.url) window.location.href = data.url;
       else setUpgradeLoading(false);
     } catch {
       setUpgradeLoading(false);
@@ -226,21 +214,9 @@ export default function AccountPage() {
   const handleManageSubscription = async () => {
     setPortalLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setPortalLoading(false); return; }
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-        }
-      );
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      const { data, error } = await supabase.functions.invoke('create-portal-session');
+      if (error) { console.error('Portal error:', error); setPortalLoading(false); return; }
+      if (data?.url) window.location.href = data.url;
       else setPortalLoading(false);
     } catch {
       setPortalLoading(false);
