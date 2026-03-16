@@ -315,6 +315,25 @@ export const en = {
     trialExpiredDesc: 'Upgrade to keep full access to your coaching platform.',
     upgradeCta: 'Upgrade Now',
     upgradePrice: '$49/month after $100 one-time setup',
+    upgradeLoading: 'Redirecting to checkout...',
+    // Pro plan
+    proActive: 'Active Subscription',
+    proBadge: 'Pro',
+    manageSubscription: 'Manage Subscription',
+    manageBilling: 'Update payment method, cancel, or view invoices',
+    nextBilling: 'Next billing date',
+    // Cancelled
+    cancelledBadge: 'Cancelled',
+    accessUntil: 'Access until',
+    resubscribe: 'Re-subscribe',
+    // Past due
+    pastDueBadge: 'Payment Failed',
+    pastDueHeading: 'Payment failed',
+    pastDueDesc: 'Your last payment failed. Update your payment method to keep access.',
+    updatePayment: 'Update Payment Method',
+    // Payment success
+    paymentSuccessHeading: 'Welcome to FitCore Pro!',
+    paymentSuccessDesc: 'Your payment was successful. You now have full access to all features.',
     // Quick Actions
     quickActions: 'Quick Actions',
     goToDashboard: 'Open Dashboard',

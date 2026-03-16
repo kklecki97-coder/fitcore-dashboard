@@ -11,6 +11,8 @@ export interface AuthUser {
   coachingNiche?: string;
   clientCount?: string;
   plan: 'trial' | 'pro' | 'cancelled';
+  subscriptionStatus?: string;
+  subscriptionEndsAt?: string | null;
   trialStartDate: string;
   trialEndDate: string;
   createdAt: string;
@@ -34,6 +36,8 @@ interface AuthContextValue {
   isLoggedIn: boolean;
   isTrialActive: boolean;
   trialDaysRemaining: number;
+  hasAccess: boolean;
+  refreshUser: () => Promise<void>;
   login: (email: string, password: string) => Promise<AuthResult>;
   register: (data: RegisterData) => Promise<AuthResult>;
   logout: () => void;
@@ -61,13 +65,17 @@ function buildAuthUser(
   const trialEnd = new Date(startDate);
   trialEnd.setDate(trialEnd.getDate() + 14);
 
+  const dbPlan = (coachRow?.plan as string) || 'trial';
+
   return {
     id: authId,
     fullName: (coachRow?.name as string) || (meta?.name as string) || email.split('@')[0],
     email,
     coachingNiche: (meta?.coaching_niche as string) || undefined,
     clientCount: (meta?.client_count as string) || undefined,
-    plan: 'trial',
+    plan: dbPlan as 'trial' | 'pro' | 'cancelled',
+    subscriptionStatus: (coachRow?.subscription_status as string) || 'trialing',
+    subscriptionEndsAt: (coachRow?.subscription_ends_at as string) || null,
     trialStartDate: startDate,
     trialEndDate: trialEnd.toISOString(),
     createdAt: startDate,
@@ -150,6 +158,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isLoggedIn = user !== null;
   const trialDaysRemaining = user ? computeTrialDays(user.trialEndDate) : 0;
   const isTrialActive = user?.plan === 'trial' && trialDaysRemaining > 0;
+  const hasAccess = user?.plan === 'pro'
+    || (user?.plan === 'trial' && trialDaysRemaining > 0)
+    || (user?.plan === 'cancelled' && !!user.subscriptionEndsAt && new Date(user.subscriptionEndsAt) > new Date());
+
+  // Re-fetch coach data from DB (e.g. after returning from Stripe Checkout)
+  const refreshUser = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) await loadUser(session);
+  }, [loadUser]);
 
   const register = useCallback(async (data: RegisterData): Promise<AuthResult> => {
     const { data: signUpData, error } = await supabase.auth.signUp({
@@ -275,14 +292,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Show nothing while loading initial session
   if (loading) {
     return (
-      <AuthContext.Provider value={{ user: null, isLoggedIn: false, isTrialActive: false, trialDaysRemaining: 0, login, register, logout, updateProfile, changePassword }}>
+      <AuthContext.Provider value={{ user: null, isLoggedIn: false, isTrialActive: false, trialDaysRemaining: 0, hasAccess: false, refreshUser, login, register, logout, updateProfile, changePassword }}>
         {children}
       </AuthContext.Provider>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, isTrialActive, trialDaysRemaining, login, register, logout, updateProfile, changePassword }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, isTrialActive, trialDaysRemaining, hasAccess, refreshUser, login, register, logout, updateProfile, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

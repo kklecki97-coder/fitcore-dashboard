@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Mail, Calendar, Clock, ExternalLink, LogOut, Trash2, Edit3, Check, X, Dumbbell, Lock, ChevronLeft, AlertTriangle, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Calendar, Clock, ExternalLink, LogOut, Trash2, Edit3, Check, X, Dumbbell, Lock, ChevronLeft, AlertTriangle, CheckCircle2, ArrowRight, Eye, EyeOff, CreditCard, Loader2 } from 'lucide-react';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 import { supabase } from './lib/supabase';
@@ -13,8 +13,9 @@ import { supabase } from './lib/supabase';
 
 export default function AccountPage() {
   const { lang, t } = useLang();
-  const { user, isTrialActive, trialDaysRemaining, logout, updateProfile, changePassword } = useAuth();
+  const { user, trialDaysRemaining, logout, updateProfile, changePassword, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const ta = t.auth;
 
   // ── Local state ──
@@ -43,9 +44,24 @@ export default function AccountPage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+  // Stripe state
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  // Handle ?payment=success return from Stripe
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      setPaymentSuccess(true);
+      setSearchParams({}, { replace: true });
+      // Re-fetch coach data — webhook may not have fired yet, retry a few times
+      const attempts = [1000, 3000, 6000];
+      attempts.forEach(delay => setTimeout(() => refreshUser(), delay));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Lang-aware links ──
   const homeUrl = lang === 'pl' ? '/pl/' : '/';
-  const checkoutUrl = lang === 'pl' ? '/pl/checkout' : '/checkout';
 
   // ── Null guard (ProtectedRoute handles redirect, but be safe) ──
   if (!user) return null;
@@ -180,6 +196,55 @@ export default function AccountPage() {
       setShowPasswordForm(false);
       setPasswordSuccess(false);
     }, 2000);
+  };
+
+  // ── Stripe handlers ──
+  const handleUpgrade = async () => {
+    setUpgradeLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setUpgradeLoading(false); return; }
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setUpgradeLoading(false);
+    } catch {
+      setUpgradeLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setPortalLoading(false); return; }
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+        }
+      );
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setPortalLoading(false);
+    } catch {
+      setPortalLoading(false);
+    }
   };
 
   // ── Glass card style ──
@@ -318,8 +383,87 @@ export default function AccountPage() {
         )}
 
 
+        {/* ── PAYMENT SUCCESS BANNER ── */}
+        {paymentSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              ...glassCard,
+              marginBottom: 24,
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+            }}
+          >
+            <div style={{ ...glassGlow, background: 'linear-gradient(90deg, transparent, #22c55e, transparent)' }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: 'rgba(34, 197, 94, 0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <CheckCircle2 size={20} style={{ color: '#22c55e' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f5', marginBottom: 4 }}>
+                  {ta.paymentSuccessHeading}
+                </div>
+                <div style={{ fontSize: 13, color: '#8b92a5', lineHeight: 1.5 }}>
+                  {ta.paymentSuccessDesc}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── PAST DUE WARNING ── */}
+        {user.subscriptionStatus === 'past_due' && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            style={{
+              ...glassCard,
+              marginBottom: 24,
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+            }}
+          >
+            <div style={{ ...glassGlow, background: 'linear-gradient(90deg, transparent, #ef4444, transparent)' }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: 'rgba(239, 68, 68, 0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <AlertTriangle size={20} style={{ color: '#ef4444' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#f0f2f5', marginBottom: 4 }}>
+                  {ta.pastDueHeading}
+                </div>
+                <div style={{ fontSize: 13, color: '#8b92a5', lineHeight: 1.5, marginBottom: 16 }}>
+                  {ta.pastDueDesc}
+                </div>
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={portalLoading}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                    color: '#fff', padding: '10px 22px', borderRadius: 8,
+                    fontWeight: 700, fontSize: 13, border: 'none', cursor: portalLoading ? 'wait' : 'pointer',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                  }}
+                >
+                  {portalLoading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={14} />} {ta.updatePayment}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* ── UPGRADE CTA (trial running low or expired) ── */}
-        {(trialRunningLow || trialExpired) && (
+        {user.plan === 'trial' && (trialRunningLow || trialExpired) && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -359,18 +503,21 @@ export default function AccountPage() {
                   }
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                  <Link to={checkoutUrl} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: 'linear-gradient(135deg, #00e5c8, #00c4aa)',
-                    color: '#07090e', padding: '10px 22px', borderRadius: 8,
-                    fontWeight: 700, fontSize: 13, textDecoration: 'none',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 229, 200, 0.2)'; }}
+                  <button
+                    onClick={handleUpgrade}
+                    disabled={upgradeLoading}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: upgradeLoading ? 'rgba(0, 229, 200, 0.5)' : 'linear-gradient(135deg, #00e5c8, #00c4aa)',
+                      color: '#07090e', padding: '10px 22px', borderRadius: 8,
+                      fontWeight: 700, fontSize: 13, border: 'none', cursor: upgradeLoading ? 'wait' : 'pointer',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                    }}
+                    onMouseEnter={e => { if (!upgradeLoading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 229, 200, 0.2)'; } }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    {ta.upgradeCta} <ArrowRight size={14} />
-                  </Link>
+                    {upgradeLoading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> {ta.upgradeLoading}</> : <>{ta.upgradeCta} <ArrowRight size={14} /></>}
+                  </button>
                   <span style={{ fontSize: 12, color: '#8b92a5' }}>{ta.upgradePrice}</span>
                 </div>
               </div>
@@ -592,16 +739,24 @@ export default function AccountPage() {
           style={{
             ...glassCard,
             marginBottom: 24,
-            border: trialExpired
-              ? '1px solid rgba(245, 158, 11, 0.25)'
-              : '1px solid rgba(255, 255, 255, 0.06)',
+            border: user.plan === 'pro'
+              ? '1px solid rgba(34, 197, 94, 0.15)'
+              : user.plan === 'cancelled'
+                ? '1px solid rgba(245, 158, 11, 0.15)'
+                : trialExpired
+                  ? '1px solid rgba(245, 158, 11, 0.25)'
+                  : '1px solid rgba(255, 255, 255, 0.06)',
           }}
         >
           <div style={{
             ...glassGlow,
-            background: trialExpired
-              ? 'linear-gradient(90deg, transparent, #f59e0b, transparent)'
-              : 'linear-gradient(90deg, transparent, #00e5c8, transparent)',
+            background: user.plan === 'pro'
+              ? 'linear-gradient(90deg, transparent, #22c55e, transparent)'
+              : user.plan === 'cancelled'
+                ? 'linear-gradient(90deg, transparent, #f59e0b, transparent)'
+                : trialExpired
+                  ? 'linear-gradient(90deg, transparent, #f59e0b, transparent)'
+                  : 'linear-gradient(90deg, transparent, #00e5c8, transparent)',
           }} />
 
           <div style={{
@@ -621,79 +776,146 @@ export default function AccountPage() {
             <span style={{ fontSize: 12, fontWeight: 500, color: '#07090e', margin: '1px 0' }}>
               &mdash;
             </span>
-            <span style={{
-              fontSize: 11, fontWeight: 700,
-              padding: '3px 10px', borderRadius: 20,
-              background: trialExpired
-                ? 'rgba(239, 68, 68, 0.12)'
-                : isTrialActive
-                  ? 'rgba(34, 197, 94, 0.12)'
-                  : 'rgba(99, 102, 241, 0.12)',
-              color: trialExpired
-                ? '#ef4444'
-                : isTrialActive
-                  ? '#22c55e'
-                  : '#818cf8',
-              border: `1px solid ${trialExpired ? 'rgba(239, 68, 68, 0.25)' : isTrialActive ? 'rgba(34, 197, 94, 0.25)' : 'rgba(99, 102, 241, 0.25)'}`,
-              textTransform: 'uppercase', letterSpacing: 0.5,
-            }}>
-              {trialExpired ? ta.planExpired : isTrialActive ? ta.planTrial : ta.planActive}
-            </span>
-          </div>
-
-          {/* Trial progress bar */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              marginBottom: 8,
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#f0f2f5' }}>
-                {trialDaysRemaining} {ta.trialDaysLeft}
-              </span>
+            {user.plan === 'pro' ? (
               <span style={{
-                fontSize: 12, color: '#8b92a5',
-                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                background: 'rgba(34, 197, 94, 0.12)', color: '#22c55e',
+                border: '1px solid rgba(34, 197, 94, 0.25)',
+                textTransform: 'uppercase', letterSpacing: 0.5,
               }}>
-                {trialDaysRemaining}/{trialTotalDays}
+                {ta.proBadge}
               </span>
-            </div>
-            <div style={{
-              width: '100%', height: 6, borderRadius: 3,
-              background: 'rgba(255, 255, 255, 0.06)',
-              overflow: 'hidden',
-            }}>
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${trialRemainingPercent}%` }}
-                transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
-                style={{
-                  height: '100%', borderRadius: 3,
-                  background: trialExpired
-                    ? 'linear-gradient(90deg, #ef4444, #f59e0b)'
-                    : trialDaysRemaining <= 3
-                      ? 'linear-gradient(90deg, #f59e0b, #22c55e)'
-                      : 'linear-gradient(90deg, #00e5c8, #22c55e)',
-                }}
-              />
-            </div>
+            ) : user.plan === 'cancelled' ? (
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                textTransform: 'uppercase', letterSpacing: 0.5,
+              }}>
+                {ta.cancelledBadge}
+              </span>
+            ) : (
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                background: trialExpired ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+                color: trialExpired ? '#ef4444' : '#22c55e',
+                border: `1px solid ${trialExpired ? 'rgba(239, 68, 68, 0.25)' : 'rgba(34, 197, 94, 0.25)'}`,
+                textTransform: 'uppercase', letterSpacing: 0.5,
+              }}>
+                {trialExpired ? ta.planExpired : ta.planTrial}
+              </span>
+            )}
           </div>
 
-          {/* Dates */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b92a5' }}>
-              <Clock size={13} style={{ opacity: 0.6 }} />
-              <span style={{ fontWeight: 500 }}>{ta.trialStarted}:</span>
-              <span style={{ color: '#f0f2f5', fontWeight: 600 }}>{formatDate(user.trialStartDate)}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b92a5' }}>
-              <Calendar size={13} style={{ opacity: 0.6 }} />
-              <span style={{ fontWeight: 500 }}>{ta.trialEnds}:</span>
-              <span style={{
-                color: trialExpired ? '#ef4444' : '#f0f2f5',
-                fontWeight: 600,
-              }}>{formatDate(user.trialEndDate)}</span>
-            </div>
-          </div>
+          {/* ── Content depends on plan ── */}
+          {user.plan === 'pro' ? (
+            <>
+              {/* Pro active content */}
+              <div style={{ fontSize: 14, color: '#8b92a5', lineHeight: 1.6, marginBottom: 20 }}>
+                {ta.proActive}
+              </div>
+              <button
+                onClick={handleManageSubscription}
+                disabled={portalLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: '#f0f2f5', padding: '10px 20px', borderRadius: 8,
+                  fontWeight: 600, fontSize: 13, cursor: portalLoading ? 'wait' : 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'; }}
+              >
+                {portalLoading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={14} />}
+                {ta.manageSubscription}
+              </button>
+              <div style={{ fontSize: 12, color: '#8b92a5', marginTop: 8 }}>
+                {ta.manageBilling}
+              </div>
+            </>
+          ) : user.plan === 'cancelled' ? (
+            <>
+              {/* Cancelled — show access-until date */}
+              {user.subscriptionEndsAt && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b92a5', marginBottom: 20 }}>
+                  <Calendar size={13} style={{ opacity: 0.6 }} />
+                  <span style={{ fontWeight: 500 }}>{ta.accessUntil}:</span>
+                  <span style={{ color: '#f59e0b', fontWeight: 600 }}>{formatDate(user.subscriptionEndsAt)}</span>
+                </div>
+              )}
+              <button
+                onClick={handleUpgrade}
+                disabled={upgradeLoading}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: upgradeLoading ? 'rgba(0, 229, 200, 0.5)' : 'linear-gradient(135deg, #00e5c8, #00c4aa)',
+                  color: '#07090e', padding: '10px 22px', borderRadius: 8,
+                  fontWeight: 700, fontSize: 13, border: 'none', cursor: upgradeLoading ? 'wait' : 'pointer',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                }}
+              >
+                {upgradeLoading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <ArrowRight size={14} />}
+                {ta.resubscribe}
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Trial progress bar */}
+              <div style={{ marginBottom: 20 }}>
+                <div style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  marginBottom: 8,
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#f0f2f5' }}>
+                    {trialDaysRemaining} {ta.trialDaysLeft}
+                  </span>
+                  <span style={{
+                    fontSize: 12, color: '#8b92a5',
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}>
+                    {trialDaysRemaining}/{trialTotalDays}
+                  </span>
+                </div>
+                <div style={{
+                  width: '100%', height: 6, borderRadius: 3,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  overflow: 'hidden',
+                }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${trialRemainingPercent}%` }}
+                    transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
+                    style={{
+                      height: '100%', borderRadius: 3,
+                      background: trialExpired
+                        ? 'linear-gradient(90deg, #ef4444, #f59e0b)'
+                        : trialDaysRemaining <= 3
+                          ? 'linear-gradient(90deg, #f59e0b, #22c55e)'
+                          : 'linear-gradient(90deg, #00e5c8, #22c55e)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b92a5' }}>
+                  <Clock size={13} style={{ opacity: 0.6 }} />
+                  <span style={{ fontWeight: 500 }}>{ta.trialStarted}:</span>
+                  <span style={{ color: '#f0f2f5', fontWeight: 600 }}>{formatDate(user.trialStartDate)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b92a5' }}>
+                  <Calendar size={13} style={{ opacity: 0.6 }} />
+                  <span style={{ fontWeight: 500 }}>{ta.trialEnds}:</span>
+                  <span style={{
+                    color: trialExpired ? '#ef4444' : '#f0f2f5',
+                    fontWeight: 600,
+                  }}>{formatDate(user.trialEndDate)}</span>
+                </div>
+              </div>
+            </>
+          )}
         </motion.div>
 
 

@@ -317,6 +317,25 @@ export const pl: Translations = {
     trialExpiredDesc: 'Ulepsz, aby zachować pełny dostęp do platformy coachingowej.',
     upgradeCta: 'Ulepsz teraz',
     upgradePrice: '170 zł/mies. po jednorazowej opłacie 360 zł',
+    upgradeLoading: 'Przekierowanie do płatności...',
+    // Pro plan
+    proActive: 'Aktywna subskrypcja',
+    proBadge: 'Pro',
+    manageSubscription: 'Zarządzaj subskrypcją',
+    manageBilling: 'Zmień metodę płatności, anuluj lub sprawdź faktury',
+    nextBilling: 'Następna płatność',
+    // Cancelled
+    cancelledBadge: 'Anulowana',
+    accessUntil: 'Dostęp do',
+    resubscribe: 'Subskrybuj ponownie',
+    // Past due
+    pastDueBadge: 'Płatność nieudana',
+    pastDueHeading: 'Płatność nie powiodła się',
+    pastDueDesc: 'Ostatnia płatność nie powiodła się. Zaktualizuj metodę płatności, aby zachować dostęp.',
+    updatePayment: 'Zaktualizuj płatność',
+    // Payment success
+    paymentSuccessHeading: 'Witaj w FitCore Pro!',
+    paymentSuccessDesc: 'Płatność zakończona sukcesem. Masz teraz pełny dostęp do wszystkich funkcji.',
     // Quick Actions
     quickActions: 'Szybkie akcje',
     goToDashboard: 'Otwórz dashboard',
