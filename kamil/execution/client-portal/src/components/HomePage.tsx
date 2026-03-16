@@ -15,6 +15,30 @@ const WORKOUT_COLORS = [
   { r: 20, g: 184, b: 166 },   // teal
 ];
 
+// Same label extraction as CalendarPage — group same workout types to same color
+const extractLabel = (name: string): string => {
+  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–—:]\s*/i, '');
+  const s = stripped.toLowerCase();
+  if (s.includes('push')) return 'Push';
+  if (s.includes('pull')) return 'Pull';
+  if (s.includes('upper')) return 'Upper';
+  if (s.includes('lower')) return 'Lower';
+  if (s.includes('legs') || s.includes('leg day')) return 'Legs';
+  const hasBjj = s.includes('jiu') || s.includes('bjj') || s.includes('grappling');
+  const hasBoxing = s.includes('box');
+  const hasMma = s.includes('mma');
+  if (hasBjj && hasBoxing) return 'BJJ + Box';
+  if (hasBjj && hasMma) return 'BJJ + MMA';
+  if (hasBjj) return 'BJJ';
+  if (hasBoxing) return 'Boxing';
+  if (hasMma) return 'MMA';
+  if (s.includes('strength') || s.includes('full body') || s.includes('gym')) return 'Gym';
+  if (s.includes('cardio')) return 'Cardio';
+  if (s.includes('hiit')) return 'HIIT';
+  if (s.includes('yoga') || s.includes('stretch')) return 'Yoga';
+  return stripped.length > 8 ? stripped.slice(0, 8) : stripped;
+};
+
 interface HomePageProps {
   client: Client;
   program: WorkoutProgram | null;
@@ -34,10 +58,19 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
 
   const [showAllWeeks, setShowAllWeeks] = useState(false);
 
-  // ── Workout color map ──
+  // ── Workout color map — same workout types share a color ──
   const dayColorMap: Record<string, number> = {};
   if (program) {
-    program.days.forEach((d, i) => { dayColorMap[d.id] = i % WORKOUT_COLORS.length; });
+    const labelToColor: Record<string, number> = {};
+    let nextColor = 0;
+    program.days.forEach((d) => {
+      const label = extractLabel(d.name);
+      if (!(label in labelToColor)) {
+        labelToColor[label] = nextColor % WORKOUT_COLORS.length;
+        nextColor++;
+      }
+      dayColorMap[d.id] = labelToColor[label];
+    });
   }
 
   // ── Today's workout day (schedule-aware) ──
@@ -95,21 +128,14 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
     const isRest = !isTraining && !log;
 
     // Short label for the workout
-    let shortLabel = '';
-    if (assignedDay) {
-      const n = assignedDay.name;
-      if (n.toLowerCase().includes('push')) shortLabel = 'Push';
-      else if (n.toLowerCase().includes('pull')) shortLabel = 'Pull';
-      else if (n.toLowerCase().includes('upper')) shortLabel = 'Upper';
-      else if (n.toLowerCase().includes('lower')) shortLabel = 'Lower';
-      else if (n.toLowerCase().includes('legs')) shortLabel = 'Legs';
-      else if (n.toLowerCase().includes('full') || n.toLowerCase().includes('fbw')) shortLabel = 'FBW';
-      else shortLabel = n.slice(0, 4);
-    }
+    const shortLabel = assignedDay ? extractLabel(assignedDay.name) : '';
 
     const colorIdx = assignedId ? (dayColorMap[assignedId] ?? -1) : -1;
 
-    const missed = isPast && isTraining && !log;
+    // Only count as missed if program has actually started
+    const programStartDate = program ? new Date(program.createdAt) : null;
+    const programStarted = programStartDate ? d >= programStartDate : false;
+    const missed = isPast && isTraining && !log && programStarted;
 
     return { day: t.home.weekDays[i], date: d.getDate(), dateStr, log, isToday, isPast, isTraining, isRest, missed, dayIdx: i, shortLabel, colorIdx };
   });
@@ -120,9 +146,11 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
 
   // ── Program progress ──
   const programWeeks = program?.durationWeeks ?? 0;
-  const weeksElapsed = program ? Math.max(1, Math.ceil((Date.now() - new Date(program.createdAt).getTime()) / (7 * 86400000))) : 0;
-  const currentWeek = Math.min(weeksElapsed, programWeeks);
-  const progressPct = programWeeks > 0 ? Math.round((currentWeek / programWeeks) * 100) : 0;
+  const programStartTime = program ? new Date(program.createdAt).getTime() : 0;
+  const msElapsed = Date.now() - programStartTime;
+  const weeksElapsed = program && msElapsed > 0 ? Math.ceil(msElapsed / (7 * 86400000)) : 0;
+  const currentWeek = Math.min(Math.max(weeksElapsed, 0), programWeeks);
+  const progressPct = programWeeks > 0 && currentWeek > 0 ? Math.round((currentWeek / programWeeks) * 100) : 0;
 
   // ── Full program consistency (all weeks including future) ──
   const allProgramWeeks = Array.from({ length: programWeeks }, (_, i) => {
@@ -144,6 +172,13 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
 
   // ── Smart motivational line ──
   const motiveLine = (() => {
+    if (currentWeek === 0 && program) {
+      const startDate = new Date(program.createdAt + 'T00:00:00');
+      const daysUntil = Math.ceil((startDate.getTime() - Date.now()) / 86400000);
+      if (daysUntil <= 1) return 'Your program starts tomorrow — get ready!';
+      if (daysUntil <= 7) return `Your program begins in ${daysUntil} days — time to prepare`;
+      return 'New program coming soon — stay ready';
+    }
     const remaining = totalTrainingDays - completedThisWeek;
     const perfectWeeks = recentWeeks.filter(w => w.completed >= w.target).length;
     if (completedThisWeek >= totalTrainingDays && totalTrainingDays > 0) return 'Perfect week — you crushed it!';
@@ -361,7 +396,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             {/* Text details */}
             <div style={styles.progressInfo}>
               <div style={styles.progressTitle}>{program.name}</div>
-              <div style={styles.progressWeek}>Week {currentWeek} of {programWeeks}</div>
+              <div style={styles.progressWeek}>{currentWeek > 0 ? `Week ${currentWeek} of ${programWeeks}` : `Starts ${new Date(program.createdAt + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</div>
               <div style={styles.progressBar}>
                 <div style={{ ...styles.progressBarFill, width: `${progressPct}%` }} />
               </div>

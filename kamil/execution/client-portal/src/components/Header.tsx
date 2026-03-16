@@ -4,10 +4,11 @@ import type { ClientPage } from '../types';
 
 interface HeaderProps {
   clientName: string;
+  currentPage: ClientPage;
   onNavigate: (page: ClientPage) => void;
 }
 
-export default function Header({ clientName, onNavigate }: HeaderProps) {
+export default function Header({ clientName, currentPage, onNavigate }: HeaderProps) {
   const { t } = useLang();
 
   return (
@@ -21,8 +22,11 @@ export default function Header({ clientName, onNavigate }: HeaderProps) {
       </div>
       <div style={styles.right}>
         <button
-          style={styles.settingsBtn}
-          onClick={() => onNavigate('settings')}
+          style={{
+            ...styles.settingsBtn,
+            color: currentPage === 'settings' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+          }}
+          onClick={() => onNavigate(currentPage === 'settings' ? 'home' : 'settings')}
           title="Settings"
         >
           <Settings size={20} />

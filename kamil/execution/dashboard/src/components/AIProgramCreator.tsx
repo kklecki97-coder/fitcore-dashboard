@@ -1,0 +1,859 @@
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowLeft, Sparkles, Loader2, Send, Check, Dumbbell, User, ChevronRight,
+} from 'lucide-react';
+import useIsMobile from '../hooks/useIsMobile';
+import { supabase } from '../lib/supabase';
+import type { Client, WorkoutProgram, WorkoutDay, Exercise } from '../types';
+
+interface AIProgramCreatorProps {
+  clients: Client[];
+  onGenerated: (program: WorkoutProgram) => void;
+  onBack: () => void;
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+}
+
+const SYSTEM_PROMPT = `You are FitCore AI — an expert personal trainer and program designer built into the FitCore coaching platform.
+
+Your job: Have a short, focused conversation with the coach to build a workout program. You are practical and direct — like a senior coach talking to another coach.
+
+RULES:
+- Be SHORT. 1-2 sentences max per response. No filler.
+- NEVER ask about injuries, equipment, session duration, or experience level unless the coach brings it up first. Assume they have a full gym and know what they're doing.
+- Focus ONLY on what matters for the program: which days, what exercises, sets/reps/weight specifics.
+- When the coach mentions exercises, IMMEDIATELY ask the details that matter: how many sets, rep range, barbell or dumbbell, what weight or % 1RM. This is what actually goes into the program.
+- Don't ask generic questions. Every question should directly help you fill in the program.
+- If the coach gives you enough info (days + exercises + some details), tell them you're ready to generate. Don't drag it out.
+- If the coach says something doesn't matter or is vague, just pick reasonable defaults and move on.
+
+FLOW:
+1. Ask what the training week looks like (days + activities)
+2. For gym/strength days: ask which exercises, then drill into sets/reps/weight details
+3. Ask what 3 key lifts/metrics to track on the client's progress dashboard (e.g. bench press, squat, deadlift — or overhead press, pull-ups, whatever matters for this client). Also ask their current numbers so we have a starting point.
+4. Ask what the client's main goals are (e.g. "lose 5kg by summer", "hit 100kg bench", "improve cardio endurance"). Be specific — not generic stuff like "get fit". These go on their progress dashboard.
+5. As soon as you have the picture, say you're ready to generate
+
+Start with a brief greeting and ask about their client's training week.`;
+
+const GENERATE_PROMPT = `Based on our conversation, generate the complete workout program now.
+
+RESPOND WITH ONLY VALID JSON in this exact structure (no markdown, no code blocks, just raw JSON):
+{
+  "programName": "string - creative program name based on our discussion",
+  "durationWeeks": number,
+  "trackedLifts": [
+    {
+      "name": "string - e.g. 'Bench Press', 'Squat', 'Deadlift', 'Overhead Press'",
+      "currentValue": number or null (in kg, the client's current number if discussed),
+      "unit": "kg"
+    }
+  ],
+  "clientGoals": ["string - specific goals like 'Lose 5kg by summer', 'Bench 100kg', 'Run 5k under 25 min'"],
+  "days": [
+    {
+      "name": "string - e.g. 'Monday - BJJ + MMA' or 'Friday - Upper Body Hypertrophy'",
+      "exercises": [
+        {
+          "name": "string - exercise name",
+          "sets": number,
+          "reps": "string - e.g. '8-12', '5', 'AMRAP', '30s'",
+          "weight": "string - e.g. '70% 1RM', 'moderate', 'BW', '20kg'",
+          "rpe": number or null (1-10 scale),
+          "tempo": "string - e.g. '3-1-2-0' or empty string",
+          "restSeconds": number or null (in seconds),
+          "notes": "string - coaching cues, form tips"
+        }
+      ]
+    }
+  ]
+}
+
+trackedLifts: Include exactly 3 key lifts/metrics that the coach wants to track on the client's progress dashboard. Use the lifts discussed in conversation. If not discussed, default to Bench Press, Squat, Deadlift.
+clientGoals: Include the specific goals discussed with the coach. Make them concrete and measurable when possible. These appear on the client's progress dashboard.
+
+Include 5-8 exercises per gym/strength day. For martial arts days, include appropriate drills and conditioning. Be specific with loads and coaching cues. Make it a program a real coach would be proud of.`;
+
+export default function AIProgramCreator({ clients, onGenerated, onBack }: AIProgramCreatorProps) {
+  const isMobile = useIsMobile();
+  const [selectedClientId, setSelectedClientId] = useState('');
+  const [phase, setPhase] = useState<'pick-client' | 'chat'>('pick-client');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generatedProgram, setGeneratedProgram] = useState<WorkoutProgram | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const selectedClient = clients.find(c => c.id === selectedClientId);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  };
+
+  const startChat = () => {
+    setPhase('chat');
+    const clientInfo = selectedClient
+      ? `The coach is building a program for ${selectedClient.name} (${selectedClient.plan} plan, goals: ${selectedClient.goals.join(', ')})`
+      : 'The coach is building a general program template';
+    sendToAI([
+      { role: 'system' as const, content: SYSTEM_PROMPT + `\n\nCLIENT CONTEXT: ${clientInfo}` },
+      { role: 'user' as const, content: 'Hey, I need to create a workout program for my client.' },
+    ]);
+  };
+
+  const getConversationMessages = () => {
+    const clientInfo = selectedClient
+      ? `The coach is building a program for ${selectedClient.name} (${selectedClient.plan} plan, goals: ${selectedClient.goals.join(', ')})`
+      : 'The coach is building a general program template';
+    const msgs: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: SYSTEM_PROMPT + `\n\nCLIENT CONTEXT: ${clientInfo}` },
+    ];
+    for (const msg of messages) msgs.push({ role: msg.role, content: msg.text });
+    return msgs;
+  };
+
+  const sendToAI = async (apiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>) => {
+    setLoading(true);
+    try {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) throw new Error('OpenAI API key not configured');
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: 'gpt-4o', messages: apiMessages, temperature: 0.7, max_tokens: 1000 }),
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
+      const data = await res.json();
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: data.choices[0].message.content.trim() }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}` }]);
+    } finally { setLoading(false); }
+  };
+
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'user', text }]);
+    setInput('');
+    if (inputRef.current) inputRef.current.style.height = 'auto';
+    const apiMessages = getConversationMessages();
+    apiMessages.push({ role: 'user', content: text });
+    await sendToAI(apiMessages);
+  };
+
+  const generateProgram = async () => {
+    setGenerating(true); setLoading(true);
+    const apiMessages = getConversationMessages();
+    apiMessages.push({ role: 'user', content: GENERATE_PROMPT });
+    try {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) throw new Error('OpenAI API key not configured');
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: 'gpt-4o', messages: apiMessages, temperature: 0.7, max_tokens: 4000 }),
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
+      const data = await res.json();
+      const content = data.choices[0].message.content.trim();
+      const jsonStr = content.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
+      const generated = JSON.parse(jsonStr);
+      const program: WorkoutProgram = {
+        id: crypto.randomUUID(), name: generated.programName || 'AI Generated Program', status: 'draft',
+        durationWeeks: generated.durationWeeks || 8, clientIds: selectedClientId ? [selectedClientId] : [],
+        days: generated.days.map((day: { name: string; exercises: Array<{ name: string; sets: number; reps: string; weight: string; rpe: number | null; tempo: string; restSeconds: number | null; notes: string; }> }) => ({
+          id: crypto.randomUUID(), name: day.name,
+          exercises: day.exercises.map((ex: { name: string; sets: number; reps: string; weight: string; rpe: number | null; tempo: string; restSeconds: number | null; notes: string; }): Exercise => ({
+            id: crypto.randomUUID(), name: ex.name, sets: ex.sets || 3, reps: String(ex.reps || '10'),
+            weight: ex.weight || '', rpe: ex.rpe ?? null, tempo: ex.tempo || '', restSeconds: ex.restSeconds ?? null, notes: ex.notes || '',
+          })),
+        } as WorkoutDay)),
+        isTemplate: false, createdAt: new Date().toISOString().split('T')[0], updatedAt: new Date().toISOString().split('T')[0],
+      };
+      // Save tracked lifts to client_metrics if client selected
+      if (selectedClientId && generated.trackedLifts) {
+        const liftData: Record<string, number | null> = {};
+        for (const lift of generated.trackedLifts) {
+          const key = lift.name.toLowerCase().replace(/\s+/g, '_');
+          if (key.includes('bench')) liftData.bench_press = lift.currentValue ?? null;
+          else if (key.includes('squat')) liftData.squat = lift.currentValue ?? null;
+          else if (key.includes('deadlift') || key.includes('dead_lift')) liftData.deadlift = lift.currentValue ?? null;
+        }
+        if (Object.values(liftData).some(v => v !== null)) {
+          await supabase.from('client_metrics').insert({
+            client_id: selectedClientId,
+            recorded_at: new Date().toISOString().split('T')[0],
+            ...liftData,
+          });
+        }
+      }
+
+      // Save client goals if provided
+      if (selectedClientId && generated.clientGoals?.length) {
+        await supabase.from('clients').update({
+          goals: generated.clientGoals,
+        }).eq('id', selectedClientId);
+      }
+
+      setGeneratedProgram(program);
+      setGenerating(false);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: `Program "${program.name}" is ready! Review it on the left and hit Save when you're happy.` }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: `Failed to generate: ${err instanceof Error ? err.message : 'Unknown error'}. Try again.` }]);
+      setGenerating(false);
+    } finally { setLoading(false); }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  };
+
+  // ═══════════════════════════════════════
+  // CLIENT PICKER — Full screen first step
+  // ═══════════════════════════════════════
+  if (phase === 'pick-client') {
+    return (
+      <div style={s.outerPage}>
+        <div style={s.pickerCentered}>
+          <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
+            <ArrowLeft size={15} /> Back to Programs
+          </motion.button>
+          <motion.div
+            style={s.pickerCard}
+            initial={{ opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          >
+            <div style={s.pickerGlow} />
+            <div style={s.pickerIconWrap}>
+              <div style={s.pickerIcon}><Sparkles size={22} /></div>
+            </div>
+            <h2 style={s.pickerTitle}>AI Program Builder</h2>
+            <p style={s.pickerDesc}>Select a client to get started</p>
+            <div style={s.clientList}>
+              {clients.filter(c => c.status === 'active').map(client => (
+                <motion.button
+                  key={client.id}
+                  onClick={() => setSelectedClientId(client.id)}
+                  style={{
+                    ...s.clientCard,
+                    borderColor: selectedClientId === client.id ? 'var(--accent-primary)' : 'var(--glass-border)',
+                    background: selectedClientId === client.id ? 'rgba(0,229,200,0.08)' : 'transparent',
+                  }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <div style={{ ...s.clientAvatar, background: selectedClientId === client.id ? 'var(--accent-primary)' : 'var(--bg-subtle-hover)' }}>
+                    {client.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  </div>
+                  <div style={s.clientInfo}>
+                    <span style={s.clientName}>{client.name}</span>
+                    <span style={s.clientMeta}>{client.plan}</span>
+                  </div>
+                  {selectedClientId === client.id ? (
+                    <div style={s.checkMark}><Check size={13} /></div>
+                  ) : (
+                    <ChevronRight size={16} color="var(--text-tertiary)" />
+                  )}
+                </motion.button>
+              ))}
+            </div>
+            <motion.button
+              onClick={startChat}
+              style={{ ...s.pickerStartBtn, opacity: selectedClientId ? 1 : 0.35, pointerEvents: selectedClientId ? 'auto' : 'none' }}
+              whileHover={selectedClientId ? { scale: 1.01 } : {}}
+              whileTap={selectedClientId ? { scale: 0.99 } : {}}
+            >
+              <Sparkles size={15} /> Start Building
+            </motion.button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════
+  // WORKSPACE — Left cards + Right chatbot
+  // ═══════════════════════════════════════
+  return (
+    <div style={s.outerPage}>
+      <div style={s.layoutGrid}>
+        {/* ── LEFT COLUMN ── */}
+        <div style={s.leftCol}>
+          {/* Back */}
+          <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
+            <ArrowLeft size={15} /> Back to Programs
+          </motion.button>
+
+          {/* Card 1: Selected Client */}
+          <motion.div
+            style={s.leftCard}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.05 }}
+          >
+            <div style={s.leftCardHeader}>
+              <User size={14} color="var(--accent-primary)" />
+              <span style={s.leftCardTitle}>Client</span>
+            </div>
+            {selectedClient && (
+              <div style={{ ...s.clientCard, borderColor: 'var(--accent-primary)', background: 'rgba(0,229,200,0.08)', cursor: 'default' }}>
+                <div style={{ ...s.clientAvatar, background: 'var(--accent-primary)' }}>
+                  {selectedClient.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                </div>
+                <div style={s.clientInfo}>
+                  <span style={s.clientName}>{selectedClient.name}</span>
+                  <span style={s.clientMeta}>{selectedClient.plan}</span>
+                </div>
+                <div style={s.checkMark}><Check size={13} /></div>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Card 2: AI Info / Status */}
+          <motion.div
+            style={s.leftCard}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.1 }}
+          >
+            <div style={s.leftCardHeader}>
+              <Sparkles size={14} color="var(--accent-primary)" />
+              <span style={s.leftCardTitle}>AI Program Builder</span>
+            </div>
+            <div style={s.infoContent}>
+              <p style={s.infoText}>
+                Describe the training plan in the chat and FitCore AI will generate a complete periodized program.
+              </p>
+              <div style={s.infoSteps}>
+                <div style={{ ...s.infoStep, opacity: phase === 'chat' ? 1 : 0.4 }}>
+                  <div style={{ ...s.stepDot, background: messages.length > 0 ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
+                  <span>Discuss the program</span>
+                </div>
+                <div style={{ ...s.infoStep, opacity: messages.length >= 4 ? 1 : 0.4 }}>
+                  <div style={{ ...s.stepDot, background: messages.length >= 4 ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
+                  <span>Generate program</span>
+                </div>
+                <div style={{ ...s.infoStep, opacity: generatedProgram ? 1 : generating ? 0.7 : 0.4 }}>
+                  <div style={{ ...s.stepDot, background: generatedProgram ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
+                  <span>Review & save</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 3: Program Preview */}
+          <motion.div
+            style={{ ...s.leftCard, flex: 1, overflow: 'auto' }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: 0.15 }}
+          >
+            <div style={s.leftCardHeader}>
+              <Dumbbell size={14} color="var(--accent-primary)" />
+              <span style={s.leftCardTitle}>Program</span>
+            </div>
+            {generatedProgram ? (
+              <div style={s.programPreview}>
+                <div style={s.programName}>{generatedProgram.name}</div>
+                <div style={s.programMeta}>{generatedProgram.durationWeeks} weeks · {generatedProgram.days.length} training days</div>
+                <div style={s.programDays}>
+                  {generatedProgram.days.map((day, i) => (
+                    <div key={day.id} style={s.programDay}>
+                      <div style={s.programDayHeader}>
+                        <div style={{ ...s.programDayDot, background: i % 2 === 0 ? 'var(--accent-primary)' : 'var(--accent-secondary)' }} />
+                        <span style={s.programDayName}>{day.name}</span>
+                        <span style={s.programDayCount}>{day.exercises.length} exercises</span>
+                      </div>
+                      <div style={s.programExercises}>
+                        {day.exercises.slice(0, 4).map((ex) => (
+                          <div key={ex.id} style={s.programExercise}>
+                            <span style={s.exName}>{ex.name}</span>
+                            <span style={s.exDetail}>{ex.sets}×{ex.reps}</span>
+                          </div>
+                        ))}
+                        {day.exercises.length > 4 && (
+                          <span style={s.exMore}>+{day.exercises.length - 4} more</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <motion.button
+                  onClick={() => onGenerated(generatedProgram)}
+                  style={s.saveBtn}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
+                  <Check size={14} /> Save Program
+                </motion.button>
+              </div>
+            ) : (
+              <div style={s.programEmpty}>
+                <Dumbbell size={20} color="var(--text-tertiary)" style={{ opacity: 0.3 }} />
+                <span style={s.programEmptyText}>
+                  {generating ? 'Generating...' : 'Program will appear here after generation'}
+                </span>
+              </div>
+            )}
+          </motion.div>
+        </div>
+
+        {/* ── RIGHT COLUMN — Chatbot card ── */}
+        <motion.div
+          style={s.chatCard}
+          initial={{ opacity: 0, y: 12, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+        >
+          <div style={s.cardGlow} />
+
+          {/* Card header */}
+          <div style={s.cardHeader}>
+            <div style={s.cardHeaderLeft}>
+              <div style={s.cardHeaderIcon}><Sparkles size={14} /></div>
+              <span style={s.cardTitle}>FitCore AI</span>
+            </div>
+            <div style={s.cardOnline}>
+              <div style={s.onlineDot} />
+              <span>Online</span>
+            </div>
+          </div>
+
+          {/* Messages area */}
+          <div style={s.cardMessages}>
+            <div style={s.cardMessagesInner}>
+              {phase === 'pick-client' ? (
+                <div style={s.chatWaiting}>
+                  <div style={s.chatWaitingIcon}><Sparkles size={24} /></div>
+                  <p style={s.chatWaitingText}>Select a client to start building</p>
+                </div>
+              ) : (
+                <>
+                  <AnimatePresence initial={false}>
+                    {messages.map((msg) => (
+                      <motion.div
+                        key={msg.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {msg.role === 'assistant' ? (
+                          <div style={s.aiMsg}>
+                            <div style={s.aiAvatar}><Sparkles size={11} /></div>
+                            <div style={s.aiBubble}>
+                              <div style={s.aiText}>{msg.text}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={s.userMsg}>
+                            <div style={s.userBubble}>
+                              <div style={s.userText}>{msg.text}</div>
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {loading && !generating && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      <div style={s.aiMsg}>
+                        <div style={s.aiAvatar}><Sparkles size={11} /></div>
+                        <div style={s.aiBubble}>
+                          <div style={s.dots}>
+                            <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} style={s.dot} />
+                            <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1, delay: 0.15 }} style={s.dot} />
+                            <motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1, delay: 0.3 }} style={s.dot} />
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {generating && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={s.genRow}>
+                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'flex' }}>
+                        <Loader2 size={15} color="var(--accent-primary)" />
+                      </motion.div>
+                      <span style={s.genText}>Building your program...</span>
+                    </motion.div>
+                  )}
+                </>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          </div>
+
+          {/* Card footer */}
+          <div style={s.cardFooter}>
+            {messages.length >= 4 && !generating && (
+              <motion.button
+                onClick={generateProgram}
+                style={s.genBtn}
+                disabled={loading}
+                whileHover={!loading ? { scale: 1.01 } : {}}
+                whileTap={!loading ? { scale: 0.99 } : {}}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Dumbbell size={14} /> Generate Program
+              </motion.button>
+            )}
+            <div style={s.inputRow}>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={phase === 'pick-client' ? 'Select a client first...' : 'Describe the program you need...'}
+                style={s.textInput}
+                rows={1}
+                disabled={loading || phase === 'pick-client'}
+              />
+              <motion.button
+                onClick={sendMessage}
+                style={{ ...s.sendBtn, opacity: input.trim() && !loading && phase === 'chat' ? 1 : 0.25 }}
+                disabled={!input.trim() || loading || phase === 'pick-client'}
+                whileHover={input.trim() && !loading ? { scale: 1.06 } : {}}
+                whileTap={input.trim() && !loading ? { scale: 0.94 } : {}}
+              >
+                <Send size={14} />
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
+const s: Record<string, React.CSSProperties> = {
+  outerPage: {
+    height: 'calc(100vh - var(--header-height))',
+    overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '24px',
+  },
+
+  // ── Layout grid: left cards + right chatbot ──
+  layoutGrid: {
+    display: 'grid',
+    gridTemplateColumns: '320px 1fr',
+    gap: '20px',
+    width: '100%',
+    maxWidth: '1100px',
+    height: '100%',
+  },
+
+  // ── Picker screen ──
+  pickerCentered: {
+    width: '100%', maxWidth: '480px', padding: '24px 20px',
+    display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto',
+    margin: '0 auto',
+  },
+  pickerCard: {
+    position: 'relative',
+    borderRadius: '16px', border: '1px solid var(--glass-border)',
+    background: 'var(--bg-card)', padding: '36px 28px 28px',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+    overflow: 'hidden',
+    boxShadow: '0 4px 30px rgba(0,0,0,0.15), 0 0 40px rgba(0,229,200,0.04)',
+  },
+  pickerGlow: {
+    position: 'absolute', top: '-40px', left: '50%', transform: 'translateX(-50%)',
+    width: '200px', height: '100px', borderRadius: '50%',
+    background: 'radial-gradient(ellipse, rgba(0,229,200,0.12), transparent 70%)',
+    pointerEvents: 'none',
+  },
+  pickerIconWrap: { position: 'relative' },
+  pickerIcon: {
+    width: '52px', height: '52px', borderRadius: '14px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--text-on-accent)', boxShadow: '0 0 24px rgba(0,229,200,0.2)',
+  },
+  pickerTitle: { fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 },
+  pickerDesc: { fontSize: '15px', color: 'var(--text-tertiary)', margin: '0 0 4px' },
+  pickerStartBtn: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    padding: '12px 0', width: '100%', borderRadius: '10px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    border: 'none', color: 'var(--text-on-accent)', fontSize: '15px', fontWeight: 700,
+    fontFamily: 'var(--font-display)', cursor: 'pointer',
+    boxShadow: '0 0 20px rgba(0,229,200,0.15)', marginTop: '6px',
+  },
+
+  // ── Left column ──
+  leftCol: {
+    display: 'flex', flexDirection: 'column', gap: '16px',
+    overflow: 'auto',
+  },
+  backBtn: {
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 12px',
+    borderRadius: '8px', border: '1px solid var(--glass-border)',
+    background: 'transparent', color: 'var(--text-tertiary)',
+    fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-display)', cursor: 'pointer',
+    alignSelf: 'flex-start',
+  },
+  leftCard: {
+    borderRadius: '14px', border: '1px solid var(--glass-border)',
+    background: 'var(--bg-card)', padding: '20px',
+    display: 'flex', flexDirection: 'column', gap: '14px',
+  },
+  leftCardHeader: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+  },
+  leftCardTitle: {
+    fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)',
+  },
+
+  // Client list
+  clientList: { display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' },
+  clientCard: {
+    display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px',
+    borderRadius: '10px', border: '1px solid var(--glass-border)',
+    cursor: 'pointer', textAlign: 'left', width: '100%',
+    fontFamily: 'var(--font-display)', transition: 'all 0.12s',
+  },
+  clientAvatar: {
+    width: '36px', height: '36px', borderRadius: '9px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '13px', fontWeight: 700, color: 'var(--text-on-accent)', flexShrink: 0,
+  },
+  clientInfo: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' },
+  clientName: { fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' },
+  clientMeta: { fontSize: '13px', color: 'var(--text-tertiary)' },
+  checkMark: {
+    width: '20px', height: '20px', borderRadius: '50%', background: 'var(--accent-primary)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-on-accent)', flexShrink: 0,
+  },
+
+  // Info card
+  infoContent: { display: 'flex', flexDirection: 'column', gap: '14px' },
+  infoText: { fontSize: '14px', lineHeight: 1.6, color: 'var(--text-tertiary)', margin: 0 },
+  infoSteps: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  infoStep: {
+    display: 'flex', alignItems: 'center', gap: '10px',
+    fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500,
+    transition: 'opacity 0.3s',
+  },
+  stepDot: {
+    width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+    transition: 'background 0.3s',
+  },
+
+  // ── Program preview card ──
+  programPreview: {
+    display: 'flex', flexDirection: 'column', gap: '12px',
+  },
+  programName: {
+    fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)',
+    letterSpacing: '-0.3px',
+  },
+  programMeta: {
+    fontSize: '13px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)',
+    fontWeight: 500,
+  },
+  programDays: {
+    display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px',
+  },
+  programDay: {
+    display: 'flex', flexDirection: 'column', gap: '6px',
+  },
+  programDayHeader: {
+    display: 'flex', alignItems: 'center', gap: '8px',
+  },
+  programDayDot: {
+    width: '6px', height: '6px', borderRadius: '50%', flexShrink: 0,
+  },
+  programDayName: {
+    fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', flex: 1,
+  },
+  programDayCount: {
+    fontSize: '12px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)',
+  },
+  programExercises: {
+    display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '14px',
+  },
+  programExercise: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px',
+  },
+  exName: {
+    fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 400,
+  },
+  exDetail: {
+    fontSize: '12px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)',
+    fontWeight: 600, flexShrink: 0,
+  },
+  exMore: {
+    fontSize: '11px', color: 'var(--accent-primary)', fontWeight: 500, paddingTop: '2px',
+  },
+  saveBtn: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+    padding: '10px 0', width: '100%', borderRadius: '10px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    border: 'none', color: 'var(--text-on-accent)', fontSize: '14px', fontWeight: 700,
+    fontFamily: 'var(--font-display)', cursor: 'pointer',
+    boxShadow: '0 0 14px rgba(0,229,200,0.12)', marginTop: '8px',
+  },
+  programEmpty: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    gap: '8px', padding: '24px 0', flex: 1,
+  },
+  programEmptyText: {
+    fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center',
+  },
+
+  // ── Right column — Chat card ──
+  chatCard: {
+    position: 'relative',
+    borderRadius: '16px',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-card)',
+    display: 'flex', flexDirection: 'column',
+    overflow: 'hidden',
+    boxShadow: '0 4px 30px rgba(0,0,0,0.15), 0 0 40px rgba(0,229,200,0.04)',
+  },
+  cardGlow: {
+    position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)',
+    width: '300px', height: '120px', borderRadius: '50%',
+    background: 'radial-gradient(ellipse, rgba(0,229,200,0.08), transparent 70%)',
+    pointerEvents: 'none',
+  },
+  cardHeader: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '16px 20px', borderBottom: '1px solid var(--glass-border)',
+    flexShrink: 0, position: 'relative', zIndex: 1,
+  },
+  cardHeaderLeft: {
+    display: 'flex', alignItems: 'center', gap: '10px',
+  },
+  cardHeaderIcon: {
+    width: '28px', height: '28px', borderRadius: '8px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--text-on-accent)', boxShadow: '0 0 16px rgba(0,229,200,0.15)',
+  },
+  cardTitle: { fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' },
+  cardOnline: {
+    display: 'flex', alignItems: 'center', gap: '6px',
+    fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 500,
+  },
+  onlineDot: {
+    width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e',
+    boxShadow: '0 0 6px rgba(34,197,94,0.4)',
+  },
+  wsClientBadge: {
+    display: 'flex', alignItems: 'center', gap: '5px',
+    padding: '4px 10px 4px 8px', borderRadius: '8px',
+    background: 'var(--bg-elevated)', border: '1px solid var(--glass-border)',
+    fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500, flexShrink: 0,
+  },
+
+  // Messages area
+  cardMessages: { flex: 1, overflowY: 'auto', overflowX: 'hidden' },
+  cardMessagesInner: {
+    padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: '18px',
+    minHeight: '100%',
+  },
+
+  // Waiting state
+  chatWaiting: {
+    flex: 1, display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center', gap: '12px',
+    minHeight: '300px', opacity: 0.5,
+  },
+  chatWaitingIcon: {
+    width: '48px', height: '48px', borderRadius: '14px',
+    background: 'var(--accent-primary-dim)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--accent-primary)',
+  },
+  chatWaitingText: {
+    fontSize: '14px', color: 'var(--text-tertiary)', margin: 0,
+  },
+
+  // AI message
+  aiMsg: {
+    display: 'flex', gap: '10px', alignItems: 'flex-start',
+  },
+  aiAvatar: {
+    width: '24px', height: '24px', borderRadius: '7px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'var(--text-on-accent)', flexShrink: 0, marginTop: '2px',
+  },
+  aiBubble: {
+    padding: '10px 14px', borderRadius: '12px 12px 12px 4px',
+    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)',
+    maxWidth: '85%',
+  },
+  aiText: {
+    fontSize: '14px', lineHeight: 1.65, color: 'var(--text-primary)',
+    fontFamily: 'var(--font-display)', whiteSpace: 'pre-wrap',
+  },
+
+  // User message
+  userMsg: {
+    display: 'flex', justifyContent: 'flex-end',
+  },
+  userBubble: {
+    padding: '10px 14px', borderRadius: '12px 12px 4px 12px',
+    background: 'rgba(0,229,200,0.1)', border: '1px solid rgba(0,229,200,0.2)',
+    maxWidth: '85%',
+  },
+  userText: {
+    fontSize: '14px', lineHeight: 1.65, color: 'var(--text-primary)',
+    fontFamily: 'var(--font-display)', whiteSpace: 'pre-wrap',
+  },
+
+  // Dots
+  dots: { display: 'flex', gap: '3px', alignItems: 'center', padding: '4px 0' },
+  dot: { width: '5px', height: '5px', borderRadius: '50%', background: 'var(--text-tertiary)', display: 'inline-block' },
+
+  // Generating
+  genRow: { display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', marginLeft: '34px' },
+  genText: { fontSize: '13px', color: 'var(--text-tertiary)' },
+
+  // Footer
+  cardFooter: {
+    padding: '12px 20px 16px', borderTop: '1px solid var(--glass-border)',
+    flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px',
+    position: 'relative', zIndex: 1,
+  },
+  genBtn: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+    padding: '10px 0', width: '100%', borderRadius: '10px',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    border: 'none', color: 'var(--text-on-accent)', fontSize: '14px', fontWeight: 700,
+    fontFamily: 'var(--font-display)', cursor: 'pointer',
+    boxShadow: '0 0 14px rgba(0,229,200,0.12)',
+  },
+  inputRow: { display: 'flex', alignItems: 'flex-end', gap: '8px' },
+  textInput: {
+    flex: 1, padding: '10px 14px', borderRadius: '10px',
+    border: '1px solid var(--glass-border)', background: 'var(--bg-elevated)',
+    color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-display)',
+    outline: 'none', resize: 'none', lineHeight: 1.4, maxHeight: '120px', boxSizing: 'border-box',
+  },
+  sendBtn: {
+    width: '36px', height: '36px', borderRadius: '10px', background: 'var(--accent-primary)',
+    border: 'none', color: 'var(--text-on-accent)', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+};

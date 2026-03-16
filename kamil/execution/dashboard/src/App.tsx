@@ -11,6 +11,8 @@ import AnalyticsPage from './components/AnalyticsPage';
 import SettingsPage from './components/SettingsPage';
 import WorkoutProgramsPage from './components/WorkoutProgramsPage';
 import ProgramBuilderPage from './components/ProgramBuilderPage';
+import ProgramCreateChooser from './components/ProgramCreateChooser';
+import AIProgramCreator from './components/AIProgramCreator';
 import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
@@ -746,10 +748,31 @@ function App() {
           <WorkoutProgramsPage
             programs={allPrograms}
             onViewProgram={handleViewProgram}
-            onAddProgram={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
+            onAddProgram={() => { setSelectedProgramId(''); setCurrentPage('program-create-chooser'); }}
             onDeleteProgram={handleDeleteProgram}
             onDuplicateProgram={handleDuplicateProgram}
             onUpdateProgram={handleUpdateProgram}
+          />
+        );
+      case 'program-create-chooser':
+        return (
+          <ProgramCreateChooser
+            onChooseManual={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
+            onChooseAI={() => setCurrentPage('ai-program-creator')}
+            onBack={() => setCurrentPage('programs')}
+          />
+        );
+      case 'ai-program-creator':
+        return (
+          <AIProgramCreator
+            clients={allClients}
+            onGenerated={(program: WorkoutProgram) => {
+              // AI generated a program — open it in the builder so coach can review & edit
+              handleAddProgram(program);
+              setSelectedProgramId(program.id);
+              setCurrentPage('program-builder');
+            }}
+            onBack={() => setCurrentPage('program-create-chooser')}
           />
         );
       case 'program-builder':

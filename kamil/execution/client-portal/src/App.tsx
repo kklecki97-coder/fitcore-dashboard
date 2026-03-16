@@ -429,23 +429,20 @@ function App() {
         dayAssignments: schedRow.day_assignments ?? {},
       });
     } else {
-      // Try last week's schedule as default
-      const lastMonday = new Date(thisMonday);
-      lastMonday.setDate(thisMonday.getDate() - 7);
-      const lastWeekStr = lastMonday.toISOString().split('T')[0];
-
-      const { data: prevRow } = await supabase
+      // No schedule for this week — find the most recent one (could be past or future)
+      const { data: latestRow } = await supabase
         .from('weekly_schedule')
         .select('*')
         .eq('client_id', clientRow.id)
-        .eq('week_start', lastWeekStr)
+        .order('week_start', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       setWeeklySchedule({
-        id: '',
+        id: latestRow?.id ?? '',
         clientId: clientRow.id,
         weekStart: weekStartStr,
-        dayAssignments: prevRow?.day_assignments ?? {},
+        dayAssignments: latestRow?.day_assignments ?? {},
       });
     }
 
@@ -989,7 +986,7 @@ function App() {
       )}
 
       <div style={styles.main}>
-        <Header clientName={clientUser?.name ?? ''} onNavigate={setCurrentPage} />
+        <Header clientName={clientUser?.name ?? ''} currentPage={currentPage} onNavigate={setCurrentPage} />
 
         <AnimatePresence mode="wait">
           <motion.div

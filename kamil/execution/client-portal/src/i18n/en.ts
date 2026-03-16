@@ -97,7 +97,7 @@ export const en = {
     yesterday: 'Yesterday',
     dAgo: (d: number) => `${d}d ago`,
     weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as readonly string[],
-    planYourWeek: 'Tap days to plan your training week',
+    planYourWeek: 'Your training week',
     rest: 'Rest',
   },
 
