@@ -80,7 +80,7 @@ clientGoals: Include the specific goals discussed with the coach. Make them conc
 Include 5-8 exercises per gym/strength day. For martial arts days, include appropriate drills and conditioning. Be specific with loads and coaching cues. Make it a program a real coach would be proud of.`;
 
 export default function AIProgramCreator({ clients, onGenerated, onBack }: AIProgramCreatorProps) {
-  const isMobile = useIsMobile();
+  useIsMobile(); // hook must be called
   const [selectedClientId, setSelectedClientId] = useState('');
   const [phase, setPhase] = useState<'pick-client' | 'chat'>('pick-client');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -435,13 +435,6 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           {/* Messages area */}
           <div style={s.cardMessages}>
             <div style={s.cardMessagesInner}>
-              {phase === 'pick-client' ? (
-                <div style={s.chatWaiting}>
-                  <div style={s.chatWaitingIcon}><Sparkles size={24} /></div>
-                  <p style={s.chatWaitingText}>Select a client to start building</p>
-                </div>
-              ) : (
-                <>
                   <AnimatePresence initial={false}>
                     {messages.map((msg) => (
                       <motion.div
@@ -491,8 +484,6 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                       <span style={s.genText}>Building your program...</span>
                     </motion.div>
                   )}
-                </>
-              )}
               <div ref={chatEndRef} />
             </div>
           </div>
@@ -518,15 +509,15 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder={phase === 'pick-client' ? 'Select a client first...' : 'Describe the program you need...'}
+                placeholder="Describe the program you need..."
                 style={s.textInput}
                 rows={1}
-                disabled={loading || phase === 'pick-client'}
+                disabled={loading}
               />
               <motion.button
                 onClick={sendMessage}
-                style={{ ...s.sendBtn, opacity: input.trim() && !loading && phase === 'chat' ? 1 : 0.25 }}
-                disabled={!input.trim() || loading || phase === 'pick-client'}
+                style={{ ...s.sendBtn, opacity: input.trim() && !loading ? 1 : 0.25 }}
+                disabled={!input.trim() || loading}
                 whileHover={input.trim() && !loading ? { scale: 1.06 } : {}}
                 whileTap={input.trim() && !loading ? { scale: 0.94 } : {}}
               >

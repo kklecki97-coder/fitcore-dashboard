@@ -14,7 +14,6 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 // Extract a short label from a workout day name like "Monday - Boxing + Jiu-Jitsu" → "BJJ + Box"
 const extractLabel = (name: string): string => {
-  const n = name.toLowerCase();
   // Strip leading day-of-week prefix (e.g. "Monday - ", "Wed - ")
   const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–—:]\s*/i, '');
   const s = stripped.toLowerCase();
