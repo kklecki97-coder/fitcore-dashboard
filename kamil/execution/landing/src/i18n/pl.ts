@@ -120,7 +120,7 @@ export const pl: Translations = {
     withoutLabel: 'Za 12 miesięcy — bez FitCore',
     withLabel: 'Za 12 miesięcy — z FitCore',
     without: [
-      { stat: 'Wypalony, nie obłożony.', detail: 'Pracujesz więcej niż kiedykolwiek, ale liczba klientów stoi w miejscu od miesięcy. Więcej wysiłku, te same wyniki.' },
+      { stat: 'Wypalony, a lista stoi w miejscu.', detail: 'Pracujesz więcej niż kiedykolwiek, ale liczba klientów nie rośnie od miesięcy. Więcej wysiłku, te same wyniki.' },
       { stat: 'Pieniądze leżą na stole.', detail: 'Wiesz, że powinieneś brać więcej. Ale Twoje narzędzia krzyczą "fucha na boku" — więc nie podnosisz cen. Klient widzi Google Drive i wycenia Cię na tyle.' },
       { stat: 'Wieczory stracone na adminie.', detail: 'Kolejna noc kopiowania treningów, gonienia za płatnościami, aktualizowania trackerów, których nikt oprócz Ciebie nie widzi. Tak nie wygląda biznes.' },
       { stat: 'Kolejny rok minął.', detail: 'Inny miesiąc, te same problemy. Przepaść między tym, gdzie jesteś, a gdzie mógłbyś być — właśnie się powiększyła.' },
