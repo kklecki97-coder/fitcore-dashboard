@@ -57,7 +57,8 @@ function buildAuthUser(
   coachRow?: Record<string, unknown> | null,
 ): AuthUser {
   const now = new Date();
-  const trialEnd = new Date(now);
+  const startDate = (coachRow?.created_at as string) || now.toISOString();
+  const trialEnd = new Date(startDate);
   trialEnd.setDate(trialEnd.getDate() + 14);
 
   return {
@@ -67,9 +68,9 @@ function buildAuthUser(
     coachingNiche: (meta?.coaching_niche as string) || undefined,
     clientCount: (meta?.client_count as string) || undefined,
     plan: 'trial',
-    trialStartDate: (coachRow?.created_at as string) || now.toISOString(),
+    trialStartDate: startDate,
     trialEndDate: trialEnd.toISOString(),
-    createdAt: (coachRow?.created_at as string) || now.toISOString(),
+    createdAt: startDate,
   };
 }
 
