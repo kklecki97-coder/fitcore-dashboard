@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // ── 1. Verify the coach's JWT ──
+    // ── 1. Verify the caller's JWT (client) ──
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization header" }), {
@@ -37,41 +37,76 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    const { data: { user: coachUser }, error: authError } = await supabaseAuth.auth.getUser(
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(
       authHeader.replace("Bearer ", "")
     );
 
-    if (authError || !coachUser) {
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ── 2. Parse request body ──
-    const { invoiceId, amount, clientName, clientEmail, plan, period } = await req.json();
+    // ── 2. Parse request body (only invoiceId needed) ──
+    const { invoiceId } = await req.json();
 
-    if (!invoiceId || !amount) {
-      return new Response(JSON.stringify({ error: "Missing invoiceId or amount" }), {
+    if (!invoiceId) {
+      return new Response(JSON.stringify({ error: "Missing invoiceId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ── 3. Get coach's Connect account ──
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false },
     });
 
+    // ── 3. Fetch invoice from DB ──
+    const { data: invoice, error: invError } = await supabaseAdmin
+      .from("invoices")
+      .select("id, coach_id, client_id, amount, plan, period, status")
+      .eq("id", invoiceId)
+      .single();
+
+    if (invError || !invoice) {
+      return new Response(JSON.stringify({ error: "Invoice not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (invoice.status === "paid") {
+      return new Response(JSON.stringify({ error: "Invoice is already paid" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── 4. Verify the caller owns this invoice ──
+    const { data: clientRow } = await supabaseAdmin
+      .from("clients")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!clientRow || clientRow.id !== invoice.client_id) {
+      return new Response(JSON.stringify({ error: "Not authorized to pay this invoice" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── 5. Get coach's Stripe Connect account ──
     const { data: coach } = await supabaseAdmin
       .from("coaches")
       .select("stripe_connect_id, stripe_connect_onboarded")
-      .eq("id", coachUser.id)
+      .eq("id", invoice.coach_id)
       .single();
 
     if (!coach?.stripe_connect_id || !coach.stripe_connect_onboarded) {
       return new Response(
-        JSON.stringify({ error: "Stripe Connect not set up. Please connect your Stripe account in Settings." }),
+        JSON.stringify({ error: "Coach has not set up payments yet. Please contact your coach." }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -79,12 +114,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ── 4. Create Checkout Session on connected account ──
+    // ── 6. Create Checkout Session on connected account ──
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2024-12-18.acacia",
     });
 
-    const amountCents = Math.round(amount * 100);
+    const amountCents = Math.round(invoice.amount * 100);
     const feeCents = Math.round(amountCents * 0.05); // 5% platform fee
 
     const session = await stripe.checkout.sessions.create(
@@ -95,8 +130,7 @@ Deno.serve(async (req) => {
             price_data: {
               currency: "usd",
               product_data: {
-                name: `${plan || "Coaching"} Plan — ${period || "Monthly"}`,
-                description: `Coaching invoice for ${clientName || "client"}`,
+                name: `${invoice.plan || "Coaching"} Plan — ${invoice.period || "Monthly"}`,
               },
               unit_amount: amountCents,
             },
@@ -108,18 +142,18 @@ Deno.serve(async (req) => {
         },
         metadata: {
           invoice_id: invoiceId,
-          coach_id: coachUser.id,
+          coach_id: invoice.coach_id,
         },
-        customer_email: clientEmail || undefined,
-        success_url: `https://app.fitcore.tech/?payment=success&invoice=${invoiceId}`,
-        cancel_url: `https://app.fitcore.tech/?payment=cancelled&invoice=${invoiceId}`,
+        customer_email: user.email || undefined,
+        success_url: `https://client.fitcore.tech/?page=invoices&payment=success`,
+        cancel_url: `https://client.fitcore.tech/?page=invoices&payment=cancelled`,
       },
       {
         stripeAccount: coach.stripe_connect_id,
       }
     );
 
-    // ── 5. Store payment URL and session ID on the invoice ──
+    // ── 7. Store payment URL and session ID on the invoice ──
     await supabaseAdmin
       .from("invoices")
       .update({
@@ -136,8 +170,10 @@ Deno.serve(async (req) => {
       }
     );
   } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    console.error("create-invoice-checkout error:", message, err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Internal server error" }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

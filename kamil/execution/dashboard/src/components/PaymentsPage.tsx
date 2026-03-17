@@ -3,13 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, CheckCircle2, Clock, AlertTriangle,
   Search, Filter, Send, X, ChevronDown, ChevronUp, MessageSquare,
-  TrendingUp, TrendingDown, ExternalLink, Loader2, Copy, Check,
+  TrendingUp, TrendingDown,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import { supabase } from '../lib/supabase';
 import type { Client, Invoice } from '../types';
 
 interface PaymentsPageProps {
@@ -93,49 +92,6 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
 
   const handleMarkPaid = (id: string) => {
     onUpdateInvoice(id, { status: 'paid', paidDate: new Date().toISOString().split('T')[0] });
-  };
-
-  const [paymentLinkLoading, setPaymentLinkLoading] = useState<string | null>(null);
-  const [paymentLinkUrl, setPaymentLinkUrl] = useState<{ id: string; url: string } | null>(null);
-  const [linkCopied, setLinkCopied] = useState(false);
-
-  const handleGetPaymentLink = async (inv: Invoice) => {
-    setPaymentLinkLoading(inv.id);
-    try {
-      // Look up client email
-      const client = clients.find(c => c.id === inv.clientId);
-      const { data, error } = await supabase.functions.invoke('create-invoice-checkout', {
-        body: {
-          invoiceId: inv.id,
-          amount: inv.amount,
-          clientName: inv.clientName,
-          clientEmail: client?.email || '',
-          plan: inv.plan,
-          period: inv.period,
-        },
-      });
-      console.log('Invoice checkout response:', { data, error });
-      if (error) {
-        console.error('Invoice checkout error:', error);
-        alert('Error: ' + (error.message || JSON.stringify(error)));
-        setPaymentLinkLoading(null);
-        return;
-      }
-      if (data?.url) {
-        setPaymentLinkUrl({ id: inv.id, url: data.url });
-        onUpdateInvoice(inv.id, { paymentUrl: data.url });
-        navigator.clipboard.writeText(data.url).catch(() => {});
-        setLinkCopied(true);
-        setTimeout(() => setLinkCopied(false), 3000);
-        window.open(data.url, '_blank');
-      } else if (data?.error) {
-        console.error('Payment link error:', data.error);
-        alert(data.error);
-      }
-    } catch (err) {
-      console.error('Payment link error:', err);
-    }
-    setPaymentLinkLoading(null);
   };
 
   const handleCreateInvoice = () => {
@@ -365,30 +321,6 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                             {t.payments.markAsPaid}
                           </button>
                         </div>
-                        <button
-                          onClick={() => handleGetPaymentLink(inv)}
-                          disabled={paymentLinkLoading === inv.id}
-                          style={{ ...styles.markPaidBtn, background: 'rgba(0,229,200,0.08)', borderColor: 'rgba(0,229,200,0.15)', color: 'var(--accent-primary)' }}
-                        >
-                          {paymentLinkLoading === inv.id ? <Loader2 size={13} className="spin" /> : <ExternalLink size={13} />}
-                          {t.payments.paymentLink ?? 'Payment Link'}
-                        </button>
-                        {paymentLinkUrl?.id === inv.id && (
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                            <input
-                              readOnly
-                              value={paymentLinkUrl.url}
-                              style={{ ...styles.searchInput, flex: 1, fontSize: '11px', padding: '6px 8px' }}
-                              onClick={(e) => (e.target as HTMLInputElement).select()}
-                            />
-                            <button
-                              onClick={() => { navigator.clipboard.writeText(paymentLinkUrl.url); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}
-                              style={{ ...styles.markPaidBtn, padding: '6px 10px' }}
-                            >
-                              {linkCopied ? <Check size={12} /> : <Copy size={12} />}
-                            </button>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -430,20 +362,10 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                         </button>
                       )}
                       {inv.status !== 'paid' ? (
-                        <>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleGetPaymentLink(inv); }}
-                            disabled={paymentLinkLoading === inv.id}
-                            style={{ ...styles.markPaidBtnSmall, color: 'var(--accent-primary)', borderColor: 'rgba(0,229,200,0.2)' }}
-                          >
-                            {paymentLinkLoading === inv.id ? <Loader2 size={12} className="spin" /> : <ExternalLink size={12} />}
-                            {t.payments.paymentLink ?? 'Pay Link'}
-                          </button>
                           <button onClick={(e) => { e.stopPropagation(); handleMarkPaid(inv.id); }} style={styles.markPaidBtnSmall}>
                             <CheckCircle2 size={12} />
                             {t.payments.markAsPaid}
                           </button>
-                        </>
                       ) : (
                         <span style={styles.paidDateLabel}>
                           <CheckCircle2 size={12} />

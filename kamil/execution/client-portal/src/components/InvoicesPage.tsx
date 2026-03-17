@@ -1,7 +1,9 @@
-import { DollarSign, CheckCircle2, Clock, AlertTriangle, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { DollarSign, CheckCircle2, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { supabase } from '../lib/supabase';
 import type { Invoice } from '../types';
 
 interface InvoicesPageProps {
@@ -11,6 +13,29 @@ interface InvoicesPageProps {
 export default function InvoicesPage({ invoices }: InvoicesPageProps) {
   const isMobile = useIsMobile();
   const { lang } = useLang();
+  const [payingId, setPayingId] = useState<string | null>(null);
+
+  const handlePay = async (invoiceId: string) => {
+    setPayingId(invoiceId);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-invoice-checkout', {
+        body: { invoiceId },
+      });
+      if (error) {
+        alert(lang === 'pl' ? 'Błąd płatności. Spróbuj ponownie.' : 'Payment error. Please try again.');
+        return;
+      }
+      if (data?.url) {
+        window.location.href = data.url;
+      } else if (data?.error) {
+        alert(data.error);
+      }
+    } catch {
+      alert(lang === 'pl' ? 'Coś poszło nie tak.' : 'Something went wrong.');
+    } finally {
+      setPayingId(null);
+    }
+  };
 
   const outstanding = invoices
     .filter(i => i.status === 'pending' || i.status === 'overdue')
@@ -191,13 +216,17 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
                     <Icon size={12} />
                     {cfg.label}
                   </div>
-                  {(inv.status === 'pending' || inv.status === 'overdue') && inv.paymentUrl && (
-                    <a href={inv.paymentUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                      <button style={s.payBtn}>
-                        <ExternalLink size={14} />
-                        {lang === 'pl' ? 'Zapłać' : 'Pay Now'}
-                      </button>
-                    </a>
+                  {(inv.status === 'pending' || inv.status === 'overdue') && (
+                    <button
+                      style={{ ...s.payBtn, opacity: payingId === inv.id ? 0.6 : 1 }}
+                      onClick={() => handlePay(inv.id)}
+                      disabled={payingId === inv.id}
+                    >
+                      {payingId === inv.id
+                        ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                        : <DollarSign size={14} />}
+                      {lang === 'pl' ? 'Zapłać' : 'Pay Now'}
+                    </button>
                   )}
                   {inv.status === 'paid' && inv.paidDate && (
                     <div style={{ fontSize: 12, color: '#22c55e' }}>
