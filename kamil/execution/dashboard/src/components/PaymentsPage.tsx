@@ -90,10 +90,6 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
     return a.clientName.localeCompare(b.clientName);
   });
 
-  const handleMarkPaid = (id: string) => {
-    onUpdateInvoice(id, { status: 'paid', paidDate: new Date().toISOString().split('T')[0] });
-  };
-
   const handleCreateInvoice = () => {
     if (!newInvoice.clientId) return;
     const client = clients.find(c => c.id === newInvoice.clientId);
@@ -259,8 +255,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
             <span style={{ ...styles.th, flex: 1 }}>{t.payments.plan}</span>
             <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>{t.payments.amount}</span>
             <span style={{ ...styles.th, flex: 1 }}>{t.payments.dueDate}</span>
-            <span style={{ ...styles.th, flex: 1 }}>{t.payments.status}</span>
-            <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>{t.payments.action}</span>
+            <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>{t.payments.status}</span>
           </div>
         )}
 
@@ -304,25 +299,6 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                         </span>
                       </div>
                     </div>
-                    {inv.status !== 'paid' && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          {inv.status === 'overdue' && (
-                            <button
-                              onClick={() => setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id })}
-                              style={{ ...styles.markPaidBtn, background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.15)', color: 'var(--accent-danger)', flex: 1 }}
-                            >
-                              <MessageSquare size={13} />
-                              {t.payments.remind}
-                            </button>
-                          )}
-                          <button onClick={() => handleMarkPaid(inv.id)} style={{ ...styles.markPaidBtn, flex: 1 }}>
-                            <CheckCircle2 size={13} />
-                            {t.payments.markAsPaid}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   // Desktop row layout
@@ -343,33 +319,16 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                     <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '17px' }}>
                       {new Date(inv.dueDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
                     </span>
-                    <span style={{ ...styles.td, flex: 1 }}>
+                    <span style={{ ...styles.td, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                       <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
                         {inv.status === 'paid' && <CheckCircle2 size={11} />}
                         {inv.status === 'pending' && <Clock size={11} />}
                         {inv.status === 'overdue' && <AlertTriangle size={11} />}
                         {statusLabel(inv.status)}
                       </span>
-                    </span>
-                    <span style={{ ...styles.td, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                      {inv.status === 'overdue' && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id }); }}
-                          style={styles.reminderBtnSmall}
-                        >
-                          <MessageSquare size={12} />
-                          {t.payments.remind}
-                        </button>
-                      )}
-                      {inv.status !== 'paid' ? (
-                          <button onClick={(e) => { e.stopPropagation(); handleMarkPaid(inv.id); }} style={styles.markPaidBtnSmall}>
-                            <CheckCircle2 size={12} />
-                            {t.payments.markAsPaid}
-                          </button>
-                      ) : (
-                        <span style={styles.paidDateLabel}>
-                          <CheckCircle2 size={12} />
-                          {t.payments.paid} {inv.paidDate && new Date(inv.paidDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
+                      {inv.status === 'paid' && inv.paidDate && (
+                        <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
+                          {new Date(inv.paidDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
                         </span>
                       )}
                       {clientHistory.length > 0 && (
