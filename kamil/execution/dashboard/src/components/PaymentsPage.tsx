@@ -114,7 +114,13 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
           period: inv.period,
         },
       });
-      if (error) throw error;
+      console.log('Invoice checkout response:', { data, error });
+      if (error) {
+        console.error('Invoice checkout error:', error);
+        alert('Error: ' + (error.message || JSON.stringify(error)));
+        setPaymentLinkLoading(null);
+        return;
+      }
       if (data?.url) {
         setPaymentLinkUrl({ id: inv.id, url: data.url });
         onUpdateInvoice(inv.id, { paymentUrl: data.url });
