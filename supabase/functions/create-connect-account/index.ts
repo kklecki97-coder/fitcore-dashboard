@@ -65,7 +65,26 @@ Deno.serve(async (req) => {
 
     let connectId = coach?.stripe_connect_id;
 
-    // ── 3. Create Express account if none exists ──
+    // ── 3. If account exists, check if onboarding is complete ──
+    if (connectId && !coach?.stripe_connect_onboarded) {
+      const account = await stripe.accounts.retrieve(connectId);
+      if (account.charges_enabled) {
+        await supabaseAdmin
+          .from("coaches")
+          .update({ stripe_connect_onboarded: true })
+          .eq("id", coachUser.id);
+
+        return new Response(
+          JSON.stringify({ onboarded: true }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+    }
+
+    // ── 4. Create Express account if none exists ──
     if (!connectId) {
       const account = await stripe.accounts.create({
         type: "express",

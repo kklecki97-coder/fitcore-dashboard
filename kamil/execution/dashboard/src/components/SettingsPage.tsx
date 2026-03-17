@@ -118,6 +118,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
         setStripeConnectLoading(false);
         return;
       }
+      if (data?.onboarded) {
+        setStripeConnected(true);
+        setStripeOnboarded(true);
+        setStripeConnectLoading(false);
+        return;
+      }
       if (data?.url) {
         window.location.href = data.url;
       }
