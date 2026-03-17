@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Search, Filter, Send, X, ChevronDown, ChevronUp, MessageSquare,
+  Search, Filter, Send, X, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
@@ -22,7 +22,8 @@ interface PaymentsPageProps {
 type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
-export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
+// @ts-ignore onUpdateInvoice reserved for future manual payment marking
+export default function PaymentsPage({ clients, invoices, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
   const { lang, t } = useLang();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
