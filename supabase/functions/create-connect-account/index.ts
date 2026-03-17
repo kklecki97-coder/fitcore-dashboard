@@ -101,8 +101,10 @@ Deno.serve(async (req) => {
       }
     );
   } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal server error";
+    console.error("create-connect-account error:", message, err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Internal server error" }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

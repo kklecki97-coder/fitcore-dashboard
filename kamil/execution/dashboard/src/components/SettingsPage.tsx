@@ -106,12 +106,24 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
     setStripeConnectLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-connect-account');
-      if (error) throw error;
+      if (error) {
+        console.error('Stripe Connect error:', error);
+        alert('Stripe Connect error: ' + (error.message || JSON.stringify(error)));
+        setStripeConnectLoading(false);
+        return;
+      }
+      if (data?.error) {
+        console.error('Stripe Connect error:', data.error);
+        alert('Stripe Connect error: ' + data.error);
+        setStripeConnectLoading(false);
+        return;
+      }
       if (data?.url) {
         window.location.href = data.url;
       }
     } catch (err) {
       console.error('Stripe Connect error:', err);
+      alert('Stripe Connect error: ' + (err instanceof Error ? err.message : String(err)));
     }
     setStripeConnectLoading(false);
   };
