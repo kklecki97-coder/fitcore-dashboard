@@ -54,6 +54,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [tfaFactorId, setTfaFactorId] = useState('');
   // @ts-ignore — scaffolded for "Copied!" indicator on backup codes button
   const [copiedBackup, setCopiedBackup] = useState(false);
+
+  // Stripe Connect state
+  const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
+  const [stripeConnected, setStripeConnected] = useState(false);
+  const [stripeOnboarded, setStripeOnboarded] = useState(false);
+
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -71,6 +77,44 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
       }
     });
   }, []);
+
+  // Load Stripe Connect status
+  useEffect(() => {
+    const checkStripeConnect = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase
+        .from('coaches')
+        .select('stripe_connect_id, stripe_connect_onboarded')
+        .eq('id', session.user.id)
+        .single();
+      if (data?.stripe_connect_id) {
+        setStripeConnected(true);
+        setStripeOnboarded(data.stripe_connect_onboarded ?? false);
+      }
+    };
+    checkStripeConnect();
+
+    // Check URL params for Stripe return
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('stripe') === 'success' || params.get('stripe') === 'refresh') {
+      checkStripeConnect();
+    }
+  }, []);
+
+  const handleConnectStripe = async () => {
+    setStripeConnectLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-connect-account');
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error('Stripe Connect error:', err);
+    }
+    setStripeConnectLoading(false);
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -394,14 +438,45 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               ))}
             </div>
 
-            <div style={styles.stripeBadge}>
-              <span style={styles.stripeBadgeText}>{t.settings.comingSoon}</span>
-            </div>
-
-            <button style={styles.stripeBtn} disabled>
-              <CreditCard size={14} />
-              {t.settings.connectStripe}
-            </button>
+            {stripeOnboarded ? (
+              <>
+                <div style={{ ...styles.stripeBadge, background: 'rgba(0, 229, 200, 0.1)', border: '1px solid rgba(0, 229, 200, 0.3)' }}>
+                  <span style={{ ...styles.stripeBadgeText, color: '#00e5c8' }}>
+                    <CheckCircle size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                    {t.settings.stripeConnected || 'Connected'}
+                  </span>
+                </div>
+                <button style={{ ...styles.stripeBtn, cursor: 'default', opacity: 0.7 }} disabled>
+                  <CheckCircle size={14} />
+                  {t.settings.stripeConnected || 'Stripe Connected'}
+                </button>
+              </>
+            ) : stripeConnected ? (
+              <>
+                <div style={{ ...styles.stripeBadge, background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                  <span style={{ ...styles.stripeBadgeText, color: '#fbbf24' }}>
+                    {t.settings.stripePending || 'Onboarding Pending'}
+                  </span>
+                </div>
+                <button
+                  style={{ ...styles.stripeBtn, cursor: 'pointer', opacity: 1 }}
+                  onClick={handleConnectStripe}
+                  disabled={stripeConnectLoading}
+                >
+                  {stripeConnectLoading ? <Loader2 size={14} className="spin" /> : <CreditCard size={14} />}
+                  {t.settings.completeOnboarding || 'Complete Onboarding'}
+                </button>
+              </>
+            ) : (
+              <button
+                style={{ ...styles.stripeBtn, cursor: 'pointer', opacity: 1, background: 'rgba(99, 91, 255, 0.15)' }}
+                onClick={handleConnectStripe}
+                disabled={stripeConnectLoading}
+              >
+                {stripeConnectLoading ? <Loader2 size={14} className="spin" /> : <CreditCard size={14} />}
+                {t.settings.connectStripe}
+              </button>
+            )}
           </div>
         </GlassCard>
 

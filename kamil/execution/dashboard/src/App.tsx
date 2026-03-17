@@ -197,6 +197,8 @@ function App() {
           paidDate: r.paid_date ?? null,
           period: r.period ?? '',
           plan: r.plan,
+          paymentUrl: r.payment_url ?? null,
+          stripeSessionId: r.stripe_checkout_session_id ?? null,
         })));
       }
     };

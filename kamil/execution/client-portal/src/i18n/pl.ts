@@ -62,6 +62,7 @@ export const pl: Translations = {
     messages: 'Wiadomości',
     settings: 'Ustawienia',
     calendar: 'Kalendarz',
+    invoices: 'Faktury',
     logOut: 'Wyloguj',
   },
 

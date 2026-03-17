@@ -9,6 +9,7 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { supabase } from '../lib/supabase';
 import type { Client, Invoice } from '../types';
 
 interface PaymentsPageProps {
@@ -101,23 +102,28 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
   const handleGetPaymentLink = async (inv: Invoice) => {
     setPaymentLinkLoading(inv.id);
     try {
-      const res = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Look up client email
+      const client = clients.find(c => c.id === inv.clientId);
+      const { data, error } = await supabase.functions.invoke('create-invoice-checkout', {
+        body: {
           invoiceId: inv.id,
           amount: inv.amount,
           clientName: inv.clientName,
+          clientEmail: client?.email || '',
           plan: inv.plan,
           period: inv.period,
-        }),
+        },
       });
-      const data = await res.json();
-      if (data.url) {
+      if (error) throw error;
+      if (data?.url) {
         setPaymentLinkUrl({ id: inv.id, url: data.url });
+        onUpdateInvoice(inv.id, { paymentUrl: data.url });
         navigator.clipboard.writeText(data.url).catch(() => {});
         setLinkCopied(true);
         setTimeout(() => setLinkCopied(false), 3000);
+      } else if (data?.error) {
+        console.error('Payment link error:', data.error);
+        alert(data.error);
       }
     } catch (err) {
       console.error('Payment link error:', err);

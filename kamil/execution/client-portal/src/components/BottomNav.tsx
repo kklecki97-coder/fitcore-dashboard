@@ -1,4 +1,4 @@
-import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, Settings, LogOut } from 'lucide-react';
+import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
@@ -18,6 +18,7 @@ const navIcons: Record<string, typeof Home> = {
   'check-in': ClipboardCheck,
   progress: TrendingUp,
   messages: MessageSquare,
+  invoices: DollarSign,
   settings: Settings,
 };
 
@@ -33,6 +34,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
     'check-in': t.nav.checkIn,
     progress: t.nav.progress,
     messages: t.nav.messages,
+    invoices: t.nav.invoices || 'Invoices',
     settings: t.nav.settings,
   };
 
@@ -141,9 +143,33 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
         })}
       </div>
 
-      {/* Bottom section: settings + logout */}
+      {/* Bottom section: invoices + settings + logout */}
       <div style={styles.bottomSection}>
         <div style={styles.divider} />
+
+        {/* Invoices */}
+        <motion.button
+          onClick={() => onNavigate('invoices')}
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            ...styles.sideItem,
+            color: currentPage === 'invoices' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            background: currentPage === 'invoices' ? 'var(--accent-primary-dim)' : 'transparent',
+          }}
+        >
+          {currentPage === 'invoices' && (
+            <motion.div
+              layoutId="nav-indicator"
+              style={styles.activeBar}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <DollarSign size={20} style={{ opacity: currentPage === 'invoices' ? 1 : 0.5, flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: currentPage === 'invoices' ? 600 : 500, opacity: currentPage === 'invoices' ? 1 : 0.6 }}>
+            {navLabels.invoices}
+          </span>
+        </motion.button>
 
         {/* Settings */}
         <motion.button

@@ -93,6 +93,8 @@ export interface Invoice {
   paidDate: string | null;
   period: string; // e.g. "Feb 2026"
   plan: 'Basic' | 'Premium' | 'Elite';
+  paymentUrl?: string | null;
+  stripeSessionId?: string | null;
 }
 
 export interface CheckIn {

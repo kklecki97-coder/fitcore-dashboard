@@ -60,6 +60,7 @@ export const en = {
     messages: 'Messages',
     settings: 'Settings',
     calendar: 'Calendar',
+    invoices: 'Invoices',
     logOut: 'Log out',
   },
 

@@ -588,6 +588,9 @@ export const pl: Translations = {
     payoutTracking: 'Śledzenie wypłat',
     comingSoon: 'Wkrótce',
     connectStripe: 'Połącz Stripe',
+    stripeConnected: 'Stripe Połączony',
+    stripePending: 'Oczekuje na weryfikację',
+    completeOnboarding: 'Dokończ weryfikację',
     // Client Invites
     clientInvites: 'Zaproszenia Klientów',
     clientInvitesSub: 'Wyślij linki zaproszeń nowym klientom',

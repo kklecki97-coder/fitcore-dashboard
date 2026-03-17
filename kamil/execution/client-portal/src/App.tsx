@@ -12,12 +12,13 @@ import MessagesPage from './components/MessagesPage';
 import CalendarPage from './components/CalendarPage';
 import ProgressPage from './components/ProgressPage';
 import SettingsPage from './components/SettingsPage';
+import InvoicesPage from './components/InvoicesPage';
 import OnboardingPage from './components/OnboardingPage';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
 import { mockClient, mockCoachName, mockProgram, mockWorkoutLogs, mockCheckIns, mockMessages, mockSetLogs, mockWeeklySchedule } from './mockData';
-import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule } from './types';
+import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule, Invoice } from './types';
 
 // Toggle this to true to bypass auth and use mock data for UI development
 const USE_MOCK_DATA = false;
@@ -151,6 +152,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [setLogs, setSetLogs] = useState<WorkoutSetLog[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(null);
   const [toastError, setToastError] = useState<string | null>(null);
 
@@ -444,6 +446,29 @@ function App() {
         weekStart: weekStartStr,
         dayAssignments: latestRow?.day_assignments ?? {},
       });
+    }
+
+    // Load invoices
+    const { data: invData, error: invError } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .order('created_at', { ascending: false });
+
+    if (invError) console.error('invoices query failed:', invError);
+
+    if (invData) {
+      setInvoices(invData.map(r => ({
+        id: r.id,
+        clientId: r.client_id,
+        amount: r.amount,
+        status: r.status,
+        dueDate: r.due_date ?? '',
+        paidDate: r.paid_date ?? null,
+        period: r.period ?? '',
+        plan: r.plan,
+        paymentUrl: r.payment_url ?? null,
+      })));
     }
 
     return true;
@@ -843,6 +868,10 @@ function App() {
             workoutLogs={workoutLogs}
             checkIns={checkIns}
           />
+        );
+      case 'invoices':
+        return (
+          <InvoicesPage invoices={invoices} />
         );
       case 'settings':
         return (

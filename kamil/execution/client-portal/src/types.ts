@@ -127,6 +127,18 @@ export interface WeeklySchedule {
   dayAssignments: Record<string, string>;  // { "0": "workout-day-id", "2": "workout-day-id" } — key is 0=Mon..6=Sun
 }
 
-export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar';
+export interface Invoice {
+  id: string;
+  clientId: string;
+  amount: number;
+  status: 'paid' | 'pending' | 'overdue';
+  dueDate: string;
+  paidDate: string | null;
+  period: string;
+  plan: 'Basic' | 'Premium' | 'Elite';
+  paymentUrl: string | null;
+}
+
+export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar' | 'invoices';
 
 export type Theme = 'dark' | 'light';

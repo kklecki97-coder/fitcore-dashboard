@@ -586,6 +586,9 @@ export const en = {
     payoutTracking: 'Payout tracking',
     comingSoon: 'Coming Soon',
     connectStripe: 'Connect Stripe',
+    stripeConnected: 'Stripe Connected',
+    stripePending: 'Onboarding Pending',
+    completeOnboarding: 'Complete Onboarding',
     // Client Invites
     clientInvites: 'Client Invites',
     clientInvitesSub: 'Send invite links to new clients',
