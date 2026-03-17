@@ -127,6 +127,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
         navigator.clipboard.writeText(data.url).catch(() => {});
         setLinkCopied(true);
         setTimeout(() => setLinkCopied(false), 3000);
+        window.open(data.url, '_blank');
       } else if (data?.error) {
         console.error('Payment link error:', data.error);
         alert(data.error);
