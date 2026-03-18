@@ -23,15 +23,12 @@ export default function ContactPage() {
     setError('');
 
     try {
-      const { error: dbError } = await supabase.from('contact_submissions').insert({
-        name: name.trim(),
-        email: email.trim(),
-        message: message.trim(),
+      const { data, error: fnError } = await supabase.functions.invoke('notify-contact', {
+        body: { name: name.trim(), email: email.trim(), message: message.trim() },
       });
 
-      if (dbError) {
+      if (fnError || data?.error) {
         setError(lang === 'pl' ? 'Nie udało się wysłać. Spróbuj ponownie.' : 'Failed to send. Please try again.');
-        console.error('Contact form error:', dbError);
       } else {
         setSent(true);
       }
