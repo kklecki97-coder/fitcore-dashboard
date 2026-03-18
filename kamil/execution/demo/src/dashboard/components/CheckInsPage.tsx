@@ -59,7 +59,7 @@ function DeltaBadge({ current, previous, unit, inverse }: { current: number; pre
   const diff = current - previous;
   const isGood = inverse ? diff < 0 : diff > 0;
   const isBad = inverse ? diff > 0 : diff < 0;
-  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>—</span>;
+  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>-</span>;
   const color = isGood ? 'var(--accent-success)' : isBad ? 'var(--accent-danger)' : 'var(--text-tertiary)';
   const Icon = diff > 0 ? TrendingUp : TrendingDown;
   return (
@@ -487,7 +487,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         style={{ overflow: 'hidden' }}
                       >
                         <div style={styles.expandedContent}>
-                          {/* Missed check-in — simplified view */}
+                          {/* Missed check-in - simplified view */}
                           {ci.status === 'missed' ? (
                             <>
                               <div style={styles.missedBanner}>
@@ -497,7 +497,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                     {ci.clientName} missed their check-in
                                   </div>
                                   <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                    Due {new Date(ci.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} — no data submitted
+                                    Due {new Date(ci.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} - no data submitted
                                   </div>
                                 </div>
                               </div>
@@ -520,7 +520,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           <div style={{ ...styles.comparisonGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             {/* This Week */}
                             <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>This Week — {new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                              <div style={styles.comparisonLabel}>This Week - {new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                               <div style={styles.metricsGrid}>
                                 {ci.weight != null && (
                                   <div style={styles.metricCell}>
@@ -748,7 +748,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Action bar — pending check-ins */}
+                          {/* Action bar - pending check-ins */}
                           {ci.reviewStatus === 'pending' && (
                             <div style={styles.actionBar}>
                               <textarea
@@ -799,7 +799,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Action bar — flagged check-ins */}
+                          {/* Action bar - flagged check-ins */}
                           {ci.reviewStatus === 'flagged' && (
                             <div style={styles.actionBar}>
                               <textarea
@@ -824,7 +824,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Reviewed — just view + message shortcuts */}
+                          {/* Reviewed - just view + message shortcuts */}
                           {ci.reviewStatus === 'reviewed' && (
                             <div style={styles.actionButtons}>
                               <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>

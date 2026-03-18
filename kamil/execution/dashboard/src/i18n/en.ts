@@ -1,6 +1,6 @@
 export const en = {
   meta: {
-    title: 'FitCore — Coach Dashboard',
+    title: 'FitCore - Coach Dashboard',
     description: 'Manage your clients, programs, and revenue with FitCore.',
   },
 
@@ -104,7 +104,7 @@ export const en = {
     unread: (n: number) => `${n} unread`,
     viewAll: 'View all',
     insightActiveWeek: (n: number, total: number) => `${n}/${total} clients active this week`,
-    insightStreak: (name: string, days: number) => `${name}'s ${days}-day streak — longest active`,
+    insightStreak: (name: string, days: number) => `${name}'s ${days}-day streak - longest active`,
     insightLeading: (name: string, pct: number, weight: number) => `${name} leading at ${pct}% progress (Bench: ${weight}kg)`,
     insightOverdue: (n: number, names: string) => `${n} check-in${n === 1 ? '' : 's'} overdue (${names})`,
     insightUnread: (n: number) => `${n} unread message${n === 1 ? '' : 's'} waiting`,
@@ -332,7 +332,7 @@ export const en = {
       ],
       reminder: [
         "Don't forget to log your meals today",
-        'Rest day — recovery is part of the process',
+        'Rest day - recovery is part of the process',
         'Check-in is due this week. Please submit.',
       ],
       onboarding: [
@@ -446,7 +446,7 @@ export const en = {
     sortName: 'Name',
     searchClients: 'Search clients...',
     noInvoicesFound: 'No invoices found.',
-    paymentHistory: (name: string) => `Payment History — ${name}`,
+    paymentHistory: (name: string) => `Payment History - ${name}`,
     planTier: 'Plan Tier',
     selectClient: 'Select a client...',
     noPlansMessage: 'No plans created yet. Go to Settings to create plans.',
@@ -566,7 +566,7 @@ export const en = {
     copyAll: 'Copy All',
     copied: 'Copied!',
     actionPermanent: 'This action is permanent',
-    deleteWarningDesc: 'All your data — clients, workouts, schedules, messages, and payment history — will be permanently deleted. This cannot be undone.',
+    deleteWarningDesc: 'All your data - clients, workouts, schedules, messages, and payment history - will be permanently deleted. This cannot be undone.',
     cannotBeUndone: 'This action cannot be undone.',
     typeToConfirm: 'to confirm',
     type: 'Type',
@@ -655,7 +655,7 @@ export const en = {
     saveClient: 'Add Client',
     creating: 'Creating...',
     cancel: 'Cancel',
-    optionalSubtitle: 'Optional — can be filled in later',
+    optionalSubtitle: 'Optional - can be filled in later',
     goalsHint: 'Separate multiple goals with commas',
     coachNotes: 'Coach Notes',
     monthlyRate: 'Monthly Rate',
@@ -672,10 +672,10 @@ export const en = {
   notifications: {
     newMessageFrom: (name: string) => `New message from ${name}`,
     checkInSubmitted: (name: string) => `${name} submitted a check-in`,
-    paymentReceived: (amount: string) => `Payment received — ${amount}`,
+    paymentReceived: (amount: string) => `Payment received - ${amount}`,
     programStarts: (name: string) => `${name}'s program starts tomorrow`,
     missedCheckIn: (name: string) => `${name} missed check-in`,
-    paymentOverdue: (amount: string) => `Payment overdue — ${amount}`,
+    paymentOverdue: (amount: string) => `Payment overdue - ${amount}`,
     welcomeTitle: 'Welcome to FitCore!',
     welcomeBody: 'Your dashboard is set up and ready to go',
     messageSentTo: (name: string) => `Message sent to ${name}`,

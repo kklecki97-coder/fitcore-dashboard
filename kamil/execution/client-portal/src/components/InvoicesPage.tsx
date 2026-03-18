@@ -44,7 +44,7 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
   const lastPaid = invoices.find(i => i.status === 'paid');
 
   const formatDate = (d: string) => {
-    if (!d) return '—';
+    if (!d) return '-';
     const date = new Date(d);
     return date.toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
@@ -179,7 +179,7 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
           <div style={s.summaryCard}>
             <div style={s.summaryLabel}>{lang === 'pl' ? 'Ostatnia płatność' : 'Last Payment'}</div>
             <div style={s.summaryValue}>
-              {lastPaid ? `$${lastPaid.amount}` : '—'}
+              {lastPaid ? `$${lastPaid.amount}` : '-'}
             </div>
             {lastPaid?.paidDate && (
               <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>

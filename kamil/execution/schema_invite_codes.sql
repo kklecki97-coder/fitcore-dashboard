@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore — Invite Codes table
+-- FitCore - Invite Codes table
 -- Allows coaches to generate invite links for clients
 -- Run this in Supabase SQL Editor
 -- ============================================================

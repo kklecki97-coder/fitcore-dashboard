@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── 2. Parse request body — require email confirmation ──
+    // ── 2. Parse request body - require email confirmation ──
     const { confirmEmail } = await req.json();
 
     if (!confirmEmail || confirmEmail.toLowerCase() !== coachUser.email?.toLowerCase()) {

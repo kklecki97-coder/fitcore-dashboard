@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore — Allow clients to insert their own row during registration
+-- FitCore - Allow clients to insert their own row during registration
 -- The signUp flow creates the auth user first, then inserts a clients row.
 -- Without this policy, RLS blocks the insert because the new user is not a coach.
 -- Run this in Supabase SQL Editor.

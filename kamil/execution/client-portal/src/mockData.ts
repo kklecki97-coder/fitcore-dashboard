@@ -82,7 +82,7 @@ export const mockWeeklySchedule: WeeklySchedule = {
   },
 };
 
-// No past workout logs — fresh start — this is a fresh start
+// No past workout logs - fresh start - this is a fresh start
 export const mockWorkoutLogs: WorkoutLog[] = [];
 
 // No past set logs
@@ -121,7 +121,7 @@ export const mockMessages: Message[] = [
     clientId: 'mock-client-1',
     clientName: 'Kuba Mika',
     clientAvatar: '',
-    text: 'Hey Kuba! Welcome to FitCore. I\'ve set up your program — Full Body on Fridays, plus your BJJ+Box on Mon/Wed. Let\'s build some serious upper body strength.',
+    text: 'Hey Kuba! Welcome to FitCore. I\'ve set up your program - Full Body on Fridays, plus your BJJ+Box on Mon/Wed. Let\'s build some serious upper body strength.',
     timestamp: new Date(now.getTime() - 2 * 3600000).toISOString(),
     isRead: false,
     isFromCoach: true,
@@ -131,7 +131,7 @@ export const mockMessages: Message[] = [
     clientId: 'mock-client-1',
     clientName: 'Kuba Mika',
     clientAvatar: '',
-    text: 'Thanks coach! Excited to start. The gym day looks good — no legs right? BJJ already kills my legs haha',
+    text: 'Thanks coach! Excited to start. The gym day looks good - no legs right? BJJ already kills my legs haha',
     timestamp: new Date(now.getTime() - 1.5 * 3600000).toISOString(),
     isRead: true,
     isFromCoach: false,
@@ -141,7 +141,7 @@ export const mockMessages: Message[] = [
     clientId: 'mock-client-1',
     clientName: 'Kuba Mika',
     clientAvatar: '',
-    text: 'Exactly — no legs on gym day. BJJ + Box gives you plenty of lower body and conditioning. Friday is all upper body push/pull + arms. Focus on getting stronger there and it\'ll carry over to your grappling.',
+    text: 'Exactly - no legs on gym day. BJJ + Box gives you plenty of lower body and conditioning. Friday is all upper body push/pull + arms. Focus on getting stronger there and it\'ll carry over to your grappling.',
     timestamp: new Date(now.getTime() - 1 * 3600000).toISOString(),
     isRead: false,
     isFromCoach: true,
@@ -151,7 +151,7 @@ export const mockMessages: Message[] = [
     clientId: 'mock-client-1',
     clientName: 'Kuba Mika',
     clientAvatar: '',
-    text: 'Also, I updated your program — added face pulls on pull day. Your shoulders will thank you later.',
+    text: 'Also, I updated your program - added face pulls on pull day. Your shoulders will thank you later.',
     timestamp: new Date(now.getTime() - 2 * 3600000).toISOString(),
     isRead: false,
     isFromCoach: true,
@@ -161,7 +161,7 @@ export const mockMessages: Message[] = [
     clientId: 'mock-client-1',
     clientName: 'Kuba Mika',
     clientAvatar: '',
-    text: 'Got it, makes sense. Will aim for 4x10 at 80. And thanks for the face pulls — my rear delts definitely need the work!',
+    text: 'Got it, makes sense. Will aim for 4x10 at 80. And thanks for the face pulls - my rear delts definitely need the work!',
     timestamp: new Date(now.getTime() - 1.5 * 3600000).toISOString(),
     isRead: true,
     isFromCoach: false,
@@ -191,7 +191,7 @@ export const mockMessages: Message[] = [
     clientId: 'mock-client-1',
     clientName: 'Kuba Mika',
     clientAvatar: '',
-    text: 'Quick question — is it okay to do cardio on rest days? Thinking of adding 20min walks.',
+    text: 'Quick question - is it okay to do cardio on rest days? Thinking of adding 20min walks.',
     timestamp: new Date(now.getTime() - 48 * 3600000).toISOString(), // 2 days ago
     isRead: true,
     isFromCoach: false,

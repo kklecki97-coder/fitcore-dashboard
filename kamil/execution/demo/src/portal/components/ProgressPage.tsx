@@ -38,7 +38,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     { name: 'Deadlift', values: metrics.deadlift, unit: 'kg', icon: '💪' },
   ];
 
-  // Calendar palette — cyan-green & soft coral (on-brand, not generic traffic lights)
+  // Calendar palette - cyan-green & soft coral (on-brand, not generic traffic lights)
   const calDone = '#20dba4';
   const calMiss = '#e8637a';
 
@@ -154,13 +154,13 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
       return { goal, progress: Math.max(0, pct), label: `${current.toLocaleString()} / ${target.toLocaleString()} steps` };
     }
 
-    // Cardio / running goal — derive from overall training consistency as proxy
+    // Cardio / running goal - derive from overall training consistency as proxy
     if (g.includes('5k') || g.includes('run') || g.includes('cardio')) {
       const pct = Math.min(100, Math.round(completionRate * 0.72));
       return { goal, progress: Math.max(0, pct), label: 'Based on training consistency' };
     }
 
-    // Fallback — use overall client progress
+    // Fallback - use overall client progress
     return { goal, progress: Math.round(client.progress * 0.7), label: 'In progress' };
   });
 
@@ -168,7 +168,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     <div style={{ ...styles.page, padding: isMobile ? '16px 12px 80px' : '24px 24px 80px' }}>
       <h2 style={styles.title}>Your Progress</h2>
 
-      {/* Goals — top priority */}
+      {/* Goals - top priority */}
       <GlassCard delay={0.05}>
         <div style={styles.sectionHeader}>
           <Target size={18} color="var(--accent-primary)" />
@@ -312,7 +312,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
             <span style={styles.emptyStateText}>Complete your first workout to start tracking consistency</span>
           </div>
         ) : <>
-        {/* Stats row — 3 mini cards */}
+        {/* Stats row - 3 mini cards */}
         <div style={styles.statsRow}>
           <div style={styles.statCard}>
             <Dumbbell size={16} color="var(--accent-primary)" />
@@ -345,14 +345,14 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
           </div>
         </div>
 
-        {/* Calendar — day header */}
+        {/* Calendar - day header */}
         <div style={styles.calGrid}>
           {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
             <div key={i} style={styles.calDayHeader}>{d}</div>
           ))}
         </div>
 
-        {/* Calendar — 4 week rows */}
+        {/* Calendar - 4 week rows */}
         {calWeeks.map((week, wi) => (
           <div key={wi} style={styles.calGrid}>
             {week.map(day => {

@@ -118,7 +118,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Edge function created the user — now sign in
+      // Edge function created the user - now sign in
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
@@ -130,7 +130,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto-login via onAuthStateChange — redirect to home
+      // Auto-login via onAuthStateChange - redirect to home
       const prefix = lang === 'pl' ? '/pl' : '';
       navigate(prefix + '/', { replace: true });
     } catch {

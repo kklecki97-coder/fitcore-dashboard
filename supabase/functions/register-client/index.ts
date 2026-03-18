@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
       .update({ used_by: clientId })
       .eq("code", code);
 
-    // ── 5. Success — client can now sign in ──
+    // ── 5. Success - client can now sign in ──
     return new Response(
       JSON.stringify({ success: true, userId: newUser.user.id }),
       {

@@ -1,15 +1,15 @@
-# Fitness Project — Agent Instructions
+# Fitness Project - Agent Instructions
 
 > This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
 > Contributors: kubamika16 (Jakub), kklecki97-coder (Kamil)
 
 ## Project Overview
 
-We sell custom dashboards to fitness coaches worldwide. Coaches need better tools to manage clients, track progress, and run their business — we build those dashboards for them.
+We sell custom dashboards to fitness coaches worldwide. Coaches need better tools to manage clients, track progress, and run their business - we build those dashboards for them.
 
 **Two workstreams, one repo:**
-- **Jakub** — Marketing, cold outreach, emails, finding and closing clients
-- **Kamil** — Building the dashboard product, integrations, deployment
+- **Jakub** - Marketing, cold outreach, emails, finding and closing clients
+- **Kamil** - Building the dashboard product, integrations, deployment
 
 ## Boundary Rule
 
@@ -29,12 +29,12 @@ Fitness Project/
 ├── .env                   # API keys and environment variables
 ├── .gitignore
 │
-├── jakub/                 # Jakub — marketing & client acquisition
+├── jakub/                 # Jakub - marketing & client acquisition
 │   ├── directives/        # SOPs: outreach templates, email campaigns, lead gen
 │   ├── execution/         # Scripts: scraping, emailing, CRM, lead tracking
 │   └── .tmp/              # Intermediate files (gitignored)
 │
-├── kamil/                 # Kamil — dashboard product development
+├── kamil/                 # Kamil - dashboard product development
 │   ├── directives/        # SOPs: dashboard features, client onboarding, deployment
 │   ├── execution/         # Scripts: dashboard, integrations, APIs
 │   └── .tmp/              # Intermediate files (gitignored)
@@ -71,7 +71,7 @@ Before writing a script, check the relevant `execution/` folder. Only create new
 - Update the directive with what you learned
 
 **3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, or common errors — update the directive. Don't create or overwrite directives without asking.
+Directives are living documents. When you discover API constraints, better approaches, or common errors - update the directive. Don't create or overwrite directives without asking.
 
 **4. Stay in your lane**
 When working for Jakub, only touch `jakub/`. When working for Kamil, only touch `kamil/`. Shared resources go in `shared/`.
@@ -81,16 +81,16 @@ When working for Jakub, only touch `jakub/`. When working for Kamil, only touch 
 Errors are learning opportunities. When something breaks:
 1. Fix it
 2. Update the tool
-3. Test — make sure it works
+3. Test - make sure it works
 4. Update directive to include new flow
 5. System is now stronger
 
 ## File Organization
 
 - **Deliverables**: Google Sheets, Slides, or other cloud-based outputs
-- **Intermediates**: Temporary files in `{person}/.tmp/` — never committed, always regenerated
-- `.env` — Environment variables and API keys
-- `credentials.json`, `token.json` — Google OAuth credentials (gitignored)
+- **Intermediates**: Temporary files in `{person}/.tmp/` - never committed, always regenerated
+- `.env` - Environment variables and API keys
+- `credentials.json`, `token.json` - Google OAuth credentials (gitignored)
 
 ## Outreach Pipeline Dashboard
 
@@ -100,7 +100,7 @@ Jakub's internal tool for managing daily Instagram outreach. React + TypeScript 
 - **Run:** `cd jakub/execution/pipeline-dashboard && npm run dev`
 - **Main file:** `jakub/execution/pipeline-dashboard/src/App.tsx`
 - **Two views:** Daily Tasks (engage batch + DM batch) and Pipeline (stats, funnel, activity chart, lead list)
-- **DM generation script:** `jakub/execution/generate_dm_drafts.py` — generates AI DM drafts and stores them in Supabase
+- **DM generation script:** `jakub/execution/generate_dm_drafts.py` - generates AI DM drafts and stores them in Supabase
 - **Directive:** `jakub/directives/instagram_dm_outreach.md`
 
 ## Deployment (Vercel)
@@ -113,14 +113,14 @@ Jakub's internal tool for managing daily Instagram outreach. React + TypeScript 
 
 **How to deploy:**
 
-Option 1 — Script:
+Option 1 - Script:
 ```bash
 ./shared/deploy.sh dashboard   # Deploy dashboard only
 ./shared/deploy.sh landing     # Deploy landing page only
 ./shared/deploy.sh both        # Deploy both
 ```
 
-Option 2 — Direct curl (if script doesn't work):
+Option 2 - Direct curl (if script doesn't work):
 ```bash
 # Dashboard → app.fitcore.tech
 curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_jZJeht6JKlqGLVDJADp2NzZ4zOM4/QZtTnlqMWJ"

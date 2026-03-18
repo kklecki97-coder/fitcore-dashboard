@@ -2,7 +2,7 @@ import type { Translations } from './en';
 
 export const pl: Translations = {
   meta: {
-    title: 'FitCore — Panel Klienta',
+    title: 'FitCore - Panel Klienta',
     description: 'Śledź swoje treningi, check-iny i postępy z FitCore.',
   },
 
@@ -73,7 +73,7 @@ export const pl: Translations = {
 
   home: {
     greeting: (name: string) => `Hej ${name}`,
-    motivational: 'Działaj dalej — regularność wygrywa.',
+    motivational: 'Działaj dalej - regularność wygrywa.',
     dayStreak: 'dni z rzędu',
     progress: 'postęp',
     todaysWorkout: 'Dzisiejszy Trening',
@@ -81,13 +81,13 @@ export const pl: Translations = {
     exercises: 'ćwiczeń',
     approxTime: '~60 min',
     startWorkout: 'Rozpocznij Trening',
-    restText: 'Dzień odpoczynku — zregeneruj się i wróć silniejszy jutro.',
+    restText: 'Dzień odpoczynku - zregeneruj się i wróć silniejszy jutro.',
     logWorkout: 'Zapisz Trening',
     checkIn: 'Check-In',
     message: 'Wiadomość',
     goals: 'Cele',
     nextCheckIn: 'Następny Check-In',
-    dueToday: 'Termin dzisiaj — wyślij teraz!',
+    dueToday: 'Termin dzisiaj - wyślij teraz!',
     dueTomorrow: 'Termin jutro',
     dueInDays: (days: number) => `Za ${days} dni`,
     from: (name: string) => `Od ${name}`,
@@ -116,10 +116,10 @@ export const pl: Translations = {
     set: (n: number) => `Seria ${n}`,
     rpe: 'RPE',
     rpeTarget: (target: number) => `(cel ${target})`,
-    allDone: 'Wszystkie ćwiczenia ukończone — świetna robota!',
+    allDone: 'Wszystkie ćwiczenia ukończone - świetna robota!',
     exercisesCompleted: (done: number, total: number) => `${done}/${total} ćwiczeń ukończonych`,
     restUpMessage: 'Zregeneruj się i wróć silniejszy jutro.',
-    setsRemaining: (sets: number) => `Pozostało ${sets} serii — kontynuuj!`,
+    setsRemaining: (sets: number) => `Pozostało ${sets} serii - kontynuuj!`,
     noProgram: 'Brak przypisanego programu',
     noProgramSub: 'Twój trener nie przypisał jeszcze programu treningowego. Sprawdź ponownie wkrótce!',
   },
@@ -249,7 +249,7 @@ export const pl: Translations = {
     deleteAccount: 'Usuń Konto',
     deleteAccountDesc: 'Trwale usuń swoje konto i wszystkie dane',
     actionPermanent: 'Ta akcja jest nieodwracalna',
-    deleteWarningDesc: 'Wszystkie Twoje dane — treningi, check-iny, zdjęcia postępów i wiadomości — zostaną trwale usunięte. Tego nie można cofnąć.',
+    deleteWarningDesc: 'Wszystkie Twoje dane - treningi, check-iny, zdjęcia postępów i wiadomości - zostaną trwale usunięte. Tego nie można cofnąć.',
     type: 'Wpisz',
     typeToConfirm: 'aby potwierdzić',
     cancel: 'Anuluj',

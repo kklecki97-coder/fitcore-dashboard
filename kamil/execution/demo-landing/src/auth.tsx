@@ -6,7 +6,7 @@ export interface AuthUser {
   id: string;
   fullName: string;
   email: string;
-  passwordHash: string; // btoa() — demo only, not secure
+  passwordHash: string; // btoa() - demo only, not secure
   coachingNiche?: string;
   clientCount?: string;
   plan: 'trial' | 'pro' | 'cancelled';

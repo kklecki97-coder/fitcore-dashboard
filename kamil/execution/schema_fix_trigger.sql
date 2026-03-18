@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore — Fix handle_new_user trigger
+-- FitCore - Fix handle_new_user trigger
 -- Prevents coach row creation when a CLIENT auth user is created
 -- Run this in Supabase SQL Editor
 -- ============================================================

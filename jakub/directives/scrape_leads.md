@@ -41,7 +41,7 @@ The fastest path to a clean list. 67,000+ personal trainers listed in the US alo
 5. Run `jakub/execution/clean_leads.py` to normalize (to be built)
 
 ### What Google Maps gives you
-- Real business contact info (publicly listed — CAN-SPAM safe)
+- Real business contact info (publicly listed - CAN-SPAM safe)
 - Phone numbers (for follow-up if email doesn't work)
 - Websites (to check if they do online coaching)
 - Reviews (social proof of active clients)
@@ -53,7 +53,7 @@ Many Google Maps results will be in-person-only trainers. Filter for online coac
 - Has Instagram linked (online coaches always have IG)
 - Reviews mention "online", "app", "program" (not "gym", "studio")
 
-Script needed: `jakub/execution/filter_online_coaches.py` — takes Google Maps CSV, visits each website, flags online vs in-person coaches.
+Script needed: `jakub/execution/filter_online_coaches.py` - takes Google Maps CSV, visits each website, flags online vs in-person coaches.
 
 ---
 
@@ -90,13 +90,13 @@ Keep only profiles where:
 - email is not empty
 - biography contains coaching-related keywords: "coach", "training", "program", "transformation", "clients", "DM", "apply"
 
-Script needed: `jakub/execution/filter_ig_coaches.py` — takes Apify output, applies ICP filters, exports clean CSV.
+Script needed: `jakub/execution/filter_ig_coaches.py` - takes Apify output, applies ICP filters, exports clean CSV.
 
 ### Important Notes
-- **Residential proxies required** — datacenter IPs get blocked by Instagram
-- **Rate limits** — don't scrape more than 5,000 profiles per run
-- **Meta shut down Basic Display API (Dec 2024)** — all scraping is web-based now
-- **Emails from bios only** — some coaches have business emails visible only to logged-in users; Apify can't always get these
+- **Residential proxies required** - datacenter IPs get blocked by Instagram
+- **Rate limits** - don't scrape more than 5,000 profiles per run
+- **Meta shut down Basic Display API (Dec 2024)** - all scraping is web-based now
+- **Emails from bios only** - some coaches have business emails visible only to logged-in users; Apify can't always get these
 
 ---
 
@@ -130,9 +130,9 @@ Good for coaches who operate as registered businesses.
 **Never skip this.** Bad emails = high bounce rate = Instantly domains get burned.
 
 ### Tools (pick one)
-- **ZeroBounce** — $16 for 2,000 verifications
-- **NeverBounce** — $8 for 1,000 verifications
-- **MillionVerifier** — $37 for 10,000 verifications (best value at scale)
+- **ZeroBounce** - $16 for 2,000 verifications
+- **NeverBounce** - $8 for 1,000 verifications
+- **MillionVerifier** - $37 for 10,000 verifications (best value at scale)
 
 ### Process
 1. Upload full email list to verification tool
@@ -172,4 +172,4 @@ Before uploading to Instantly, your CSV should have these columns:
 | `jakub/execution/verify_emails.py` | Call ZeroBounce/NeverBounce API, remove bad emails | To build |
 | `jakub/execution/prep_instantly_csv.py` | Format final CSV for Instantly import | To build |
 
-Build these as needed. Don't build all at once — start with clean_leads.py and prep_instantly_csv.py.
+Build these as needed. Don't build all at once - start with clean_leads.py and prep_instantly_csv.py.

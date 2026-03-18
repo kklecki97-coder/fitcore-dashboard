@@ -1,4 +1,4 @@
-# FitCore — Payments Infrastructure Plan
+# FitCore - Payments Infrastructure Plan
 
 > Author: Kamil | Date: Feb 24, 2026
 > Purpose: Full architecture plan for how payments will work in FitCore. Share with Jakub for review.
@@ -9,8 +9,8 @@
 
 1. [Overview](#overview)
 2. [Recommended Payment Model](#recommended-payment-model)
-3. [How It Works — Client Perspective](#client-perspective)
-4. [How It Works — Coach Perspective](#coach-perspective)
+3. [How It Works - Client Perspective](#client-perspective)
+4. [How It Works - Coach Perspective](#coach-perspective)
 5. [Technical Architecture](#technical-architecture)
 6. [Stripe Connect Deep Dive](#stripe-connect)
 7. [Apple Pay, Google Pay & Digital Wallets](#digital-wallets)
@@ -31,12 +31,12 @@
 
 FitCore needs payment infrastructure so coaches can charge their clients directly through the platform. The goal:
 
-- **Clients** pay like they're shopping on Amazon — click, pay, done
+- **Clients** pay like they're shopping on Amazon - click, pay, done
 - **Coaches** connect their bank account with one button click
 - **FitCore** takes a platform fee (e.g. 10%) on every transaction
 - **Nobody** needs to understand payment processing, APIs, or compliance
 
-**Key decision: We use Stripe Connect (Express accounts).** Stripe is the regulated entity that handles all money flow. FitCore is a technology platform, NOT a payment institution — so we don't need any financial licenses.
+**Key decision: We use Stripe Connect (Express accounts).** Stripe is the regulated entity that handles all money flow. FitCore is a technology platform, NOT a payment institution - so we don't need any financial licenses.
 
 ---
 
@@ -48,10 +48,10 @@ FitCore needs payment infrastructure so coaches can charge their clients directl
 |---|---|
 | **Model** | Marketplace / platform (like Airbnb, Uber, Shopify) |
 | **Processor** | Stripe Connect |
-| **Account type** | Express — Stripe handles onboarding, KYC, compliance |
-| **Charge type** | Destination charges — atomic charge + transfer in one API call |
+| **Account type** | Express - Stripe handles onboarding, KYC, compliance |
+| **Charge type** | Destination charges - atomic charge + transfer in one API call |
 | **Revenue model** | `application_fee` on every transaction (FitCore's cut) |
-| **License needed?** | NO — Stripe is the licensed entity |
+| **License needed?** | NO - Stripe is the licensed entity |
 
 ### Why Stripe?
 
@@ -64,7 +64,7 @@ FitCore needs payment infrastructure so coaches can charge their clients directl
 
 ---
 
-## 3. How It Works — Client Perspective <a id="client-perspective"></a>
+## 3. How It Works - Client Perspective <a id="client-perspective"></a>
 
 The client experience is identical to buying something online:
 
@@ -79,7 +79,7 @@ The client experience is identical to buying something online:
    - SEPA Direct Debit (if in EU)
    - Bank transfer (P24 for Poland)
 4. Picks their method, pays
-5. Gets confirmation — done
+5. Gets confirmation - done
 ```
 
 The client never sees "Stripe" or "FitCore payment processing." They just pay like they would anywhere else.
@@ -88,7 +88,7 @@ The client never sees "Stripe" or "FitCore payment processing." They just pay li
 
 ---
 
-## 4. How It Works — Coach Perspective <a id="coach-perspective"></a>
+## 4. How It Works - Coach Perspective <a id="coach-perspective"></a>
 
 ### Connecting Payments (One-Time Setup)
 
@@ -107,12 +107,12 @@ The client never sees "Stripe" or "FitCore payment processing." They just pay li
 
 **That's the entire process.** Stripe handles identity verification, compliance, and bank validation. The coach never sees an API key, never configures anything technical. The onboarding page is available in 40+ languages including Polish.
 
-### After Connecting — Settings Page Shows:
+### After Connecting - Settings Page Shows:
 
 ```
 ✓ Connected
 Payouts to: ****4821 (PKO Bank)
-Next payout: Feb 28 — $1,240.00
+Next payout: Feb 28 - $1,240.00
 
 Payment methods enabled:
 ✓ Cards (Visa, Mastercard)
@@ -190,11 +190,11 @@ COACH CREATES INVOICE IN FITCORE DASHBOARD
 
 ### Webhook Best Practices
 
-1. **Return 200 immediately** — before any business logic. Queue for async processing.
-2. **Verify signatures** — use Stripe's webhook signing secret.
-3. **Process idempotently** — store processed event IDs, skip duplicates.
-4. **Use a message queue** — push webhook payloads to Redis/SQS for workers.
-5. **Monitor failures** — alerts for webhook delivery failures.
+1. **Return 200 immediately** - before any business logic. Queue for async processing.
+2. **Verify signatures** - use Stripe's webhook signing secret.
+3. **Process idempotently** - store processed event IDs, skip duplicates.
+4. **Use a message queue** - push webhook payloads to Redis/SQS for workers.
+5. **Monitor failures** - alerts for webhook delivery failures.
 
 ### Simplified Database Schema
 
@@ -253,7 +253,7 @@ CREATE TABLE invoices (
 
 **Total backend code: ~50 lines.** Stripe maintains the entire onboarding UI.
 
-### Destination Charges — How Money Flows
+### Destination Charges - How Money Flows
 
 ```
 Client pays $200 for coaching
@@ -336,7 +336,7 @@ When using Stripe Checkout or Payment Element, the system automatically:
 **Polish client (PLN):**
 | Method | Fee | Notes |
 |---|---|---|
-| BLIK | 1.6% + 1.00 PLN | **76% of Polish e-commerce uses this — must-have** |
+| BLIK | 1.6% + 1.00 PLN | **76% of Polish e-commerce uses this - must-have** |
 | Card | 1.5% + 1.00 PLN | Standard fallback |
 | Apple Pay / Google Pay | 1.5% + 1.00 PLN | Same as card, zero extra fees |
 | Przelewy24 (P24) | 1.9% + 1.00 PLN | Bank transfer, popular in Poland |
@@ -356,7 +356,7 @@ When using Stripe Checkout or Payment Element, the system automatically:
 | Card | 1.5% + 1.00 PLN + 1% intl + 1% FX | Non-EEA + currency conversion |
 | Apple Pay / Google Pay | Same as card | Very popular in US (65M users) |
 
-### BLIK — Critical for Polish Market
+### BLIK - Critical for Polish Market
 
 - **76% of Polish e-commerce** payments use BLIK
 - **14.2 million active users** (out of 38M population)
@@ -364,12 +364,12 @@ When using Stripe Checkout or Payment Element, the system automatically:
 - **2.4 billion transactions** in 2024
 - Contributed ~1.2% to Poland's GDP
 
-**If we serve Polish coaches with Polish clients, BLIK is not optional — it's essential.** Stripe supports it natively.
+**If we serve Polish coaches with Polish clients, BLIK is not optional - it's essential.** Stripe supports it natively.
 
-### SEPA Direct Debit — Best for EU Recurring
+### SEPA Direct Debit - Best for EU Recurring
 
 - Covers **34 countries**, 520+ million people
-- Fee: **0.8%** — almost half the cost of card payments
+- Fee: **0.8%** - almost half the cost of card payments
 - Bank details don't expire (unlike cards) → less failed payments
 - Ideal for monthly coaching subscriptions
 - Settlement delay: 5-7 days (first), 3 days after
@@ -459,7 +459,7 @@ This is important because some coaches are 100% in-person and may want to track 
 |---|---|
 | B2C to Polish coach | 23% Polish VAT |
 | B2C to EU coach (other country) | Local VAT rate via **EU OSS scheme** |
-| B2B to EU coach (VAT-registered) | Reverse charge — no VAT on invoice |
+| B2B to EU coach (VAT-registered) | Reverse charge - no VAT on invoice |
 | Non-EU coach (US, UK, etc.) | No EU VAT applies |
 
 ### EU OSS (One-Stop Shop) Scheme
@@ -504,7 +504,7 @@ This is important because some coaches are 100% in-person and may want to track 
 | Feature | Detail |
 |---|---|
 | What | Polish invoicing SaaS with REST API |
-| KSeF integration | Built-in — auto-submits invoices to KSeF |
+| KSeF integration | Built-in - auto-submits invoices to KSeF |
 | API | Full REST API, Python library on PyPI |
 | Multi-currency | Yes, EU VAT rate normalization |
 | GDPR | Compliant |
@@ -572,7 +572,7 @@ Flow: FitCore backend calls Fakturownia API on payment confirmation → Fakturow
 
 ### Why NOT the Others
 
-- **Paddle / Lemon Squeezy**: Merchant of Record model — they "buy" your product and resell it. NOT designed for marketplace splits where coaches receive payments. Would only work for FitCore's own subscription billing, not coach-to-client payments.
+- **Paddle / Lemon Squeezy**: Merchant of Record model - they "buy" your product and resell it. NOT designed for marketplace splits where coaches receive payments. Would only work for FitCore's own subscription billing, not coach-to-client payments.
 - **Adyen**: Great at scale but requires ~€250K/month processing, 5-6 month integration, and sales engagement. Not viable for early-stage startup.
 - **Square**: Only in 8 countries, no marketplace features, designed for in-person POS. Not applicable.
 - **PayPal**: Could be added as a secondary option for clients who prefer it. Higher fees, no Polish-specific methods.
@@ -587,7 +587,7 @@ Flow: FitCore backend calls Fakturownia API on payment confirmation → Fakturow
 | PT Distinction | Stripe standard rates | Just passes through |
 | **FitCore (planned)** | **Stripe rates + 10% platform fee** | Competitive |
 
-FitCore's 10% application fee is competitive — TrueCoach charges 5% on top of Stripe's fees (so effectively ~6.5-8% total). We're transparent: Stripe fees + our 10% cut.
+FitCore's 10% application fee is competitive - TrueCoach charges 5% on top of Stripe's fees (so effectively ~6.5-8% total). We're transparent: Stripe fees + our 10% cut.
 
 ---
 
@@ -660,14 +660,14 @@ FitCore's 10% application fee is competitive — TrueCoach charges 5% on top of 
 
 **The short version:**
 
-1. We use **Stripe Connect** — the same platform Airbnb, Uber, and Shopify use for marketplace payments
+1. We use **Stripe Connect** - the same platform Airbnb, Uber, and Shopify use for marketplace payments
 2. Coaches click **one button** to connect their bank, Stripe handles everything else
-3. Clients pay like shopping on Amazon — card, Apple Pay, Google Pay, BLIK, whatever works for them
-4. FitCore takes **10% per transaction** as our platform fee — this is our revenue from payments
+3. Clients pay like shopping on Amazon - card, Apple Pay, Google Pay, BLIK, whatever works for them
+4. FitCore takes **10% per transaction** as our platform fee - this is our revenue from payments
 5. We also support **cash/offline payments** for in-person coaches
-6. We need **no financial license** — Stripe is the regulated entity
+6. We need **no financial license** - Stripe is the regulated entity
 7. For invoicing compliance (KSeF mandatory April 2026), we use **Fakturownia**
-8. Stripe fees are **1.4-3.25%** depending on card origin — we don't pay these, they come out of the transaction
-9. Apple Pay, Google Pay, BLIK, SEPA — all **free** (same fee as card), all handled automatically by Stripe
+8. Stripe fees are **1.4-3.25%** depending on card origin - we don't pay these, they come out of the transaction
+9. Apple Pay, Google Pay, BLIK, SEPA - all **free** (same fee as card), all handled automatically by Stripe
 
-**Our competitive advantage:** TrueCoach charges 5% per transaction ON TOP of Stripe fees. We charge 10% but it includes everything — simpler, more transparent, and we offer a better dashboard experience.
+**Our competitive advantage:** TrueCoach charges 5% per transaction ON TOP of Stripe fees. We charge 10% but it includes everything - simpler, more transparent, and we offer a better dashboard experience.

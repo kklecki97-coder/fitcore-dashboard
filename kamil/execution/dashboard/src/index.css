@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════
-   FitCore — Premium Fitness Coach Dashboard
+   FitCore - Premium Fitness Coach Dashboard
    Design: Dark Luxe Futuristic
    Typography: Outfit (display) + JetBrains Mono (data)
    Palette: Deep black → electric cyan/teal accents
@@ -248,7 +248,7 @@ body::after {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Responsive — Mobile (<768px)
+   Responsive - Mobile (<768px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   :root {

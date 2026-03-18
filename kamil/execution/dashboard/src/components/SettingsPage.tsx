@@ -56,7 +56,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [tfaQrSvg, setTfaQrSvg] = useState('');
   const [tfaSecret, setTfaSecret] = useState('');
   const [tfaFactorId, setTfaFactorId] = useState('');
-  // @ts-ignore — scaffolded for "Copied!" indicator on backup codes button
+  // @ts-ignore - scaffolded for "Copied!" indicator on backup codes button
   const [copiedBackup, setCopiedBackup] = useState(false);
 
   // Stripe Connect state
@@ -179,7 +179,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
-        {/* Profile — Row 1, Col 1 */}
+        {/* Profile - Row 1, Col 1 */}
         <GlassCard delay={0.05}>
           <div style={styles.sectionHeader}>
             <div style={styles.sectionIcon}>
@@ -192,7 +192,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
           <div style={styles.divider} />
 
-          {/* Profile hero — avatar + identity */}
+          {/* Profile hero - avatar + identity */}
           <div style={styles.profileHero}>
             <div style={styles.avatarRing}>
               <div style={styles.avatarWrapper}>
@@ -264,7 +264,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           )}
         </GlassCard>
 
-        {/* Appearance — Row 1, Col 2 */}
+        {/* Appearance - Row 1, Col 2 */}
         <GlassCard delay={0.1}>
           <div style={styles.sectionHeader}>
             <div style={styles.sectionIcon}>
@@ -356,7 +356,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Notifications — Row 1, Col 3 */}
+        {/* Notifications - Row 1, Col 3 */}
         <GlassCard delay={0.15}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'var(--accent-warm-dim)' }}>
@@ -391,7 +391,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           ))}
         </GlassCard>
 
-        {/* Security — Row 2, Col 1 */}
+        {/* Security - Row 2, Col 1 */}
         <GlassCard delay={0.2}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'var(--accent-danger-dim)' }}>
@@ -433,7 +433,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Stripe Payments + Plans — Row 2, Col 2-3 */}
+        {/* Stripe Payments + Plans - Row 2, Col 2-3 */}
         <GlassCard delay={0.3}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'rgba(99, 91, 255, 0.08)' }}>
@@ -508,7 +508,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Plans & Pricing — Row 2, Col 3 */}
+        {/* Plans & Pricing - Row 2, Col 3 */}
         <GlassCard delay={0.35}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
@@ -599,7 +599,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
 
       </div>
 
-      {/* Plan Modal — Add / Edit */}
+      {/* Plan Modal - Add / Edit */}
       <AnimatePresence>
         {planModal && (
           <motion.div
@@ -696,7 +696,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
         )}
       </AnimatePresence>
 
-      {/* Security Modals — Password / 2FA / Delete */}
+      {/* Security Modals - Password / 2FA / Delete */}
       <AnimatePresence>
         {securityModal && (
           <motion.div

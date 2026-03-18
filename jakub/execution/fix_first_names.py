@@ -1,5 +1,5 @@
 """
-fix_first_names.py — Populate missing first_name in Supabase leads.
+fix_first_names.py - Populate missing first_name in Supabase leads.
 
 Usage:
     python3 jakub/execution/fix_first_names.py [--dry-run]
@@ -8,7 +8,7 @@ Strategy (in priority order):
 1. Extract from email: "catherine.palmer@..." → Catherine
 2. Extract from email: "brandon@..." → Brandon
 3. Extract smooshed: "joshpresnell@..." + last_name=Presnell → Josh
-4. Fallback: "Hey" — greeting reads "Hey," / subject reads "Hey"
+4. Fallback: "Hey" - greeting reads "Hey," / subject reads "Hey"
 
 Processes ALL leads with null, empty, or "Hi there" first_name.
 Paginates through Supabase (no limit). Runs 20 concurrent updates.
@@ -41,7 +41,7 @@ GENERIC_PREFIXES = {
 }
 
 # Common first names to validate against (top 500 US names)
-# We don't need the full list — just checking that it LOOKS like a name
+# We don't need the full list - just checking that it LOOKS like a name
 def looks_like_name(s):
     """Check if a string looks like a plausible first name."""
     if not s or len(s) < 3 or len(s) > 12:
@@ -51,7 +51,7 @@ def looks_like_name(s):
     # Must be all letters
     if not s.isalpha():
         return False
-    # Count vowels (y counts — Crystal, Sherry, Kyndle, etc.)
+    # Count vowels (y counts - Crystal, Sherry, Kyndle, etc.)
     vowels = sum(1 for c in s.lower() if c in "aeiouy")
     if len(s) > 3 and vowels == 0:
         return False
@@ -218,7 +218,7 @@ async def main_async():
     print(f"  'Hi there' placeholder: {len(hithere_leads)}")
     print(f"  'Hey' placeholder: {len(hey_leads)}")
     if dry_run:
-        print("DRY RUN — no changes will be written\n")
+        print("DRY RUN - no changes will be written\n")
 
     # Extract all names first (instant, no API calls)
     to_update = []
@@ -231,7 +231,7 @@ async def main_async():
         if first_name:
             to_update.append((lead_id, email, first_name, last_name))
         elif last_name and last_name.strip():
-            # Use last name as fallback — "Kellogg," is professional
+            # Use last name as fallback - "Kellogg," is professional
             fallback = last_name.strip().capitalize()
             to_update.append((lead_id, email, fallback, last_name))
             fallback_count += 1

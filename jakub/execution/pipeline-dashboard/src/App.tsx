@@ -1046,7 +1046,7 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
           <div>
             <div style={{ fontSize: 18, fontWeight: 600 }}>DM Batch</div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-              {leads.length} leads ready — {readyCount} with draft DMs
+              {leads.length} leads ready - {readyCount} with draft DMs
             </div>
           </div>
         </div>
@@ -1344,7 +1344,7 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
             <span style={{ fontFamily: 'var(--font-mono)' }}>
               {dmBatch.length > 0 || todayDmed > 0
                 ? `${todayDmed}/${dmBatch.length + todayDmed}`
-                : '—'}
+                : '-'}
             </span>
           </div>
           <div style={{
@@ -1700,7 +1700,7 @@ function Dashboard() {
     fetchLeads()
   }, [fetchLeads])
 
-  // Snapshot engage batches for BOTH accounts at once from the shared new pool — interleaved by score
+  // Snapshot engage batches for BOTH accounts at once from the shared new pool - interleaved by score
   useEffect(() => {
     if (engageBatchIds.jakub !== null || allLeads.length === 0) return
 
@@ -1752,7 +1752,7 @@ function Dashboard() {
     }
   }
 
-  // Batch update helper — now includes engaged_by/dmed_by
+  // Batch update helper - now includes engaged_by/dmed_by
   const batchUpdateStatus = async (ids: number[], newStatus: PipelineStage, timestampField?: string) => {
     const now = new Date().toISOString()
     const updates: Record<string, string> = { status: newStatus }
@@ -1810,7 +1810,7 @@ function Dashboard() {
     [allLeads, account, todayStart]
   )
 
-  // Daily activity data for chart — filtered by account
+  // Daily activity data for chart - filtered by account
   const dailyActivity = useMemo(() => {
     const days: { date: string; label: string; engaged: number; dmed: number }[] = []
     for (let i = 89; i >= 0; i--) {
@@ -1863,7 +1863,7 @@ function Dashboard() {
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [allLeads, account])
 
-  // Pipeline view filters — show leads this account worked + new leads
+  // Pipeline view filters - show leads this account worked + new leads
   const filtered = accountLeads
     .filter(l => filterStage === 'all' || l.status === filterStage)
     .filter(l => {

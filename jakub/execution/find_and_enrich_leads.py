@@ -1,9 +1,9 @@
 """
-find_and_enrich_leads.py — All-in-one pipeline: Find leads by US city via Apify,
+find_and_enrich_leads.py - All-in-one pipeline: Find leads by US city via Apify,
 deduplicate against Supabase, clean, push to Supabase, then run enrichment + Instantly push.
 
 Usage:
-    # Full run — ~25 cities, 200 leads each, full enrichment + push to Instantly
+    # Full run - ~25 cities, 200 leads each, full enrichment + push to Instantly
     python3 jakub/execution/find_and_enrich_leads.py
 
     # Test with 2 cities, 50 leads each
@@ -18,7 +18,7 @@ Usage:
     # Resume from an existing Apify dataset (skip the Apify run)
     python3 jakub/execution/find_and_enrich_leads.py --dataset Yc8vjXz4KCfq7g3lI
 
-    # Dry run — show what would happen without calling Apify
+    # Dry run - show what would happen without calling Apify
     python3 jakub/execution/find_and_enrich_leads.py --dry-run
 
 Apify actor: code_crafter~leads-finder ($1.50/1k leads)
@@ -65,13 +65,13 @@ def load_env(path=".env"):
 # CONFIG
 # ---------------------------------------------------------------------------
 
-# US cities to search — mid-to-large, avoiding mega-cities already covered by national search
+# US cities to search - mid-to-large, avoiding mega-cities already covered by national search
 CITIES = [
     # Mid-size (not yet done)
     "Raleigh", "Columbus", "Indianapolis", "Jacksonville", "Salt Lake City",
     "Kansas City", "Scottsdale", "Richmond", "Memphis", "New Orleans",
     "Oklahoma City", "El Paso",
-    # New batch — more cities not yet searched
+    # New batch - more cities not yet searched
     "Washington", "Baltimore", "Las Vegas", "Orlando", "Cincinnati",
     "Pittsburgh", "St. Louis", "Cleveland", "Milwaukee", "Louisville",
     "Virginia Beach", "Sacramento", "Colorado Springs", "Honolulu",
@@ -87,7 +87,7 @@ CITIES = [
     "Birmingham", "Montgomery", "Jackson", "Mobile", "Tallahassee",
     "Wilmington", "Charleston", "Columbia", "Greenville", "Asheville",
     "Durham", "Greensboro", "Winston-Salem", "Fayetteville", "Roanoke",
-    # Already done — keep at bottom for --cities N filtering
+    # Already done - keep at bottom for --cities N filtering
     "Los Angeles", "New York", "Chicago", "Houston", "Phoenix",
     "Dallas", "San Francisco", "Miami", "Atlanta", "Seattle",
     "Boston", "Philadelphia", "San Antonio", "San Jose", "Detroit",
@@ -491,7 +491,7 @@ def main():
     estimated_cost = estimated_raw * 0.0015
 
     print("=" * 60)
-    print("LEAD PIPELINE — Find by City → Dedup → Clean → Enrich → Push")
+    print("LEAD PIPELINE - Find by City → Dedup → Clean → Enrich → Push")
     print("=" * 60)
     if dataset_id:
         print(f"  Mode:            Resume from dataset {dataset_id}")
@@ -617,7 +617,7 @@ def main():
     sample = random.sample(cleaned_leads, sample_size)
     print(f"\n  Sample leads ({sample_size} random):")
     for j, lead in enumerate(sample, 1):
-        print(f"    {j}. {lead['first_name']} {lead['last_name']} — {lead['job_title']}")
+        print(f"    {j}. {lead['first_name']} {lead['last_name']} - {lead['job_title']}")
         print(f"       {lead['company_name']} ({lead['company_size']} emp) | {lead['city']}, {lead['state']}")
         print(f"       {lead['email']} | {lead['segment']}")
 

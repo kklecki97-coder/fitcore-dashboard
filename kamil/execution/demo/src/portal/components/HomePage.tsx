@@ -120,7 +120,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       {/* ── Welcome ── */}
       <div style={styles.welcome}>
         <h1 style={styles.greeting}>Hey {client.name.split(' ')[0]}</h1>
-        <p style={styles.motivational}>Keep pushing — consistency beats perfection.</p>
+        <p style={styles.motivational}>Keep pushing - consistency beats perfection.</p>
       </div>
 
       {/* ── Stats Row ── */}
@@ -174,7 +174,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             </button>
           </>
         ) : (
-          <p style={styles.restText}>Rest day — recover and come back stronger tomorrow.</p>
+          <p style={styles.restText}>Rest day - recover and come back stronger tomorrow.</p>
         )}
       </GlassCard>
 
@@ -308,7 +308,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
               <div style={styles.cardTitle}>Next Check-In</div>
               <div style={styles.checkInDue}>
                 {daysUntilCheckIn !== null && daysUntilCheckIn <= 0
-                  ? 'Due today — submit now!'
+                  ? 'Due today - submit now!'
                   : daysUntilCheckIn === 1
                     ? 'Due tomorrow'
                     : `Due in ${daysUntilCheckIn} days`}

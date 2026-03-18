@@ -1,5 +1,5 @@
 """
-push_to_supabase.py — Create leads table and push cleaned leads to Supabase.
+push_to_supabase.py - Create leads table and push cleaned leads to Supabase.
 
 Usage:
     python3 jakub/execution/push_to_supabase.py jakub/.tmp/cleaned_leads.csv
@@ -180,7 +180,7 @@ def main():
     print(f"Loaded {len(leads)} leads from CSV")
     print()
 
-    # Try to insert — if it fails, show the CREATE TABLE SQL
+    # Try to insert - if it fails, show the CREATE TABLE SQL
     print("Attempting to push leads to 'leads' table...")
     print()
 
@@ -202,9 +202,9 @@ def main():
     else:
         print()
         print("=" * 50)
-        print(f"DONE — {pushed} leads pushed to Supabase")
+        print(f"DONE - {pushed} leads pushed to Supabase")
         if errors > 0:
-            print(f"  ({errors} errors — likely duplicates)")
+            print(f"  ({errors} errors - likely duplicates)")
         print(f"View at: {url}")
         print("=" * 50)
 

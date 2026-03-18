@@ -100,7 +100,7 @@ export const myCheckIns: CheckIn[] = [
     notes: 'Feeling strong this week. Sleep has been improving a lot.',
     wins: 'Hit a new bench PR at 92.5kg. Stuck to meal plan 6 out of 7 days.',
     challenges: 'One late night on Wednesday threw off Thursday morning session.',
-    coachFeedback: 'Great work on the bench PR! The consistency with nutrition is paying off. Let\'s keep the sleep momentum going — try to stay off screens after 10 PM.',
+    coachFeedback: 'Great work on the bench PR! The consistency with nutrition is paying off. Let\'s keep the sleep momentum going - try to stay off screens after 10 PM.',
     reviewStatus: 'reviewed', flagReason: '', photos: [],
   },
   {
@@ -119,8 +119,8 @@ export const myCheckIns: CheckIn[] = [
     steps: 7200, nutritionScore: 6,
     notes: 'Rough week. Felt tired and motivation was low.',
     wins: 'Still showed up for 4 out of 5 sessions.',
-    challenges: 'Sleep was bad — averaging under 6.5 hours. Energy in the gym was low.',
-    coachFeedback: 'Everyone has weeks like this. The fact that you still showed up is what matters. Let\'s focus on sleep this week — aim for 7+ hours. Cut caffeine after 2 PM.',
+    challenges: 'Sleep was bad - averaging under 6.5 hours. Energy in the gym was low.',
+    coachFeedback: 'Everyone has weeks like this. The fact that you still showed up is what matters. Let\'s focus on sleep this week - aim for 7+ hours. Cut caffeine after 2 PM.',
     reviewStatus: 'reviewed', flagReason: '', photos: [],
   },
   {
@@ -130,7 +130,7 @@ export const myCheckIns: CheckIn[] = [
     notes: 'Good week. Feeling the program clicking.',
     wins: 'Deadlift 140kg for 5 reps felt solid. Weight trending down nicely.',
     challenges: 'Weekends are harder to stay on track with nutrition.',
-    coachFeedback: 'Love the deadlift progress. For weekends, try meal prepping Saturday morning — it removes the decision fatigue.',
+    coachFeedback: 'Love the deadlift progress. For weekends, try meal prepping Saturday morning - it removes the decision fatigue.',
     reviewStatus: 'reviewed', flagReason: '', photos: [],
   },
   {
@@ -140,7 +140,7 @@ export const myCheckIns: CheckIn[] = [
     notes: 'First week back after holiday break. Body felt stiff.',
     wins: 'Got back to routine without missing a beat. Bench at 85kg x 10.',
     challenges: 'Lost some strength over the break. Took extra warm-up time.',
-    coachFeedback: 'Coming back strong after a break is the hardest part — you nailed it. The strength will come back fast, don\'t worry. We\'re starting the new block now.',
+    coachFeedback: 'Coming back strong after a break is the hardest part - you nailed it. The strength will come back fast, don\'t worry. We\'re starting the new block now.',
     reviewStatus: 'reviewed', flagReason: '', photos: [],
   },
   {
@@ -150,7 +150,7 @@ export const myCheckIns: CheckIn[] = [
     notes: 'Holiday aftermath. Getting back on track.',
     wins: 'Showed up Monday and didn\'t skip.',
     challenges: 'Weight went up over holidays. Feeling sluggish.',
-    coachFeedback: 'Don\'t stress about the holiday weight — most of it is water. You\'re back, that\'s what counts. Let\'s ease into the first week.',
+    coachFeedback: 'Don\'t stress about the holiday weight - most of it is water. You\'re back, that\'s what counts. Let\'s ease into the first week.',
     reviewStatus: 'reviewed', flagReason: '', photos: [],
   },
   {
@@ -168,7 +168,7 @@ export const myMessages: Message[] = [
   { id: 'msg2', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'That\'s incredible Marcus! You\'re ahead of schedule on that goal. How did it feel? RPE?', timestamp: '2026-02-21T14:45:00', isRead: true, isFromCoach: true},
   { id: 'msg3', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'Felt like RPE 8.5, maybe could have had one more rep. Form was clean.', timestamp: '2026-02-21T14:52:00', isRead: true, isFromCoach: false},
   { id: 'msg4', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'Perfect. We\'ll push for 95kg next week. Keep the momentum going 💪', timestamp: '2026-02-21T15:00:00', isRead: true, isFromCoach: true},
-  { id: 'msg5', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'Quick question — should I add an extra set on lat pulldowns? Feels too easy at 60kg.', timestamp: '2026-02-20T09:15:00', isRead: true, isFromCoach: false},
+  { id: 'msg5', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'Quick question - should I add an extra set on lat pulldowns? Feels too easy at 60kg.', timestamp: '2026-02-20T09:15:00', isRead: true, isFromCoach: false},
   { id: 'msg6', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'Good instinct. Bump the weight to 65kg first and see if 3 sets still feels easy. If so, we\'ll add a 4th set next week.', timestamp: '2026-02-20T10:30:00', isRead: true, isFromCoach: true},
   { id: 'msg7', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'Got it, will try 65kg tomorrow. Thanks!', timestamp: '2026-02-20T10:35:00', isRead: true, isFromCoach: false},
   { id: 'msg8', clientId: 'c1', clientName: 'Marcus Chen', clientAvatar: '', text: 'Hey Marcus, don\'t forget your check-in is due Monday. How are you feeling this week?', timestamp: '2026-02-19T18:00:00', isRead: true, isFromCoach: true},

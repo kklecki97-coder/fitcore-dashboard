@@ -1,4 +1,4 @@
--- Coaching Plans table — coaches define custom plans with pricing
+-- Coaching Plans table - coaches define custom plans with pricing
 CREATE TABLE coaching_plans (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   coach_id UUID NOT NULL REFERENCES coaches(id) ON DELETE CASCADE,

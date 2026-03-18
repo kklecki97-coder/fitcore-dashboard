@@ -37,7 +37,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
   })();
 
   const selectedDay = todayDayIndex;
-  // @ts-ignore — scaffolded for exercise expand/collapse UI
+  // @ts-ignore - scaffolded for exercise expand/collapse UI
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
 
   // ── Workout Mode state ──
@@ -174,7 +174,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
   const completedSets = day.exercises.reduce((sum, ex) => {
     return sum + Array.from({ length: ex.sets }, (_, i) => getSetCompleted(ex.id, i + 1)).filter(Boolean).length;
   }, 0);
-  // @ts-ignore — scaffolded for progress bar UI
+  // @ts-ignore - scaffolded for progress bar UI
   const progressPct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
   const allDone = completedSets === totalSets;
 
@@ -210,7 +210,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
     }
   };
 
-  // @ts-ignore — scaffolded for workout mode navigation
+  // @ts-ignore - scaffolded for workout mode navigation
   const goPrevExercise = () => {
     if (workoutExerciseIdx > 0) {
       setWorkoutExerciseIdx(prev => prev - 1);
@@ -234,7 +234,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
   };
 
   // ── Render set logging (shared between overview expanded and workout mode) ──
-  // @ts-ignore — scaffolded for detailed set logging UI
+  // @ts-ignore - scaffolded for detailed set logging UI
   const renderSetRow = (exercise: typeof day.exercises[0], setNum: number, compact: boolean = false) => {
     const completed = getSetCompleted(exercise.id, setNum);
     const log = getSetLog(exercise.id, setNum);
@@ -502,7 +502,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
     const exAllDone = Array.from({ length: currentExercise.sets }, (_, i) =>
       getSetCompleted(currentExercise.id, i + 1)
     ).every(Boolean);
-    // @ts-ignore — scaffolded for workout mode progress display
+    // @ts-ignore - scaffolded for workout mode progress display
     const exCompletedCount = Array.from({ length: currentExercise.sets }, (_, i) =>
       getSetCompleted(currentExercise.id, i + 1)
     ).filter(Boolean).length;
@@ -630,7 +630,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
         <div style={styles.workoutContent}>
           <div style={styles.workoutExName}>{currentExercise.name}</div>
 
-          {/* Set dots — small indicators for which set you're on */}
+          {/* Set dots - small indicators for which set you're on */}
           <div style={styles.setDots}>
             {Array.from({ length: currentExercise.sets }, (_, i) => (
               <div key={i} style={{
@@ -644,7 +644,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
             ))}
           </div>
 
-          {/* Rest timer — takes over the center when active */}
+          {/* Rest timer - takes over the center when active */}
           {isResting ? (
             <div style={styles.restCenter}>
               <div style={styles.restCircleLarge}>
@@ -670,7 +670,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
               <span style={styles.exDoneText}>All {currentExercise.sets} sets done</span>
             </div>
           ) : (
-            /* Current set — the one thing to focus on */
+            /* Current set - the one thing to focus on */
             <div style={styles.focusCenter}>
               <span style={styles.focusSetLabel}>Set {currentSetNum} of {currentExercise.sets}</span>
               <div style={styles.focusTarget}>
@@ -753,7 +753,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
           {nextDayLabel && nextWorkout && (
             <div style={styles.nextWorkout}>
               <span style={styles.nextWorkoutLabel}>Next up</span>
-              <span style={styles.nextWorkoutValue}>{nextDayLabel} — {nextWorkout}</span>
+              <span style={styles.nextWorkoutValue}>{nextDayLabel} - {nextWorkout}</span>
             </div>
           )}
         </div>
@@ -770,7 +770,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
         <p style={styles.subtitle}>{day.exercises.length} exercises · {totalSets} sets</p>
       </div>
 
-      {/* Exercise list — the main content */}
+      {/* Exercise list - the main content */}
       <div style={styles.exerciseListCard}>
         {day.exercises.map((exercise, i) => (
           <div key={exercise.id} style={{
@@ -789,7 +789,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
         ))}
       </div>
 
-      {/* Start / Resume Workout — clean action button */}
+      {/* Start / Resume Workout - clean action button */}
       {isTodaysWorkout && !allDone && (
         <button style={styles.actionBtn} onClick={startWorkout}>
           <Play size={20} fill="#07090e" color="#07090e" />
@@ -1117,7 +1117,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.3s',
   },
 
-  // Focus center — the ONE set
+  // Focus center - the ONE set
   focusCenter: {
     display: 'flex',
     flexDirection: 'column' as const,

@@ -140,7 +140,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     scrollToBottom();
   }, [selectedClient, messages]);
 
-  // Mock typing indicator — show briefly when switching to conversations with unread
+  // Mock typing indicator - show briefly when switching to conversations with unread
   useEffect(() => {
     setIsClientTyping(false);
     const clientMsgs = messages.filter(m => m.clientId === selectedClient);

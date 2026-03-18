@@ -58,7 +58,7 @@ const MESSAGE_TEMPLATES: MessageTemplate[] = [
   { text: 'How did the session go? Any pain?', category: 'checkin' },
   { text: "How's nutrition been this week?", category: 'checkin' },
   { text: "Don't forget to log your meals today", category: 'reminder' },
-  { text: 'Rest day — recovery is part of the process', category: 'reminder' },
+  { text: 'Rest day - recovery is part of the process', category: 'reminder' },
   { text: 'Check-in is due this week. Please submit.', category: 'reminder' },
   { text: 'Welcome to FitCore! Ready to start?', category: 'onboarding' },
   { text: "I've set up your first program. Check it out!", category: 'onboarding' },
@@ -153,7 +153,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     scrollToBottom();
   }, [selectedClient, messages]);
 
-  // Mock typing indicator — show briefly when switching to conversations with unread
+  // Mock typing indicator - show briefly when switching to conversations with unread
   useEffect(() => {
     setIsClientTyping(false);
     const clientMsgs = messages.filter(m => m.clientId === selectedClient);

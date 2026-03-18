@@ -124,7 +124,7 @@ export default function CheckoutPage() {
                 {tc.howPricingWorks}
               </div>
 
-              {/* Step 1: Today — Free Trial */}
+              {/* Step 1: Today - Free Trial */}
               <div style={{
                 display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16,
                 padding: '16px', borderRadius: 'var(--radius-md)',
@@ -155,7 +155,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Step 2: First payment — $100 setup + $49 month */}
+              {/* Step 2: First payment - $100 setup + $49 month */}
               <div style={{
                 display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16,
                 padding: '16px', borderRadius: 'var(--radius-md)',
@@ -191,7 +191,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Step 3: After that — just monthly */}
+              {/* Step 3: After that - just monthly */}
               <div style={{
                 display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 24,
                 padding: '16px', borderRadius: 'var(--radius-md)',
@@ -255,7 +255,7 @@ export default function CheckoutPage() {
               display: 'flex', flexDirection: 'column',
               position: 'relative', overflow: 'hidden',
             }}>
-              {/* Top glow — matches left column */}
+              {/* Top glow - matches left column */}
               <div style={{
                 position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
                 width: 300, height: 2,

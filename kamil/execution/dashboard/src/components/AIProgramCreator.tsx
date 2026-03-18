@@ -19,9 +19,9 @@ interface ChatMessage {
   text: string;
 }
 
-const SYSTEM_PROMPT = `You are FitCore AI — an expert personal trainer and program designer built into the FitCore coaching platform.
+const SYSTEM_PROMPT = `You are FitCore AI - an expert personal trainer and program designer built into the FitCore coaching platform.
 
-Your job: Have a short, focused conversation with the coach to build a workout program. You are practical and direct — like a senior coach talking to another coach.
+Your job: Have a short, focused conversation with the coach to build a workout program. You are practical and direct - like a senior coach talking to another coach.
 
 RULES:
 - Be SHORT. 1-2 sentences max per response. No filler.
@@ -35,8 +35,8 @@ RULES:
 FLOW:
 1. Ask what the training week looks like (days + activities)
 2. For gym/strength days: ask which exercises, then drill into sets/reps/weight details
-3. Ask what 3 key lifts/metrics to track on the client's progress dashboard (e.g. bench press, squat, deadlift — or overhead press, pull-ups, whatever matters for this client). Also ask their current numbers so we have a starting point.
-4. Ask what the client's main goals are (e.g. "lose 5kg by summer", "hit 100kg bench", "improve cardio endurance"). Be specific — not generic stuff like "get fit". These go on their progress dashboard.
+3. Ask what 3 key lifts/metrics to track on the client's progress dashboard (e.g. bench press, squat, deadlift - or overhead press, pull-ups, whatever matters for this client). Also ask their current numbers so we have a starting point.
+4. Ask what the client's main goals are (e.g. "lose 5kg by summer", "hit 100kg bench", "improve cardio endurance"). Be specific - not generic stuff like "get fit". These go on their progress dashboard.
 5. As soon as you have the picture, say you're ready to generate
 
 Start with a brief greeting and ask about their client's training week.`;
@@ -128,16 +128,25 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   const sendToAI = async (apiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>) => {
     setLoading(true);
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      if (!apiKey) throw new Error('OpenAI API key not configured');
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      if (!apiKey) throw new Error('Anthropic API key not configured');
+      // Separate system message from conversation messages for Claude API
+      const systemMsg = apiMessages.find(m => m.role === 'system')?.content || '';
+      const conversationMsgs = apiMessages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: 'gpt-4o', messages: apiMessages, temperature: 0.7, max_tokens: 1000 }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({ model: 'claude-opus-4-0-20250514', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 1000 }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
       const data = await res.json();
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: data.choices[0].message.content.trim() }]);
+      const text = data.content?.[0]?.text || '';
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: text.trim() }]);
     } catch (err) {
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}` }]);
     } finally { setLoading(false); }
@@ -159,16 +168,23 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
     const apiMessages = getConversationMessages();
     apiMessages.push({ role: 'user', content: GENERATE_PROMPT });
     try {
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      if (!apiKey) throw new Error('OpenAI API key not configured');
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+      if (!apiKey) throw new Error('Anthropic API key not configured');
+      const systemMsg = apiMessages.find(m => m.role === 'system')?.content || '';
+      const conversationMsgs = apiMessages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({ model: 'gpt-4o', messages: apiMessages, temperature: 0.7, max_tokens: 4000 }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({ model: 'claude-opus-4-0-20250514', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 4000 }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
       const data = await res.json();
-      const content = data.choices[0].message.content.trim();
+      const content = (data.content?.[0]?.text || '').trim();
       const jsonStr = content.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
       const generated = JSON.parse(jsonStr);
       const program: WorkoutProgram = {
@@ -222,7 +238,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   };
 
   // ═══════════════════════════════════════
-  // CLIENT PICKER — Full screen first step
+  // CLIENT PICKER - Full screen first step
   // ═══════════════════════════════════════
   if (phase === 'pick-client') {
     return (
@@ -285,7 +301,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   }
 
   // ═══════════════════════════════════════
-  // WORKSPACE — Left cards + Right chatbot
+  // WORKSPACE - Left cards + Right chatbot
   // ═══════════════════════════════════════
   return (
     <div style={s.outerPage}>
@@ -411,7 +427,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           </motion.div>
         </div>
 
-        {/* ── RIGHT COLUMN — Chatbot card ── */}
+        {/* ── RIGHT COLUMN - Chatbot card ── */}
         <motion.div
           style={s.chatCard}
           initial={{ opacity: 0, y: 12, scale: 0.98 }}
@@ -710,7 +726,7 @@ const s: Record<string, React.CSSProperties> = {
     fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center',
   },
 
-  // ── Right column — Chat card ──
+  // ── Right column - Chat card ──
   chatCard: {
     position: 'relative',
     borderRadius: '16px',

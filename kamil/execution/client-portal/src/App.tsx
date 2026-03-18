@@ -48,7 +48,7 @@ function App() {
       setIsLoggedIn(!!session);
       setAuthLoading(false);
 
-      // Check for password recovery from URL hash (cross-tab support — Fix #19)
+      // Check for password recovery from URL hash (cross-tab support - Fix #19)
       if (session && window.location.hash.includes('type=recovery')) {
         setShowResetPassword(true);
       }
@@ -63,7 +63,7 @@ function App() {
   }, []);
 
   const handleLogin = (_remember: boolean) => {
-    // Session is handled by Supabase — onAuthStateChange fires automatically
+    // Session is handled by Supabase - onAuthStateChange fires automatically
   };
 
   const handleLogout = async () => {
@@ -361,7 +361,7 @@ function App() {
         isRead: r.is_read,
         isFromCoach: r.is_from_coach,
       })));
-      // Messages loaded — Realtime subscription handles new messages
+      // Messages loaded - Realtime subscription handles new messages
     }
 
     // Load workout logs
@@ -431,7 +431,7 @@ function App() {
         dayAssignments: schedRow.day_assignments ?? {},
       });
     } else {
-      // No schedule for this week — find the most recent one (could be past or future)
+      // No schedule for this week - find the most recent one (could be past or future)
       const { data: latestRow } = await supabase
         .from('weekly_schedule')
         .select('*')
@@ -507,7 +507,7 @@ function App() {
     }).finally(() => setDataLoading(false));
   };
 
-  // ── Realtime messages — subscribe to INSERT/UPDATE on messages for this client ──
+  // ── Realtime messages - subscribe to INSERT/UPDATE on messages for this client ──
   const clientUserRef = useRef(clientUser);
   useEffect(() => { clientUserRef.current = clientUser; }, [clientUser]);
 
@@ -658,7 +658,7 @@ function App() {
           clientName: ci.clientName,
           checkInDate: ci.date,
         }),
-      }).catch(() => {}); // Silent — don't block check-in on email failure
+      }).catch(() => {}); // Silent - don't block check-in on email failure
     });
   };
 
@@ -933,7 +933,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-    {/* Password Reset Modal — Fix #19: overlay always closeable */}
+    {/* Password Reset Modal - Fix #19: overlay always closeable */}
     {showResetPassword && (
       <div style={resetStyles.overlay} onClick={handleCloseResetModal}>
         <motion.div
@@ -1040,7 +1040,7 @@ function App() {
       )}
     </div>
 
-    {/* Error toast — Fix #20: click to dismiss, 6s timeout */}
+    {/* Error toast - Fix #20: click to dismiss, 6s timeout */}
     {toastError && (
       <div
         onClick={() => setToastError(null)}

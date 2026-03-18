@@ -1,5 +1,5 @@
 """
-generate_dm_drafts.py — Generate personalized Instagram DM drafts for engaged leads.
+generate_dm_drafts.py - Generate personalized Instagram DM drafts for engaged leads.
 
 Usage:
     python3 jakub/execution/generate_dm_drafts.py [--limit 20] [--dry-run] [--regenerate]
@@ -65,10 +65,10 @@ async def supabase_update(session, url, key, table, match_col, match_val, data):
 # --- SYSTEM PROMPT ---
 SYSTEM_PROMPT = """You write personalized Instagram DMs for FitCore outreach to fitness coaches.
 
-CONTEXT: We build custom client management dashboards for fitness coaches. The DM starts a conversation — it's NOT a pitch. You're warming them up.
+CONTEXT: We build custom client management dashboards for fitness coaches. The DM starts a conversation - it's NOT a pitch. You're warming them up.
 
 HARD RULES:
-1. Under 3 sentences total. Coaches get 50+ DMs a day — long messages get skipped.
+1. Under 3 sentences total. Coaches get 50+ DMs a day - long messages get skipped.
 2. Make it about THEM, not you. Reference their coaching, their content, their niche.
 3. End with a casual question (not a pitch). Start a conversation.
 4. No links. Instagram suppresses DMs with links.
@@ -87,19 +87,19 @@ BANNED PHRASES:
 
 VARY between these styles (pick one per lead based on what info you have):
 
-Style A — Curiosity Opener:
+Style A - Curiosity Opener:
 Reference something specific about their coaching, then ask how they handle client management.
 Example: "Hey Jake, been checking out your content... how are you managing all your clients right now?"
 
-Style B — Observation Opener:
+Style B - Observation Opener:
 Comment on a specific post topic or their niche, then ask about their systems.
 Example: "Hey Sarah, saw your post about progressive overload for beginners. are you tracking client progress somewhere or is it more manual?"
 
-Style C — Pain-Based Opener:
+Style C - Pain-Based Opener:
 Reference a scaling signal (growing, busy, many clients), then empathize with the management burden.
 Example: "Hey Mike, looks like you're scaling past 30 clients. most coaches at that stage say the admin side starts eating their time. is that the case for you too?"
 
-Style D — Compliment + Question:
+Style D - Compliment + Question:
 Genuine compliment about their results or approach, then ask about client experience.
 Example: "Hey Emma, your client transformations are legit. do your clients get to see their own progress data anywhere or just during check-ins?"
 
@@ -201,7 +201,7 @@ async def generate_dm(session, semaphore, i, total, lead, openai_key, sb_url, sb
 
         if success:
             preview = dm_text[:80].replace("\n", " ")
-            print(f"  [{i+1}/{total}] @{handle} — {preview}...")
+            print(f"  [{i+1}/{total}] @{handle} - {preview}...")
             results["generated"] += 1
         else:
             results["errors"] += 1
@@ -275,12 +275,12 @@ async def main_async():
         print()
 
         if dry_run:
-            print("DRY RUN — would generate DMs for:")
+            print("DRY RUN - would generate DMs for:")
             for lead in eligible[:limit]:
                 handle = lead.get("instagram_handle", "?")
                 name = lead.get("full_name", "")
                 bio_preview = (lead.get("bio") or "")[:60]
-                print(f"  @{handle} ({name}) — {bio_preview}")
+                print(f"  @{handle} ({name}) - {bio_preview}")
             return
 
         semaphore = asyncio.Semaphore(10)

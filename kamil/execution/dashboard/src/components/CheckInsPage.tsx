@@ -61,7 +61,7 @@ function DeltaBadge({ current, previous, unit, inverse }: { current: number; pre
   const diff = current - previous;
   const isGood = inverse ? diff < 0 : diff > 0;
   const isBad = inverse ? diff > 0 : diff < 0;
-  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>—</span>;
+  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>-</span>;
   const color = isGood ? 'var(--accent-success)' : isBad ? 'var(--accent-danger)' : 'var(--text-tertiary)';
   const Icon = diff > 0 ? TrendingUp : TrendingDown;
   return (
@@ -397,7 +397,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         style={{ overflow: 'hidden' }}
                       >
                         <div style={styles.expandedContent}>
-                          {/* Missed check-in — simplified view */}
+                          {/* Missed check-in - simplified view */}
                           {ci.status === 'missed' ? (
                             <>
                               <div style={styles.missedBanner}>
@@ -407,7 +407,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                     {t.checkIns.missedCheckIn(ci.clientName)}
                                   </div>
                                   <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                    {t.checkIns.dueOn} {new Date(ci.date).toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })} — {t.checkIns.noDataSubmitted}
+                                    {t.checkIns.dueOn} {new Date(ci.date).toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })} - {t.checkIns.noDataSubmitted}
                                   </div>
                                 </div>
                               </div>
@@ -430,7 +430,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           <div style={{ ...styles.comparisonGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             {/* This Week */}
                             <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>{t.checkIns.thisWeek} — {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</div>
+                              <div style={styles.comparisonLabel}>{t.checkIns.thisWeek} - {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</div>
                               <div style={styles.metricsGrid}>
                                 {ci.weight != null && (
                                   <div style={styles.metricCell}>
@@ -658,7 +658,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Action bar — pending check-ins */}
+                          {/* Action bar - pending check-ins */}
                           {ci.reviewStatus === 'pending' && (
                             <div style={styles.actionBar}>
                               <textarea
@@ -668,7 +668,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 style={styles.feedbackInput}
                                 rows={2}
                               />
-                              {/* Flag input — only shown when toggled */}
+                              {/* Flag input - only shown when toggled */}
                               {showFlagInput === ci.id && (
                                 <div style={styles.flagRow}>
                                   <Flag size={13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -721,7 +721,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Action bar — flagged check-ins */}
+                          {/* Action bar - flagged check-ins */}
                           {ci.reviewStatus === 'flagged' && (
                             <div style={styles.actionBar}>
                               <textarea
@@ -746,7 +746,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Reviewed — just view + message shortcuts */}
+                          {/* Reviewed - just view + message shortcuts */}
                           {ci.reviewStatus === 'reviewed' && (
                             <div style={styles.actionButtons}>
                               <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>{t.checkIns.viewProfile}</button>

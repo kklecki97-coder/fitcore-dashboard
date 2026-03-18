@@ -20,7 +20,7 @@ async function run() {
     args: ['--no-sandbox'],
   });
 
-  // Single page — login once, reuse session
+  // Single page - login once, reuse session
   const page = await browser.newPage();
   await page.goto('https://app.fitcore.tech/', { waitUntil: 'networkidle2', timeout: 30000 });
   await page.waitForSelector('input[type="email"]', { timeout: 10000 });

@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore App — Supabase Schema
+-- FitCore App - Supabase Schema
 -- Run this in Supabase SQL Editor
 -- ============================================================
 

@@ -14,7 +14,7 @@ import type { Lang } from './i18n';
 import { useAuth } from './auth';
 
 /* ═══════════════════════════════════════════════════════════
-   FitCore Demo Landing Page — Identity-Driven Redesign
+   FitCore Demo Landing Page - Identity-Driven Redesign
    Positioning: Custom-built platforms for elite fitness coaches
    ═══════════════════════════════════════════════════════════ */
 
@@ -395,7 +395,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          HERO — IDENTITY-DRIVEN
+          HERO - IDENTITY-DRIVEN
          ════════════════════════════════════════════════════════ */}
       <motion.div ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}>
         <section style={{
@@ -490,7 +490,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          THE REAL PROBLEM — EMOTIONAL, NOT OPERATIONAL
+          THE REAL PROBLEM - EMOTIONAL, NOT OPERATIONAL
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
@@ -506,7 +506,7 @@ export default function App() {
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 20,
           }} className="pain-cards-grid">
-            {/* Card 1 — The Admin Trap */}
+            {/* Card 1 - The Admin Trap */}
             <GlassCard delay={0} style={{ padding: '32px' }}>
               <div style={{
                 width: 48, height: 48, borderRadius: 'var(--radius-md)',
@@ -524,7 +524,7 @@ export default function App() {
               </p>
             </GlassCard>
 
-            {/* Card 2 — The Perception Gap (slightly elevated) */}
+            {/* Card 2 - The Perception Gap (slightly elevated) */}
             <GlassCard delay={0.1} style={{
               padding: '36px 32px',
               border: '1px solid rgba(245, 158, 11, 0.2)',
@@ -546,7 +546,7 @@ export default function App() {
               </p>
             </GlassCard>
 
-            {/* Card 3 — The Invisible Ceiling (climax — strongest styling) */}
+            {/* Card 3 - The Invisible Ceiling (climax - strongest styling) */}
             <GlassCard delay={0.2} style={{
               padding: '36px 32px',
               border: '1px solid rgba(99, 102, 241, 0.3)',
@@ -574,7 +574,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          COACH DASHBOARD — SCREENSHOT CAROUSEL
+          COACH DASHBOARD - SCREENSHOT CAROUSEL
          ════════════════════════════════════════════════════════ */}
       <Section id="features">
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 40px' }}>
@@ -621,7 +621,7 @@ export default function App() {
       </Section>
 
       {/* ════════════════════════════════════════════════════════
-          THE COST — WHAT DISORGANIZATION ACTUALLY COSTS YOU
+          THE COST - WHAT DISORGANIZATION ACTUALLY COSTS YOU
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
@@ -713,7 +713,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          FEATURE ROWS — ALTERNATING IMAGE + TEXT
+          FEATURE ROWS - ALTERNATING IMAGE + TEXT
          ════════════════════════════════════════════════════════ */}
 
       {/* Feature 1: Client Management */}
@@ -755,7 +755,7 @@ export default function App() {
         </div>
       </Section>
 
-      {/* Feature 2: Unified Inbox — reversed */}
+      {/* Feature 2: Unified Inbox - reversed */}
       <Section>
         <div style={{
           maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px',
@@ -833,7 +833,7 @@ export default function App() {
         </div>
       </Section>
 
-      {/* Feature 4: Analytics — reversed */}
+      {/* Feature 4: Analytics - reversed */}
       <Section>
         <div style={{
           maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px',
@@ -875,7 +875,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          CLOSING SECTION 1 — THE FORK IN THE ROAD
+          CLOSING SECTION 1 - THE FORK IN THE ROAD
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
@@ -891,7 +891,7 @@ export default function App() {
             borderRadius: 'var(--radius-lg)', overflow: 'hidden',
             border: '1px solid var(--glass-border)',
           }} className="fork-grid">
-            {/* Left — staying put */}
+            {/* Left - staying put */}
             <div style={{
               padding: '48px 40px',
               background: 'linear-gradient(160deg, rgba(239, 68, 68, 0.06) 0%, rgba(7, 9, 14, 0.95) 100%)',
@@ -919,7 +919,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right — with FitCore */}
+            {/* Right - with FitCore */}
             <div style={{
               padding: '48px 40px',
               background: 'linear-gradient(160deg, rgba(0, 229, 200, 0.06) 0%, rgba(7, 9, 14, 0.95) 100%)',
@@ -995,7 +995,7 @@ export default function App() {
               display: 'grid', gridTemplateColumns: '1fr 1fr',
             }} className="pricing-inner-grid">
 
-              {/* Left — price block */}
+              {/* Left - price block */}
               <div style={{
                 padding: '52px 48px',
                 borderRight: '1px solid var(--glass-border)',
@@ -1088,7 +1088,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Right — what's included */}
+              {/* Right - what's included */}
               <div style={{ padding: '52px 48px' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 28 }}>
                   {t.pricing.includedLabel}
@@ -1147,7 +1147,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          NEWSLETTER — EMAIL CAPTURE
+          NEWSLETTER - EMAIL CAPTURE
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 24px 100px', textAlign: 'center' }}>

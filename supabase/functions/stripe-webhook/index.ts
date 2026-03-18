@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
-// No CORS needed — Stripe calls this server-to-server
+// No CORS needed - Stripe calls this server-to-server
 // Deploy with: supabase functions deploy stripe-webhook --no-verify-jwt
 
 Deno.serve(async (req) => {

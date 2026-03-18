@@ -22,7 +22,7 @@ function NumberStepper({ value, onChange, min, max, step = 1, placeholder }: {
 
   const adjust = (dir: 1 | -1) => {
     if (numVal === null) {
-      // Empty field — use placeholder as starting value, fall back to sensible defaults
+      // Empty field - use placeholder as starting value, fall back to sensible defaults
       const initial = placeholder ? parseFloat(placeholder) : (dir === 1 ? (min ?? 0) : (max ?? 0));
       onChange(String(initial));
     } else {
@@ -129,7 +129,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
     { label: 'Back', key: 'back', displayLabel: t.checkIn.back },
   ];
 
-  // Dynamic "Other" slots — one empty slot always shows at the end (max 5 extras)
+  // Dynamic "Other" slots - one empty slot always shows at the end (max 5 extras)
   const otherPhotos = photos.filter(p => p.label.startsWith('Other'));
   const maxOtherSlots = 5;
   const otherSlotCount = Math.min(otherPhotos.length + 1, maxOtherSlots);

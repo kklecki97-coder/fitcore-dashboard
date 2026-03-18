@@ -14,7 +14,7 @@ interface ProgressPageProps {
   checkIns: CheckIn[];
 }
 
-// @ts-ignore — workoutLogs scaffolded for future workout-based progress metrics
+// @ts-ignore - workoutLogs scaffolded for future workout-based progress metrics
 export default function ProgressPage({ client, workoutLogs, checkIns }: ProgressPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
@@ -55,7 +55,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const weightData = sliceByPeriod(allWeightData);
   const bodyFatData = sliceByPeriod(allBodyFatData);
 
-  // Progress photos — check-in photos from DB
+  // Progress photos - check-in photos from DB
   const checkInPhotos = checkIns
     .filter(ci => ci.photos && ci.photos.length > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -81,7 +81,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     { name: 'Deadlift', values: metrics.deadlift, unit: 'kg' },
   ];
 
-  // ── Goal progress — handle empty data gracefully ──
+  // ── Goal progress - handle empty data gracefully ──
   const parseTarget = (text: string): number | null => {
     const match = text.match(/(\d+(?:\.\d+)?)\s*kg/i) || text.match(/(\d+(?:\.\d+)?)/);
     return match ? parseFloat(match[1]) : null;
@@ -132,7 +132,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
       const current = latestCI?.steps ?? 0;
       return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current.toLocaleString()} / ${target.toLocaleString()}` };
     }
-    // Generic goals (Lose Weight, Build Muscle, etc.) — show as in progress
+    // Generic goals (Lose Weight, Build Muscle, etc.) - show as in progress
     return { goal, progress: 0, label: t.progress.inProgress };
   });
 
@@ -159,7 +159,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
               <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={styles.liftCard}>
                 <div style={styles.liftName}>{lift.name}</div>
                 <div style={styles.liftValue}>
-                  {current !== null ? current : '—'}<span style={styles.liftUnit}>{lift.unit}</span>
+                  {current !== null ? current : '-'}<span style={styles.liftUnit}>{lift.unit}</span>
                 </div>
                 {totalGain > 0 && (
                   <div style={styles.liftGain}>
@@ -284,7 +284,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
         </GlassCard>
       )}
 
-      {/* ── 4. PROGRESS PHOTOS — Before / Current ── */}
+      {/* ── 4. PROGRESS PHOTOS - Before / Current ── */}
       <GlassCard delay={0.35}>
         <div style={styles.photosHeader}>
           <Camera size={16} color="var(--accent-primary)" />

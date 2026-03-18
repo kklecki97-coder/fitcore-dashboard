@@ -63,7 +63,7 @@ export default function WorkoutProgramsPage({
       // and use onUpdateProgram to mark it as template
       const source = programs.find(p => p.id === id);
       if (!source) return;
-      // Find the copy by name suffix — it was just created by onDuplicateProgram
+      // Find the copy by name suffix - it was just created by onDuplicateProgram
       const copy = [...programs].reverse().find(p => p.name === `${source.name} (Copy)`);
       if (copy) {
         onUpdateProgram(copy.id, { isTemplate: true, name: `${source.name} (Template)` });

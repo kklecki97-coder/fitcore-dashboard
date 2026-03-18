@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore — Schema fixes v2
+-- FitCore - Schema fixes v2
 -- Run this in Supabase SQL Editor
 -- Fixes: #2 invite_codes RLS, #3 indexes on FK columns,
 --         #16 invite_codes.used_by ON DELETE SET NULL

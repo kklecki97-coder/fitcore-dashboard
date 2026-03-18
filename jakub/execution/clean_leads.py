@@ -1,5 +1,5 @@
 """
-clean_leads.py — Clean raw Apify leads and format for Instantly upload.
+clean_leads.py - Clean raw Apify leads and format for Instantly upload.
 
 Usage:
     python3 jakub/execution/clean_leads.py jakub/.tmp/raw_leads_batch1.csv
@@ -60,7 +60,7 @@ def check_reject(row):
     if not is_valid_email(email):
         return "no_email"
 
-    # Check industry — reject non-fitness
+    # Check industry - reject non-fitness
     industry = (row.get("industry", "") or "").lower()
     if industry and "fitness" not in industry and "health" not in industry and "wellness" not in industry:
         # Check if job title saves it

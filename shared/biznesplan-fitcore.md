@@ -3,11 +3,11 @@
 
 ---
 
-**Nazwa planowanej działalności:** FitCore — platforma SaaS do zarządzania biznesem trenerskim
+**Nazwa planowanej działalności:** FitCore - platforma SaaS do zarządzania biznesem trenerskim
 
 **Forma prawna:** Jednoosobowa działalność gospodarcza
 
-**Kod PKD:** 62.01.Z — Działalność związana z oprogramowaniem
+**Kod PKD:** 62.01.Z - Działalność związana z oprogramowaniem
 
 **Wnioskowana kwota dofinansowania:** 30 000,00 PLN
 
@@ -36,7 +36,7 @@
 
 FitCore to platforma typu SaaS (Software as a Service) skierowana do trenerów personalnych i coachów fitness, którzy prowadzą działalność stacjonarną lub online. Aplikacja webowa umożliwia kompleksowe zarządzanie biznesem trenerskim w jednym miejscu: prowadzenie bazy klientów, tworzenie programów treningowych, śledzenie postępów, komunikację wielokanałową (WhatsApp, Telegram, e-mail, Instagram), fakturowanie i analitykę biznesową.
 
-Branża fitness w Polsce dynamicznie się rozwija — w kraju działa ok. 2 760 klubów fitness, z których korzysta 3,1 mln Polaków, a ok. 7 000 trenerów personalnych prowadzi aktywną praktykę zawodową. Jednocześnie większość trenerów zarządza swoim biznesem przy użyciu arkuszy kalkulacyjnych, notatek w telefonie i rozproszonych aplikacji do komunikacji. FitCore rozwiązuje ten problem, oferując jedno zintegrowane narzędzie.
+Branża fitness w Polsce dynamicznie się rozwija - w kraju działa ok. 2 760 klubów fitness, z których korzysta 3,1 mln Polaków, a ok. 7 000 trenerów personalnych prowadzi aktywną praktykę zawodową. Jednocześnie większość trenerów zarządza swoim biznesem przy użyciu arkuszy kalkulacyjnych, notatek w telefonie i rozproszonych aplikacji do komunikacji. FitCore rozwiązuje ten problem, oferując jedno zintegrowane narzędzie.
 
 Model biznesowy opiera się na miesięcznej subskrypcji w trzech planach cenowych (od 199 PLN do 799 PLN miesięcznie), co zapewnia przewidywalne, powtarzalne przychody. Wnioskowane środki w kwocie 30 000 PLN zostaną przeznaczone na zakup sprzętu komputerowego, oprogramowania, infrastruktury serwerowej oraz działania marketingowe niezbędne do uruchomienia działalności.
 
@@ -48,7 +48,7 @@ Działalność wpisuje się w strategię cyfryzacji polskiej gospodarki, tworzy 
 
 ### 2.1 Przedmiot działalności
 
-Przedmiotem działalności jest projektowanie, rozwijanie i komercjalizacja platformy internetowej FitCore — aplikacji webowej typu SaaS dedykowanej trenerom personalnym, coachom fitness i właścicielom małych studiów treningowych.
+Przedmiotem działalności jest projektowanie, rozwijanie i komercjalizacja platformy internetowej FitCore - aplikacji webowej typu SaaS dedykowanej trenerom personalnym, coachom fitness i właścicielom małych studiów treningowych.
 
 ### 2.2 Zakres funkcjonalny platformy
 
@@ -128,10 +128,10 @@ Polska branża fitness jest jedną z najdynamiczniej rozwijających się w Europ
 
 Pandemia COVID-19 trwale zmieniła branżę fitness. Trening personalny przeniósł się częściowo do internetu, a model hybrydowy (łączący formę online i stacjonarną) stał się standardem. W 2025 roku najważniejsze trendy to:
 
-- **Coaching hybrydowy** — łączenie sesji online z treningami na siłowni
-- **Personalizacja oparta na danych** — wykorzystanie urządzeń wearables i analityki
-- **Treningi funkcjonalne** — rosnące zainteresowanie zdrowym ruchem
-- **Specjalizacja niszowa** — trenerzy skupiają się na konkretnych grupach (seniorzy, kobiety po ciąży, sportowcy)
+- **Coaching hybrydowy** - łączenie sesji online z treningami na siłowni
+- **Personalizacja oparta na danych** - wykorzystanie urządzeń wearables i analityki
+- **Treningi funkcjonalne** - rosnące zainteresowanie zdrowym ruchem
+- **Specjalizacja niszowa** - trenerzy skupiają się na konkretnych grupach (seniorzy, kobiety po ciąży, sportowcy)
 
 ### 3.3 Globalny rynek oprogramowania fitness
 
@@ -212,17 +212,17 @@ FitCore wypełnia lukę na rynku jako **pierwsze polskie, kompleksowe rozwiązan
 
 FitCore wyróżnia się od konkurencji w następujących obszarach:
 
-1. **Kompletność** — Klienci, treningi, płatności, komunikacja, analityka w jednym miejscu. Trener nie musi korzystać z 5 różnych aplikacji.
+1. **Kompletność** - Klienci, treningi, płatności, komunikacja, analityka w jednym miejscu. Trener nie musi korzystać z 5 różnych aplikacji.
 
-2. **Zunifikowana komunikacja** — Telegram, WhatsApp, e-mail i Instagram w jednej skrzynce odbiorczej. Żaden konkurent nie oferuje takiego zakresu integracji komunikacyjnych.
+2. **Zunifikowana komunikacja** - Telegram, WhatsApp, e-mail i Instagram w jednej skrzynce odbiorczej. Żaden konkurent nie oferuje takiego zakresu integracji komunikacyjnych.
 
-3. **Inteligentna analityka** — Automatyczne raporty AI wykrywają klientów zagrożonych rezygnacją, monitorują trendy przychodów i sugerują działania optymalizacyjne.
+3. **Inteligentna analityka** - Automatyczne raporty AI wykrywają klientów zagrożonych rezygnacją, monitorują trendy przychodów i sugerują działania optymalizacyjne.
 
-4. **Nowoczesny design** — Interfejs w stylu premium (dark luxe futuristic), responsywny i intuicyjny. Trenerzy mogą być dumni z narzędzia, którego używają.
+4. **Nowoczesny design** - Interfejs w stylu premium (dark luxe futuristic), responsywny i intuicyjny. Trenerzy mogą być dumni z narzędzia, którego używają.
 
-5. **Konkurencyjna cena** — Niższe koszty wytworzenia w Polsce pozwalają oferować platformę w cenie 40–60% niższej niż rozwiązania anglosaskie przy porównywalnej funkcjonalności.
+5. **Konkurencyjna cena** - Niższe koszty wytworzenia w Polsce pozwalają oferować platformę w cenie 40–60% niższej niż rozwiązania anglosaskie przy porównywalnej funkcjonalności.
 
-6. **Skalowalność** — Platforma jest przygotowana na obsługę rynków międzynarodowych (wielojęzyczność, obsługa wielu walut).
+6. **Skalowalność** - Platforma jest przygotowana na obsługę rynków międzynarodowych (wielojęzyczność, obsługa wielu walut).
 
 ---
 
@@ -240,7 +240,7 @@ FitCore wyróżnia się od konkurencji w następujących obszarach:
 - Blog na stronie z treściami SEO (np. „Jak zarządzać klientami fitness online")
 - Współpraca z influencerami fitness w Polsce (micro-influencerzy, 5 000–50 000 followersów)
 - Program poleceń: 1 miesiąc gratis za każdego poleconego klienta
-- Obecność na branżowych targach fitness (np. FIWE — Fitness Integracja Wellness Energia)
+- Obecność na branżowych targach fitness (np. FIWE - Fitness Integracja Wellness Energia)
 
 **Faza 3 (miesiące 9–24): Skalowanie**
 - Płatna reklama: Google Ads, Facebook/Instagram Ads z targetowaniem na trenerów
@@ -334,15 +334,15 @@ Wnioskowane środki w kwocie 30 000 PLN zostaną przeznaczone wyłącznie na zak
 
 | Lp. | Pozycja | Kwota (PLN) | Uzasadnienie |
 |-----|---------|-------------|--------------|
-| 1 | Laptop do programowania (min. 16GB RAM, SSD 512GB, procesor i7/Ryzen 7) | 6 000 | Główne narzędzie pracy — projektowanie, programowanie i testowanie platformy |
+| 1 | Laptop do programowania (min. 16GB RAM, SSD 512GB, procesor i7/Ryzen 7) | 6 000 | Główne narzędzie pracy - projektowanie, programowanie i testowanie platformy |
 | 2 | Monitor zewnętrzny 27" 4K | 1 500 | Zwiększenie produktywności przy projektowaniu interfejsu użytkownika |
 | 3 | Urządzenia peryferyjne (klawiatura mechaniczna, mysz ergonomiczna, słuchawki z mikrofonem) | 800 | Ergonomia stanowiska pracy i komunikacja z klientami |
-| 4 | Licencje oprogramowania deweloperskiego (Figma Pro, JetBrains IDE, GitHub Pro) — 12 miesięcy | 2 500 | Narzędzia niezbędne do projektowania i wytwarzania oprogramowania |
-| 5 | Domena internetowa, certyfikat SSL, usługa hostingowa — 12 miesięcy | 1 200 | Infrastruktura techniczna platformy dostępnej publicznie |
-| 6 | Infrastruktura serwerowa: baza danych, API, CDN — 12 miesięcy | 3 000 | Backend platformy: przechowywanie danych klientów, obsługa zapytań |
+| 4 | Licencje oprogramowania deweloperskiego (Figma Pro, JetBrains IDE, GitHub Pro) - 12 miesięcy | 2 500 | Narzędzia niezbędne do projektowania i wytwarzania oprogramowania |
+| 5 | Domena internetowa, certyfikat SSL, usługa hostingowa - 12 miesięcy | 1 200 | Infrastruktura techniczna platformy dostępnej publicznie |
+| 6 | Infrastruktura serwerowa: baza danych, API, CDN - 12 miesięcy | 3 000 | Backend platformy: przechowywanie danych klientów, obsługa zapytań |
 | 7 | Materiały marketingowe: projekt graficzny materiałów, zdjęcia stockowe, szablony | 2 000 | Profesjonalna komunikacja wizualna marki |
-| 8 | Usługi księgowe — opłata za założenie i pierwsze 3 miesiące | 1 500 | Prawidłowe prowadzenie dokumentacji finansowej od początku działalności |
-| 9 | Kampanie reklamowe online (Google Ads, Meta Ads) — budżet na pierwsze 6 miesięcy | 5 000 | Pozyskanie pierwszych płacących klientów platformy |
+| 8 | Usługi księgowe - opłata za założenie i pierwsze 3 miesiące | 1 500 | Prawidłowe prowadzenie dokumentacji finansowej od początku działalności |
+| 9 | Kampanie reklamowe online (Google Ads, Meta Ads) - budżet na pierwsze 6 miesięcy | 5 000 | Pozyskanie pierwszych płacących klientów platformy |
 | 10 | Sprzęt do tworzenia materiałów video (mikrofon USB, kamerka HD, oświetlenie LED) | 1 500 | Nagrywanie tutoriali, materiałów szkoleniowych i treści marketingowych |
 | 11 | Rezerwa na nieprzewidziane wydatki inwestycyjne | 5 000 | Zabezpieczenie na dodatkowe potrzeby sprzętowe lub licencyjne |
 | | **RAZEM** | **30 000** | |
@@ -461,12 +461,12 @@ FitCore to innowacyjny produkt technologiczny, który odpowiada na realne potrze
 
 Kluczowe atuty planowanej działalności:
 
-- **Innowacyjność** — Pierwsze polskie, kompleksowe narzędzie SaaS dla trenerów personalnych
-- **Skalowalność** — Model subskrypcyjny z potencjałem globalnej ekspansji
-- **Niskie koszty stałe** — Działalność oparta na pracy własnej, infrastruktura w chmurze
-- **Potencjał tworzenia miejsc pracy** — W perspektywie 18–24 miesięcy planowane zatrudnienie programisty/wsparcia technicznego
-- **Wkład w cyfrową gospodarkę** — Tworzenie polskiego produktu technologicznego konkurencyjnego na rynkach międzynarodowych
-- **Szybki zwrot z inwestycji** — Punkt rentowności już przy 5 klientach, osiągalny w 5. miesiącu działalności
+- **Innowacyjność** - Pierwsze polskie, kompleksowe narzędzie SaaS dla trenerów personalnych
+- **Skalowalność** - Model subskrypcyjny z potencjałem globalnej ekspansji
+- **Niskie koszty stałe** - Działalność oparta na pracy własnej, infrastruktura w chmurze
+- **Potencjał tworzenia miejsc pracy** - W perspektywie 18–24 miesięcy planowane zatrudnienie programisty/wsparcia technicznego
+- **Wkład w cyfrową gospodarkę** - Tworzenie polskiego produktu technologicznego konkurencyjnego na rynkach międzynarodowych
+- **Szybki zwrot z inwestycji** - Punkt rentowności już przy 5 klientach, osiągalny w 5. miesiącu działalności
 
 Wnioskowane środki w kwocie 30 000 PLN stanowią fundament niezbędny do profesjonalnego uruchomienia działalności i pozyskania pierwszych płacących klientów. Konserwatywna prognoza finansowa wskazuje na rentowność działalności od pierwszego roku i znaczący wzrost przychodów w roku drugim.
 

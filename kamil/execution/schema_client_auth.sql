@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore — Client Auth Migration
+-- FitCore - Client Auth Migration
 -- Adds auth_user_id to clients + RLS policies for client access
 -- Run this in Supabase SQL Editor
 -- ============================================================

@@ -378,7 +378,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                       style={{ overflow: 'hidden' }}
                     >
                       <div style={styles.historySection}>
-                        <div style={styles.historyLabel}>Payment History — {inv.clientName}</div>
+                        <div style={styles.historyLabel}>Payment History - {inv.clientName}</div>
                         {clientHistory.map(h => {
                           const hsc = statusColors[h.status];
                           return (
@@ -394,7 +394,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                                 </span>
                               </span>
                               <span style={{ ...styles.td, flex: 1, fontSize: '14px', color: 'var(--text-tertiary)' }}>
-                                {h.paidDate ? `Paid ${new Date(h.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : h.status === 'overdue' ? 'Overdue' : '—'}
+                                {h.paidDate ? `Paid ${new Date(h.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : h.status === 'overdue' ? 'Overdue' : '-'}
                               </span>
                             </div>
                           );

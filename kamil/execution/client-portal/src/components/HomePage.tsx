@@ -15,9 +15,9 @@ const WORKOUT_COLORS = [
   { r: 20, g: 184, b: 166 },   // teal
 ];
 
-// Same label extraction as CalendarPage — group same workout types to same color
+// Same label extraction as CalendarPage - group same workout types to same color
 const extractLabel = (name: string): string => {
-  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–—:]\s*/i, '');
+  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–-:]\s*/i, '');
   const s = stripped.toLowerCase();
   if (s.includes('push')) return 'Push';
   if (s.includes('pull')) return 'Pull';
@@ -51,14 +51,14 @@ interface HomePageProps {
   onUpdateSchedule: (assignments: Record<string, string>) => void;
 }
 
-// @ts-ignore — onUpdateSchedule scaffolded for weekly schedule feature
+// @ts-ignore - onUpdateSchedule scaffolded for weekly schedule feature
 export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule }: HomePageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
 
   const [showAllWeeks, setShowAllWeeks] = useState(false);
 
-  // ── Workout color map — same workout types share a color ──
+  // ── Workout color map - same workout types share a color ──
   const dayColorMap: Record<string, number> = {};
   if (program) {
     const labelToColor: Record<string, number> = {};
@@ -175,19 +175,19 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
     if (currentWeek === 0 && program) {
       const startDate = new Date(program.createdAt + 'T00:00:00');
       const daysUntil = Math.ceil((startDate.getTime() - Date.now()) / 86400000);
-      if (daysUntil <= 1) return 'Your program starts tomorrow — get ready!';
-      if (daysUntil <= 7) return `Your program begins in ${daysUntil} days — time to prepare`;
-      return 'New program coming soon — stay ready';
+      if (daysUntil <= 1) return 'Your program starts tomorrow - get ready!';
+      if (daysUntil <= 7) return `Your program begins in ${daysUntil} days - time to prepare`;
+      return 'New program coming soon - stay ready';
     }
     const remaining = totalTrainingDays - completedThisWeek;
     const perfectWeeks = recentWeeks.filter(w => w.completed >= w.target).length;
-    if (completedThisWeek >= totalTrainingDays && totalTrainingDays > 0) return 'Perfect week — you crushed it!';
+    if (completedThisWeek >= totalTrainingDays && totalTrainingDays > 0) return 'Perfect week - you crushed it!';
     if (remaining === 1) return '1 workout away from a perfect week';
-    if (perfectWeeks >= 3) return 'You\'re on a roll — ' + perfectWeeks + ' perfect weeks';
-    if (client.streak >= 10) return client.streak + ' workouts straight — keep the fire alive';
-    if (weightChange < 0) return Math.abs(weightChange).toFixed(1) + 'kg down — the work is paying off';
-    if (completedThisWeek > 0) return 'You\'re ahead of schedule — keep pushing';
-    return 'New week, new gains — let\'s go';
+    if (perfectWeeks >= 3) return 'You\'re on a roll - ' + perfectWeeks + ' perfect weeks';
+    if (client.streak >= 10) return client.streak + ' workouts straight - keep the fire alive';
+    if (weightChange < 0) return Math.abs(weightChange).toFixed(1) + 'kg down - the work is paying off';
+    if (completedThisWeek > 0) return 'You\'re ahead of schedule - keep pushing';
+    return 'New week, new gains - let\'s go';
   })();
 
   // ── Latest coach message ──
@@ -406,7 +406,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
           {/* Motivational line */}
           <div style={styles.motiveLine}>{motiveLine}</div>
 
-          {/* Weekly consistency — collapsed: last 4 with dots, expanded: grid of squares */}
+          {/* Weekly consistency - collapsed: last 4 with dots, expanded: grid of squares */}
           {!showAllWeeks ? (
             <div style={styles.consistencyRow}>
               {recentWeeks.map((w) => {
@@ -473,7 +473,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                       ...styles.weekSquareSub,
                       color: w.isFuture ? 'var(--text-tertiary)' : isPerfect ? 'var(--accent-success)' : w.isCurrent ? 'var(--accent-primary)' : 'var(--text-tertiary)',
                     }}>
-                      {w.isFuture ? '—' : `${w.completed}/${w.target}`}
+                      {w.isFuture ? '-' : `${w.completed}/${w.target}`}
                     </span>
                   </div>
                 );

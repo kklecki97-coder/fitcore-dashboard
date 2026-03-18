@@ -47,7 +47,7 @@ interface OverviewPageProps {
   onNavigate: (page: 'messages' | 'clients') => void;
 }
 
-// @ts-ignore — checkIns prop scaffolded for upcoming overview widgets
+// @ts-ignore - checkIns prop scaffolded for upcoming overview widgets
 export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
@@ -90,7 +90,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100)
     : 0;
 
-  // At-risk: based on real data — paused, no workouts in 7 days, or overdue check-in
+  // At-risk: based on real data - paused, no workouts in 7 days, or overdue check-in
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
@@ -101,7 +101,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     const recentWorkouts = workoutLogs.filter(w => w.clientId === c.id && w.date >= sevenDaysAgoStr);
     if (recentWorkouts.length === 0) return true;
     // Overdue check-in
-    if (c.nextCheckIn && c.nextCheckIn !== '—') {
+    if (c.nextCheckIn && c.nextCheckIn !== '-') {
       const checkInDate = new Date(c.nextCheckIn);
       checkInDate.setHours(0, 0, 0, 0);
       if (checkInDate < today) return true;
@@ -109,18 +109,18 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     return false;
   });
 
-  // Pending check-ins: next check-in is today or overdue (not "—")
+  // Pending check-ins: next check-in is today or overdue (not "-")
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const pendingCheckIns = clients.filter(c => {
-    if (!c.nextCheckIn || c.nextCheckIn === '—') return false;
+    if (!c.nextCheckIn || c.nextCheckIn === '-') return false;
     const checkInDate = new Date(c.nextCheckIn);
     checkInDate.setHours(0, 0, 0, 0);
     return checkInDate <= today;
   });
 
 
-  // Daily quote — rotate by day of year
+  // Daily quote - rotate by day of year
   const dailyQuote = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
@@ -130,7 +130,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [new Date().toDateString(), t]);
 
-  // AI Summary — smart aggregation from real data
+  // AI Summary - smart aggregation from real data
   const insights = useMemo(() => {
     const items: { icon: React.ElementType; text: string; color: string }[] = [];
 
@@ -255,7 +255,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
           transition={{ duration: 0.4 }}
         >
           <span style={styles.quoteText}>"{dailyQuote.text}"</span>
-          <span style={styles.quoteAuthor}> — {dailyQuote.author}</span>
+          <span style={styles.quoteAuthor}> - {dailyQuote.author}</span>
         </motion.div>
         <GlassCard delay={0.1}>
           <div style={{ textAlign: 'center', padding: isMobile ? '32px 16px' : '48px 32px' }}>
@@ -348,7 +348,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      {/* Daily Motivation — Top of Page */}
+      {/* Daily Motivation - Top of Page */}
       <motion.div
         style={styles.quoteBar}
         initial={{ opacity: 0, y: -10 }}
@@ -356,7 +356,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         transition={{ duration: 0.4 }}
       >
         <span style={styles.quoteText}>"{dailyQuote.text}"</span>
-        <span style={styles.quoteAuthor}> — {dailyQuote.author}</span>
+        <span style={styles.quoteAuthor}> - {dailyQuote.author}</span>
       </motion.div>
 
       {/* Stat Cards Row */}
@@ -503,7 +503,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
                 if (client.status === 'paused') reasons.push(t.overview.paused);
                 const clientRecentWorkouts = workoutLogs.filter(w => w.clientId === client.id && w.date >= sevenDaysAgoStr);
                 if (clientRecentWorkouts.length === 0 && client.status !== 'paused') reasons.push(t.overview.noStreak);
-                if (client.nextCheckIn && client.nextCheckIn !== '—') {
+                if (client.nextCheckIn && client.nextCheckIn !== '-') {
                   const ciDate = new Date(client.nextCheckIn);
                   ciDate.setHours(0, 0, 0, 0);
                   if (ciDate < today) reasons.push(t.overview.overdueCheckIn ?? 'Overdue check-in');

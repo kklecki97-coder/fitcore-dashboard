@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════
--- Stripe Connect + Invoice Tracking — Run in Supabase SQL Editor
+-- Stripe Connect + Invoice Tracking - Run in Supabase SQL Editor
 -- ══════════════════════════════════════════════════════════════
 
 -- 1. Coach Stripe Connect fields

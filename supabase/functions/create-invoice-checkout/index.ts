@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
             price_data: {
               currency: "usd",
               product_data: {
-                name: `${invoice.plan || "Coaching"} Plan — ${invoice.period || "Monthly"}`,
+                name: `${invoice.plan || "Coaching"} Plan - ${invoice.period || "Monthly"}`,
               },
               unit_amount: amountCents,
             },

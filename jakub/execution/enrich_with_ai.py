@@ -1,5 +1,5 @@
 """
-enrich_with_ai.py — Use GPT-5-mini to enrich leads with AI insights (async, 20 concurrent).
+enrich_with_ai.py - Use GPT-5-mini to enrich leads with AI insights (async, 20 concurrent).
 
 Usage:
     python3 jakub/execution/enrich_with_ai.py [--limit 10] [--concurrency 20] [--rerun]
@@ -69,14 +69,14 @@ async def supabase_update(session, url, key, table, match_col, match_val, data):
 
 
 # --- SYSTEM PROMPT ---
-SYSTEM_PROMPT = """You write cold email opening lines for FitCore — we build custom client dashboards for fitness coaches.
+SYSTEM_PROMPT = """You write cold email opening lines for FitCore - we build custom client dashboards for fitness coaches.
 
 Your goal: write an opening line that makes the coach think "this person actually looked at my business."
 
 HARD RULES:
 1. Opening line: ONE conversational sentence, 8-20 words. Must sound like a real person typed it, not a bot pasting website copy.
 2. Pain point: ONE different sentence about a specific operational problem they likely have. Must be a DIFFERENT angle than the opening line. Keep it to ONE short sentence, max 20 words. No consultant-speak.
-3. ABSOLUTELY BANNED — if your output contains ANY of these, it is rejected:
+3. ABSOLUTELY BANNED - if your output contains ANY of these, it is rejected:
    *** "LOVE" IS THE #1 VIOLATION. NEVER start with "Love", "Love your", "Love how", "Love that". This is the single most common AI tell. Any line starting with "Love" = instant reject. ***
    *** "I checked", "I looked at", "I saw", "I noticed", "I came across" = SECOND MOST COMMON VIOLATION. Never start with "I [verb]". You are not telling them what YOU did. You are making an observation about THEIR business. ***
    Also banned: "I see", "Impressive", "Great to see", "Congrats", "must keep you busy", "that's no small feat", "sounds like", "how's it going", "how's that working", "exciting", "vibrant", "amazing", "fantastic", "wonderful", "curious how", "how do you currently", "right?", "no?"
@@ -84,10 +84,10 @@ HARD RULES:
    Ending with a question mark is DISCOURAGED. Statements are stronger than questions.
    Location-only: NEVER write "[Company] in [City]." as the entire line.
    Flattery or compliments about their business.
-   Punctuation: NEVER use em-dashes (—). Use commas, periods, or "..." instead.
+   Punctuation: NEVER use em-dashes (-). Use commas, periods, or "..." instead.
    NEVER paste program names in ALL CAPS or exactly as they appear on the website. Paraphrase naturally.
    NEVER write sentence fragments that read like bullet points.
-   NEVER start with lowercase "i" or "saw" — capitalize properly.
+   NEVER start with lowercase "i" or "saw" - capitalize properly.
 
 TONE: Write like a casual colleague, not a copywriter. Short, lowercase-feeling, no hype. Think "guy who checked out your site and is making a quick observation" not "marketer who scraped your data."
 
@@ -126,7 +126,7 @@ PAIN POINT RULES:
 - Be specific but don't make stuff up. If you don't know their exact setup, focus on what's typical for their type of business.
 - Keep it to one sentence.
 
-CONFIDENCE SCORING — BE STRICT. Default to 5, go UP only with strong evidence, go DOWN with red flags:
+CONFIDENCE SCORING - BE STRICT. Default to 5, go UP only with strong evidence, go DOWN with red flags:
 - 9-10 = PERFECT FIT: solo/small ONLINE coach, 20-50 clients, no CRM, charges $100-300/mo. Must have CLEAR evidence of online coaching + small operation. Very few leads deserve 9-10.
 - 7-8 = good fit: small team (1-5 people), online coaching OR strong online signals, some pain visible. Must be FITNESS-specific coaching.
 - 5-6 = unclear: could be a fit, not enough data to tell. THIS IS YOUR DEFAULT when data is ambiguous.
@@ -237,9 +237,9 @@ def build_prompt(lead):
 
     quality_note = ""
     if data_quality == "SPARSE":
-        quality_note = "\n\nDATA IS SPARSE — focus on their JOB TITLE and COMPANY NAME. These often reveal their niche (e.g. 'Gut Health & Fitness Coach' = niche worth mentioning, 'Master Personal Trainer/owner' = solo operator). DO NOT default to generic 'managing things through DMs and spreadsheets' — that's what every bad AI email says. Instead, find the ONE interesting thing about this lead and highlight it."
+        quality_note = "\n\nDATA IS SPARSE - focus on their JOB TITLE and COMPANY NAME. These often reveal their niche (e.g. 'Gut Health & Fitness Coach' = niche worth mentioning, 'Master Personal Trainer/owner' = solo operator). DO NOT default to generic 'managing things through DMs and spreadsheets' - that's what every bad AI email says. Instead, find the ONE interesting thing about this lead and highlight it."
     elif data_quality == "MODERATE":
-        quality_note = "\n\nDATA IS MODERATE — you have some info. Build the line around the ONE specific detail you have (a service, a tool, or something from their site description)."
+        quality_note = "\n\nDATA IS MODERATE - you have some info. Build the line around the ONE specific detail you have (a service, a tool, or something from their site description)."
 
     return f"""Write a cold email opening line and pain point for this lead.
 
@@ -267,8 +267,8 @@ def sanitize_ai_output(result):
     pp = result.get("pain_point", "") or ""
 
     # Fix em-dashes everywhere
-    ol = ol.replace(" —", ",").replace("— ", " ").replace("—", " - ")
-    pp = pp.replace(" —", ",").replace("— ", " ").replace("—", " - ")
+    ol = ol.replace(" -", ",").replace("- ", " ").replace("-", " - ")
+    pp = pp.replace(" -", ",").replace("- ", " ").replace("-", " - ")
 
     # Fix banned opening patterns
     banned_starts = [
@@ -345,7 +345,7 @@ async def enrich_lead(session, semaphore, i, total, lead, openai_key, sb_url, sb
         success = await supabase_update(session, sb_url, sb_key, "leads", "id", lead_id, update_data)
         if success:
             skip_flag = f" [SKIP: {skip_reason[:40]}]" if score_int < 4 and skip_reason else ""
-            print(f"  [{i+1}/{total}] {name} @ {company}... score={score}{skip_flag} — {result.get('opening_line', '')[:60]}")
+            print(f"  [{i+1}/{total}] {name} @ {company}... score={score}{skip_flag} - {result.get('opening_line', '')[:60]}")
             results["enriched"] += 1
             if score_int < 4:
                 results["skipped"] += 1

@@ -4,10 +4,10 @@
 Build a qualified lead list of online fitness coaches and convert them into dashboard clients.
 
 ## Related Directives
-- **`icp_and_sales_angle.md`** — Who exactly to target, pricing, the pitch, objection handling, segmentation
-- **`scrape_leads.md`** — Step-by-step scraping pipeline (Google Maps, Instagram, TikTok, Apollo), email verification, CSV format for Instantly
-- **`enrich_leads.md`** — Website scraping (Tavily) + AI personalization (GPT-5-mini) pipeline. Generates opening lines and pain points for emails.
-- **`cold_email_outreach.md`** — Instantly setup, 4-email sequence templates, sending schedule, legal compliance
+- **`icp_and_sales_angle.md`** - Who exactly to target, pricing, the pitch, objection handling, segmentation
+- **`scrape_leads.md`** - Step-by-step scraping pipeline (Google Maps, Instagram, TikTok, Apollo), email verification, CSV format for Instantly
+- **`enrich_leads.md`** - Website scraping (Tavily) + AI personalization (GPT-5-mini) pipeline. Generates opening lines and pain points for emails.
+- **`cold_email_outreach.md`** - Instantly setup, 4-email sequence templates, sending schedule, legal compliance
 
 ## Quick Summary
 
@@ -71,7 +71,7 @@ Denver, Nashville, Austin, Charlotte, San Diego, Tampa, Portland, Minneapolis, R
 
 ### Learnings
 - Apify Leads Finder is slow (~20-40 min for 5,000 leads) because it verifies emails
-- `count` parameter is a target, not a hard limit — actor may return more or fewer
+- `count` parameter is a target, not a hard limit - actor may return more or fewer
 - Actor can time out on large runs (default 3,000s). Use `--dataset` to resume from partial results
 - `email_status` must be lowercase array: `["validated"]`
 - City-based search avoids duplicates from national searches
@@ -90,7 +90,7 @@ python3 jakub/execution/find_and_enrich_leads.py --cities 2 --leads-per-city 50 
 python3 jakub/execution/find_and_enrich_leads.py --dataset Yc8vjXz4KCfq7g3lI
 ```
 
-## Before First Outreach — Checklist
+## Before First Outreach - Checklist
 - [x] Scrape first batch of leads (Apify Leads Finder)
 - [x] Push to Supabase + enrich (website scraping + AI)
 - [x] Push to Instantly campaign

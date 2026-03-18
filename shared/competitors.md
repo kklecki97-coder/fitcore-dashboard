@@ -27,4 +27,4 @@ Fitness coach software / platforms we're tracking for inspiration.
 - **Website:** mypthub.com
 - **Followers:** 7,545
 - **Bio:** The all-in-one software for personal trainers & fit pros looking for a better way to manage their business. 30 day FREE trial.
-- **Notes:** Found in our lead pipeline — direct competitor. All-in-one PT management positioning.
+- **Notes:** Found in our lead pipeline - direct competitor. All-in-one PT management positioning.

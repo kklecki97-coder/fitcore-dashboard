@@ -7,8 +7,8 @@ import { useAuth } from './auth';
 import { supabase } from './lib/supabase';
 
 /* ═══════════════════════════════════════════════════════════
-   FitCore Account Page — Dark luxe futuristic theme
-   Protected route — expects user to be non-null (ProtectedRoute wrapper)
+   FitCore Account Page - Dark luxe futuristic theme
+   Protected route - expects user to be non-null (ProtectedRoute wrapper)
    ═══════════════════════════════════════════════════════════ */
 
 export default function AccountPage() {
@@ -54,7 +54,7 @@ export default function AccountPage() {
     if (searchParams.get('payment') === 'success') {
       setPaymentSuccess(true);
       setSearchParams({}, { replace: true });
-      // Re-fetch coach data — webhook may not have fired yet, retry a few times
+      // Re-fetch coach data - webhook may not have fired yet, retry a few times
       const attempts = [1000, 3000, 6000];
       attempts.forEach(delay => setTimeout(() => refreshUser(), delay));
     }
@@ -152,7 +152,7 @@ export default function AccountPage() {
         setDeleteLoading(false);
         return;
       }
-      // Account deleted — sign out and go home
+      // Account deleted - sign out and go home
       logout();
       navigate(homeUrl);
     } catch {
@@ -812,7 +812,7 @@ export default function AccountPage() {
             </>
           ) : user.plan === 'cancelled' ? (
             <>
-              {/* Cancelled — show access-until date */}
+              {/* Cancelled - show access-until date */}
               {user.subscriptionEndsAt && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b92a5', marginBottom: 20 }}>
                   <Calendar size={13} style={{ opacity: 0.6 }} />
@@ -1145,7 +1145,7 @@ export default function AccountPage() {
             </a>
           </div>
 
-          {/* Log Out button — inside the card now */}
+          {/* Log Out button - inside the card now */}
           <button
             onClick={handleLogout}
             style={{

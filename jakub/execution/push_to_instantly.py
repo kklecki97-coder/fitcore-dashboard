@@ -1,10 +1,10 @@
 """
-push_to_instantly.py — Bulk push leads from Supabase to an Instantly campaign.
+push_to_instantly.py - Bulk push leads from Supabase to an Instantly campaign.
 
 Usage:
     python3 jakub/execution/push_to_instantly.py
 
-Uses the bulk endpoint (POST /api/v2/leads/add) — up to 1000 leads per request.
+Uses the bulk endpoint (POST /api/v2/leads/add) - up to 1000 leads per request.
 """
 import json, urllib.request, os, sys, time
 
@@ -128,7 +128,7 @@ if total_uploaded > 0:
         except Exception as e:
             print(f"  Failed batch {i}: {e}", flush=True)
 else:
-    print("\nNo leads uploaded — skipping Supabase update.", flush=True)
+    print("\nNo leads uploaded - skipping Supabase update.", flush=True)
 
 print(f"\n=== DONE ===", flush=True)
 print(f"Uploaded: {total_uploaded}", flush=True)

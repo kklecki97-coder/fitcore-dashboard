@@ -6,8 +6,8 @@ import { useLang } from './i18n';
 import { useAuth } from './auth';
 
 /* ═══════════════════════════════════════════════════════════
-   FitCore Account Page — Dark luxe futuristic theme
-   Protected route — expects user to be non-null (ProtectedRoute wrapper)
+   FitCore Account Page - Dark luxe futuristic theme
+   Protected route - expects user to be non-null (ProtectedRoute wrapper)
    ═══════════════════════════════════════════════════════════ */
 
 export default function AccountPage() {
@@ -897,7 +897,7 @@ export default function AccountPage() {
             </a>
           </div>
 
-          {/* Log Out button — inside the card now */}
+          {/* Log Out button - inside the card now */}
           <button
             onClick={handleLogout}
             style={{

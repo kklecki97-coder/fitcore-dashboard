@@ -4,7 +4,7 @@
 
 ## Goal
 
-Build modern, professional websites that don't look "AI vibecoded" — sites that feel custom-designed and branded for each coach.
+Build modern, professional websites that don't look "AI vibecoded" - sites that feel custom-designed and branded for each coach.
 
 ## Prerequisites
 
@@ -39,9 +39,9 @@ Reference this folder in your prompts or CLAUDE.md so Claude always has access. 
 Instead of building from scratch, find a high-quality reference site and clone its structure:
 
 **Where to find inspiration:**
-- **Dribbble** (dribbble.com) — design mockups
-- **Godly** (godly.website) — curated website designs
-- **Awwwards** (awwwards.com) — award-winning websites
+- **Dribbble** (dribbble.com) - design mockups
+- **Godly** (godly.website) - curated website designs
+- **Awwwards** (awwwards.com) - award-winning websites
 
 **How to clone a reference site:**
 1. Open the reference site in your browser
@@ -89,12 +89,12 @@ After the base site looks good, elevate it with high-quality individual componen
 3. Tell Claude Code exactly where to place it (e.g., "work in this background element right behind the hero text")
 4. Paste the component code after your instruction
 
-This is how you make a site feel unique — mix and match components from different sources rather than building everything from scratch.
+This is how you make a site feel unique - mix and match components from different sources rather than building everything from scratch.
 
 ### 6. Iterate in Small Steps
 
 - Get the overall feel/vibe right first with big structural changes
-- Then make small, nitpicky tweaks — these happen quickly once you have a working version
+- Then make small, nitpicky tweaks - these happen quickly once you have a working version
 - Use natural language feedback: describe what you see and what you want changed
 - Example: "The background is too distracting, the text is hard to read, make the animation less pixelated and more professional"
 
@@ -122,10 +122,10 @@ Add to CLAUDE.md or your prompt:
 
 Once the site looks good locally:
 
-1. **Push to GitHub** — version control, commit history, collaboration
-2. **Connect GitHub to Vercel** — sign up at vercel.com with your GitHub account
-3. **Auto-deploy** — every push to GitHub automatically deploys to Vercel
-4. **Custom domain** — configure in Vercel project settings → Domains
+1. **Push to GitHub** - version control, commit history, collaboration
+2. **Connect GitHub to Vercel** - sign up at vercel.com with your GitHub account
+3. **Auto-deploy** - every push to GitHub automatically deploys to Vercel
+4. **Custom domain** - configure in Vercel project settings → Domains
 
 **Key rule:** Local changes stay local until you explicitly say "push to GitHub." Vercel auto-deploys from GitHub, so only push when you're happy with the result.
 
@@ -146,15 +146,15 @@ Once the site looks good locally:
 
 ## Common Pitfalls
 
-1. **Not using the front-end design skill** — always invoke it, the quality difference is massive
-2. **Screenshot loop on animations** — turn it off for dynamic elements or Claude gets stuck
-3. **Pushing untested changes** — always preview on localhost first
-4. **Building from scratch** — clone a reference site first, then customize. Much faster and better results
-5. **Being too vague** — the more specific your feedback, the better the iteration
-6. **Forgetting brand assets** — always have logo + brand guidelines accessible
+1. **Not using the front-end design skill** - always invoke it, the quality difference is massive
+2. **Screenshot loop on animations** - turn it off for dynamic elements or Claude gets stuck
+3. **Pushing untested changes** - always preview on localhost first
+4. **Building from scratch** - clone a reference site first, then customize. Much faster and better results
+5. **Being too vague** - the more specific your feedback, the better the iteration
+6. **Forgetting brand assets** - always have logo + brand guidelines accessible
 
 ---
 
 ## Learnings
 
-- (Add learnings here as you build — API constraints, timing, edge cases, what worked, what didn't)
+- (Add learnings here as you build - API constraints, timing, edge cases, what worked, what didn't)

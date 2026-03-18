@@ -1,5 +1,5 @@
 """
-audit_dataset.py — Pull an Apify dataset and audit lead quality with strict positive-signal filtering.
+audit_dataset.py - Pull an Apify dataset and audit lead quality with strict positive-signal filtering.
 
 Usage:
     python3 jakub/execution/audit_dataset.py Yc8vjXz4KCfq7g3lI
@@ -25,7 +25,7 @@ def load_env(path=".env"):
     return env
 
 
-# Positive fitness signals — lead MUST match at least one
+# Positive fitness signals - lead MUST match at least one
 FITNESS_SIGNALS = [
     "personal trainer", "personal training", "fitness coach", "fitness coaching",
     "online coach", "online coaching", "nutrition coach", "nutrition coaching",
@@ -43,7 +43,7 @@ FITNESS_SIGNALS = [
     "trainer", "coaching clients", "1-on-1 training", "one on one training",
 ]
 
-# Company size cap — reject huge corporations
+# Company size cap - reject huge corporations
 MAX_COMPANY_SIZE = 100
 
 
@@ -163,7 +163,7 @@ def main():
         state = lead.get("state", "")
         size = lead.get("company_size", "")
         signals = lead.get("_matched_signals", [])
-        print(f"  {i}. {lead.get('first_name', '')} {lead.get('last_name', '')} — {title}")
+        print(f"  {i}. {lead.get('first_name', '')} {lead.get('last_name', '')} - {title}")
         print(f"     Company: {company} ({size} emp) | {city}, {state}")
         print(f"     Email: {email}")
         print(f"     Signals: {', '.join(signals[:5])}")
@@ -171,14 +171,14 @@ def main():
 
     # Show 10 random FAILED leads (to see what we're rejecting)
     print("=" * 60)
-    print(f"SAMPLE REJECTED LEADS — no fitness signal (10 random out of {len(failed_no_signal)})")
+    print(f"SAMPLE REJECTED LEADS - no fitness signal (10 random out of {len(failed_no_signal)})")
     print("=" * 60)
     sample_failed = random.sample(failed_no_signal, min(10, len(failed_no_signal)))
     for i, lead in enumerate(sample_failed, 1):
         title = lead.get("job_title", "")
         company = lead.get("company_name", "")
         size = lead.get("company_size", "")
-        print(f"  {i}. {lead.get('first_name', '')} {lead.get('last_name', '')} — {title}")
+        print(f"  {i}. {lead.get('first_name', '')} {lead.get('last_name', '')} - {title}")
         print(f"     Company: {company} ({size} emp)")
         print(f"     Text: {lead.get('_combined_text', '')[:150]}")
         print()
@@ -186,12 +186,12 @@ def main():
     # Show 5 random TOO BIG leads
     if failed_too_big:
         print("=" * 60)
-        print(f"SAMPLE REJECTED — company too big (5 random out of {len(failed_too_big)})")
+        print(f"SAMPLE REJECTED - company too big (5 random out of {len(failed_too_big)})")
         print("=" * 60)
         sample_big = random.sample(failed_too_big, min(5, len(failed_too_big)))
         for i, lead in enumerate(sample_big, 1):
-            print(f"  {i}. {lead.get('company_name', '')} — {lead.get('company_size', '')} employees")
-            print(f"     {lead.get('first_name', '')} {lead.get('last_name', '')} — {lead.get('job_title', '')}")
+            print(f"  {i}. {lead.get('company_name', '')} - {lead.get('company_size', '')} employees")
+            print(f"     {lead.get('first_name', '')} {lead.get('last_name', '')} - {lead.get('job_title', '')}")
             print()
 
 

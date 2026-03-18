@@ -28,7 +28,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
-  // @ts-ignore — scaffolded for MFA verification UI (blocks login via checkAal, UI prompt coming)
+  // @ts-ignore - scaffolded for MFA verification UI (blocks login via checkAal, UI prompt coming)
   const [needsMfa, setNeedsMfa] = useState(false);
 
   // Check if session meets AAL requirements (MFA verified if enrolled)
@@ -321,7 +321,7 @@ function App() {
     });
   }, [isLoggedIn]);
 
-  // ── Realtime messages — subscribe to INSERT/UPDATE on messages table ──
+  // ── Realtime messages - subscribe to INSERT/UPDATE on messages table ──
   const clientsRef = useRef<Client[]>([]);
   useEffect(() => { clientsRef.current = allClients; }, [allClients]);
 
@@ -368,7 +368,7 @@ function App() {
     return () => { supabase.removeChannel(channel); };
   }, [isLoggedIn]);
 
-  // Settings state — loaded from Supabase auth user
+  // Settings state - loaded from Supabase auth user
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -379,7 +379,7 @@ function App() {
     weekly: false,
   });
 
-  // App notifications (bell icon) — start empty, populated from real-time events
+  // App notifications (bell icon) - start empty, populated from real-time events
   const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
 
   // Track data counts to detect new items for notifications
@@ -432,7 +432,7 @@ function App() {
           id: `notif-inv-${inv.id}`,
           type: 'payment',
           title: t.notifications.paymentReceived(`$${inv.amount}`),
-          description: `${inv.clientName} — ${inv.period}`,
+          description: `${inv.clientName} - ${inv.period}`,
           timestamp: new Date().toISOString(),
           isRead: false,
           clientId: inv.clientId,
@@ -835,7 +835,7 @@ function App() {
           <AIProgramCreator
             clients={allClients}
             onGenerated={(program: WorkoutProgram) => {
-              // AI generated a program — open it in the builder so coach can review & edit
+              // AI generated a program - open it in the builder so coach can review & edit
               handleAddProgram(program);
               setSelectedProgramId(program.id);
               setCurrentPage('program-builder');
@@ -945,7 +945,7 @@ function App() {
         <div className="mobile-overlay" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar — always rendered, slide on mobile */}
+      {/* Sidebar - always rendered, slide on mobile */}
       <div style={{
         ...styles.sidebarWrap,
         ...(isMobile ? {

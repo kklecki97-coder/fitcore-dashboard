@@ -15,7 +15,7 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 // Extract a short label from a workout day name like "Monday - Boxing + Jiu-Jitsu" → "BJJ + Box"
 const extractLabel = (name: string): string => {
   // Strip leading day-of-week prefix (e.g. "Monday - ", "Wed - ")
-  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–—:]\s*/i, '');
+  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–-:]\s*/i, '');
   const s = stripped.toLowerCase();
 
   // Keyword matching for common workout types
@@ -74,7 +74,7 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
   const programWeeks = program?.durationWeeks ?? 0;
   const programStart = program ? new Date(program.createdAt) : new Date();
 
-  // Map each program day ID to a color index — days with the same label share the same color
+  // Map each program day ID to a color index - days with the same label share the same color
   const dayColorMap: Record<string, number> = {};
   if (program) {
     const labelToColor: Record<string, number> = {};
@@ -95,7 +95,7 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
   startMonday.setDate(startMonday.getDate() - (startDow === 0 ? 6 : startDow - 1));
   startMonday.setHours(0, 0, 0, 0);
 
-  // Current week calculation — shift "today" when DEV_DAY_OVERRIDE is set
+  // Current week calculation - shift "today" when DEV_DAY_OVERRIDE is set
   const realToday = new Date();
   const today = (() => {
     if (DEV_DAY_OVERRIDE === null) return realToday;
@@ -259,7 +259,7 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
               cellBorder = `1px solid rgba(${rgb},0.15)`;
               cellOpacity = 0.45;
             } else if (day.isTraining && c) {
-              // Upcoming training day — subtle tint, no text
+              // Upcoming training day - subtle tint, no text
               cellBg = `rgba(${rgb},0.08)`;
               cellBorder = `1px solid rgba(${rgb},0.15)`;
             }
@@ -388,7 +388,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 0 12px rgba(0,229,200,0.08)',
   },
   weekRowFuture: {
-    // no row-level opacity — handled per cell so training days stay visible
+    // no row-level opacity - handled per cell so training days stay visible
   },
   weekInfo: {
     display: 'flex',

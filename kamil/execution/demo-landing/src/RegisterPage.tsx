@@ -6,9 +6,9 @@ import { useLang } from './i18n';
 import { useAuth } from './auth';
 
 /* ═══════════════════════════════════════════════════════════
-   FitCore Registration Page — Two-step form
+   FitCore Registration Page - Two-step form
    Step 1: Credentials (name, email, password, confirm)
-   Step 2: Coaching profile (niche, client count — optional)
+   Step 2: Coaching profile (niche, client count - optional)
    ═══════════════════════════════════════════════════════════ */
 
 const inputStyle: React.CSSProperties = {

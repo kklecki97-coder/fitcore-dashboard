@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore — Fix Infinite RLS Recursion
+-- FitCore - Fix Infinite RLS Recursion
 -- The program_clients coach policy references workout_programs,
 -- and the workout_programs client policy references program_clients,
 -- creating an infinite loop. Fix by breaking the cycle.

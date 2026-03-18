@@ -185,7 +185,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
     } else if (res.error) {
       setResult({ error: res.error });
     } else {
-      // Client saved but no email — go back
+      // Client saved but no email - go back
       onBack();
     }
   };
@@ -336,7 +336,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
           <div style={styles.fieldGroup}>
             <label style={styles.label}>{t.addClient.notes}</label>
             <textarea
-              placeholder="Any relevant details — injuries, schedule preferences, experience level..."
+              placeholder="Any relevant details - injuries, schedule preferences, experience level..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               style={styles.textarea}

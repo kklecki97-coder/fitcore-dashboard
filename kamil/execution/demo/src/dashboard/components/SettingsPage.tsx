@@ -148,7 +148,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
-        {/* Profile — Row 1, Col 1 */}
+        {/* Profile - Row 1, Col 1 */}
         <GlassCard delay={0.05}>
           <div style={styles.sectionHeader}>
             <div style={styles.sectionIcon}>
@@ -236,7 +236,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           )}
         </GlassCard>
 
-        {/* Appearance — Row 1, Col 2 */}
+        {/* Appearance - Row 1, Col 2 */}
         <GlassCard delay={0.1}>
           <div style={styles.sectionHeader}>
             <div style={styles.sectionIcon}>
@@ -328,7 +328,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Notifications — Row 1, Col 3 */}
+        {/* Notifications - Row 1, Col 3 */}
         <GlassCard delay={0.15}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'var(--accent-warm-dim)' }}>
@@ -363,7 +363,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           ))}
         </GlassCard>
 
-        {/* Security — Row 2, Col 1 */}
+        {/* Security - Row 2, Col 1 */}
         <GlassCard delay={0.2}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'var(--accent-danger-dim)' }}>
@@ -405,7 +405,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Integrations — Row 2, Col 2 */}
+        {/* Integrations - Row 2, Col 2 */}
         <GlassCard delay={0.25}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
@@ -448,7 +448,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                       )}
                     </div>
                     <div style={styles.settingDesc}>
-                      {connected ? handle : 'Not connected — click Connect to set up'}
+                      {connected ? handle : 'Not connected - click Connect to set up'}
                     </div>
                   </div>
                 </div>
@@ -482,7 +482,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           })}
         </GlassCard>
 
-        {/* Stripe Payments — Row 2, Col 3 */}
+        {/* Stripe Payments - Row 2, Col 3 */}
         <GlassCard delay={0.3}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'rgba(99, 91, 255, 0.08)' }}>
@@ -527,7 +527,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
         </GlassCard>
       </div>
 
-      {/* Security Modals — Password / 2FA / Delete */}
+      {/* Security Modals - Password / 2FA / Delete */}
       <AnimatePresence>
         {securityModal && (
           <motion.div
@@ -859,7 +859,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                           This action is permanent
                         </div>
                         <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                          All your data — clients, workouts, schedules, messages, and payment history — will be permanently deleted. This cannot be undone.
+                          All your data - clients, workouts, schedules, messages, and payment history - will be permanently deleted. This cannot be undone.
                         </div>
                       </div>
                     </div>

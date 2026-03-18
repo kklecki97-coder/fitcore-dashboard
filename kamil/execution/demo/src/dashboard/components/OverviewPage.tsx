@@ -67,18 +67,18 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     c.status === 'paused' || c.streak === 0 || c.progress < 30
   );
 
-  // Pending check-ins: next check-in is today or overdue (not "—")
+  // Pending check-ins: next check-in is today or overdue (not "-")
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const pendingCheckIns = clients.filter(c => {
-    if (c.nextCheckIn === '—') return false;
+    if (c.nextCheckIn === '-') return false;
     const checkInDate = new Date(c.nextCheckIn);
     checkInDate.setHours(0, 0, 0, 0);
     return checkInDate <= today;
   });
 
 
-  // Daily quote — rotate by day of year
+  // Daily quote - rotate by day of year
   const dailyQuote = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
@@ -87,7 +87,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [new Date().toDateString()]);
 
-  // AI Summary — smart aggregation from real data
+  // AI Summary - smart aggregation from real data
   const insights = useMemo(() => {
     const items: { icon: React.ElementType; text: string; color: string }[] = [];
 
@@ -104,7 +104,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     if (topStreak && topStreak.streak > 0) {
       items.push({
         icon: Flame,
-        text: `${topStreak.name}'s ${topStreak.streak}-day streak — longest active`,
+        text: `${topStreak.name}'s ${topStreak.streak}-day streak - longest active`,
         color: 'var(--accent-warm)',
       });
     }
@@ -248,7 +248,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      {/* Daily Motivation — Top of Page */}
+      {/* Daily Motivation - Top of Page */}
       <motion.div
         style={styles.quoteBar}
         initial={{ opacity: 0, y: -10 }}
@@ -256,7 +256,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
         transition={{ duration: 0.4 }}
       >
         <div style={styles.quoteText}>"{dailyQuote.text}"</div>
-        <div style={styles.quoteAuthor}>— {dailyQuote.author}</div>
+        <div style={styles.quoteAuthor}>- {dailyQuote.author}</div>
       </motion.div>
 
       {/* Stat Cards Row */}

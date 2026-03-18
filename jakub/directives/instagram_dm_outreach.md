@@ -1,7 +1,7 @@
 # Directive: Instagram DM Outreach to Fitness Coaches
 
 ## Goal
-Use Instagram DMs to start conversations with US-based fitness coaches and convert them into demo calls for the dashboard product. This is a warm-cold outreach channel — faster to start than email (no warmup period, no domain setup) with higher response rates because coaches live on Instagram.
+Use Instagram DMs to start conversations with US-based fitness coaches and convert them into demo calls for the dashboard product. This is a warm-cold outreach channel - faster to start than email (no warmup period, no domain setup) with higher response rates because coaches live on Instagram.
 
 ## Why Instagram DMs
 
@@ -23,26 +23,26 @@ Use Instagram DMs to start conversations with US-based fitness coaches and conve
 Your profile is your landing page. When a coach gets your DM, they tap your profile within 2 seconds. You need to pass the "is this person legit?" test instantly.
 
 ### Profile Checklist
-- [ ] **Profile photo** — professional photo of you (not a logo, not a group photo). Clean background, good lighting. Coaches want to talk to a person, not a brand.
-- [ ] **Name field** — your real name. Not a business name. "Jakub" or "Jakub | Coach Dashboards" if you want to add context.
-- [ ] **Bio** — one clear line about what you do for coaches. Keep it simple:
+- [ ] **Profile photo** - professional photo of you (not a logo, not a group photo). Clean background, good lighting. Coaches want to talk to a person, not a brand.
+- [ ] **Name field** - your real name. Not a business name. "Jakub" or "Jakub | Coach Dashboards" if you want to add context.
+- [ ] **Bio** - one clear line about what you do for coaches. Keep it simple:
   - "Building client management dashboards for fitness coaches"
   - "Helping fitness coaches manage clients in one place"
   - Don't write an essay. Don't use buzzwords. Don't say "CEO" or "Founder."
-- [ ] **Link in bio** — Calendly link, landing page, or a Loom video walkthrough of the dashboard. Something they can click to learn more. If you have nothing yet, set up a simple Carrd page ($19/year) or even a Notion page.
-- [ ] **Pin 2-3 posts** — these are the first things they see on your grid:
+- [ ] **Link in bio** - Calendly link, landing page, or a Loom video walkthrough of the dashboard. Something they can click to learn more. If you have nothing yet, set up a simple Carrd page ($19/year) or even a Notion page.
+- [ ] **Pin 2-3 posts** - these are the first things they see on your grid:
   - A screen recording of the dashboard in action (15-30 seconds)
   - A before/after showing "managing clients in spreadsheets vs. our dashboard"
   - A testimonial or case study (once you have one)
-- [ ] **Story highlights** — create 1-2 highlights:
-  - "Dashboard" — clips showing what the product looks like
-  - "Results" — any social proof, testimonials, or wins
+- [ ] **Story highlights** - create 1-2 highlights:
+  - "Dashboard" - clips showing what the product looks like
+  - "Results" - any social proof, testimonials, or wins
 
 ### What NOT to Do
-- Don't make it look like a corporate page — coaches smell marketing accounts instantly
-- Don't have zero posts — an empty grid = a scam account
+- Don't make it look like a corporate page - coaches smell marketing accounts instantly
+- Don't have zero posts - an empty grid = a scam account
 - Don't use stock photos or generic motivational content
-- Don't put "DM me for more info" in your bio — that's what spammers do
+- Don't put "DM me for more info" in your bio - that's what spammers do
 
 ---
 
@@ -51,15 +51,15 @@ Your profile is your landing page. When a coach gets your DM, they tap your prof
 Same ICP as email outreach (see `icp_and_sales_angle.md`), with Instagram-specific filters:
 
 ### Must-Have Criteria
-- **1,000-50,000 followers** — under 1K = probably not running a real business yet. Over 50K = likely has a team and existing systems.
-- **Sells online coaching** — look for "link in bio" to a coaching program, mentions of "online coaching" or "1:1 coaching" or "apply now" in bio
-- **Posts consistently** — at least 2-3x per week. Active coaches see DMs. Inactive ones don't.
-- **English-speaking, US-based** — check bio for US city mentions, US phone area codes, or "EST/CST/PST" references
-- **Solo operator or small team** — no "Team of 15" in their bio
+- **1,000-50,000 followers** - under 1K = probably not running a real business yet. Over 50K = likely has a team and existing systems.
+- **Sells online coaching** - look for "link in bio" to a coaching program, mentions of "online coaching" or "1:1 coaching" or "apply now" in bio
+- **Posts consistently** - at least 2-3x per week. Active coaches see DMs. Inactive ones don't.
+- **English-speaking, US-based** - check bio for US city mentions, US phone area codes, or "EST/CST/PST" references
+- **Solo operator or small team** - no "Team of 15" in their bio
 
 ### Where to Find Them
 - **Hashtags:** #onlinecoach, #fitnesscoach, #onlinepersonaltrainer, #fitnessbusiness, #onlinefitnesscoach, #coachlife, #personaltrainer, #transformationcoach, #nutritioncoach
-- **Follower lists:** Find 5-10 large fitness business accounts (e.g., coaches who teach other coaches, fitness business podcasts) and scroll through their followers — these are your leads
+- **Follower lists:** Find 5-10 large fitness business accounts (e.g., coaches who teach other coaches, fitness business podcasts) and scroll through their followers - these are your leads
 - **Explore page:** Search "online fitness coach" and browse suggested profiles
 - **Competitors' followers:** Look at who follows Trainerize, TrueCoach, and similar tools on Instagram
 
@@ -72,7 +72,7 @@ Same ICP as email outreach (see `icp_and_sales_angle.md`), with Instagram-specif
 
 ---
 
-## Step 3: Build Your Lead List (Ongoing — Automate This)
+## Step 3: Build Your Lead List (Ongoing - Automate This)
 
 ### What to Collect Per Lead
 | Field | Example | How to Get It |
@@ -93,7 +93,7 @@ A script can handle lead discovery:
 - Filter by bio keywords ("coach", "online", "1:1", "apply", "clients")
 - Export to a spreadsheet/Supabase for daily review
 
-**Important:** Instagram's API is limited. For scraping, use tools like Apify, PhantomBuster, or manual search. Do NOT use bots that log into your personal account — this will get you banned.
+**Important:** Instagram's API is limited. For scraping, use tools like Apify, PhantomBuster, or manual search. Do NOT use bots that log into your personal account - this will get you banned.
 
 ### Daily Target
 Aim to add **20-30 new leads per day** to your list. This gives you a consistent pipeline of coaches to engage with.
@@ -105,9 +105,9 @@ Aim to add **20-30 new leads per day** to your list. This gives you a consistent
 **Never DM someone cold.** Warm them up first so your name is already familiar when they see your message.
 
 ### The Warm-Up Sequence (per lead)
-1. **Follow them** — just a follow, nothing else
-2. **Wait a few hours**, then **like 2-3 of their recent posts** — spread it out, don't like 10 posts in a row
-3. **Leave one genuine comment** on a post — this is the most important step:
+1. **Follow them** - just a follow, nothing else
+2. **Wait a few hours**, then **like 2-3 of their recent posts** - spread it out, don't like 10 posts in a row
+3. **Leave one genuine comment** on a post - this is the most important step:
    - Must be specific to their content (not "Great post!" or fire emojis)
    - Must be more than 4 words
    - Show you actually looked at their content
@@ -143,22 +143,22 @@ This way when they see your DM, they think: "Oh, this is the guy who left that c
 
 ### DM Templates (Adapt, Don't Copy-Paste)
 
-**Template A — The Curiosity Opener**
-> Hey [name], been checking out your content — love how you [specific thing about their coaching]. Quick question: how are you managing all your clients right now? Like check-ins, progress tracking, that kind of stuff?
+**Template A - The Curiosity Opener**
+> Hey [name], been checking out your content - love how you [specific thing about their coaching]. Quick question: how are you managing all your clients right now? Like check-ins, progress tracking, that kind of stuff?
 
-**Template B — The Observation Opener**
+**Template B - The Observation Opener**
 > Hey [name], saw your post about [specific post topic]. [Your genuine reaction]. Out of curiosity, are you using any kind of dashboard or system for tracking your clients' progress? Or is it more manual right now?
 
-**Template C — The Pain-Based Opener**
-> Hey [name], noticed you mentioned [something about being busy/growing/scaling]. I talk to a lot of coaches in that 20-30 client range — most of them say client management is the thing eating their time. Is that the case for you too or have you got it figured out?
+**Template C - The Pain-Based Opener**
+> Hey [name], noticed you mentioned [something about being busy/growing/scaling]. I talk to a lot of coaches in that 20-30 client range - most of them say client management is the thing eating their time. Is that the case for you too or have you got it figured out?
 
-**Template D — The Compliment + Question**
+**Template D - The Compliment + Question**
 > Hey [name], your transformation results are seriously impressive. Do your clients get to see their own progress data somewhere? Or do you just share it with them during check-ins?
 
 ### What Happens After They Reply
 
 **If they say "yeah I just use spreadsheets/WhatsApp/nothing":**
-> Makes sense — most coaches start there. We actually build custom client dashboards for coaches. Think check-ins, progress tracking, messaging, all in one place — set up for how YOU coach, not some generic app. Want me to show you what it looks like?
+> Makes sense - most coaches start there. We actually build custom client dashboards for coaches. Think check-ins, progress tracking, messaging, all in one place - set up for how YOU coach, not some generic app. Want me to show you what it looks like?
 
 **If they say "I use Trainerize/TrueCoach/etc":**
 > Nice. How's it working for you? A lot of coaches I talk to say they're paying $100-200/month but only using half the features. Is that your experience or do you love it?
@@ -167,13 +167,13 @@ This way when they see your DM, they think: "Oh, this is the guy who left that c
 > All good! Keep up the great content.
 
 **If they ask "what does it look like?"** (buying signal):
-> I'll send you a quick video walkthrough — give me a few hours to set one up with your branding on it so it actually makes sense for your coaching.
+> I'll send you a quick video walkthrough - give me a few hours to set one up with your branding on it so it actually makes sense for your coaching.
 
 Then record a Loom with their colors/logo/name on the dashboard. Keep it under 3 minutes. Send it as a DM.
 
 **If they want to talk more:**
 Move to a call. Send your Calendly link:
-> Would be easier to walk you through it live — here's my calendar if you want to grab 15 min: [Calendly link]
+> Would be easier to walk you through it live - here's my calendar if you want to grab 15 min: [Calendly link]
 
 ---
 
@@ -193,8 +193,8 @@ Move to a call. Send your Calendly link:
 | Notes | "Uses spreadsheets, has 25 clients, interested in demo" | Context |
 
 ### Where to Track
-- **Google Sheet** — simple, shareable, quick to set up
-- **Supabase** — if you want something more structured that scripts can read/write to (recommended since you already use it for email leads)
+- **Google Sheet** - simple, shareable, quick to set up
+- **Supabase** - if you want something more structured that scripts can read/write to (recommended since you already use it for email leads)
 
 ### Daily Workflow (30-60 Minutes)
 
@@ -204,7 +204,7 @@ Move to a call. Send your Calendly link:
 3. Do the engagement (likes, comments)
 
 **Afternoon/Evening (15-30 min):**
-1. Check for replies to yesterday's DMs — respond to every reply
+1. Check for replies to yesterday's DMs - respond to every reply
 2. Send new DMs to coaches you engaged with yesterday/the day before
 3. Send follow-ups to coaches who didn't reply after 3-5 days
 
@@ -214,7 +214,7 @@ Move to a call. Send your Calendly link:
 
 ### Follow-Up Cadence
 - **No reply after 3-5 days:** Send one follow-up. Keep it light:
-  > "Hey [name], no worries if you're swamped — just wanted to make sure this didn't get buried. Let me know if you're curious about the dashboard!"
+  > "Hey [name], no worries if you're swamped - just wanted to make sure this didn't get buried. Let me know if you're curious about the dashboard!"
 - **No reply after follow-up:** Move to "dead" and move on. Don't harass people.
 - **Never send more than 2 DMs without a reply.** Two and done.
 
@@ -257,14 +257,14 @@ Instagram will ban your account if you use automation tools for DMs. This includ
 Automating likes and follows is also risky but slightly less so. If you do it, keep volumes very low (under 50 actions/day).
 
 ### Account Safety
-- **Don't send more than 20-30 DMs per day** — Instagram flags accounts that send too many
-- **Don't send the same message to multiple people** — copy-paste gets flagged
-- **Don't include links in your first message** — Instagram suppresses them
-- **Don't DM people who don't follow you AND haven't engaged with you** — these go to "message requests" and are often ignored. The warm-up in Step 4 helps with this.
+- **Don't send more than 20-30 DMs per day** - Instagram flags accounts that send too many
+- **Don't send the same message to multiple people** - copy-paste gets flagged
+- **Don't include links in your first message** - Instagram suppresses them
+- **Don't DM people who don't follow you AND haven't engaged with you** - these go to "message requests" and are often ignored. The warm-up in Step 4 helps with this.
 - **If Instagram gives you a warning or temporary restriction**, stop all outreach for 24-48 hours
 
 ### Operating From Poland → Targeting US
-- This doesn't matter for DMs — Instagram is global and DMs are async
+- This doesn't matter for DMs - Instagram is global and DMs are async
 - Your profile should not mention Poland unless relevant
 - Post content during US peak hours (9 AM - 9 PM EST = 3 PM - 3 AM CET)
 - The timezone difference is actually helpful: you can engage in your evening (US morning/afternoon) when coaches are most active
@@ -282,11 +282,11 @@ Automating likes and follows is also risky but slightly less so. If you do it, k
 | Sending DMs | **NO** | Manual only |
 | Engaging (likes/comments) | **NO** | Manual only (risky to automate) |
 | Tracking conversations | Partially | Script for data entry, manual for notes |
-| DM draft generation | Yes | `generate_dm_drafts.py` — AI writes personalized DMs |
+| DM draft generation | Yes | `generate_dm_drafts.py` - AI writes personalized DMs |
 
 ### Scripts Built (in `jakub/execution/`)
 
-**`find_instagram_leads.py`** — Finds and filters coach profiles from Instagram via Apify. Handles search, scraping, filtering, and export in one script.
+**`find_instagram_leads.py`** - Finds and filters coach profiles from Instagram via Apify. Handles search, scraping, filtering, and export in one script.
 
 ```bash
 # Dry run (see estimated cost before spending credits)
@@ -339,7 +339,7 @@ CREATE TABLE IF NOT EXISTS instagram_leads (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
-This cannot be done via the REST API — it requires the SQL Editor in the Supabase dashboard.
+This cannot be done via the REST API - it requires the SQL Editor in the Supabase dashboard.
 
 **Step 2: Run the scraper.** Use `--output both` to save CSV + push to Supabase:
 ```bash
@@ -353,7 +353,7 @@ python3 jakub/execution/find_instagram_leads.py --mode hashtag --limit 300 --out
 # The key query param is: ?on_conflict=instagram_handle
 # Method: POST to /rest/v1/instagram_leads?on_conflict=instagram_handle
 ```
-A working push script is inline in the conversation history. The critical fix: the POST URL must include `?on_conflict=instagram_handle` for Supabase to properly handle duplicates — without it, all rows get silently skipped.
+A working push script is inline in the conversation history. The critical fix: the POST URL must include `?on_conflict=instagram_handle` for Supabase to properly handle duplicates - without it, all rows get silently skipped.
 
 **Step 4: Verify.** Check the count in Supabase:
 ```bash
@@ -369,7 +369,7 @@ A working push script is inline in the conversation history. The critical fix: t
 - **Duplicate handling:** `instagram_handle` has a UNIQUE constraint. The `on_conflict=instagram_handle` param on the POST URL is required for proper upsert behavior.
 - **Current stats (as of 2026-02-21):** 512 leads in Supabase, ~391 US-based, ~170 business accounts, scores ranging 0-10.
 
-**`generate_dm_drafts.py`** — Generates personalized Instagram DM drafts for engaged leads using GPT-4o-mini. Fetches leads that have been engaged 24h+ ago and don't have a draft yet, generates a personalized DM based on their bio/name/niche, and writes it to the `dm_draft` column in Supabase.
+**`generate_dm_drafts.py`** - Generates personalized Instagram DM drafts for engaged leads using GPT-4o-mini. Fetches leads that have been engaged 24h+ ago and don't have a draft yet, generates a personalized DM based on their bio/name/niche, and writes it to the `dm_draft` column in Supabase.
 
 ```bash
 # Generate DMs for all eligible leads
@@ -391,11 +391,11 @@ Cost: ~$0.005/lead with gpt-4o-mini. Run this before your daily DM session so dr
 
 The dashboard at `jakub/execution/pipeline-dashboard/` now has a **Daily Tasks** view (toggle in the header). It shows:
 
-1. **Sidebar** — Today's tasks with progress bars: Engage batch progress, DM batch progress, daily limits
-2. **Engage Batch** — Top 20 "new" leads by score. Each has an "Open" button to go to their IG profile. "Mark All as Engaged" button when done.
-3. **DM Batch** — All leads engaged 24h+ ago. Shows AI-generated DM draft with "Copy" button. "Open Profile" to go send it. "Mark All as DM'd" when done.
+1. **Sidebar** - Today's tasks with progress bars: Engage batch progress, DM batch progress, daily limits
+2. **Engage Batch** - Top 20 "new" leads by score. Each has an "Open" button to go to their IG profile. "Mark All as Engaged" button when done.
+3. **DM Batch** - All leads engaged 24h+ ago. Shows AI-generated DM draft with "Copy" button. "Open Profile" to go send it. "Mark All as DM'd" when done.
 
-The **Pipeline** view (original dashboard) is still there — toggle between views in the header.
+The **Pipeline** view (original dashboard) is still there - toggle between views in the header.
 
 **Database setup:** The `dm_draft` column must exist on `instagram_leads`:
 ```sql

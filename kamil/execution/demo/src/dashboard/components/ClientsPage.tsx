@@ -348,7 +348,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 <div style={styles.cardStatItem}>
                   <div style={styles.cardStatLabel}>Streak</div>
                   <div style={styles.cardStatValue}>
-                    {client.streak > 0 ? `${client.streak}d` : '—'}
+                    {client.streak > 0 ? `${client.streak}d` : '-'}
                   </div>
                 </div>
               </div>

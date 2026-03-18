@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Client with the coach's JWT — for permission checks
+    // Client with the coach's JWT - for permission checks
     const supabaseCoach = createClient(supabaseUrl, supabaseServiceKey, {
       global: { headers: { Authorization: authHeader } },
       auth: { persistSession: false },

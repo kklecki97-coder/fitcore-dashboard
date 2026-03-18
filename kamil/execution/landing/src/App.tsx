@@ -16,7 +16,7 @@ import type { Lang } from './i18n';
 import { useAuth } from './auth';
 
 /* ═══════════════════════════════════════════════════════════
-   FitCore Demo Landing Page — Identity-Driven Redesign
+   FitCore Demo Landing Page - Identity-Driven Redesign
    Positioning: Custom-built platforms for elite fitness coaches
    ═══════════════════════════════════════════════════════════ */
 
@@ -399,7 +399,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          HERO — IDENTITY-DRIVEN
+          HERO - IDENTITY-DRIVEN
          ════════════════════════════════════════════════════════ */}
       <motion.div ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}>
         <section style={{
@@ -494,7 +494,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          THE REAL PROBLEM — EMOTIONAL, NOT OPERATIONAL
+          THE REAL PROBLEM - EMOTIONAL, NOT OPERATIONAL
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
@@ -510,7 +510,7 @@ export default function App() {
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 20,
           }} className="pain-cards-grid">
-            {/* Card 1 — The Admin Trap */}
+            {/* Card 1 - The Admin Trap */}
             <GlassCard delay={0} style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column' }}>
               <div style={{
                 width: 52, height: 52, borderRadius: 'var(--radius-md)',
@@ -528,7 +528,7 @@ export default function App() {
               </p>
             </GlassCard>
 
-            {/* Card 2 — The Perception Gap (slightly elevated) */}
+            {/* Card 2 - The Perception Gap (slightly elevated) */}
             <GlassCard delay={0.1} style={{
               padding: '36px 32px',
               border: '1px solid rgba(245, 158, 11, 0.2)',
@@ -551,7 +551,7 @@ export default function App() {
               </p>
             </GlassCard>
 
-            {/* Card 3 — The Invisible Ceiling (climax — strongest styling) */}
+            {/* Card 3 - The Invisible Ceiling (climax - strongest styling) */}
             <GlassCard delay={0.2} style={{
               padding: '36px 32px',
               border: '1px solid rgba(99, 102, 241, 0.3)',
@@ -580,7 +580,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          COACH DASHBOARD — SCREENSHOT CAROUSEL
+          COACH DASHBOARD - SCREENSHOT CAROUSEL
          ════════════════════════════════════════════════════════ */}
       <Section id="features">
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 40px' }}>
@@ -627,7 +627,7 @@ export default function App() {
       </Section>
 
       {/* ════════════════════════════════════════════════════════
-          THE COST — WHAT DISORGANIZATION ACTUALLY COSTS YOU
+          THE COST - WHAT DISORGANIZATION ACTUALLY COSTS YOU
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
@@ -719,7 +719,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          FEATURE ROWS — ALTERNATING IMAGE + TEXT
+          FEATURE ROWS - ALTERNATING IMAGE + TEXT
          ════════════════════════════════════════════════════════ */}
 
       {/* Feature 1: Client Management */}
@@ -761,7 +761,7 @@ export default function App() {
         </div>
       </Section>
 
-      {/* Feature 2: Unified Inbox — reversed */}
+      {/* Feature 2: Unified Inbox - reversed */}
       <Section>
         <div style={{
           maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px',
@@ -839,7 +839,7 @@ export default function App() {
         </div>
       </Section>
 
-      {/* Feature 4: Analytics — reversed */}
+      {/* Feature 4: Analytics - reversed */}
       <Section>
         <div style={{
           maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px',
@@ -881,7 +881,7 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          CLOSING SECTION 1 — THE FORK IN THE ROAD
+          CLOSING SECTION 1 - THE FORK IN THE ROAD
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
@@ -897,7 +897,7 @@ export default function App() {
             borderRadius: 'var(--radius-lg)', overflow: 'hidden',
             border: '1px solid var(--glass-border)',
           }} className="fork-grid">
-            {/* Left — staying put */}
+            {/* Left - staying put */}
             <div style={{
               padding: '48px 40px',
               background: 'linear-gradient(160deg, rgba(239, 68, 68, 0.06) 0%, rgba(7, 9, 14, 0.95) 100%)',
@@ -925,7 +925,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right — with FitCore */}
+            {/* Right - with FitCore */}
             <div style={{
               padding: '48px 40px',
               background: 'linear-gradient(160deg, rgba(0, 229, 200, 0.06) 0%, rgba(7, 9, 14, 0.95) 100%)',
@@ -1001,7 +1001,7 @@ export default function App() {
               display: 'grid', gridTemplateColumns: '1fr 1fr',
             }} className="pricing-inner-grid">
 
-              {/* Left — price block */}
+              {/* Left - price block */}
               <div style={{
                 padding: '52px 48px',
                 borderRight: '1px solid var(--glass-border)',
@@ -1094,7 +1094,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Right — what's included */}
+              {/* Right - what's included */}
               <div style={{ padding: '52px 48px' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 28 }}>
                   {t.pricing.includedLabel}
@@ -1155,7 +1155,7 @@ export default function App() {
       `}</style>
 
       {/* ════════════════════════════════════════════════════════
-          HOW IT WORKS — STEP-BY-STEP
+          HOW IT WORKS - STEP-BY-STEP
          ════════════════════════════════════════════════════════ */}
       <Section id="how-it-works-steps">
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
@@ -1251,11 +1251,11 @@ export default function App() {
             display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20,
           }}>
             {[
-              { icon: Lock, color: 'var(--accent-primary)', title: t.security?.item1Title || 'Encrypted Messaging', desc: t.security?.item1Desc || 'All coach-client communication is encrypted in transit and at rest. Your conversations stay private — always.' },
+              { icon: Lock, color: 'var(--accent-primary)', title: t.security?.item1Title || 'Encrypted Messaging', desc: t.security?.item1Desc || 'All coach-client communication is encrypted in transit and at rest. Your conversations stay private - always.' },
               { icon: CreditCard, color: '#635bff', title: t.security?.item2Title || 'Stripe-Secured Payments', desc: t.security?.item2Desc || 'Payments are processed through Stripe Connect, PCI-DSS Level 1 compliant. We never see or store card details.' },
-              { icon: Shield, color: 'var(--accent-success)', title: t.security?.item3Title || 'Data Ownership', desc: t.security?.item3Desc || 'You own your data. Client info, programs, and messages — export anytime, delete anytime. No lock-in.' },
+              { icon: Shield, color: 'var(--accent-success)', title: t.security?.item3Title || 'Data Ownership', desc: t.security?.item3Desc || 'You own your data. Client info, programs, and messages - export anytime, delete anytime. No lock-in.' },
               { icon: Eye, color: 'var(--accent-warm)', title: t.security?.item4Title || 'SSL Everywhere', desc: t.security?.item4Desc || 'Every connection to FitCore is encrypted with TLS/SSL. No exceptions, no compromises.' },
-              { icon: UserCheck, color: 'var(--accent-secondary)', title: t.security?.item5Title || 'Role-Based Access', desc: t.security?.item5Desc || 'Coaches and clients each have their own portal. Clients only see their own data — nothing else.' },
+              { icon: UserCheck, color: 'var(--accent-secondary)', title: t.security?.item5Title || 'Role-Based Access', desc: t.security?.item5Desc || 'Coaches and clients each have their own portal. Clients only see their own data - nothing else.' },
               { icon: FileText, color: '#ef4444', title: t.security?.item6Title || 'Transparent Fees', desc: t.security?.item6Desc || 'A simple 5% platform fee on payments. No hidden charges, no surprise invoices. You see exactly what you pay.' },
             ].map((item, i) => {
               const Icon = item.icon;
@@ -1311,7 +1311,7 @@ export default function App() {
             {(t.faq?.items || [
               { q: 'How does pricing work?', a: 'FitCore charges a simple 5% platform fee on each client payment processed through the system. No monthly platform fees during your trial. After your 14-day free trial, it\'s $49/month + a one-time $100 setup fee.' },
               { q: 'Is there a free trial?', a: 'Yes! You get a full 14-day free trial with access to all features. No credit card required to start.' },
-              { q: 'How do payments work?', a: 'You connect your own Stripe account through our dashboard. When you invoice a client, they receive a secure payment link. They pay directly — the money goes to your Stripe account minus the 5% platform fee.' },
+              { q: 'How do payments work?', a: 'You connect your own Stripe account through our dashboard. When you invoice a client, they receive a secure payment link. They pay directly - the money goes to your Stripe account minus the 5% platform fee.' },
               { q: 'Is my data secure?', a: 'Absolutely. All data is encrypted in transit (TLS/SSL) and at rest. Payments are processed through Stripe (PCI-DSS Level 1 compliant). We never store credit card information.' },
               { q: 'Can I create custom plans and pricing?', a: 'Yes. You define your own coaching plans with custom names, prices, and billing cycles (monthly, weekly, or one-time). Your pricing, your rules.' },
               { q: 'What features are included?', a: 'Everything: client management, messaging, workout program builder, invoicing with Stripe payments, analytics dashboard, check-ins, and more. All features are included in every plan.' },
@@ -1365,7 +1365,7 @@ export default function App() {
       </Section>
 
       {/* ════════════════════════════════════════════════════════
-          NEWSLETTER — EMAIL CAPTURE
+          NEWSLETTER - EMAIL CAPTURE
          ════════════════════════════════════════════════════════ */}
       <Section>
         <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 24px 100px', textAlign: 'center' }}>

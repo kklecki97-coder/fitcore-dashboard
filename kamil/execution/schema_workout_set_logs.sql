@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore — Workout Set Logs Table
+-- FitCore - Workout Set Logs Table
 -- Stores per-set tracking data from client portal workouts
 -- Run this in Supabase SQL Editor
 -- ============================================================

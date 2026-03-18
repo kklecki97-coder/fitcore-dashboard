@@ -1,5 +1,5 @@
 """
-find_instagram_leads.py — Find fitness coach leads on Instagram via Apify.
+find_instagram_leads.py - Find fitness coach leads on Instagram via Apify.
 
 Usage:
     python3 jakub/execution/find_instagram_leads.py [--mode hashtag|search|both] [--limit 100] [--output csv|supabase|both] [--dry-run]
@@ -25,9 +25,9 @@ Options:
   --max-followers N  Maximum follower count (default: 50000)
 
 Apify actors used:
-  - apify/instagram-hashtag-scraper — find posts by hashtag, extract usernames
-  - apify/instagram-search-scraper — find profiles by keyword search
-  - apify/instagram-profile-scraper — get full profile details
+  - apify/instagram-hashtag-scraper - find posts by hashtag, extract usernames
+  - apify/instagram-search-scraper - find profiles by keyword search
+  - apify/instagram-profile-scraper - get full profile details
 
 Costs (Apify free tier = $5/month):
   - Hashtag scraper: ~$0.0004/post after first 60 free per hashtag
@@ -353,7 +353,7 @@ def filter_profiles(profiles, min_followers=1000, max_followers=50000):
             reasons_rejected["no_coaching_signals"] += 1
             continue
 
-        # Activity check — at least 10 posts
+        # Activity check - at least 10 posts
         if p.get("postsCount", 0) < 10:
             reasons_rejected["inactive"] += 1
             continue
@@ -416,7 +416,7 @@ def filter_profiles(profiles, min_followers=1000, max_followers=50000):
 def qualify_with_ai(leads, api_key_openai):
     """Use GPT to verify each lead is a real Polish fitness coach."""
     print(f"\n{'='*60}")
-    print(f"STEP 3b: AI qualification — verifying {len(leads)} leads")
+    print(f"STEP 3b: AI qualification - verifying {len(leads)} leads")
     print(f"{'='*60}")
 
     if not api_key_openai:
@@ -444,9 +444,9 @@ Profile:
 
 Question 1: Is this person POLISH (from Poland)?
 IMPORTANT: Czech, Slovak, Croatian, Serbian and other Slavic languages are NOT Polish.
-- Czech uses: ř, ů, ě, ž, š, č — words like "jóga", "běh", "trenérka", "pohyb", "učitelka"
-- Slovak uses: ľ, ŕ, ĺ, ô — words like "tréner"
-- Polish uses: ą, ę, ó, ś, ł, ż, ź, ć, ń — words like "trener", "treningi", "dietetyk", "sylwetka"
+- Czech uses: ř, ů, ě, ž, š, č - words like "jóga", "běh", "trenérka", "pohyb", "učitelka"
+- Slovak uses: ľ, ŕ, ĺ, ô - words like "tréner"
+- Polish uses: ą, ę, ó, ś, ł, ż, ź, ć, ń - words like "trener", "treningi", "dietetyk", "sylwetka"
 Look at the LANGUAGE of the bio text, not just the characters. If the bio is in Czech, Slovak, or any other non-Polish language, answer false.
 
 Question 2: Is this person an actual FITNESS COACH or PERSONAL TRAINER who works with individual clients?
@@ -479,7 +479,7 @@ Respond ONLY with this exact JSON format, nothing else:
 
                 # If empty response (reasoning model used all tokens), reject as unqualified
                 if not content:
-                    print(f"  {i+1}/{len(leads)} @{handle}: [EMPTY RESPONSE] — rejecting (unverified)")
+                    print(f"  {i+1}/{len(leads)} @{handle}: [EMPTY RESPONSE] - rejecting (unverified)")
                     rejected += 1
                     continue
 
@@ -501,7 +501,7 @@ Respond ONLY with this exact JSON format, nothing else:
                 if not is_coach:
                     tag += " [NOT COACH]"
 
-                print(f"  {i+1}/{len(leads)} @{handle}: {status}{tag} — {reason}")
+                print(f"  {i+1}/{len(leads)} @{handle}: {status}{tag} - {reason}")
 
                 if is_polish and is_coach:
                     qualified.append(lead)
@@ -509,7 +509,7 @@ Respond ONLY with this exact JSON format, nothing else:
                     rejected += 1
 
         except Exception as e:
-            print(f"  {i+1}/{len(leads)} @{handle}: [ERROR] {e} — rejecting (unverified)")
+            print(f"  {i+1}/{len(leads)} @{handle}: [ERROR] {e} - rejecting (unverified)")
             rejected += 1
 
         # Small delay to avoid rate limits

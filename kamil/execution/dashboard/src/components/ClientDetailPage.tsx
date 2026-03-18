@@ -34,7 +34,7 @@ interface ClientDetailPageProps {
   onAddCheckIn: (checkIn: CheckIn) => void;
 }
 
-// @ts-ignore — onAddCheckIn scaffolded for upcoming check-in-from-coach feature
+// @ts-ignore - onAddCheckIn scaffolded for upcoming check-in-from-coach feature
 export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
@@ -49,7 +49,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
   const [editNotes, setEditNotes] = useState('');
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [saveFlash, setSaveFlash] = useState('');
-  // @ts-ignore — scaffolded for upcoming check-in-from-coach modal
+  // @ts-ignore - scaffolded for upcoming check-in-from-coach modal
   const [checkInForm, setCheckInForm] = useState({
     weight: '',
     bodyFat: '',
@@ -64,7 +64,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     challenges: '',
     coachFeedback: '',
   });
-  // @ts-ignore — scaffolded for upcoming metrics logging modal
+  // @ts-ignore - scaffolded for upcoming metrics logging modal
   const [metricsForm, setMetricsForm] = useState({
     weight: '',
     bodyFat: '',
@@ -196,7 +196,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     onUpdateClient(client.id, { notesHistory: history });
   };
 
-  // @ts-ignore — scaffolded for upcoming metrics logging modal
+  // @ts-ignore - scaffolded for upcoming metrics logging modal
   const handleLogMetrics = () => {
     const updates: Partial<Client> = {
       metrics: { ...client.metrics },
@@ -239,7 +239,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     // Header
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
-    doc.text('FitCore — Client Report', 14, y);
+    doc.text('FitCore - Client Report', 14, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -274,11 +274,11 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     const latSquat = client.metrics.squat[client.metrics.squat.length - 1];
     const latDeadlift = client.metrics.deadlift[client.metrics.deadlift.length - 1];
     const metrics = [
-      `Weight: ${latW ?? '—'} kg`,
-      `Body Fat: ${latBF ?? '—'}%`,
-      `Bench: ${latBench ?? '—'} kg`,
-      `Squat: ${latSquat ?? '—'} kg`,
-      `Deadlift: ${latDeadlift ?? '—'} kg`,
+      `Weight: ${latW ?? '-'} kg`,
+      `Body Fat: ${latBF ?? '-'}%`,
+      `Bench: ${latBench ?? '-'} kg`,
+      `Squat: ${latSquat ?? '-'} kg`,
+      `Deadlift: ${latDeadlift ?? '-'} kg`,
       `Monthly Rate: $${client.monthlyRate}`,
       `Progress: ${client.progress}%`,
       `Streak: ${client.streak} days`,
@@ -333,7 +333,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       recentActivity.forEach(a => {
         if (y > 275) { doc.addPage(); y = 20; }
         const date = new Date(a.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
-        doc.text(`${date}  —  ${a.description}`, 14, y);
+        doc.text(`${date}  -  ${a.description}`, 14, y);
         y += 5;
       });
     }
@@ -368,7 +368,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150);
-      doc.text('FitCore — Confidential', 14, doc.internal.pageSize.getHeight() - 10);
+      doc.text('FitCore - Confidential', 14, doc.internal.pageSize.getHeight() - 10);
       doc.text(`Page ${i} of ${pageCount}`, pageWidth - 40, doc.internal.pageSize.getHeight() - 10);
     }
 
@@ -499,7 +499,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         <GlassCard delay={0.1} style={{ flex: 1 }}>
           <div style={styles.metricLabel}>{t.clientDetail.weight}</div>
           <div style={styles.metricValue}>
-            {latestWeight != null ? latestWeight : '—'} <span style={styles.metricUnit}>kg</span>
+            {latestWeight != null ? latestWeight : '-'} <span style={styles.metricUnit}>kg</span>
           </div>
           {hasWeight && (
           <div style={{ ...styles.metricChange, color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
@@ -511,7 +511,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         <GlassCard delay={0.12} style={{ flex: 1 }}>
           <div style={styles.metricLabel}>{t.clientDetail.bodyFat}</div>
           <div style={styles.metricValue}>
-            {latestBF != null ? latestBF : '—'} <span style={styles.metricUnit}>%</span>
+            {latestBF != null ? latestBF : '-'} <span style={styles.metricUnit}>%</span>
           </div>
           {hasBF && (
           <div style={{ ...styles.metricChange, color: bfChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
@@ -653,7 +653,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                 </div>
               </div>
 
-              {/* Stats row — 3 mini cards */}
+              {/* Stats row - 3 mini cards */}
               <div style={styles.calStatsRow}>
                 <div style={styles.calStatCard}>
                   <Dumbbell size={16} color="var(--accent-primary)" />
@@ -796,7 +796,7 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         const missed = clientCheckIns.filter(ci => ci.status === 'missed');
         const avgMood = completed.length > 0
           ? (completed.reduce((s, ci) => s + (ci.mood || 0), 0) / completed.filter(ci => ci.mood).length).toFixed(1)
-          : '—';
+          : '-';
         const avgSteps = completed.length > 0
           ? Math.round(completed.reduce((s, ci) => s + (ci.steps || 0), 0) / completed.filter(ci => ci.steps).length)
           : 0;

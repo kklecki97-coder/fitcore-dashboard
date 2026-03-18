@@ -445,7 +445,7 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                 const fiveDaysMs = 5 * 86400000;
                 return clients
                   .filter(c => {
-                    if (!c.nextCheckIn || c.nextCheckIn === '—') return false;
+                    if (!c.nextCheckIn || c.nextCheckIn === '-') return false;
                     const diff = new Date(c.nextCheckIn).getTime() - nowMs;
                     return diff > 0 && diff <= fiveDaysMs;
                   })
@@ -539,8 +539,8 @@ export default function SchedulePage({ clients, programs, sessionsByDate, onSess
                         <>
                           {clientPrograms.flatMap(p =>
                             p.days.map(d => (
-                              <option key={`${p.id}-${d.id}`} value={`${p.name} — ${d.name}`}>
-                                {p.name} — {d.name}
+                              <option key={`${p.id}-${d.id}`} value={`${p.name} - ${d.name}`}>
+                                {p.name} - {d.name}
                               </option>
                             ))
                           )}

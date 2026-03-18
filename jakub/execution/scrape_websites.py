@@ -1,5 +1,5 @@
 """
-scrape_websites.py — Visit each lead's website and extract coaching info (async, concurrent).
+scrape_websites.py - Visit each lead's website and extract coaching info (async, concurrent).
 
 Usage:
     python3 jakub/execution/scrape_websites.py [--limit 10] [--use-ai] [--use-tavily] [--use-linkedin] [--concurrency 10] [--rerun]
@@ -314,7 +314,7 @@ def linkedin_to_coaching_info(profile):
     combined_text = "\n".join(parts)
     combined_lower = combined_text.lower()
 
-    # Website description — build from headline + about
+    # Website description - build from headline + about
     desc_parts = []
     if headline:
         desc_parts.append(headline)
@@ -390,7 +390,7 @@ def linkedin_to_coaching_info(profile):
             tools.add(tool)
     result["tools_detected"] = ", ".join(sorted(tools))
 
-    # Pricing — rarely on LinkedIn but check anyway
+    # Pricing - rarely on LinkedIn but check anyway
     price_patterns = [
         r'\$\d+[\d,.]*\s*/?\s*(?:month|mo|session|week|program)',
         r'\$\d+[\d,.]*',
@@ -403,7 +403,7 @@ def linkedin_to_coaching_info(profile):
     if prices_found:
         result["pricing_details"] = "; ".join(prices_found[:5])
 
-    # Social links — LinkedIn itself
+    # Social links - LinkedIn itself
     result["social_links"] = f"linkedin:{profile.get('profileUrl', '')}"
 
     return result
@@ -423,7 +423,7 @@ Return JSON with these fields (empty string if not found):
     "pricing": "any pricing mentioned, or empty",
     "tools": "any software/booking/payment tools detected (e.g. Calendly, Trainerize)",
     "target_audience": "who they serve",
-    "offers_online": "true or false — do they offer online/remote/virtual coaching?",
+    "offers_online": "true or false - do they offer online/remote/virtual coaching?",
     "notable_detail": "ONE specific interesting fact about this business (a program name, method, unique angle)"
 }}"""
 
@@ -574,7 +574,7 @@ async def analyze_text(session, text, website_url, openai_key=None):
                 tools.add(t)
     result["tools_detected"] = ", ".join(sorted(tools))
 
-    # Social links (from text — look for handles)
+    # Social links (from text - look for handles)
     socials = []
     social_patterns = {
         "instagram": r'(?:instagram\.com|instagr\.am)/([a-zA-Z0-9_.]+)',
@@ -814,12 +814,12 @@ async def process_lead(session, lead, i, total, use_tavily, use_linkedin, tavily
             else:
                 stats["failed"] += 1
                 stats["method_counts"]["failed"] = stats["method_counts"].get("failed", 0) + 1
-                print(f"  [{i+1}/{total}] {name} @ {company} — FAILED (website + LinkedIn)", flush=True)
+                print(f"  [{i+1}/{total}] {name} @ {company} - FAILED (website + LinkedIn)", flush=True)
                 return
         elif website_failed:
             stats["failed"] += 1
             stats["method_counts"]["failed"] = stats["method_counts"].get("failed", 0) + 1
-            print(f"  [{i+1}/{total}] {name} @ {company} — FAILED", flush=True)
+            print(f"  [{i+1}/{total}] {name} @ {company} - FAILED", flush=True)
             return
 
         # Track method
@@ -830,7 +830,7 @@ async def process_lead(session, lead, i, total, use_tavily, use_linkedin, tavily
 
         services_str = info.get("coaching_services", "")[:40]
         status = "ONLINE" if info.get("offers_online_coaching") else "ok"
-        print(f"  [{i+1}/{total}] {name} @ {company} — {status} via {method} ({services_str})", flush=True)
+        print(f"  [{i+1}/{total}] {name} @ {company} - {status} via {method} ({services_str})", flush=True)
 
         # Update Supabase
         update_data = {
@@ -893,7 +893,7 @@ async def async_main():
         print("ERROR: APIFY_API_KEY must be set in .env for --use-linkedin mode")
         sys.exit(1)
 
-    # Fetch leads (sync — only once at start)
+    # Fetch leads (sync - only once at start)
     select_fields = "id,email,website,first_name,company_name,linkedin"
     if rerun:
         print("RERUN MODE: re-scraping all leads with websites")

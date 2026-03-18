@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `FitCore ${plan || 'Coaching'} — ${period || 'Monthly'}`,
+              name: `FitCore ${plan || 'Coaching'} - ${period || 'Monthly'}`,
               description: `Coaching invoice for ${clientName || 'client'}`,
             },
             unit_amount: Math.round(amount * 100), // Stripe uses cents

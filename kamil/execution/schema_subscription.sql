@@ -1,5 +1,5 @@
 -- ============================================================
--- FitCore Subscription System — Migration
+-- FitCore Subscription System - Migration
 -- Run this in Supabase SQL Editor
 -- ============================================================
 

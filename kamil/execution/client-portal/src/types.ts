@@ -124,7 +124,7 @@ export interface WeeklySchedule {
   id: string;
   clientId: string;
   weekStart: string;       // YYYY-MM-DD (Monday)
-  dayAssignments: Record<string, string>;  // { "0": "workout-day-id", "2": "workout-day-id" } — key is 0=Mon..6=Sun
+  dayAssignments: Record<string, string>;  // { "0": "workout-day-id", "2": "workout-day-id" } - key is 0=Mon..6=Sun
 }
 
 export interface Invoice {

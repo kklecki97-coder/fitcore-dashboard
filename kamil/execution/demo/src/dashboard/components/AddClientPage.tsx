@@ -243,7 +243,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
             <Weight size={16} color="var(--accent-primary)" />
             <h3 style={styles.sectionTitle}>Starting Metrics</h3>
           </div>
-          <p style={styles.sectionSub}>Optional — can be filled in later</p>
+          <p style={styles.sectionSub}>Optional - can be filled in later</p>
 
           <div style={{ ...styles.metricRow, flexDirection: isMobile ? 'column' : 'row' }}>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
@@ -298,7 +298,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Notes</label>
             <textarea
-              placeholder="Any relevant details — injuries, schedule preferences, experience level..."
+              placeholder="Any relevant details - injuries, schedule preferences, experience level..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               style={styles.textarea}

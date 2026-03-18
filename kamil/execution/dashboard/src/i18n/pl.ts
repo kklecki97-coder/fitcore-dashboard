@@ -2,7 +2,7 @@ import type { Translations } from './en';
 
 export const pl: Translations = {
   meta: {
-    title: 'FitCore — Panel Trenera',
+    title: 'FitCore - Panel Trenera',
     description: 'Zarządzaj klientami, programami i przychodami z FitCore.',
   },
 
@@ -106,7 +106,7 @@ export const pl: Translations = {
     unread: (n: number) => `${n} nieprzeczytanych`,
     viewAll: 'Zobacz wszystkie',
     insightActiveWeek: (n: number, total: number) => `${n}/${total} klientów aktywnych w tym tygodniu`,
-    insightStreak: (name: string, days: number) => `${name} — passa ${days} dni, najdłuższa aktywna`,
+    insightStreak: (name: string, days: number) => `${name} - passa ${days} dni, najdłuższa aktywna`,
     insightLeading: (name: string, pct: number, weight: number) => `${name} prowadzi z ${pct}% postępu (Bench: ${weight}kg)`,
     insightOverdue: (n: number, names: string) => `${n} zaległ${n === 1 ? 'y' : n < 5 ? 'e' : 'ych'} raport${n === 1 ? '' : n < 5 ? 'y' : 'ów'} (${names})`,
     insightUnread: (n: number) => `${n} nieprzeczytana${n === 1 ? '' : n < 5 ? 'e' : 'ych'} wiadomości`,
@@ -334,7 +334,7 @@ export const pl: Translations = {
       ],
       reminder: [
         'Nie zapomnij zanotować posiłków',
-        'Dzień odpoczynku — regeneracja to część procesu',
+        'Dzień odpoczynku - regeneracja to część procesu',
         'Raport jest zaległy. Proszę o przesłanie.',
       ],
       onboarding: [
@@ -448,7 +448,7 @@ export const pl: Translations = {
     sortName: 'Nazwa',
     searchClients: 'Szukaj klientów...',
     noInvoicesFound: 'Nie znaleziono faktur.',
-    paymentHistory: (name: string) => `Historia Płatności — ${name}`,
+    paymentHistory: (name: string) => `Historia Płatności - ${name}`,
     planTier: 'Poziom Planu',
     selectClient: 'Wybierz klienta...',
     noPlansMessage: 'Brak planów. Przejdź do Ustawień, aby utworzyć plany.',
@@ -568,7 +568,7 @@ export const pl: Translations = {
     copyAll: 'Kopiuj Wszystko',
     copied: 'Skopiowano!',
     actionPermanent: 'Ta akcja jest nieodwracalna',
-    deleteWarningDesc: 'Wszystkie Twoje dane — klienci, treningi, harmonogramy, wiadomości i historia płatności — zostaną trwale usunięte. Nie można tego cofnąć.',
+    deleteWarningDesc: 'Wszystkie Twoje dane - klienci, treningi, harmonogramy, wiadomości i historia płatności - zostaną trwale usunięte. Nie można tego cofnąć.',
     cannotBeUndone: 'Tej operacji nie można cofnąć.',
     typeToConfirm: 'aby potwierdzić',
     type: 'Wpisz',
@@ -657,7 +657,7 @@ export const pl: Translations = {
     saveClient: 'Dodaj Klienta',
     creating: 'Tworzenie...',
     cancel: 'Anuluj',
-    optionalSubtitle: 'Opcjonalnie — można uzupełnić później',
+    optionalSubtitle: 'Opcjonalnie - można uzupełnić później',
     goalsHint: 'Rozdziel cele przecinkami',
     coachNotes: 'Notatki Trenera',
     monthlyRate: 'Stawka Miesięczna',
@@ -674,10 +674,10 @@ export const pl: Translations = {
   notifications: {
     newMessageFrom: (name: string) => `Nowa wiadomość od ${name}`,
     checkInSubmitted: (name: string) => `${name} przesłał(a) raport`,
-    paymentReceived: (amount: string) => `Otrzymano płatność — ${amount}`,
+    paymentReceived: (amount: string) => `Otrzymano płatność - ${amount}`,
     programStarts: (name: string) => `Program ${name} zaczyna się jutro`,
     missedCheckIn: (name: string) => `${name} pominął(a) raport`,
-    paymentOverdue: (amount: string) => `Zaległa płatność — ${amount}`,
+    paymentOverdue: (amount: string) => `Zaległa płatność - ${amount}`,
     welcomeTitle: 'Witaj w FitCore!',
     welcomeBody: 'Twój dashboard jest gotowy',
     messageSentTo: (name: string) => `Wiadomość wysłana do ${name}`,

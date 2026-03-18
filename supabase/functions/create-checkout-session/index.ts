@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       .eq("id", coachUser.id)
       .single();
 
-    // Already pro — no need to checkout
+    // Already pro - no need to checkout
     if (coach?.plan === "pro") {
       return new Response(JSON.stringify({ error: "Already subscribed" }), {
         status: 400,

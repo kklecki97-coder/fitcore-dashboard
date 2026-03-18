@@ -20,7 +20,7 @@ export const en = {
     badge: 'Custom-Built for Your Coaching Business',
     title1: 'Your Clients, Programs & Revenue',
     title2: 'in One Dashboard',
-    subtitle: 'Everything you need to manage clients, deliver world-class programs, and grow your revenue — without the admin chaos.',
+    subtitle: 'Everything you need to manage clients, deliver world-class programs, and grow your revenue - without the admin chaos.',
     ctaPrimary: 'See What You Get',
     ctaSecondary: 'Book a Call',
   },

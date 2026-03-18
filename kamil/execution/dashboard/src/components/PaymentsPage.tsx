@@ -370,7 +370,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                                 </span>
                               </span>
                               <span style={{ ...styles.td, flex: 1, fontSize: '14px', color: 'var(--text-tertiary)' }}>
-                                {h.paidDate ? `${t.payments.paid} ${new Date(h.paidDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}` : h.status === 'overdue' ? t.payments.overdue : '—'}
+                                {h.paidDate ? `${t.payments.paid} ${new Date(h.paidDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}` : h.status === 'overdue' ? t.payments.overdue : '-'}
                               </span>
                             </div>
                           );

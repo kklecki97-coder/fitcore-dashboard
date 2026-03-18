@@ -91,7 +91,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
         <p style={styles.subtitle}>{program.durationWeeks} week program</p>
       </div>
 
-      {/* Day Selector — shows workout names + highlights today */}
+      {/* Day Selector - shows workout names + highlights today */}
       <div style={styles.dayRow}>
         {program.days.map((d, i) => {
           const isSelected = i === selectedDay;
@@ -258,7 +258,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
                               {completed ? <CheckCircle2 size={16} /> : <Circle size={16} />}
                             </button>
                           </div>
-                          {/* RPE selector — shown after set is completed */}
+                          {/* RPE selector - shown after set is completed */}
                           {completed && (
                             <div style={styles.rpeRow}>
                               <span style={styles.rpeLabel}>
@@ -314,13 +314,13 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
               color: allDone ? 'var(--accent-success)' : 'var(--text-primary)',
             }}>
               {allDone
-                ? 'All exercises done — great work!'
+                ? 'All exercises done - great work!'
                 : `${completedExercises}/${day.exercises.length} exercises completed`}
             </div>
             <div style={styles.summarySub}>
               {allDone
                 ? 'Rest up and come back stronger tomorrow.'
-                : `${totalSets - completedSets} sets remaining — keep going!`}
+                : `${totalSets - completedSets} sets remaining - keep going!`}
             </div>
           </div>
         </div>

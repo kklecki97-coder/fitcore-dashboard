@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Skip client users — they shouldn't log into the landing/dashboard
+    // Skip client users - they shouldn't log into the landing/dashboard
     if (session.user.user_metadata?.role === 'client') {
       setUser(null);
       setLoading(false);
@@ -193,11 +193,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // We detect this by checking if the session is null (email not yet confirmed).
     const session = signUpData.session;
     if (!session) {
-      // Email confirmation required — just return success, skip coach row check
+      // Email confirmation required - just return success, skip coach row check
       return { success: true };
     }
 
-    // Session exists (email confirmation disabled) — verify coach row was created
+    // Session exists (email confirmation disabled) - verify coach row was created
     const userId = signUpData.user?.id;
     if (userId) {
       const { data: coach } = await supabase
@@ -279,7 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'wrongPassword' };
     }
 
-    // Current password verified — now update to new password
+    // Current password verified - now update to new password
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {

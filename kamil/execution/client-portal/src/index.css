@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════
-   FitCore — Client Portal
+   FitCore - Client Portal
    Design: Dark Luxe Futuristic (shared with Coach Dashboard)
    Typography: Outfit (display) + JetBrains Mono (data)
    Palette: Deep black → electric cyan/teal accents
@@ -209,7 +209,7 @@ body::after {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Responsive — Mobile (<768px)
+   Responsive - Mobile (<768px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   :root {

@@ -47,7 +47,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     // Check if MFA is required
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aalData && aalData.currentLevel === 'aal1' && aalData.nextLevel === 'aal2') {
-      // MFA enrolled — need verification
+      // MFA enrolled - need verification
       const { data: factors } = await supabase.auth.mfa.listFactors();
       const totp = factors?.totp?.find(f => f.status === 'verified');
       if (totp) {

@@ -113,11 +113,11 @@ Include these as **custom variables** when adding leads to Instantly (via MCP or
 
 **Fallback for missing first names:** If we can't extract a first name from the email, use their **last name** instead (e.g., `Kellogg,` as greeting, `Kellogg` as subject). Professional and personal. If no last name either, fall back to `"Hey"`. Handled by `fix_first_names.py`. Current stats: 2,902 real first names, 430 last name fallback.
 
-**Avoid:** "FREE", "limited time", exclamation marks, all caps — these trigger spam filters.
+**Avoid:** "FREE", "limited time", exclamation marks, all caps - these trigger spam filters.
 
 ## Instantly MCP Integration
 
-We manage Instantly campaigns, leads, and analytics directly from Claude Code via the **Instantly MCP server**. No scripts needed — the MCP tools handle everything.
+We manage Instantly campaigns, leads, and analytics directly from Claude Code via the **Instantly MCP server**. No scripts needed - the MCP tools handle everything.
 
 ### Connection Setup
 
@@ -162,7 +162,7 @@ API key is stored in the settings file (not `.env`). To generate a new key: Inst
 | `list_lead_lists` | View lead lists |
 | `create_lead_list` | Create a new lead list |
 | `update_lead_list` | Update lead list settings |
-| `add_leads_to_campaign_or_list_bulk` | **Import up to 1,000 leads at once** — use this for bulk uploads |
+| `add_leads_to_campaign_or_list_bulk` | **Import up to 1,000 leads at once** - use this for bulk uploads |
 | `move_leads_to_campaign_or_list` | Transfer leads between campaigns/lists |
 | `delete_lead` | Remove a lead |
 | `delete_lead_list` | Remove a lead list |
@@ -203,7 +203,7 @@ API key is stored in the settings file (not `.env`). To generate a new key: Inst
 
 ### How to Create a Campaign (Step by Step)
 
-1. **Create the campaign** with `create_campaign` — this returns a campaign ID
+1. **Create the campaign** with `create_campaign` - this returns a campaign ID
 2. **Update the campaign** with `update_campaign` to add the 4-email sequence, set schedule, and configure settings
 3. **Create a lead list** or use an existing one
 4. **Bulk import leads** with `add_leads_to_campaign_or_list_bulk` (max 1,000 per call, loop for more). Include custom variables: `openingLine`, `painPoint`
@@ -234,9 +234,9 @@ When pushing leads from Supabase to Instantly:
 ### Monitoring Checklist
 
 After launch, use MCP analytics tools daily:
-1. `get_campaign_analytics` — check overall open/reply/bounce rates
-2. `get_daily_campaign_analytics` — spot trends day by day
-3. `get_warmup_analytics` — ensure sending accounts are healthy
+1. `get_campaign_analytics` - check overall open/reply/bounce rates
+2. `get_daily_campaign_analytics` - spot trends day by day
+3. `get_warmup_analytics` - ensure sending accounts are healthy
 4. If bounce rate > 2%, pause campaign immediately with `pause_campaign`
 
 ## Health Metrics to Monitor
@@ -283,11 +283,11 @@ Every email must include:
 
 ## Supplementary Channels
 
-### LinkedIn (secondary — use after email)
+### LinkedIn (secondary - use after email)
 - When you send a cold email, connect on LinkedIn 1-2 days later (multichannel touch)
-- Don't invest in Sales Navigator yet ($99/mo) — spend that on email infrastructure first
+- Don't invest in Sales Navigator yet ($99/mo) - spend that on email infrastructure first
 - Best for higher-ticket coaches ($500+/mo programs)
-- Most online fitness coaches are NOT active on LinkedIn — their audience is on IG/TikTok
+- Most online fitness coaches are NOT active on LinkedIn - their audience is on IG/TikTok
 
 ### Instagram DMs (warm follow-up only)
 - Do NOT use for cold outreach (accounts get banned, doesn't scale)
@@ -305,6 +305,6 @@ Every email must include:
 | Score 1-3 (skip) | 768 |
 | No data (skip) | 412 |
 
-**AI model:** GPT-5-nano ($0.05/M input, $0.40/M output). Switched from GPT-5-mini for 4-8x cost savings with comparable quality. Prompt is tightened with banned phrases and inline score caps — see `enrich_with_ai.py` for details.
+**AI model:** GPT-5-nano ($0.05/M input, $0.40/M output). Switched from GPT-5-mini for 4-8x cost savings with comparable quality. Prompt is tightened with banned phrases and inline score caps - see `enrich_with_ai.py` for details.
 
 **Scripts are async:** Both `scrape_websites.py` and `enrich_with_ai.py` use `asyncio` + `aiohttp` with configurable concurrency (default 10 and 20 respectively). Full pipeline runs in ~30 min for 3,000+ leads.
