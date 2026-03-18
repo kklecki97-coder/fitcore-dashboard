@@ -222,7 +222,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   ];
 
   return (
-    <div style={styles.page}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px' }}>
       {/* Main Queue */}
       <GlassCard delay={0.2}>
         {/* Header with tabs */}

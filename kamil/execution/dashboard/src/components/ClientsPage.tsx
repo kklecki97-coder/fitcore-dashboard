@@ -11,18 +11,19 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import type { Client, WorkoutProgram } from '../types';
+import type { Client, WorkoutProgram, CoachingPlan } from '../types';
 
 interface ClientsPageProps {
   clients: Client[];
   programs: WorkoutProgram[];
+  plans: CoachingPlan[];
   onViewClient: (id: string) => void;
   onNavigate?: (page: 'messages') => void;
   onUpdateClient: (id: string, updates: Partial<Client>) => void;
   onDeleteClient: (id: string) => void;
 }
 
-export default function ClientsPage({ clients: allClients, programs, onViewClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
+export default function ClientsPage({ clients: allClients, programs, plans, onViewClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
   const [searchQuery, setSearchQuery] = useState('');
@@ -519,24 +520,42 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 <div style={styles.modalField}>
                   <span style={styles.modalLabel}>{t.clients.planTier}</span>
                   <div style={styles.modalPlanPicker}>
-                    {(['Basic', 'Premium', 'Elite'] as const).map(p => {
-                      const isActive = editModal.plan === p;
-                      const accentMap = { Basic: 'var(--accent-primary)', Premium: 'var(--accent-secondary)', Elite: 'var(--accent-warm)' };
-                      const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
-                      return (
-                        <button
-                          key={p}
-                          onClick={() => setEditModal({ ...editModal, plan: p })}
-                          style={{
-                            ...styles.modalPlanOption,
-                            ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'var(--bg-subtle)' } : {}),
-                          }}
-                        >
-                          <div style={{ fontWeight: 600, fontSize: '18px' }}>{planLabel(p)}</div>
-                          <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
-                        </button>
-                      );
-                    })}
+                    {(plans.filter(p => p.isActive).length > 0
+                      ? plans.filter(p => p.isActive).map(p => {
+                          const isActive = editModal.plan === p.name;
+                          const cycleSuffix = p.billingCycle === 'monthly' ? '/mo' : p.billingCycle === 'weekly' ? '/wk' : '';
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => setEditModal({ ...editModal, plan: p.name as Client['plan'] })}
+                              style={{
+                                ...styles.modalPlanOption,
+                                ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--bg-subtle)' } : {}),
+                              }}
+                            >
+                              <div style={{ fontWeight: 600, fontSize: '16px' }}>{p.name}</div>
+                              <div style={{ fontSize: '14px', opacity: 0.7 }}>${p.price}{cycleSuffix}</div>
+                            </button>
+                          );
+                        })
+                      : (['Basic', 'Premium', 'Elite'] as const).map(p => {
+                          const isActive = editModal.plan === p;
+                          const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
+                          return (
+                            <button
+                              key={p}
+                              onClick={() => setEditModal({ ...editModal, plan: p })}
+                              style={{
+                                ...styles.modalPlanOption,
+                                ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--bg-subtle)' } : {}),
+                              }}
+                            >
+                              <div style={{ fontWeight: 600, fontSize: '16px' }}>{p}</div>
+                              <div style={{ fontSize: '14px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
+                            </button>
+                          );
+                        })
+                    )}
                   </div>
                 </div>
 
@@ -718,28 +737,51 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                   </div>
                   <div style={styles.inviteField}>
                     <label style={styles.inviteFieldLabel}>{t.settings.invitePlan}</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      {(['Basic', 'Premium', 'Elite'] as const).map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => setInvitePlan(p)}
-                          style={{
-                            flex: 1,
-                            padding: '10px 12px',
-                            borderRadius: 'var(--radius-sm)',
-                            border: `1.5px solid ${invitePlan === p ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
-                            background: invitePlan === p ? 'rgba(0,229,200,0.08)' : 'transparent',
-                            color: invitePlan === p ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            fontFamily: 'var(--font-display)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                          }}
-                        >
-                          {p}
-                        </button>
-                      ))}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {(plans.filter(p => p.isActive).length > 0
+                        ? plans.filter(p => p.isActive).map((p) => (
+                            <button
+                              key={p.id}
+                              onClick={() => setInvitePlan(p.name as typeof invitePlan)}
+                              style={{
+                                flex: 1,
+                                padding: '10px 12px',
+                                borderRadius: 'var(--radius-sm)',
+                                border: `1.5px solid ${invitePlan === p.name ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
+                                background: invitePlan === p.name ? 'rgba(0,229,200,0.08)' : 'transparent',
+                                color: invitePlan === p.name ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                fontFamily: 'var(--font-display)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                              }}
+                            >
+                              {p.name}
+                            </button>
+                          ))
+                        : (['Basic', 'Premium', 'Elite'] as const).map((p) => (
+                            <button
+                              key={p}
+                              onClick={() => setInvitePlan(p)}
+                              style={{
+                                flex: 1,
+                                padding: '10px 12px',
+                                borderRadius: 'var(--radius-sm)',
+                                border: `1.5px solid ${invitePlan === p ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
+                                background: invitePlan === p ? 'rgba(0,229,200,0.08)' : 'transparent',
+                                color: invitePlan === p ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                fontFamily: 'var(--font-display)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                              }}
+                            >
+                              {p}
+                            </button>
+                          ))
+                      )}
                     </div>
                   </div>
 
