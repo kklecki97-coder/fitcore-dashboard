@@ -519,7 +519,6 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
               <div style={styles.modalBody}>
                 <div style={styles.modalField}>
                   <span style={styles.modalLabel}>{t.clients.planTier}</span>
-                  {(() => { console.log('DEBUG_PLANS_V2:', JSON.stringify(plans)); return null; })()}
                   <div style={styles.modalPlanPicker}>
                     {(plans.filter(p => p.isActive).length > 0
                       ? plans.filter(p => p.isActive).map(p => {
