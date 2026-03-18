@@ -10,6 +10,9 @@ import RegisterPage from './RegisterPage.tsx'
 import LoginPage from './LoginPage.tsx'
 import AccountPage from './AccountPage.tsx'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
+import PrivacyPage from './PrivacyPage.tsx'
+import TermsPage from './TermsPage.tsx'
+import ContactPage from './ContactPage.tsx'
 
 function LangUrlSync() {
   const { pathname } = useLocation();
@@ -58,6 +61,9 @@ function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         {/* Polish prefix */}
         <Route path="/pl" element={<App />} />
         <Route path="/pl/" element={<App />} />
@@ -65,6 +71,9 @@ function AppRoutes() {
         <Route path="/pl/register" element={<RegisterPage />} />
         <Route path="/pl/login" element={<LoginPage />} />
         <Route path="/pl/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+        <Route path="/pl/privacy" element={<PrivacyPage />} />
+        <Route path="/pl/terms" element={<TermsPage />} />
+        <Route path="/pl/contact" element={<ContactPage />} />
         {/* Catch-all */}
         <Route path="/pl/*" element={<Navigate to="/pl/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />

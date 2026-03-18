@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   AlertTriangle, Eye, TrendingUp,
   Clock, DollarSign, UserMinus,
+  Shield, Lock, CreditCard, UserCheck, ChevronDown,
+  FileText, HelpCircle,
 } from 'lucide-react';
 import { useLang } from './i18n';
 import type { Lang } from './i18n';
@@ -193,6 +195,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [emailValue, setEmailValue] = useState('');
   const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll();
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
@@ -219,8 +222,9 @@ export default function App() {
 
   const navLinks = [
     { label: t.nav.features, href: '#features' },
-    { label: t.nav.howItWorks, href: '#how-it-works' },
+    { label: t.nav.howItWorks, href: '#how-it-works-steps' },
     { label: t.nav.pricing, href: '#pricing' },
+    { label: 'FAQ', href: '#faq' },
   ];
 
   return (
@@ -1144,9 +1148,221 @@ export default function App() {
           .pricing-inner-grid { grid-template-columns: 1fr !important; }
           .pricing-inner-grid > div:first-child { border-right: none !important; border-bottom: 1px solid var(--glass-border); }
           .newsletter-form { flex-direction: column !important; }
+          .how-it-works-grid { grid-template-columns: 1fr 1fr !important; }
+          .security-grid { grid-template-columns: 1fr !important; }
+          .footer-columns { grid-template-columns: 1fr 1fr !important; }
         }
       `}</style>
 
+      {/* ════════════════════════════════════════════════════════
+          HOW IT WORKS — STEP-BY-STEP
+         ════════════════════════════════════════════════════════ */}
+      <Section id="how-it-works-steps">
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 16px', borderRadius: 100,
+              background: 'var(--accent-primary-dim)', border: '1px solid rgba(0, 229, 200, 0.15)',
+              fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)',
+              marginBottom: 20,
+            }}>
+              <Zap size={14} /> {t.howItWorks?.badge || 'Simple Setup'}
+            </div>
+            <h2 style={{
+              fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800,
+              letterSpacing: -1.5, lineHeight: 1.15, marginBottom: 12,
+            }}>
+              {t.howItWorks?.heading || 'Up and Running in Minutes'}
+            </h2>
+            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
+              {t.howItWorks?.subheading || 'Four simple steps to transform how you run your coaching business.'}
+            </p>
+          </div>
+
+          <div className="how-it-works-grid" style={{
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24,
+          }}>
+            {[
+              { icon: UserCheck, color: 'var(--accent-primary)', step: '01', title: t.howItWorks?.step1Title || 'Sign Up', desc: t.howItWorks?.step1Desc || 'Create your account in seconds. 14-day free trial, no credit card required.' },
+              { icon: CreditCard, color: '#635bff', step: '02', title: t.howItWorks?.step2Title || 'Connect Stripe', desc: t.howItWorks?.step2Desc || 'Link your Stripe account to start accepting payments from clients directly.' },
+              { icon: Users, color: 'var(--accent-warm)', step: '03', title: t.howItWorks?.step3Title || 'Add Clients & Plans', desc: t.howItWorks?.step3Desc || 'Import your clients, create custom coaching plans with your own pricing.' },
+              { icon: DollarSign, color: 'var(--accent-success)', step: '04', title: t.howItWorks?.step4Title || 'Get Paid', desc: t.howItWorks?.step4Desc || 'Send invoices, clients pay in one click. Track everything from your dashboard.' },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <GlassCard key={i} delay={i * 0.1}>
+                  <div style={{ padding: '28px 20px', textAlign: 'center' }}>
+                    <div style={{
+                      fontSize: 12, fontWeight: 700, color: item.color,
+                      fontFamily: 'var(--font-mono)', marginBottom: 16, letterSpacing: 1,
+                    }}>
+                      STEP {item.step}
+                    </div>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: 12,
+                      background: `${item.color}15`, border: `1px solid ${item.color}30`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      margin: '0 auto 16px',
+                    }}>
+                      <Icon size={22} color={item.color} />
+                    </div>
+                    <h4 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, letterSpacing: -0.3 }}>
+                      {item.title}
+                    </h4>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                      {item.desc}
+                    </p>
+                  </div>
+                </GlassCard>
+              );
+            })}
+          </div>
+        </div>
+      </Section>
+
+      {/* ════════════════════════════════════════════════════════
+          SECURITY & TRUST
+         ════════════════════════════════════════════════════════ */}
+      <Section id="security">
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 16px', borderRadius: 100,
+              background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.15)',
+              fontSize: 13, fontWeight: 600, color: 'var(--accent-secondary)',
+              marginBottom: 20,
+            }}>
+              <Shield size={14} /> {t.security?.badge || 'Enterprise-Grade Security'}
+            </div>
+            <h2 style={{
+              fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800,
+              letterSpacing: -1.5, lineHeight: 1.15, marginBottom: 12,
+            }}>
+              {t.security?.heading || 'Your Data. Your Clients. Protected.'}
+            </h2>
+            <p style={{ fontSize: 16, color: 'var(--text-secondary)', maxWidth: 560, margin: '0 auto', lineHeight: 1.6 }}>
+              {t.security?.subheading || 'We take security seriously. Every interaction on FitCore is encrypted, authenticated, and compliant.'}
+            </p>
+          </div>
+
+          <div className="security-grid" style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20,
+          }}>
+            {[
+              { icon: Lock, color: 'var(--accent-primary)', title: t.security?.item1Title || 'Encrypted Messaging', desc: t.security?.item1Desc || 'All coach-client communication is encrypted in transit and at rest. Your conversations stay private — always.' },
+              { icon: CreditCard, color: '#635bff', title: t.security?.item2Title || 'Stripe-Secured Payments', desc: t.security?.item2Desc || 'Payments are processed through Stripe Connect, PCI-DSS Level 1 compliant. We never see or store card details.' },
+              { icon: Shield, color: 'var(--accent-success)', title: t.security?.item3Title || 'Data Ownership', desc: t.security?.item3Desc || 'You own your data. Client info, programs, and messages — export anytime, delete anytime. No lock-in.' },
+              { icon: Eye, color: 'var(--accent-warm)', title: t.security?.item4Title || 'SSL Everywhere', desc: t.security?.item4Desc || 'Every connection to FitCore is encrypted with TLS/SSL. No exceptions, no compromises.' },
+              { icon: UserCheck, color: 'var(--accent-secondary)', title: t.security?.item5Title || 'Role-Based Access', desc: t.security?.item5Desc || 'Coaches and clients each have their own portal. Clients only see their own data — nothing else.' },
+              { icon: FileText, color: '#ef4444', title: t.security?.item6Title || 'Transparent Fees', desc: t.security?.item6Desc || 'A simple 5% platform fee on payments. No hidden charges, no surprise invoices. You see exactly what you pay.' },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <GlassCard key={i} delay={i * 0.08}>
+                  <div style={{ padding: '24px 20px' }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12,
+                      background: `${item.color}12`, border: `1px solid ${item.color}25`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginBottom: 16,
+                    }}>
+                      <Icon size={20} color={item.color} />
+                    </div>
+                    <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, letterSpacing: -0.3 }}>
+                      {item.title}
+                    </h4>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.65 }}>
+                      {item.desc}
+                    </p>
+                  </div>
+                </GlassCard>
+              );
+            })}
+          </div>
+        </div>
+      </Section>
+
+      {/* ════════════════════════════════════════════════════════
+          FAQ
+         ════════════════════════════════════════════════════════ */}
+      <Section id="faq">
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px 100px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '6px 16px', borderRadius: 100,
+              background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.15)',
+              fontSize: 13, fontWeight: 600, color: 'var(--accent-warm)',
+              marginBottom: 20,
+            }}>
+              <HelpCircle size={14} /> FAQ
+            </div>
+            <h2 style={{
+              fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800,
+              letterSpacing: -1.5, lineHeight: 1.15,
+            }}>
+              {t.faq?.heading || 'Frequently Asked Questions'}
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {(t.faq?.items || [
+              { q: 'How does pricing work?', a: 'FitCore charges a simple 5% platform fee on each client payment processed through the system. No monthly platform fees during your trial. After your 14-day free trial, it\'s $49/month + a one-time $100 setup fee.' },
+              { q: 'Is there a free trial?', a: 'Yes! You get a full 14-day free trial with access to all features. No credit card required to start.' },
+              { q: 'How do payments work?', a: 'You connect your own Stripe account through our dashboard. When you invoice a client, they receive a secure payment link. They pay directly — the money goes to your Stripe account minus the 5% platform fee.' },
+              { q: 'Is my data secure?', a: 'Absolutely. All data is encrypted in transit (TLS/SSL) and at rest. Payments are processed through Stripe (PCI-DSS Level 1 compliant). We never store credit card information.' },
+              { q: 'Can I create custom plans and pricing?', a: 'Yes. You define your own coaching plans with custom names, prices, and billing cycles (monthly, weekly, or one-time). Your pricing, your rules.' },
+              { q: 'What features are included?', a: 'Everything: client management, messaging, workout program builder, invoicing with Stripe payments, analytics dashboard, check-ins, and more. All features are included in every plan.' },
+              { q: 'Can my clients access their own portal?', a: 'Yes. Each client gets their own secure portal where they can view programs, track progress, chat with you, and pay invoices. Fully branded with your coaching identity.' },
+              { q: 'Can I cancel anytime?', a: 'Yes. No long-term contracts. You can cancel your subscription at any time from your account settings.' },
+            ] as { q: string; a: string }[]).map((item, i) => (
+              <div key={i} style={{
+                background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-md)', overflow: 'hidden',
+                transition: 'border-color 0.2s',
+                ...(faqOpen === i ? { borderColor: 'rgba(0, 229, 200, 0.2)' } : {}),
+              }}>
+                <button
+                  onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '18px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-primary)', fontSize: 15, fontWeight: 600,
+                    fontFamily: 'var(--font-display)', textAlign: 'left',
+                  }}
+                >
+                  <span>{item.q}</span>
+                  <ChevronDown size={18} style={{
+                    color: 'var(--text-secondary)', flexShrink: 0, marginLeft: 12,
+                    transform: faqOpen === i ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s',
+                  }} />
+                </button>
+                <AnimatePresence>
+                  {faqOpen === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={{
+                        padding: '0 20px 18px', fontSize: 14,
+                        color: 'var(--text-secondary)', lineHeight: 1.7,
+                      }}>
+                        {item.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Section>
 
       {/* ════════════════════════════════════════════════════════
           NEWSLETTER — EMAIL CAPTURE
@@ -1231,48 +1447,125 @@ export default function App() {
          ════════════════════════════════════════════════════════ */}
       <footer style={{
         borderTop: '1px solid var(--glass-border)',
-        padding: '40px 24px', position: 'relative', zIndex: 1,
+        padding: '60px 24px 32px', position: 'relative', zIndex: 1,
       }}>
-        <div style={{
-          maxWidth: 1100, margin: '0 auto',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          flexWrap: 'wrap', gap: 24,
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 28, height: 28, borderRadius: '50%' }} />
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                Fit<span style={{ color: 'var(--accent-primary)' }}>Core</span>
-              </span>
-            </div>
-            <a href="mailto:contact@fitcore.tech" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
-              fontWeight: 500, transition: 'color 0.2s',
-            }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-            >
-              <Mail size={14} /> contact@fitcore.tech
-            </a>
-          </div>
-          <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-            {[
-              { label: t.nav.features, href: '#features' },
-              { label: t.nav.howItWorks, href: '#how-it-works' },
-              { label: t.nav.pricing, href: '#pricing' },
-            ].map(link => (
-              <a key={link.label} href={link.href} style={{
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 48,
+            marginBottom: 48,
+          }} className="footer-columns">
+            {/* Brand Column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+                <span style={{ fontSize: 16, fontWeight: 700 }}>
+                  Fit<span style={{ color: 'var(--accent-primary)' }}>Core</span>
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6, maxWidth: 240 }}>
+                {t.footer?.tagline || 'Custom-built dashboards for fitness coaches who want to scale.'}
+              </p>
+              <a href="mailto:contact@fitcore.tech" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
                 color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
                 fontWeight: 500, transition: 'color 0.2s',
               }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent-primary)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+              >
+                <Mail size={14} /> contact@fitcore.tech
+              </a>
+            </div>
+
+            {/* Product Column */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                {t.footer?.productTitle || 'Product'}
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { label: t.nav.features, href: '#features' },
+                  { label: t.nav.howItWorks, href: '#how-it-works-steps' },
+                  { label: t.nav.pricing, href: '#pricing' },
+                  { label: t.footer?.security || 'Security', href: '#security' },
+                  { label: 'FAQ', href: '#faq' },
+                ].map(link => (
+                  <a key={link.label} href={link.href} style={{
+                    color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
+                    fontWeight: 500, transition: 'color 0.2s',
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                  >{link.label}</a>
+                ))}
+              </div>
+            </div>
+
+            {/* Resources Column */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                {t.footer?.resourcesTitle || 'Resources'}
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[
+                  { label: t.footer?.bookCall || 'Book a Call', href: 'https://cal.com/fitcore/demo', external: true },
+                  { label: t.footer?.privacyPolicy || 'Privacy Policy', href: lang === 'pl' ? '/pl/privacy' : '/privacy' },
+                  { label: t.footer?.termsOfService || 'Terms of Service', href: lang === 'pl' ? '/pl/terms' : '/terms' },
+                ].map(link => (
+                  <a key={link.label} href={link.href} target={link.external ? '_blank' : undefined} rel={link.external ? 'noopener noreferrer' : undefined} style={{
+                    color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
+                    fontWeight: 500, transition: 'color 0.2s',
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                  >{link.label}</a>
+                ))}
+              </div>
+            </div>
+
+            {/* Contact Column */}
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 16, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                {t.footer?.contactTitle || 'Contact'}
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
+                  color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
+                  fontWeight: 500, transition: 'color 0.2s',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                >{t.footer?.contactUs || 'Contact Us'}</a>
+                <a href="https://www.instagram.com/fitcoretech/" target="_blank" rel="noopener noreferrer" style={{
+                  color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 13,
+                  fontWeight: 500, transition: 'color 0.2s',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                >Instagram</a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div style={{
+            borderTop: '1px solid var(--glass-border)', paddingTop: 24,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            flexWrap: 'wrap', gap: 12,
+          }}>
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+              {t.footer.copyright}
+            </div>
+            <div style={{ display: 'flex', gap: 20 }}>
+              <a href={lang === 'pl' ? '/pl/privacy' : '/privacy'} style={{ color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 12, transition: 'color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
                 onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-              >{link.label}</a>
-            ))}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-            {t.footer.copyright}
+              >{t.footer?.privacyPolicy || 'Privacy Policy'}</a>
+              <a href={lang === 'pl' ? '/pl/terms' : '/terms'} style={{ color: 'var(--text-tertiary)', textDecoration: 'none', fontSize: 12, transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+              >{t.footer?.termsOfService || 'Terms of Service'}</a>
+            </div>
           </div>
         </div>
       </footer>

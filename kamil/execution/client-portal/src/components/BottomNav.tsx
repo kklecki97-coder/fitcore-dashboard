@@ -22,7 +22,7 @@ const navIcons: Record<string, typeof Home> = {
   settings: Settings,
 };
 
-const navPages: ClientPage[] = ['home', 'calendar', 'program', 'progress', 'messages'];
+const navPages: ClientPage[] = ['home', 'calendar', 'program', 'progress', 'messages', 'invoices'];
 
 export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout, unreadCount = 0 }: BottomNavProps) {
   const { t } = useLang();

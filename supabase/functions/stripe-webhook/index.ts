@@ -60,7 +60,6 @@ Deno.serve(async (req) => {
           .eq("id", coachId);
 
         if (error) console.error("Failed to update coach after checkout:", error.message);
-        else console.log(`Coach ${coachId} upgraded to pro`);
         break;
       }
 
@@ -138,7 +137,7 @@ Deno.serve(async (req) => {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        break;
     }
 
     return new Response(JSON.stringify({ received: true }), {
