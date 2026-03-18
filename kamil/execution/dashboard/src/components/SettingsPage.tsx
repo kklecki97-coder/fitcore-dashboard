@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, User, Bell, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Sun, Moon, User, Bell, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Eye, EyeOff, Package, Plus, Edit3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Theme } from '../types';
+import type { Theme, CoachingPlan } from '../types';
 
 interface Notifications {
   messages: boolean;
@@ -24,9 +24,13 @@ interface SettingsPageProps {
   onPhotoChange: (file: File) => void;
   notifications: Notifications;
   onNotificationsChange: (n: Notifications) => void;
+  plans: CoachingPlan[];
+  onAddPlan: (plan: CoachingPlan) => void;
+  onUpdatePlan: (id: string, updates: Partial<CoachingPlan>) => void;
+  onDeletePlan: (id: string) => void;
 }
 
-export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, notifications, onNotificationsChange }: SettingsPageProps) {
+export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, notifications, onNotificationsChange, plans, onAddPlan, onUpdatePlan, onDeletePlan }: SettingsPageProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
 
@@ -64,6 +68,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleteFinalConfirm, setDeleteFinalConfirm] = useState(false);
+
+  // Plans & Pricing state
+  const [planModal, setPlanModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<CoachingPlan | null>(null);
+  const [planForm, setPlanForm] = useState({ name: '', price: '', billingCycle: 'monthly' as 'monthly' | 'weekly' | 'one-time', description: '' });
+  const [deletePlanId, setDeletePlanId] = useState<string | null>(null);
 
   // Load real MFA status on mount
   useEffect(() => {
@@ -423,7 +433,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
-        {/* Stripe Payments — Row 2, Col 2 */}
+        {/* Stripe Payments + Plans — Row 2, Col 2-3 */}
         <GlassCard delay={0.3}>
           <div style={styles.sectionHeader}>
             <div style={{ ...styles.sectionIcon, background: 'rgba(99, 91, 255, 0.08)' }}>
@@ -498,7 +508,193 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
           </div>
         </GlassCard>
 
+        {/* Plans & Pricing — Row 2, Col 3 */}
+        <GlassCard delay={0.35}>
+          <div style={styles.sectionHeader}>
+            <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
+              <Package size={18} color="var(--accent-primary)" />
+            </div>
+            <div>
+              <h3 style={styles.sectionTitle}>{t.settings.plansAndPricing || 'Plans & Pricing'}</h3>
+              <p style={styles.sectionSub}>{t.settings.plansAndPricingSub || 'Create custom coaching plans'}</p>
+            </div>
+          </div>
+          <div style={styles.divider} />
+
+          {plans.length === 0 ? (
+            <div style={{ textAlign: 'center' as const, padding: '24px 16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+              {t.settings.noPlansYet || 'No plans yet. Create your first coaching plan.'}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px', marginBottom: '12px' }}>
+              {plans.map(plan => (
+                <div key={plan.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 12px', borderRadius: '8px',
+                  background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)',
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{plan.name}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      ${plan.price}{plan.billingCycle === 'monthly' ? '/mo' : plan.billingCycle === 'weekly' ? '/wk' : ' one-time'}
+                      {plan.description && ` · ${plan.description}`}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => {
+                        setEditingPlan(plan);
+                        setPlanForm({ name: plan.name, price: String(plan.price), billingCycle: plan.billingCycle, description: plan.description });
+                        setPlanModal(true);
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => setDeletePlanId(plan.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Delete confirmation */}
+          {deletePlanId && (
+            <div style={{ padding: '8px 12px', marginBottom: '8px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '13px', color: '#ef4444' }}>{t.settings.deletePlanConfirm || 'Delete this plan?'}</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={() => { onDeletePlan(deletePlanId); setDeletePlanId(null); }} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: '#ef4444', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  {t.settings.deleteAccount ? 'Delete' : 'Delete'}
+                </button>
+                <button onClick={() => setDeletePlanId(null)} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border-glass)', background: 'none', color: 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setEditingPlan(null);
+              setPlanForm({ name: '', price: '', billingCycle: 'monthly', description: '' });
+              setPlanModal(true);
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px', width: '100%',
+              padding: '10px', borderRadius: '8px', border: '1px dashed var(--border-glass)',
+              background: 'none', color: 'var(--accent-primary)', fontSize: '13px',
+              fontWeight: 600, cursor: 'pointer', justifyContent: 'center',
+              fontFamily: 'var(--font-display)',
+            }}
+          >
+            <Plus size={14} />
+            {t.settings.addPlan || 'Add Plan'}
+          </button>
+        </GlassCard>
+
       </div>
+
+      {/* Plan Modal — Add / Edit */}
+      <AnimatePresence>
+        {planModal && (
+          <motion.div
+            style={styles.modalOverlay}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setPlanModal(false)}
+          >
+            <motion.div
+              style={{ ...styles.modal, maxWidth: 400 }}
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              <div style={styles.modalHeader}>
+                <h3 style={styles.modalTitle}>{editingPlan ? (t.settings.editPlan || 'Edit Plan') : (t.settings.addPlan || 'Add Plan')}</h3>
+                <button style={styles.modalClose} onClick={() => setPlanModal(false)}><X size={18} /></button>
+              </div>
+              <div style={styles.modalBody}>
+                <label style={styles.fieldLabel}>{t.settings.planName || 'Plan Name'}</label>
+                <input
+                  type="text"
+                  value={planForm.name}
+                  onChange={(e) => setPlanForm(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g. Gold Plan"
+                  style={{ ...styles.fieldInput, marginBottom: '12px' }}
+                />
+
+                <label style={styles.fieldLabel}>{t.settings.planPrice || 'Price ($)'}</label>
+                <input
+                  type="number"
+                  value={planForm.price}
+                  onChange={(e) => setPlanForm(prev => ({ ...prev, price: e.target.value }))}
+                  placeholder="e.g. 149"
+                  style={{ ...styles.fieldInput, marginBottom: '12px' }}
+                  min="0"
+                  step="1"
+                />
+
+                <label style={styles.fieldLabel}>{t.settings.billingCycle || 'Billing Cycle'}</label>
+                <select
+                  value={planForm.billingCycle}
+                  onChange={(e) => setPlanForm(prev => ({ ...prev, billingCycle: e.target.value as 'monthly' | 'weekly' | 'one-time' }))}
+                  style={{ ...styles.fieldInput, marginBottom: '12px', cursor: 'pointer' }}
+                >
+                  <option value="monthly">{t.settings.monthly || 'Monthly'}</option>
+                  <option value="weekly">{t.settings.weekly || 'Weekly'}</option>
+                  <option value="one-time">{t.settings.oneTime || 'One-time'}</option>
+                </select>
+
+                <label style={styles.fieldLabel}>{t.settings.planDescription || 'Description (optional)'}</label>
+                <input
+                  type="text"
+                  value={planForm.description}
+                  onChange={(e) => setPlanForm(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="e.g. Full coaching + meal plans"
+                  style={{ ...styles.fieldInput, marginBottom: '16px' }}
+                />
+              </div>
+              <div style={styles.modalActions}>
+                <button style={styles.cancelBtn} onClick={() => setPlanModal(false)}>Cancel</button>
+                <button
+                  style={{ ...styles.saveBtn, opacity: (!planForm.name || !planForm.price) ? 0.5 : 1 }}
+                  disabled={!planForm.name || !planForm.price}
+                  onClick={() => {
+                    if (editingPlan) {
+                      onUpdatePlan(editingPlan.id, {
+                        name: planForm.name,
+                        price: Number(planForm.price),
+                        billingCycle: planForm.billingCycle,
+                        description: planForm.description,
+                      });
+                    } else {
+                      const now = new Date().toISOString();
+                      onAddPlan({
+                        id: crypto.randomUUID(),
+                        coachId: '',
+                        name: planForm.name,
+                        price: Number(planForm.price),
+                        billingCycle: planForm.billingCycle,
+                        description: planForm.description,
+                        isActive: true,
+                        createdAt: now,
+                        updatedAt: now,
+                      });
+                    }
+                    setPlanModal(false);
+                  }}
+                >
+                  <Save size={14} />
+                  {t.settings.save}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Security Modals — Password / 2FA / Delete */}
       <AnimatePresence>

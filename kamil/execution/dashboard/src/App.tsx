@@ -20,7 +20,7 @@ import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { exerciseLibrary } from './data';
 import { supabase } from './lib/supabase';
-import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification, WorkoutLog } from './types';
+import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification, WorkoutLog, CoachingPlan } from './types';
 
 function App() {
   const { t } = useLang();
@@ -94,6 +94,7 @@ function App() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>([]);
   const [allWorkoutLogs, setAllWorkoutLogs] = useState<WorkoutLog[]>([]);
+  const [allPlans, setAllPlans] = useState<CoachingPlan[]>([]);
 
   // ── Load data from Supabase on login ──
   useEffect(() => {
@@ -289,6 +290,24 @@ function App() {
       }
     };
 
+    const loadPlans = async () => {
+      const { data, error } = await supabase.from('coaching_plans').select('*').order('created_at');
+      if (error) { console.error('loadPlans failed:', error); return; }
+      if (data) {
+        setAllPlans(data.map(r => ({
+          id: r.id,
+          coachId: r.coach_id,
+          name: r.name,
+          price: Number(r.price),
+          billingCycle: r.billing_cycle,
+          description: r.description ?? '',
+          isActive: r.is_active,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        })));
+      }
+    };
+
     setDataLoading(true);
     loadClients().then((clientsList) => {
       Promise.all([
@@ -297,6 +316,7 @@ function App() {
         loadCheckIns(clientsList),
         loadPrograms(),
         loadWorkoutLogs(),
+        loadPlans(),
       ]).finally(() => setDataLoading(false));
     });
   }, [isLoggedIn]);
@@ -646,6 +666,50 @@ function App() {
     }
   };
 
+  // ── Plan handlers ──
+  const handleAddPlan = async (plan: CoachingPlan) => {
+    setAllPlans(prev => [...prev, plan]);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from('coaching_plans').insert({
+      id: plan.id,
+      coach_id: user?.id || null,
+      name: plan.name,
+      price: plan.price,
+      billing_cycle: plan.billingCycle,
+      description: plan.description || null,
+      is_active: plan.isActive,
+    });
+    if (error) {
+      console.error('handleAddPlan failed:', error);
+      setAllPlans(prev => prev.filter(p => p.id !== plan.id));
+    }
+  };
+
+  const handleUpdatePlan = async (id: string, updates: Partial<CoachingPlan>) => {
+    setAllPlans(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.price !== undefined) dbUpdates.price = updates.price;
+    if (updates.billingCycle !== undefined) dbUpdates.billing_cycle = updates.billingCycle;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive;
+    if (Object.keys(dbUpdates).length > 0) {
+      dbUpdates.updated_at = new Date().toISOString();
+      const { error } = await supabase.from('coaching_plans').update(dbUpdates).eq('id', id);
+      if (error) console.error('handleUpdatePlan failed:', error);
+    }
+  };
+
+  const handleDeletePlan = async (id: string) => {
+    const removed = allPlans.find(p => p.id === id);
+    setAllPlans(prev => prev.filter(p => p.id !== id));
+    const { error } = await supabase.from('coaching_plans').delete().eq('id', id);
+    if (error) {
+      console.error('handleDeletePlan failed:', error);
+      if (removed) setAllPlans(prev => [...prev, removed]);
+    }
+  };
+
   // ── Check-in handlers ──
   const handleUpdateCheckIn = async (id: string, updates: Partial<CheckIn>) => {
     setAllCheckIns(prev => prev.map(ci => ci.id === id ? { ...ci, ...updates } : ci));
@@ -802,6 +866,7 @@ function App() {
           <PaymentsPage
             clients={allClients}
             invoices={allInvoices}
+            plans={allPlans}
             onUpdateInvoice={handleUpdateInvoice}
             onAddInvoice={handleAddInvoice}
             onViewClient={handleViewClient}
@@ -849,6 +914,10 @@ function App() {
             }}
             notifications={notifications}
             onNotificationsChange={setNotifications}
+            plans={allPlans}
+            onAddPlan={handleAddPlan}
+            onUpdatePlan={handleUpdatePlan}
+            onDeletePlan={handleDeletePlan}
           />
         );
       default:

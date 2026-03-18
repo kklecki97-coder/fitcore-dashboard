@@ -9,11 +9,12 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, Invoice } from '../types';
+import type { Client, Invoice, CoachingPlan } from '../types';
 
 interface PaymentsPageProps {
   clients: Client[];
   invoices: Invoice[];
+  plans: CoachingPlan[];
   onUpdateInvoice: (id: string, updates: Partial<Invoice>) => void;
   onAddInvoice: (invoice: Invoice) => void;
   onViewClient: (id: string) => void;
@@ -23,14 +24,14 @@ type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
 // @ts-ignore onUpdateInvoice reserved for future manual payment marking
-export default function PaymentsPage({ clients, invoices, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
+export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
   const { lang, t } = useLang();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [sortBy, setSortBy] = useState<SortKey>('date');
   const [createModal, setCreateModal] = useState(false);
-  const [newInvoice, setNewInvoice] = useState({ clientId: '', plan: 'Basic' as 'Basic' | 'Premium' | 'Elite' });
+  const [newInvoice, setNewInvoice] = useState({ clientId: '', planId: '' });
   const [reminderModal, setReminderModal] = useState<{ clientId: string; clientName: string; amount: number; invoiceId: string } | null>(null);
   const [reminderDraft, setReminderDraft] = useState('');
   const [reminderSent, setReminderSent] = useState(false);
@@ -92,26 +93,26 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice: _onUp
   });
 
   const handleCreateInvoice = () => {
-    if (!newInvoice.clientId) return;
+    if (!newInvoice.clientId || !newInvoice.planId) return;
     const client = clients.find(c => c.id === newInvoice.clientId);
-    if (!client) return;
-    const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
+    const plan = plans.find(p => p.id === newInvoice.planId);
+    if (!client || !plan) return;
     const now = new Date();
     const period = formatPeriod(now);
     const inv: Invoice = {
       id: crypto.randomUUID(),
       clientId: client.id,
       clientName: client.name,
-      amount: rateMap[newInvoice.plan],
+      amount: plan.price,
       status: 'pending',
       dueDate: now.toISOString().split('T')[0],
       paidDate: null,
       period,
-      plan: newInvoice.plan,
+      plan: plan.name,
     };
     onAddInvoice(inv);
     setCreateModal(false);
-    setNewInvoice({ clientId: '', plan: 'Basic' });
+    setNewInvoice({ clientId: '', planId: '' });
   };
 
   const statusColors: Record<string, { color: string; bg: string }> = {
@@ -424,31 +425,37 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice: _onUp
                 </div>
                 <div style={styles.modalField}>
                   <span style={styles.modalLabel}>{t.payments.planTier}</span>
-                  <div style={styles.planPicker}>
-                    {(['Basic', 'Premium', 'Elite'] as const).map(p => {
-                      const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
-                      const isActive = newInvoice.plan === p;
-                      return (
-                        <button
-                          key={p}
-                          onClick={() => setNewInvoice(prev => ({ ...prev, plan: p }))}
-                          style={{
-                            ...styles.planOption,
-                            ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--accent-primary-dim)' } : {}),
-                          }}
-                        >
-                          <div style={{ fontWeight: 600, fontSize: '18px' }}>{p}</div>
-                          <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {plans.filter(p => p.isActive).length === 0 ? (
+                    <div style={{ padding: '16px', textAlign: 'center' as const, color: 'var(--text-secondary)', fontSize: '13px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                      {t.payments.noPlansMessage || 'No plans created yet. Go to Settings to create plans.'}
+                    </div>
+                  ) : (
+                    <div style={styles.planPicker}>
+                      {plans.filter(p => p.isActive).map(p => {
+                        const isActive = newInvoice.planId === p.id;
+                        const cycleSuffix = p.billingCycle === 'monthly' ? '/mo' : p.billingCycle === 'weekly' ? '/wk' : '';
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => setNewInvoice(prev => ({ ...prev, planId: p.id }))}
+                            style={{
+                              ...styles.planOption,
+                              ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--accent-primary-dim)' } : {}),
+                            }}
+                          >
+                            <div style={{ fontWeight: 600, fontSize: '16px' }}>{p.name}</div>
+                            <div style={{ fontSize: '14px', opacity: 0.7 }}>${p.price}{cycleSuffix}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div style={styles.modalActions}>
                   <button onClick={() => setCreateModal(false)} style={styles.cancelBtn}>{t.common.cancel}</button>
                   <button
                     onClick={handleCreateInvoice}
-                    style={{ ...styles.primaryBtn, opacity: newInvoice.clientId ? 1 : 0.5 }}
+                    style={{ ...styles.primaryBtn, opacity: (newInvoice.clientId && newInvoice.planId) ? 1 : 0.5 }}
                   >
                     <Send size={14} />
                     {t.payments.createInvoice}

@@ -92,9 +92,21 @@ export interface Invoice {
   dueDate: string;
   paidDate: string | null;
   period: string; // e.g. "Feb 2026"
-  plan: 'Basic' | 'Premium' | 'Elite';
+  plan: string;
   paymentUrl?: string | null;
   stripeSessionId?: string | null;
+}
+
+export interface CoachingPlan {
+  id: string;
+  coachId: string;
+  name: string;
+  price: number;
+  billingCycle: 'monthly' | 'weekly' | 'one-time';
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CheckIn {
