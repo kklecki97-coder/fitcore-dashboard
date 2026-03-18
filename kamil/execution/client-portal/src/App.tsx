@@ -627,7 +627,7 @@ function App() {
       if (metricsErr) console.error('client_metrics sync failed:', metricsErr);
       else {
         // Update local state so UI refreshes without reload
-        setClient(prev => {
+        setClientUser((prev: Client | null) => {
           if (!prev) return prev;
           const newWeight = ci.weight != null ? [...prev.metrics.weight, ci.weight] : prev.metrics.weight;
           const newBodyFat = ci.bodyFat != null ? [...prev.metrics.bodyFat, ci.bodyFat] : prev.metrics.bodyFat;
