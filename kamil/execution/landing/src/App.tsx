@@ -14,6 +14,7 @@ import {
 import { useLang } from './i18n';
 import type { Lang } from './i18n';
 import { useAuth } from './auth';
+import { supabase } from './lib/supabase';
 
 /* ═══════════════════════════════════════════════════════════
    FitCore Demo Landing Page - Identity-Driven Redesign
@@ -1395,9 +1396,12 @@ export default function App() {
             </motion.div>
           ) : (
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
-                // TODO: wire up to Supabase / email service
+                if (!emailValue.trim()) return;
+                try {
+                  await supabase.from('newsletter_subscribers').insert({ email: emailValue.trim() });
+                } catch { /* silent */ }
                 setEmailSubmitted(true);
               }}
               style={{

@@ -663,6 +663,10 @@ function App() {
     if (error) {
       console.error('handleAddInvoice failed:', error);
       setAllInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
+    } else {
+      // Notify client via email (fire and forget)
+      supabase.functions.invoke('notify-invoice', { body: { invoiceId: invoice.id } })
+        .catch(() => { /* silent — email is best-effort */ });
     }
   };
 

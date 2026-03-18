@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { DollarSign, CheckCircle2, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { DollarSign, CheckCircle2, Clock, AlertTriangle, Loader2, X } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
@@ -14,6 +14,19 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
   const isMobile = useIsMobile();
   const { lang } = useLang();
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get('payment');
+    if (payment === 'success' || payment === 'cancelled') {
+      setPaymentBanner(payment);
+      // Clean URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('payment');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, []);
 
   const handlePay = async (invoiceId: string) => {
     setPayingId(invoiceId);
@@ -164,6 +177,28 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
         <DollarSign size={22} style={{ verticalAlign: 'middle', marginRight: 8, color: 'var(--accent-primary)' }} />
         {lang === 'pl' ? 'Faktury' : 'Invoices'}
       </h1>
+
+      {/* Payment Banner */}
+      {paymentBanner && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 16px', borderRadius: '10px',
+          background: paymentBanner === 'success' ? 'rgba(34, 197, 94, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+          border: `1px solid ${paymentBanner === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle2 size={18} color={paymentBanner === 'success' ? '#22c55e' : '#f59e0b'} />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: paymentBanner === 'success' ? '#22c55e' : '#f59e0b' }}>
+              {paymentBanner === 'success'
+                ? (lang === 'pl' ? 'Płatność zakończona sukcesem!' : 'Payment successful!')
+                : (lang === 'pl' ? 'Płatność anulowana.' : 'Payment cancelled.')}
+            </span>
+          </div>
+          <button onClick={() => setPaymentBanner(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Summary */}
       <div style={s.summaryRow}>

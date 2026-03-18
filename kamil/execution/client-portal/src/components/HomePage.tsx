@@ -17,7 +17,7 @@ const WORKOUT_COLORS = [
 
 // Same label extraction as CalendarPage - group same workout types to same color
 const extractLabel = (name: string): string => {
-  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[-–-:]\s*/i, '');
+  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[\-–\-:]\s*/i, '');
   const s = stripped.toLowerCase();
   if (s.includes('push')) return 'Push';
   if (s.includes('pull')) return 'Pull';
