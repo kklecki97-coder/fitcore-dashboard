@@ -52,6 +52,7 @@ function GlassCard({ children, style, delay = 0 }: { children: React.ReactNode; 
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
       whileHover={{ y: -4, borderColor: 'rgba(255,255,255,0.12)' }}
+      className="glass-card"
       style={{
         background: 'var(--bg-card)',
         backdropFilter: 'blur(var(--glass-blur))',
@@ -74,6 +75,7 @@ interface Screenshot { src: string; label: string; desc: string; }
 function ScreenshotCarousel({ screenshots }: { screenshots: Screenshot[] }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const next = () => { setDirection(1); setCurrent(i => (i + 1) % screenshots.length); };
   const prev = () => { setDirection(-1); setCurrent(i => (i - 1 + screenshots.length) % screenshots.length); };
@@ -110,12 +112,13 @@ function ScreenshotCarousel({ screenshots }: { screenshots: Screenshot[] }) {
             flex: 1, background: 'var(--bg-elevated)', borderRadius: 8,
             padding: '6px 16px', fontSize: 12, color: 'var(--text-tertiary)',
             fontFamily: 'var(--font-mono)', maxWidth: 400,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             app.fitcore.tech/{screenshots[current].label.toLowerCase().replace(/ /g, '-')}
           </div>
         </div>
 
-        <div style={{ position: 'relative', overflow: 'hidden', aspectRatio: '16/9', background: 'var(--bg-primary)' }}>
+        <div onClick={() => setLightboxOpen(true)} style={{ position: 'relative', overflow: 'hidden', aspectRatio: '16/9', background: 'var(--bg-primary)', cursor: 'zoom-in' }}>
           <AnimatePresence custom={direction} mode="wait">
             <motion.img
               key={current}
@@ -181,6 +184,39 @@ function ScreenshotCarousel({ screenshots }: { screenshots: Screenshot[] }) {
           />
         ))}
       </div>
+
+      <AnimatePresence>
+        {lightboxOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setLightboxOpen(false)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              zIndex: 1000, background: 'rgba(0, 0, 0, 0.85)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 24, cursor: 'zoom-out',
+            }}
+          >
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              src={screenshots[current].src}
+              alt={screenshots[current].label}
+              style={{
+                maxWidth: '90vw', maxHeight: '90vh',
+                objectFit: 'contain', borderRadius: 12,
+                boxShadow: '0 16px 80px rgba(0, 0, 0, 0.6)',
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -276,7 +312,7 @@ export default function App() {
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
           background: 'rgba(7, 9, 14, 0.8)', backdropFilter: 'blur(20px)',
           borderBottom: '1px solid var(--glass-border)',
-          padding: '0 24px', height: 72,
+          padding: '0 16px', height: 60,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           maxWidth: '100%',
         }}
@@ -355,7 +391,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             className="nav-mobile-menu"
             style={{
-              position: 'absolute', top: 72, left: 0, right: 0,
+              position: 'absolute', top: 60, left: 0, right: 0,
               background: 'rgba(7, 9, 14, 0.95)', backdropFilter: 'blur(20px)',
               borderBottom: '1px solid var(--glass-border)',
               padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 16,
@@ -403,7 +439,7 @@ export default function App() {
         <section style={{
           minHeight: '100vh', display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-          padding: '60px 24px 32px', position: 'relative', zIndex: 1,
+          padding: '80px 20px 32px', position: 'relative', zIndex: 1,
           maxWidth: 1200, margin: '0 auto',
         }}>
           <motion.div
@@ -459,6 +495,7 @@ export default function App() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.5 }}
+            className="hero-cta-buttons"
             style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}
           >
             <a href="#pricing" style={{
@@ -1012,7 +1049,7 @@ export default function App() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                     <span style={{
-                      fontSize: 48, fontWeight: 800, color: 'var(--accent-primary)',
+                      fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: 800, color: 'var(--accent-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
                     }}>{t.pricing.trialPrice}</span>
                     <span style={{ fontSize: 16, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.trialDuration}</span>
@@ -1041,15 +1078,15 @@ export default function App() {
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
                     {t.pricing.afterTrialLabel}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
+                  <div className="pricing-after-trial" style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
                     <span style={{
-                      fontSize: 48, fontWeight: 800, color: 'var(--text-primary)',
+                      fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: 800, color: 'var(--text-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
                     }}>{t.pricing.setupPrice}</span>
                     <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.oneTime}</span>
                     <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>{t.pricing.plus}</span>
                     <span style={{
-                      fontSize: 32, fontWeight: 800, color: 'var(--text-primary)',
+                      fontSize: 'clamp(24px, 6vw, 32px)', fontWeight: 800, color: 'var(--text-primary)',
                       fontFamily: 'var(--font-mono)', letterSpacing: -1, lineHeight: 1,
                     }}>{t.pricing.monthlyPrice}</span>
                     <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.perMonth}</span>
@@ -1142,12 +1179,26 @@ export default function App() {
       <style>{`
         @media (max-width: 768px) {
           .fork-grid { grid-template-columns: 1fr !important; }
+          .fork-grid > div { padding: 32px 24px !important; }
+          .fork-grid > div:first-child { border-right: none !important; border-bottom: 1px solid var(--glass-border); }
           .objections-grid { grid-template-columns: 1fr !important; }
           .pricing-inner-grid { grid-template-columns: 1fr !important; }
           .pricing-inner-grid > div:first-child { border-right: none !important; border-bottom: 1px solid var(--glass-border); }
-          .how-it-works-grid { grid-template-columns: 1fr 1fr !important; }
+          .pricing-inner-grid > div { padding: 32px 24px !important; }
+          .newsletter-form { flex-direction: column !important; }
+          .how-it-works-grid { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
           .security-grid { grid-template-columns: 1fr !important; }
-          .footer-columns { grid-template-columns: 1fr 1fr !important; }
+          .footer-columns { grid-template-columns: 1fr 1fr !important; gap: 32px !important; }
+          .glass-card { padding: 24px !important; }
+          .pain-cards-grid .glass-card { padding: 28px 24px !important; }
+          .pain-cards-grid .glass-card h3 { font-size: 19px !important; min-height: auto !important; }
+        }
+        @media (max-width: 480px) {
+          .how-it-works-grid { grid-template-columns: 1fr !important; }
+          .stat-cards-grid { grid-template-columns: 1fr !important; }
+          .footer-columns { grid-template-columns: 1fr !important; gap: 28px !important; }
+          .pricing-after-trial { flex-wrap: wrap !important; gap: 4px 8px !important; }
+          .glass-card { padding: 20px !important; }
         }
       `}</style>
 
@@ -1503,6 +1554,8 @@ export default function App() {
           .feature-row, .feature-row-reverse {
             grid-template-columns: 1fr !important;
             gap: 32px !important;
+            padding-left: 20px !important;
+            padding-right: 20px !important;
           }
           .feature-image-reverse {
             order: -1;
@@ -1512,6 +1565,23 @@ export default function App() {
           }
           .stat-cards-grid {
             grid-template-columns: 1fr 1fr !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .feature-row, .feature-row-reverse {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+            gap: 24px !important;
+          }
+          .hero-cta-buttons {
+            flex-direction: column !important;
+            width: 100%;
+          }
+          .hero-cta-buttons a {
+            width: 100%;
+            justify-content: center;
+            padding: 14px 24px !important;
+            font-size: 15px !important;
           }
         }
       `}</style>

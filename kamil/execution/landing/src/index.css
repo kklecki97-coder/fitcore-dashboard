@@ -66,6 +66,12 @@ html {
   zoom: 1.25;
 }
 
+@media (max-width: 768px) {
+  #root {
+    zoom: 1;
+  }
+}
+
 html, body, #root {
   width: 100%;
 }
