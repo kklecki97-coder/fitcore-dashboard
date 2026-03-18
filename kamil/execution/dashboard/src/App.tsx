@@ -628,9 +628,11 @@ function App() {
 
   const handleAddInvoice = async (invoice: Invoice) => {
     setAllInvoices(prev => [...prev, invoice]);
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from('invoices').insert({
       id: invoice.id,
       client_id: invoice.clientId,
+      coach_id: user?.id || null,
       amount: invoice.amount,
       status: invoice.status,
       due_date: invoice.dueDate || null,
