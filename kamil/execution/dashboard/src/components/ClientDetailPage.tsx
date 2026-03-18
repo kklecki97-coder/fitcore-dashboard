@@ -688,7 +688,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
               </div>
 
               {/* Day-of-week headers */}
-              <div style={styles.calGrid}>
+              <div style={{ ...styles.calGrid, ...(isMobile ? { gap: '2px' } : {}) }}>
                 {dayHeaders.map(d => (
                   <div key={d} style={styles.calDayHeader}>{d}</div>
                 ))}
@@ -714,6 +714,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       title={entries ? entries.map(e => `${e.type} (${e.duration}min)`).join(', ') : dateKey}
                       style={{
                         ...styles.calCell,
+                        ...(isMobile ? { minHeight: '36px', padding: '0 1px 3px' } : {}),
                         ...(isToday ? {
                           background: 'rgba(0,229,200,0.08)',
                           border: '1px solid rgba(0,229,200,0.25)',

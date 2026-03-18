@@ -250,13 +250,15 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
+  const isMobile = useIsMobile();
+
   // ═══════════════════════════════════════
   // CLIENT PICKER - Full screen first step
   // ═══════════════════════════════════════
   if (phase === 'pick-client') {
     return (
-      <div style={s.outerPage}>
-        <div style={s.pickerCentered}>
+      <div style={{ ...s.outerPage, padding: isMobile ? '12px' : '24px' }}>
+        <div style={{ ...s.pickerCentered, padding: isMobile ? '12px 0' : '24px 20px' }}>
           <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
             <ArrowLeft size={15} /> Back to Programs
           </motion.button>
@@ -317,10 +319,10 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   // WORKSPACE - Left cards + Right chatbot
   // ═══════════════════════════════════════
   return (
-    <div style={s.outerPage}>
-      <div style={s.layoutGrid}>
-        {/* ── LEFT COLUMN ── */}
-        <div style={s.leftCol}>
+    <div style={{ ...s.outerPage, padding: isMobile ? '12px' : '24px' }}>
+      <div style={{ ...s.layoutGrid, gridTemplateColumns: isMobile ? '1fr' : '320px 1fr' }}>
+        {/* ── LEFT COLUMN (hidden on mobile) ── */}
+        {!isMobile && <div style={s.leftCol}>
           {/* Back */}
           <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
             <ArrowLeft size={15} /> Back to Programs
@@ -435,7 +437,26 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
               </div>
             )}
           </motion.div>
-        </div>
+        </div>}
+
+        {/* ── Mobile: back button + save button above chat ── */}
+        {isMobile && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between' }}>
+            <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
+              <ArrowLeft size={15} /> Back
+            </motion.button>
+            {generatedProgram && (
+              <motion.button
+                onClick={() => onGenerated(generatedProgram)}
+                style={{ ...s.saveBtn, padding: '8px 16px', fontSize: '13px' }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                <Check size={14} /> Save Program
+              </motion.button>
+            )}
+          </div>
+        )}
 
         {/* ── RIGHT COLUMN - Chatbot card ── */}
         <motion.div
