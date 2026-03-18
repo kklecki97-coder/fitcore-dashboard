@@ -17,12 +17,13 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn } from '../types';
+import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn, CoachingPlan } from '../types';
 
 interface ClientDetailPageProps {
   clientId: string;
   clients: Client[];
   programs: WorkoutProgram[];
+  plans: CoachingPlan[];
   workoutLogs: WorkoutLog[];
   checkIns: CheckIn[];
   onBack: () => void;
@@ -35,7 +36,7 @@ interface ClientDetailPageProps {
 }
 
 // @ts-ignore - onAddCheckIn scaffolded for upcoming check-in-from-coach feature
-export default function ClientDetailPage({ clientId, clients, programs, workoutLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
   const client = clients.find(c => c.id === clientId);
@@ -1099,24 +1100,42 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>{t.clientDetail.plan}</span>
                     <div style={styles.modalPlanPicker}>
-                      {(['Basic', 'Premium', 'Elite'] as const).map((p) => {
-                        const isActive = editPlan === p;
-                        const accentMap = { Basic: 'var(--accent-primary)', Premium: 'var(--accent-secondary)', Elite: 'var(--accent-warm)' };
-                        const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
-                        return (
-                          <button
-                            key={p}
-                            onClick={() => setEditPlan(p)}
-                            style={{
-                              ...styles.modalPlanOption,
-                              ...(isActive ? { borderColor: accentMap[p], color: accentMap[p], background: 'var(--bg-subtle)' } : {}),
-                            }}
-                          >
-                            <div style={{ fontWeight: 600, fontSize: '18px' }}>{planLabelMap[p]}</div>
-                            <div style={{ fontSize: '15px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
-                          </button>
-                        );
-                      })}
+                      {(plans.filter(p => p.isActive).length > 0
+                        ? plans.filter(p => p.isActive).map(p => {
+                            const isActive = editPlan === p.name;
+                            const cycleSuffix = p.billingCycle === 'monthly' ? '/mo' : p.billingCycle === 'weekly' ? '/wk' : '';
+                            return (
+                              <button
+                                key={p.id}
+                                onClick={() => setEditPlan(p.name as Client['plan'])}
+                                style={{
+                                  ...styles.modalPlanOption,
+                                  ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--bg-subtle)' } : {}),
+                                }}
+                              >
+                                <div style={{ fontWeight: 600, fontSize: '16px' }}>{p.name}</div>
+                                <div style={{ fontSize: '14px', opacity: 0.7 }}>${p.price}{cycleSuffix}</div>
+                              </button>
+                            );
+                          })
+                        : (['Basic', 'Premium', 'Elite'] as const).map(p => {
+                            const isActive = editPlan === p;
+                            const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
+                            return (
+                              <button
+                                key={p}
+                                onClick={() => setEditPlan(p)}
+                                style={{
+                                  ...styles.modalPlanOption,
+                                  ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--bg-subtle)' } : {}),
+                                }}
+                              >
+                                <div style={{ fontWeight: 600, fontSize: '16px' }}>{p}</div>
+                                <div style={{ fontSize: '14px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
+                              </button>
+                            );
+                          })
+                      )}
                     </div>
                   </div>
 

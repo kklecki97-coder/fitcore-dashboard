@@ -801,6 +801,7 @@ function App() {
             clientId={selectedClientId}
             clients={allClients}
             programs={allPrograms}
+            plans={allPlans}
             workoutLogs={allWorkoutLogs}
             checkIns={allCheckIns}
             onBack={handleBackFromClient}
