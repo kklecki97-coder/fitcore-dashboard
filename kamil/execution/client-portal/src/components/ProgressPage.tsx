@@ -4,6 +4,7 @@ import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'rec
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { supabase } from '../lib/supabase';
 import type { Client, WorkoutLog, CheckIn } from '../types';
 
 type TimePeriod = '1m' | '3m' | '6m' | 'all';
@@ -136,13 +137,42 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     return { goal, progress: 0, label: t.progress.inProgress };
   });
 
-  const handlePhotoUpload = (_target: 'week1' | 'latest') => {
-    // TODO: implement photo upload to Supabase storage
-    setUploadTarget(_target);
+  const [uploading, setUploading] = useState(false);
+
+  const handlePhotoUpload = (target: 'week1' | 'latest') => {
+    setUploadTarget(target);
     photoInputRef.current?.click();
   };
-  // suppress unused warning
-  void uploadTarget;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${client.id}/${uploadTarget}-${photoPose}-${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('progress-photos').upload(path, file, { upsert: true });
+      if (uploadErr) { console.error('Photo upload failed:', uploadErr); return; }
+
+      const { data: urlData } = supabase.storage.from('progress-photos').getPublicUrl(path);
+      const photoUrl = urlData.publicUrl;
+
+      // Find the target check-in to attach the photo to
+      const targetCheckIn = uploadTarget === 'week1' ? firstPhotos : (latestPhotos ?? checkIns.sort((a, b) => b.date.localeCompare(a.date))[0]);
+      if (targetCheckIn) {
+        const updatedPhotos = [...(targetCheckIn.photos || []), { url: photoUrl, label: photoPose }];
+        await supabase.from('check_ins').update({ photos: updatedPhotos }).eq('id', targetCheckIn.id);
+        // Reload page to show new photo
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('Photo upload error:', err);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '20px 16px 100px' : '24px 24px 80px' }}>
@@ -304,7 +334,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
             ))}
           </div>
         </div>
-        <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} />
+        <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
         <div style={styles.photoCompare}>
           {/* Week 1 / Starting photo */}
           <div style={styles.photoSide}>
@@ -332,7 +362,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                     <img src={placeholderSrc} alt="" style={{ ...styles.photoImg, opacity: 0.15, filter: 'blur(2px)' }} />
                     <div style={styles.photoPlaceholder}>
                       <Upload size={20} color="var(--accent-primary)" style={{ opacity: 0.6 }} />
-                      <span style={styles.photoUploadText}>Upload your photo</span>
+                      <span style={styles.photoUploadText}>{uploading ? 'Uploading...' : 'Upload your photo'}</span>
                     </div>
                   </div>
                   <div style={styles.photoMeta}>
@@ -369,7 +399,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                     <img src={placeholderSrc} alt="" style={{ ...styles.photoImg, opacity: 0.15, filter: 'blur(2px)' }} />
                     <div style={styles.photoPlaceholder}>
                       <Upload size={20} color="var(--accent-primary)" style={{ opacity: 0.6 }} />
-                      <span style={styles.photoUploadText}>Upload your photo</span>
+                      <span style={styles.photoUploadText}>{uploading ? 'Uploading...' : 'Upload your photo'}</span>
                     </div>
                   </div>
                   <div style={styles.photoMeta} />
