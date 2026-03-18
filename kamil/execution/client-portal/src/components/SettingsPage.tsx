@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Moon, Sun, LogOut, CheckCircle, Lock, Trash2, AlertTriangle, Loader2, X } from 'lucide-react';
+import { User, Moon, Sun, LogOut, CheckCircle, Lock, Trash2, AlertTriangle, Loader2, X, DollarSign } from 'lucide-react';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import type { Client, Theme } from '../types';
+import type { Client, Theme, ClientPage } from '../types';
 
 interface SettingsPageProps {
   client: Client;
@@ -11,9 +11,10 @@ interface SettingsPageProps {
   onThemeChange: (t: Theme) => void;
   onLogout: () => void;
   onClientUpdate: (updates: Partial<Client>) => void;
+  onNavigate?: (page: ClientPage) => void;
 }
 
-export default function SettingsPage({ client, theme, onThemeChange, onLogout, onClientUpdate }: SettingsPageProps) {
+export default function SettingsPage({ client, theme, onThemeChange, onLogout, onClientUpdate, onNavigate }: SettingsPageProps) {
   const { t } = useLang();
   const s = t.settings;
 
@@ -242,6 +243,25 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
           </form>
         )}
       </motion.div>
+
+      {/* ── Invoices (mobile shortcut) ── */}
+      {onNavigate && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          style={{ ...styles.card, marginTop: '16px', cursor: 'pointer' }}
+          onClick={() => onNavigate('invoices')}
+        >
+          <div style={styles.themeRow}>
+            <div style={styles.themeRowLeft}>
+              <DollarSign size={18} color="var(--accent-primary)" />
+              <span style={styles.cardTitle}>{t.nav.invoices || 'Invoices'}</span>
+            </div>
+            <span style={{ color: 'var(--text-tertiary)', fontSize: '18px' }}>&#8250;</span>
+          </div>
+        </motion.div>
+      )}
 
       {/* ── Appearance (compact toggle) ── */}
       <motion.div

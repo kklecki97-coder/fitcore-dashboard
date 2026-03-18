@@ -858,8 +858,6 @@ function App() {
               } else {
                 handleAddProgram(program);
               }
-              setCurrentPage(previousPage);
-              setSelectedProgramId('');
             }}
             onBack={handleBackFromProgram}
             backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}

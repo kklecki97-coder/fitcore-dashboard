@@ -1,5 +1,6 @@
-import { useRef, useEffect } from 'react';
-import { Check, X, Dumbbell } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import { Check, X, Dumbbell, CalendarCog } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import type { WorkoutProgram, WorkoutLog, WeeklySchedule } from '../types';
@@ -8,6 +9,7 @@ interface CalendarPageProps {
   program: WorkoutProgram | null;
   workoutLogs: WorkoutLog[];
   weeklySchedule: WeeklySchedule | null;
+  onUpdateSchedule?: (assignments: Record<string, string>) => void;
 }
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -66,9 +68,11 @@ const localDateStr = (d: Date) => {
 // DEV ONLY: set to monday-based day index (0=Mon..6=Sun) to pretend today is that day, or null for real date
 const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
 
-export default function CalendarPage({ program, workoutLogs, weeklySchedule }: CalendarPageProps) {
+export default function CalendarPage({ program, workoutLogs, weeklySchedule, onUpdateSchedule }: CalendarPageProps) {
   const isMobile = useIsMobile();
   const currentWeekRef = useRef<HTMLDivElement>(null);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editAssignments, setEditAssignments] = useState<Record<string, string>>({});
 
   const dayAssignments = weeklySchedule?.dayAssignments ?? {};
   const programWeeks = program?.durationWeeks ?? 0;
@@ -174,7 +178,23 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
     <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
       {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>{program.name}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h1 style={styles.title}>{program.name}</h1>
+          {onUpdateSchedule && (
+            <motion.button
+              onClick={() => {
+                setEditAssignments({ ...dayAssignments });
+                setShowEditor(true);
+              }}
+              style={schedStyles.editBtn}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <CalendarCog size={15} />
+              <span>Edit</span>
+            </motion.button>
+          )}
+        </div>
         <div style={styles.headerRow}>
           <span style={styles.subtitle}>{programWeeks} weeks</span>
           <div style={styles.legend}>
@@ -294,6 +314,99 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule }: C
           })}
         </div>
       ))}
+
+      {/* Schedule Editor Modal */}
+      <AnimatePresence>
+        {showEditor && program && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={schedStyles.overlay}
+            onClick={() => setShowEditor(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              style={schedStyles.modal}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              <div style={schedStyles.modalHeader}>
+                <h2 style={schedStyles.modalTitle}>Edit Schedule</h2>
+                <button onClick={() => setShowEditor(false)} style={schedStyles.closeBtn}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p style={schedStyles.modalDesc}>Choose which workout to do on each day. Set to Rest if you don&#39;t train that day.</p>
+
+              <div style={schedStyles.dayList}>
+                {DAY_LABELS.map((label, i) => {
+                  const key = String(i);
+                  const assignedId = editAssignments[key] || '';
+                  const assignedDay = assignedId ? program.days.find(d => d.id === assignedId) : null;
+                  const colorIdx = assignedId ? (dayColorMap[assignedId] ?? -1) : -1;
+                  const c = colorIdx >= 0 ? WORKOUT_COLORS[colorIdx] : null;
+
+                  return (
+                    <div key={key} style={schedStyles.dayRow}>
+                      <div style={{
+                        ...schedStyles.dayName,
+                        color: assignedDay ? `rgb(${c?.r ?? 200},${c?.g ?? 200},${c?.b ?? 200})` : 'var(--text-tertiary)',
+                      }}>
+                        {label}
+                      </div>
+                      <select
+                        value={assignedId}
+                        onChange={(e) => {
+                          setEditAssignments(prev => {
+                            const next = { ...prev };
+                            if (e.target.value) {
+                              next[key] = e.target.value;
+                            } else {
+                              delete next[key];
+                            }
+                            return next;
+                          });
+                        }}
+                        style={{
+                          ...schedStyles.select,
+                          borderColor: c ? `rgba(${c.r},${c.g},${c.b},0.4)` : 'var(--glass-border)',
+                          color: assignedDay ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                        }}
+                      >
+                        <option value="">Rest Day</option>
+                        {program.days.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={schedStyles.modalFooter}>
+                <button onClick={() => setShowEditor(false)} style={schedStyles.cancelBtn}>
+                  Cancel
+                </button>
+                <motion.button
+                  onClick={() => {
+                    onUpdateSchedule?.(editAssignments);
+                    setShowEditor(false);
+                  }}
+                  style={schedStyles.saveBtn}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Check size={14} /> Save Schedule
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -436,5 +549,140 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase',
     letterSpacing: '0.3px',
     lineHeight: 1,
+  },
+};
+
+const schedStyles: Record<string, React.CSSProperties> = {
+  editBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    borderRadius: '10px',
+    border: '1px solid rgba(0,229,200,0.25)',
+    background: 'rgba(0,229,200,0.08)',
+    color: 'var(--accent-primary)',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(4px)',
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '16px',
+  },
+  modal: {
+    width: '100%',
+    maxWidth: '420px',
+    maxHeight: '85vh',
+    borderRadius: '20px 20px 16px 16px',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--glass-border)',
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    overflowY: 'auto',
+  },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  modalTitle: {
+    fontSize: '20px',
+    fontWeight: 700,
+    color: 'var(--text-primary)',
+    margin: 0,
+  },
+  closeBtn: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    border: 'none',
+    background: 'rgba(255,255,255,0.05)',
+    color: 'var(--text-tertiary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+  },
+  modalDesc: {
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+    margin: 0,
+    lineHeight: 1.5,
+  },
+  dayList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  dayRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  dayName: {
+    width: '42px',
+    fontSize: '14px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    flexShrink: 0,
+  },
+  select: {
+    flex: 1,
+    padding: '10px 12px',
+    borderRadius: '10px',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-elevated)',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontFamily: 'var(--font-display)',
+    outline: 'none',
+    cursor: 'pointer',
+    appearance: 'none' as const,
+    WebkitAppearance: 'none' as const,
+  },
+  modalFooter: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '4px',
+  },
+  cancelBtn: {
+    flex: 1,
+    padding: '12px',
+    borderRadius: '10px',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+  },
+  saveBtn: {
+    flex: 1,
+    padding: '12px',
+    borderRadius: '10px',
+    border: 'none',
+    background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))',
+    color: 'var(--text-on-accent)',
+    fontSize: '14px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
   },
 };

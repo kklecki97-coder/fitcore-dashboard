@@ -309,8 +309,12 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
               cellBg = `rgba(${rgb},0.08)`;
               cellBorder = `1px solid rgba(${rgb},0.15)`;
               cellOpacity = 0.45;
+            } else if (wd.isTraining && c) {
+              cellBg = `rgba(${rgb},0.06)`;
+              cellBorder = `1px solid rgba(${rgb},0.12)`;
             } else if (wd.isTraining) {
-              cellBorder = '1px solid rgba(255,255,255,0.06)';
+              cellBg = 'rgba(59,130,246,0.06)';
+              cellBorder = '1px solid rgba(59,130,246,0.12)';
             }
 
             if (wd.isRest && wd.isPast) cellOpacity = 0.3;

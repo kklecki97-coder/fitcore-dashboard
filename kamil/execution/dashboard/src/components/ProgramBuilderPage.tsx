@@ -137,8 +137,13 @@ export default function ProgramBuilderPage({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [renamingDay, setRenamingDay] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(program || ''));
+  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
+  const [showStatusBanner, setShowStatusBanner] = useState(true);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const hasUnsavedChanges = JSON.stringify(draft) !== savedSnapshot;
 
   // Close suggestions on outside click
   const closeSuggestions = useCallback((e: MouseEvent) => {
@@ -266,7 +271,12 @@ export default function ProgramBuilderPage({
       alert(t.programBuilder.enterProgramName);
       return;
     }
-    onSave({ ...draft, updatedAt: new Date().toISOString().split('T')[0] });
+    const updated = { ...draft, updatedAt: new Date().toISOString().split('T')[0] };
+    onSave(updated);
+    setSavedSnapshot(JSON.stringify(updated));
+    setDraft(updated);
+    setShowSavedIndicator(true);
+    setTimeout(() => setShowSavedIndicator(false), 3000);
   };
 
   // ── Filtered suggestions ──
@@ -282,6 +292,53 @@ export default function ProgramBuilderPage({
           <ArrowLeft size={16} /> {backLabel ?? t.programBuilder.backToPrograms}
         </motion.button>
       </div>
+
+      {/* Status Banner */}
+      <AnimatePresence>
+        {showStatusBanner && draft.status === 'draft' && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px', borderRadius: '10px', marginBottom: '16px',
+              background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)',
+            }}
+          >
+            <span style={{ fontSize: '14px', color: '#eab308', fontWeight: 500, fontFamily: 'var(--font-display)' }}>
+              This program is in <strong>Draft</strong> mode. When you're happy with it, change the status to <strong>Active</strong> and save.
+            </span>
+            <button
+              onClick={() => setShowStatusBanner(false)}
+              style={{ background: 'transparent', border: 'none', color: '#eab308', cursor: 'pointer', padding: '4px', display: 'flex' }}
+            >
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Saved Indicator */}
+      <AnimatePresence>
+        {showSavedIndicator && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '12px 16px', borderRadius: '10px', marginBottom: '16px',
+              background: 'rgba(0, 229, 200, 0.1)', border: '1px solid rgba(0, 229, 200, 0.3)',
+            }}
+          >
+            <Check size={16} color="var(--accent-primary)" />
+            <span style={{ fontSize: '14px', color: 'var(--accent-primary)', fontWeight: 500, fontFamily: 'var(--font-display)' }}>
+              Program saved successfully!
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Program Metadata */}
       <GlassCard delay={0.05}>
@@ -496,8 +553,18 @@ export default function ProgramBuilderPage({
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={onBack} style={styles.cancelBtnBottom}>{t.programBuilder.cancel}</button>
-            <motion.button onClick={handleSave} style={styles.saveBtnBottom} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Save size={14} /> {t.programBuilder.saveProgram}
+            <motion.button
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges}
+              style={{
+                ...styles.saveBtnBottom,
+                opacity: hasUnsavedChanges ? 1 : 0.35,
+                cursor: hasUnsavedChanges ? 'pointer' : 'default',
+              }}
+              whileHover={hasUnsavedChanges ? { scale: 1.02 } : {}}
+              whileTap={hasUnsavedChanges ? { scale: 0.98 } : {}}
+            >
+              {showSavedIndicator ? <><Check size={14} /> Saved!</> : <><Save size={14} /> {t.programBuilder.saveProgram}</>}
             </motion.button>
           </div>
         </div>

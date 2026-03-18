@@ -29,15 +29,18 @@ RULES:
 - Focus ONLY on what matters for the program: which days, what exercises, sets/reps/weight specifics.
 - When the coach mentions exercises, IMMEDIATELY ask the details that matter: how many sets, rep range, barbell or dumbbell, what weight or % 1RM. This is what actually goes into the program.
 - Don't ask generic questions. Every question should directly help you fill in the program.
-- If the coach gives you enough info (days + exercises + some details), tell them you're ready to generate. Don't drag it out.
 - If the coach says something doesn't matter or is vague, just pick reasonable defaults and move on.
+- Do NOT say you're ready to generate until you have completed ALL steps in the flow below. You MUST gather exercise details for every gym/strength day before moving on.
+- For non-gym days (martial arts, boxing, BJJ, cardio, sports, etc.): do NOT invent exercises. Only include exercises the coach explicitly tells you. If the coach just says "Monday is boxing + BJJ", that day should have NO exercises in the program — it's just a label/placeholder. The coach handles those sessions themselves.
+- ONLY generate exercises that the coach explicitly provides or confirms. Never make up exercises on your own.
 
-FLOW:
+FLOW (follow this order strictly — do not skip steps):
 1. Ask what the training week looks like (days + activities)
-2. For gym/strength days: ask which exercises, then drill into sets/reps/weight details
-3. Ask what 3 key lifts/metrics to track on the client's progress dashboard (e.g. bench press, squat, deadlift - or overhead press, pull-ups, whatever matters for this client). Also ask their current numbers so we have a starting point.
-4. Ask what the client's main goals are (e.g. "lose 5kg by summer", "hit 100kg bench", "improve cardio endurance"). Be specific - not generic stuff like "get fit". These go on their progress dashboard.
-5. As soon as you have the picture, say you're ready to generate
+2. Ask when the program starts and when it ends (or how many weeks). The coach may have phases (e.g. "3 days for the first month, then 4 days from May"). Capture this.
+3. For EACH gym/strength day: ask which exercises the coach wants, then drill into sets/reps/weight details. Do not move to step 4 until you have exercise info for every gym day.
+4. Ask what 3 key lifts/metrics to track on the client's progress dashboard (e.g. bench press, squat, deadlift - or overhead press, pull-ups, whatever matters for this client). Also ask their current numbers so we have a starting point.
+5. Ask what the client's main goals are (e.g. "lose 5kg by summer", "hit 100kg bench", "improve cardio endurance"). Be specific - not generic stuff like "get fit". These go on their progress dashboard.
+6. ONLY after you have: start/end dates + exercises for all gym days + tracked lifts + goals — tell the coach you're ready to generate and include the exact tag [READY] at the end of your message. Do NOT include [READY] until you truly have all the information.
 
 Start with a brief greeting and ask about their client's training week.`;
 
@@ -77,7 +80,12 @@ RESPOND WITH ONLY VALID JSON in this exact structure (no markdown, no code block
 trackedLifts: Include exactly 3 key lifts/metrics that the coach wants to track on the client's progress dashboard. Use the lifts discussed in conversation. If not discussed, default to Bench Press, Squat, Deadlift.
 clientGoals: Include the specific goals discussed with the coach. Make them concrete and measurable when possible. These appear on the client's progress dashboard.
 
-Include 5-8 exercises per gym/strength day. For martial arts days, include appropriate drills and conditioning. Be specific with loads and coaching cues. Make it a program a real coach would be proud of.`;
+CRITICAL RULES for generation:
+- For gym/strength days: include ONLY the exercises the coach explicitly mentioned. Do not add extra exercises. Use exact sets/reps/weight the coach provided.
+- For non-gym days (martial arts, boxing, BJJ, sports, etc.): include the day with an empty exercises array []. Do NOT invent drills, sparring rounds, or any exercises the coach didn't specify. These are just labels.
+- If the coach described phases (e.g. "3 days until April, then 4 days from May"), include ALL days but add phase info in the day name (e.g. "Sunday - Full Body (starts May 1st)").
+- Use the start/end dates discussed to calculate durationWeeks accurately.
+- Be specific with loads and coaching cues for the exercises the coach DID provide.`;
 
 export default function AIProgramCreator({ clients, onGenerated, onBack }: AIProgramCreatorProps) {
   useIsMobile(); // hook must be called
@@ -88,6 +96,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedProgram, setGeneratedProgram] = useState<WorkoutProgram | null>(null);
+  const [aiReady, setAiReady] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -141,12 +150,16 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
-        body: JSON.stringify({ model: 'claude-opus-4-0-20250514', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 1000 }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 1000 }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
       const data = await res.json();
-      const text = data.content?.[0]?.text || '';
-      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: text.trim() }]);
+      let text = (data.content?.[0]?.text || '').trim();
+      if (text.includes('[READY]')) {
+        setAiReady(true);
+        text = text.replace(/\s*\[READY\]\s*/g, '').trim();
+      }
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text }]);
     } catch (err) {
       setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'assistant', text: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}` }]);
     } finally { setLoading(false); }
@@ -180,7 +193,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
-        body: JSON.stringify({ model: 'claude-opus-4-0-20250514', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 4000 }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 4000 }),
       });
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
       const data = await res.json();
@@ -358,8 +371,8 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                   <div style={{ ...s.stepDot, background: messages.length > 0 ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
                   <span>Discuss the program</span>
                 </div>
-                <div style={{ ...s.infoStep, opacity: messages.length >= 4 ? 1 : 0.4 }}>
-                  <div style={{ ...s.stepDot, background: messages.length >= 4 ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
+                <div style={{ ...s.infoStep, opacity: aiReady ? 1 : 0.4 }}>
+                  <div style={{ ...s.stepDot, background: aiReady ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
                   <span>Generate program</span>
                 </div>
                 <div style={{ ...s.infoStep, opacity: generatedProgram ? 1 : generating ? 0.7 : 0.4 }}>
@@ -394,15 +407,12 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                         <span style={s.programDayCount}>{day.exercises.length} exercises</span>
                       </div>
                       <div style={s.programExercises}>
-                        {day.exercises.slice(0, 4).map((ex) => (
+                        {day.exercises.map((ex) => (
                           <div key={ex.id} style={s.programExercise}>
                             <span style={s.exName}>{ex.name}</span>
                             <span style={s.exDetail}>{ex.sets}×{ex.reps}</span>
                           </div>
                         ))}
-                        {day.exercises.length > 4 && (
-                          <span style={s.exMore}>+{day.exercises.length - 4} more</span>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -506,7 +516,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
 
           {/* Card footer */}
           <div style={s.cardFooter}>
-            {messages.length >= 4 && !generating && (
+            {aiReady && !generating && !generatedProgram && (
               <motion.button
                 onClick={generateProgram}
                 style={s.genBtn}

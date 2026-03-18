@@ -9,13 +9,15 @@ interface ProgramPageProps {
   program: WorkoutProgram | null;
   setLogs: WorkoutSetLog[];
   onLogSet: (log: WorkoutSetLog) => void;
+  onLogWorkout: (type: string, date: string) => void;
+  onRemoveWorkout: (type: string, date: string) => void;
   onRemoveLog: (exerciseId: string, setNumber: number, date: string) => void;
   onUpdateLog: (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => void;
   workoutLogs: WorkoutLog[];
   weeklySchedule: WeeklySchedule | null;
 }
 
-export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, onUpdateLog, workoutLogs: _workoutLogs, weeklySchedule }: ProgramPageProps) {
+export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, onRemoveWorkout, onRemoveLog, onUpdateLog, workoutLogs, weeklySchedule }: ProgramPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
 
@@ -755,6 +757,70 @@ export default function ProgramPage({ program, setLogs, onLogSet, onRemoveLog, o
               <span style={styles.nextWorkoutLabel}>Next up</span>
               <span style={styles.nextWorkoutValue}>{nextDayLabel} - {nextWorkout}</span>
             </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Session-based workout (no exercises, e.g. BJJ, Boxing classes) ──
+  const isSessionWorkout = day.exercises.length === 0;
+  const sessionLogged = isSessionWorkout && workoutLogs.some(
+    l => l.date === todayStr && l.type === day.name && l.completed
+  );
+
+  if (isSessionWorkout) {
+    return (
+      <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
+        <div style={styles.header}>
+          <p style={styles.todayLabel}>Today's Workout</p>
+          <h2 style={styles.title}>{day.name}</h2>
+          <p style={styles.subtitle}>Session workout</p>
+        </div>
+
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px',
+          padding: '40px 24px', background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
+          borderRadius: 'var(--radius-lg)', textAlign: 'center',
+        }}>
+          {sessionLogged ? (
+            <>
+              <CheckCircle2 size={48} color="var(--accent-success)" />
+              <div>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>Session Complete</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>Great work today!</div>
+              </div>
+              <button
+                onClick={() => onRemoveWorkout(day.name, todayStr)}
+                style={{
+                  padding: '8px 20px', border: '1px solid var(--border-primary)', borderRadius: '10px',
+                  background: 'transparent', color: 'var(--text-secondary)',
+                  fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-display)',
+                  cursor: 'pointer', marginTop: '4px',
+                }}
+              >
+                Undo
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '48px', lineHeight: 1 }}>&#129354;</div>
+              <div>
+                <div style={{ fontSize: '16px', color: 'var(--text-secondary)', maxWidth: '280px' }}>
+                  Tap below when you've finished your session
+                </div>
+              </div>
+              <button
+                onClick={() => onLogWorkout(day.name, todayStr)}
+                style={{
+                  ...styles.actionBtn,
+                  width: '100%', maxWidth: '280px', justifyContent: 'center',
+                }}
+              >
+                <CheckCircle2 size={20} color="#07090e" />
+                <span>Mark as Done</span>
+              </button>
+            </>
           )}
         </div>
       </div>

@@ -168,6 +168,8 @@ function App() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('getUser failed:', userError);
+      // Session is stale/invalid - sign out so user sees login page
+      await supabase.auth.signOut();
       return false;
     }
 
@@ -614,6 +616,26 @@ function App() {
       return;
     }
 
+    // Sync weight & body_fat to client_metrics so HomePage picks them up
+    if (ci.weight != null || ci.bodyFat != null) {
+      const { error: metricsErr } = await supabase.from('client_metrics').insert({
+        client_id: ci.clientId,
+        recorded_at: ci.date,
+        weight: ci.weight,
+        body_fat: ci.bodyFat,
+      });
+      if (metricsErr) console.error('client_metrics sync failed:', metricsErr);
+      else {
+        // Update local state so UI refreshes without reload
+        setClient(prev => {
+          if (!prev) return prev;
+          const newWeight = ci.weight != null ? [...prev.metrics.weight, ci.weight] : prev.metrics.weight;
+          const newBodyFat = ci.bodyFat != null ? [...prev.metrics.bodyFat, ci.bodyFat] : prev.metrics.bodyFat;
+          return { ...prev, metrics: { ...prev.metrics, weight: newWeight, bodyFat: newBodyFat } };
+        });
+      }
+    }
+
     // Fix #1: Upload photos using signed URLs instead of public URLs
     const photosWithFiles = ci.photos.filter((p: { url: string; label: string; file?: File }) => p.file);
     for (const photo of photosWithFiles) {
@@ -660,6 +682,48 @@ function App() {
         }),
       }).catch(() => {}); // Silent - don't block check-in on email failure
     });
+  };
+
+  const handleLogWorkout = async (type: string, date: string) => {
+    if (!clientUser) {
+      showError('Failed to log workout');
+      return;
+    }
+    const newLog: WorkoutLog = {
+      id: crypto.randomUUID(),
+      clientId: clientUser.id,
+      clientName: clientUser.name,
+      type,
+      duration: 0,
+      date,
+      completed: true,
+    };
+    setWorkoutLogs(prev => [...prev, newLog]);
+    if (USE_MOCK_DATA) return;
+    const { error } = await supabase.from('workout_logs').insert({
+      id: newLog.id,
+      client_id: clientUser.id,
+      type: newLog.type,
+      duration: newLog.duration,
+      date: newLog.date,
+      completed: true,
+    });
+    if (error) {
+      setWorkoutLogs(prev => prev.filter(l => l.id !== newLog.id));
+      showError('Failed to log workout');
+    }
+  };
+
+  const handleRemoveWorkout = async (type: string, date: string) => {
+    const toRemove = workoutLogs.find(l => l.type === type && l.date === date && l.completed);
+    if (!toRemove) return;
+    setWorkoutLogs(prev => prev.filter(l => l.id !== toRemove.id));
+    if (USE_MOCK_DATA) return;
+    const { error } = await supabase.from('workout_logs').delete().eq('id', toRemove.id);
+    if (error) {
+      setWorkoutLogs(prev => [...prev, toRemove]);
+      showError('Failed to remove workout log');
+    }
   };
 
   const handleLogSet = async (log: WorkoutSetLog) => {
@@ -828,6 +892,8 @@ function App() {
             program={myProgram}
             setLogs={setLogs}
             onLogSet={handleLogSet}
+            onLogWorkout={handleLogWorkout}
+            onRemoveWorkout={handleRemoveWorkout}
             onRemoveLog={handleRemoveLog}
             onUpdateLog={handleUpdateLog}
             workoutLogs={workoutLogs}
@@ -859,6 +925,7 @@ function App() {
             program={myProgram}
             workoutLogs={workoutLogs}
             weeklySchedule={weeklySchedule}
+            onUpdateSchedule={handleUpdateSchedule}
           />
         );
       case 'progress':
@@ -881,6 +948,7 @@ function App() {
             onThemeChange={setTheme}
             onLogout={handleLogout}
             onClientUpdate={(updates) => setClientUser(prev => prev ? { ...prev, ...updates } : null)}
+            onNavigate={setCurrentPage}
           />
         );
       default:
@@ -912,6 +980,17 @@ function App() {
           }}
         >
           <RefreshCw size={16} /> Retry
+        </button>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: '10px 20px', border: '1px solid var(--border-primary)', borderRadius: '10px',
+            background: 'transparent', color: 'var(--text-secondary)',
+            fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-display)',
+            cursor: 'pointer',
+          }}
+        >
+          Log out
         </button>
       </div>
     );
