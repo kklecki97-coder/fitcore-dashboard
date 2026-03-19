@@ -152,7 +152,9 @@ export default function ProgramBuilderPage({
   const quickNameRef = useRef<HTMLInputElement>(null);
   const quickSuggestionsRef = useRef<HTMLDivElement>(null);
 
-  const hasUnsavedChanges = JSON.stringify(draft) !== savedSnapshot;
+  // For new programs (status === 'draft' and days already populated), always allow save
+  const isNewWithContent = draft.status === 'draft' && draft.days.length > 0 && draft.days.some(d => d.exercises.length > 0);
+  const hasUnsavedChanges = isNewWithContent || JSON.stringify(draft) !== savedSnapshot;
 
   // Close suggestions on outside click
   const closeSuggestions = useCallback((e: MouseEvent) => {
