@@ -12,6 +12,7 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
+  ChevronDown,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -52,6 +53,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const { t, lang } = useLang();
   const { briefing, loading: briefingLoading, refresh: refreshBriefing } = useAIBriefing(clients, invoices, workoutLogs, checkIns, messages, programs, lang);
   const [ready, setReady] = useState(false);
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 500);
@@ -336,17 +338,47 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
             </span>
           </div>
         ) : briefing ? (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            style={{
-              fontSize: '18px', color: 'var(--text-primary)', lineHeight: 1.7,
-              padding: '8px 10px', margin: 0, fontWeight: 400,
-            }}
-          >
-            {briefing}
-          </motion.p>
+          <div style={{ position: 'relative' }}>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                fontSize: '18px', color: 'var(--text-primary)', lineHeight: 1.7,
+                padding: '8px 10px', margin: 0, fontWeight: 400,
+                ...(isMobile && !summaryExpanded ? {
+                  maxHeight: '120px',
+                  overflow: 'hidden',
+                } : {}),
+              }}
+            >
+              {briefing}
+            </motion.p>
+            {isMobile && !summaryExpanded && (
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px',
+                background: 'linear-gradient(transparent, var(--bg-card, #0d1117))',
+                pointerEvents: 'none',
+              }} />
+            )}
+            {isMobile && (
+              <button
+                onClick={() => setSummaryExpanded(prev => !prev)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  width: '100%', padding: '8px 0', marginTop: summaryExpanded ? '4px' : '0',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--accent-primary)', fontSize: '13px', fontFamily: 'Outfit',
+                }}
+              >
+                {summaryExpanded ? (lang === 'pl' ? 'Zwiń' : 'Show less') : (lang === 'pl' ? 'Rozwiń' : 'Show more')}
+                <ChevronDown size={14} style={{
+                  transform: summaryExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                }} />
+              </button>
+            )}
+          </div>
         ) : (
           <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {fallbackStats.map((stat, i) => (
