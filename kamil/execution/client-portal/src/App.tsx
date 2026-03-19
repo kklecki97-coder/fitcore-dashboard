@@ -899,86 +899,103 @@ function App() {
   const renderPage = () => {
     if (!clientUser) return null;
 
+    // Each page wrapped in ErrorBoundary so one page crash doesn't kill the whole app
     switch (currentPage) {
       case 'home':
         return (
-          <HomePage
-            client={clientUser}
-            program={myProgram}
-            workoutLogs={workoutLogs}
-            checkIns={checkIns}
-            messages={messages}
-            coachName={coachName}
-            onNavigate={setCurrentPage}
-            weeklySchedule={weeklySchedule}
-            onUpdateSchedule={handleUpdateSchedule}
-          />
+          <ErrorBoundary>
+            <HomePage
+              client={clientUser}
+              program={myProgram}
+              workoutLogs={workoutLogs}
+              checkIns={checkIns}
+              messages={messages}
+              coachName={coachName}
+              onNavigate={setCurrentPage}
+              weeklySchedule={weeklySchedule}
+              onUpdateSchedule={handleUpdateSchedule}
+            />
+          </ErrorBoundary>
         );
       case 'program':
         return (
-          <ProgramPage
-            program={myProgram}
-            setLogs={setLogs}
-            onLogSet={handleLogSet}
-            onLogWorkout={handleLogWorkout}
-            onRemoveWorkout={handleRemoveWorkout}
-            onRemoveLog={handleRemoveLog}
-            onUpdateLog={handleUpdateLog}
-            workoutLogs={workoutLogs}
-            weeklySchedule={weeklySchedule}
-          />
+          <ErrorBoundary>
+            <ProgramPage
+              program={myProgram}
+              setLogs={setLogs}
+              onLogSet={handleLogSet}
+              onLogWorkout={handleLogWorkout}
+              onRemoveWorkout={handleRemoveWorkout}
+              onRemoveLog={handleRemoveLog}
+              onUpdateLog={handleUpdateLog}
+              workoutLogs={workoutLogs}
+              weeklySchedule={weeklySchedule}
+            />
+          </ErrorBoundary>
         );
       case 'check-in':
         return (
-          <CheckInPage
-            checkIns={checkIns}
-            onSubmitCheckIn={handleSubmitCheckIn}
-            clientId={clientUser.id}
-            clientName={clientUser.name}
-          />
+          <ErrorBoundary>
+            <CheckInPage
+              checkIns={checkIns}
+              onSubmitCheckIn={handleSubmitCheckIn}
+              clientId={clientUser.id}
+              clientName={clientUser.name}
+            />
+          </ErrorBoundary>
         );
       case 'messages':
         return (
-          <MessagesPage
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            coachName={coachName}
-            clientId={clientUser.id}
-            clientName={clientUser.name}
-          />
+          <ErrorBoundary>
+            <MessagesPage
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              coachName={coachName}
+              clientId={clientUser.id}
+              clientName={clientUser.name}
+            />
+          </ErrorBoundary>
         );
       case 'calendar':
         return (
-          <CalendarPage
-            program={myProgram}
-            workoutLogs={workoutLogs}
-            weeklySchedule={weeklySchedule}
-            onUpdateSchedule={handleUpdateSchedule}
-          />
+          <ErrorBoundary>
+            <CalendarPage
+              program={myProgram}
+              workoutLogs={workoutLogs}
+              weeklySchedule={weeklySchedule}
+              onUpdateSchedule={handleUpdateSchedule}
+            />
+          </ErrorBoundary>
         );
       case 'progress':
         return (
-          <ProgressPage
-            client={clientUser}
-            workoutLogs={workoutLogs}
-            checkIns={checkIns}
-            setLogs={setLogs}
-          />
+          <ErrorBoundary>
+            <ProgressPage
+              client={clientUser}
+              workoutLogs={workoutLogs}
+              checkIns={checkIns}
+              setLogs={setLogs}
+            />
+          </ErrorBoundary>
         );
       case 'invoices':
         return (
-          <InvoicesPage invoices={invoices} />
+          <ErrorBoundary>
+            <InvoicesPage invoices={invoices} />
+          </ErrorBoundary>
         );
       case 'settings':
         return (
-          <SettingsPage
-            client={clientUser}
-            theme={theme}
-            onThemeChange={setTheme}
-            onLogout={handleLogout}
-            onClientUpdate={(updates) => setClientUser(prev => prev ? { ...prev, ...updates } : null)}
-            onNavigate={setCurrentPage}
-          />
+          <ErrorBoundary>
+            <SettingsPage
+              client={clientUser}
+              theme={theme}
+              onThemeChange={setTheme}
+              onLogout={handleLogout}
+              onClientUpdate={(updates) => setClientUser(prev => prev ? { ...prev, ...updates } : null)}
+              onNavigate={setCurrentPage}
+            />
+          </ErrorBoundary>
         );
       default:
         return null;
@@ -1123,7 +1140,7 @@ function App() {
       )}
 
       <div style={styles.main}>
-        <Header clientName={clientUser?.name ?? ''} currentPage={currentPage} onNavigate={setCurrentPage} />
+        <Header clientName={clientUser?.name ?? ''} />
 
         <AnimatePresence mode="wait">
           <motion.div

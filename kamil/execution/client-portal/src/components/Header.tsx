@@ -1,14 +1,10 @@
-import { Settings } from 'lucide-react';
 import { useLang } from '../i18n';
-import type { ClientPage } from '../types';
 
 interface HeaderProps {
   clientName: string;
-  currentPage: ClientPage;
-  onNavigate: (page: ClientPage) => void;
 }
 
-export default function Header({ clientName, currentPage, onNavigate }: HeaderProps) {
+export default function Header({ clientName }: HeaderProps) {
   const { t } = useLang();
 
   return (
@@ -19,18 +15,6 @@ export default function Header({ clientName, currentPage, onNavigate }: HeaderPr
           <div style={styles.title}>{t.header.brandName}</div>
           <div style={styles.subtitle}>{clientName}</div>
         </div>
-      </div>
-      <div style={styles.right}>
-        <button
-          style={{
-            ...styles.settingsBtn,
-            color: currentPage === 'settings' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-          }}
-          onClick={() => onNavigate(currentPage === 'settings' ? 'home' : 'settings')}
-          title="Settings"
-        >
-          <Settings size={20} />
-        </button>
       </div>
     </div>
   );
@@ -54,10 +38,6 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '12px',
   },
-  right: {
-    display: 'flex',
-    alignItems: 'center',
-  },
   title: {
     fontSize: '18px',
     fontWeight: 700,
@@ -68,18 +48,5 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     color: 'var(--text-secondary)',
     fontWeight: 500,
-  },
-  settingsBtn: {
-    width: '40px',
-    height: '40px',
-    borderRadius: 'var(--radius-sm)',
-    border: 'none',
-    background: 'transparent',
-    color: 'var(--text-secondary)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.15s',
   },
 };
