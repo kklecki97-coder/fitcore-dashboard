@@ -470,11 +470,6 @@ export default function ProgramBuilderPage({
                         <span style={styles.prescriptionChip}>
                           {ex.sets} × {ex.reps}
                         </span>
-                        {ex.weight && (
-                          <span style={{ ...styles.prescriptionChip, color: 'var(--accent-primary)' }}>
-                            {ex.weight}
-                          </span>
-                        )}
                         {ex.rpe !== null && (
                           <span style={{
                             ...styles.prescriptionChip,
@@ -484,11 +479,10 @@ export default function ProgramBuilderPage({
                           </span>
                         )}
                       </div>
-                      {(ex.tempo || ex.restSeconds || ex.notes) && (
+                      {(ex.tempo || ex.restSeconds) && (
                         <div style={styles.detailRow}>
                           {ex.tempo && <span style={styles.detailText}>{t.programBuilder.tempo}: {ex.tempo}</span>}
                           {ex.restSeconds && <span style={styles.detailText}>{t.programBuilder.restSeconds}: {ex.restSeconds}s</span>}
-                          {ex.notes && <span style={{ ...styles.detailText, fontStyle: 'italic', color: 'var(--text-secondary)' }}>{ex.notes}</span>}
                         </div>
                       )}
                     </div>
@@ -597,7 +591,7 @@ export default function ProgramBuilderPage({
               </motion.button>
             </div>
             <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-              Quick add — type name, sets × reps, press Enter. Click <Edit3 size={11} style={{ verticalAlign: 'middle' }} /> on any exercise to edit full details.
+              {t.programBuilder.quickAddHint}
             </span>
           </div>
         </GlassCard>
@@ -606,7 +600,7 @@ export default function ProgramBuilderPage({
           <div style={styles.emptyDay}>
             <Dumbbell size={40} color="var(--text-tertiary)" />
             <p style={{ color: 'var(--text-secondary)', margin: '12px 0', fontSize: '20px' }}>
-              No workout days yet. Add your first day to get started.
+              {t.programBuilder.noDaysYet}
             </p>
             <button onClick={addDay} style={styles.addExerciseBtn}>
               <Plus size={14} /> {t.programBuilder.addDay}
@@ -615,8 +609,22 @@ export default function ProgramBuilderPage({
         </GlassCard>
       )}
 
-      {/* Bottom Summary Bar */}
+      {/* Program Notes */}
       <GlassCard delay={0.2}>
+        <div style={{ padding: '16px 20px' }}>
+          <label style={{ ...styles.label, marginBottom: '6px', display: 'block' }}>{t.programBuilder.programNotes || 'Program Notes'}</label>
+          <textarea
+            value={draft.notes || ''}
+            onChange={(e) => setDraft(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder={t.programBuilder.programNotesPlaceholder || 'General notes, instructions, progression rules...'}
+            rows={3}
+            style={styles.textarea}
+          />
+        </div>
+      </GlassCard>
+
+      {/* Bottom Summary Bar */}
+      <GlassCard delay={0.25}>
         <div style={styles.bottomBar}>
           <div style={styles.summaryChips}>
             <span style={styles.summaryChip}><Dumbbell size={13} /> {t.programs.days(draft.days.length)}</span>
@@ -717,38 +725,14 @@ export default function ProgramBuilderPage({
                   </div>
                 </div>
 
-                {/* Weight + RPE */}
+                {/* RPE + Rest */}
                 <div style={styles.fieldRow}>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>{t.programBuilder.weight}</label>
-                    <input
-                      type="text"
-                      value={exerciseForm.weight}
-                      onChange={(e) => setExerciseForm(prev => ({ ...prev, weight: e.target.value }))}
-                      placeholder='e.g. 80kg, BW'
-                      style={styles.input}
-                    />
-                  </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
                     <label style={styles.label}>{t.programBuilder.rpe} (1-10)</label>
                     <NumberStepper
                       value={exerciseForm.rpe ?? ''}
                       onChange={(v) => setExerciseForm(prev => ({ ...prev, rpe: v ? parseInt(v) : null }))}
                       min={1} max={10} placeholder="7"
-                    />
-                  </div>
-                </div>
-
-                {/* Tempo + Rest */}
-                <div style={styles.fieldRow}>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>{t.programBuilder.tempo}</label>
-                    <input
-                      type="text"
-                      value={exerciseForm.tempo}
-                      onChange={(e) => setExerciseForm(prev => ({ ...prev, tempo: e.target.value }))}
-                      placeholder='e.g. 3-1-2-0'
-                      style={styles.input}
                     />
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
@@ -761,15 +745,15 @@ export default function ProgramBuilderPage({
                   </div>
                 </div>
 
-                {/* Notes */}
+                {/* Tempo */}
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>{t.programBuilder.notes}</label>
-                  <textarea
-                    value={exerciseForm.notes}
-                    onChange={(e) => setExerciseForm(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Exercise-specific coaching cues..."
-                    rows={2}
-                    style={styles.textarea}
+                  <label style={styles.label}>{t.programBuilder.tempo}</label>
+                  <input
+                    type="text"
+                    value={exerciseForm.tempo}
+                    onChange={(e) => setExerciseForm(prev => ({ ...prev, tempo: e.target.value }))}
+                    placeholder='e.g. 3-1-2-0'
+                    style={styles.input}
                   />
                 </div>
               </div>

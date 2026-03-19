@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Sparkles, Wrench, FileSpreadsheet } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 
 interface ProgramCreateChooserProps {
   onChooseManual: () => void;
@@ -12,16 +13,18 @@ interface ProgramCreateChooserProps {
 
 export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onChooseImport, onBack }: ProgramCreateChooserProps) {
   const isMobile = useIsMobile();
+  const { t } = useLang();
+  const c = t.programChooser;
 
   return (
     <div style={{ ...s.page, padding: isMobile ? '16px' : '24px 32px' }}>
       <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-        <ArrowLeft size={16} /> Back to Programs
+        <ArrowLeft size={16} /> {c.backToPrograms}
       </motion.button>
 
       <div style={s.header}>
-        <h2 style={s.title}>Create New Program</h2>
-        <p style={s.subtitle}>Choose how you want to build this program</p>
+        <h2 style={s.title}>{c.title}</h2>
+        <p style={s.subtitle}>{c.subtitle}</p>
       </div>
 
       <div style={{ ...s.grid, flexDirection: isMobile ? 'column' : 'row' }}>
@@ -38,19 +41,13 @@ export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onCho
                 <Sparkles size={28} color="var(--text-on-accent)" />
               </div>
             </div>
-            <h3 style={s.choiceTitle}>AI Generated</h3>
-            <p style={s.choiceDesc}>
-              Answer a few questions about your client's goals, experience, and schedule.
-              AI builds a complete program in seconds.
-            </p>
+            <h3 style={s.choiceTitle}>{c.aiTitle}</h3>
+            <p style={s.choiceDesc}>{c.aiDesc}</p>
             <div style={s.featureList}>
-              <span style={s.feature}>Smart exercise selection</span>
-              <span style={s.feature}>Auto sets, reps & RPE</span>
-              <span style={s.feature}>Coaching cues included</span>
-              <span style={s.feature}>Edit everything after</span>
+              {c.aiFeatures.map((f: string) => <span key={f} style={s.feature}>{f}</span>)}
             </div>
             <div style={s.choiceBtnAI}>
-              <Sparkles size={16} /> Create with AI
+              <Sparkles size={16} /> {c.aiBtn}
             </div>
           </motion.button>
         </GlassCard>
@@ -68,19 +65,13 @@ export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onCho
                 <Wrench size={28} color="var(--text-secondary)" />
               </div>
             </div>
-            <h3 style={s.choiceTitle}>Manual</h3>
-            <p style={s.choiceDesc}>
-              Build from scratch. Add days, pick exercises, set reps and weights yourself.
-              Full control over every detail.
-            </p>
+            <h3 style={s.choiceTitle}>{c.manualTitle}</h3>
+            <p style={s.choiceDesc}>{c.manualDesc}</p>
             <div style={s.featureList}>
-              <span style={s.feature}>Complete control</span>
-              <span style={s.feature}>Exercise library</span>
-              <span style={s.feature}>Duplicate & reorder</span>
-              <span style={s.feature}>Save as template</span>
+              {c.manualFeatures.map((f: string) => <span key={f} style={s.feature}>{f}</span>)}
             </div>
             <div style={s.choiceBtnManual}>
-              <Wrench size={16} /> Build Manually
+              <Wrench size={16} /> {c.manualBtn}
             </div>
           </motion.button>
         </GlassCard>
@@ -98,19 +89,13 @@ export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onCho
                 <FileSpreadsheet size={28} color="#a855f7" />
               </div>
             </div>
-            <h3 style={s.choiceTitle}>Import</h3>
-            <p style={s.choiceDesc}>
-              Upload an Excel or CSV file with an existing training plan.
-              Auto-parsed into days and exercises.
-            </p>
+            <h3 style={s.choiceTitle}>{c.importTitle}</h3>
+            <p style={s.choiceDesc}>{c.importDesc}</p>
             <div style={s.featureList}>
-              <span style={s.feature}>Excel & CSV</span>
-              <span style={s.feature}>Auto-detect days</span>
-              <span style={s.feature}>Preview before saving</span>
-              <span style={s.feature}>Edit after import</span>
+              {c.importFeatures.map((f: string) => <span key={f} style={s.feature}>{f}</span>)}
             </div>
             <div style={s.choiceBtnImport}>
-              <FileSpreadsheet size={16} /> Import File
+              <FileSpreadsheet size={16} /> {c.importBtn}
             </div>
           </motion.button>
         </GlassCard>

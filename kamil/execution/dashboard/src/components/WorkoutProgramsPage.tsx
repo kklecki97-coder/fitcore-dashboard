@@ -114,7 +114,7 @@ export default function WorkoutProgramsPage({
                     <button
                       onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : program.id); }}
                       style={{ ...styles.menuBtn, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}
-                      title="Show exercises"
+                      title={t.programBuilder.showExercises}
                     >
                       <ChevronDown size={16} />
                     </button>
@@ -179,7 +179,7 @@ export default function WorkoutProgramsPage({
                                 <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>{ex.sets}×{ex.reps}</span>
                               </div>
                             )) : (
-                              <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>No exercises</span>
+                              <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>{t.programBuilder.noExercises}</span>
                             )}
                           </div>
                         ))}

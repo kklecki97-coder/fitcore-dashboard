@@ -250,6 +250,7 @@ function App() {
           durationWeeks: p.duration_weeks,
           clientIds: (p.program_clients ?? []).map((pc: { client_id: string }) => pc.client_id),
           isTemplate: p.is_template,
+          notes: p.notes ?? '',
           createdAt: p.created_at?.split('T')[0] ?? '',
           updatedAt: p.updated_at?.split('T')[0] ?? '',
           days: (p.workout_days ?? [])
@@ -546,6 +547,7 @@ function App() {
       status: program.status,
       duration_weeks: program.durationWeeks,
       is_template: program.isTemplate,
+      notes: program.notes || '',
       updated_at: new Date().toISOString(),
     });
     if (r1.error) console.error('saveProgramToDb upsert:', r1.error);

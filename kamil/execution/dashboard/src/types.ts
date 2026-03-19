@@ -79,6 +79,7 @@ export interface WorkoutProgram {
   clientIds: string[];
   days: WorkoutDay[];
   isTemplate: boolean;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }

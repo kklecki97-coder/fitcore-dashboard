@@ -4,6 +4,7 @@ import { ArrowLeft, Upload, FileSpreadsheet, Check, AlertTriangle, Dumbbell, X }
 import * as XLSX from 'xlsx';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import type { WorkoutProgram, WorkoutDay, Exercise } from '../types';
 
 interface ProgramImporterProps {
@@ -145,6 +146,8 @@ function parseWorkbook(wb: XLSX.WorkBook): WorkoutProgram {
 
 export default function ProgramImporter({ onImported, onBack }: ProgramImporterProps) {
   const isMobile = useIsMobile();
+  const { t } = useLang();
+  const tr = t.programImporter;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<WorkoutProgram | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -160,13 +163,13 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
       const program = parseWorkbook(wb);
 
       if (program.days.length === 0) {
-        setError('No training days found in the file. Make sure your file has training day headers (e.g. "Trening I", "Day 1").');
+        setError(tr.errorNoDays);
         return;
       }
 
       setPreview(program);
     } catch {
-      setError('Failed to parse the file. Make sure it\'s a valid .xlsx, .xls, or .csv file.');
+      setError(tr.errorParse);
     }
   };
 
@@ -192,12 +195,12 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
   return (
     <div style={{ ...s.page, padding: isMobile ? '16px' : '24px 32px' }}>
       <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-        <ArrowLeft size={16} /> Back
+        <ArrowLeft size={16} /> {tr.back}
       </motion.button>
 
       <div style={s.header}>
-        <h2 style={s.title}>Import Program</h2>
-        <p style={s.subtitle}>Upload an Excel (.xlsx) or CSV file with your training plan</p>
+        <h2 style={s.title}>{tr.title}</h2>
+        <p style={s.subtitle}>{tr.subtitle}</p>
       </div>
 
       {!preview ? (
@@ -219,10 +222,10 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
               <Upload size={32} color="var(--accent-primary)" />
             </div>
             <p style={s.dropText}>
-              Drag & drop your file here
+              {tr.dropText}
             </p>
             <p style={s.dropSubtext}>
-              or click to browse — .xlsx, .xls, .csv
+              {tr.dropSubtext}
             </p>
             {fileName && !error && (
               <p style={{ ...s.dropSubtext, color: 'var(--accent-primary)' }}>
@@ -246,12 +249,9 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
           </AnimatePresence>
 
           <div style={s.tips}>
-            <p style={s.tipTitle}>Supported formats:</p>
+            <p style={s.tipTitle}>{tr.tipsTitle}</p>
             <ul style={s.tipList}>
-              <li>Rows with exercise name, sets, reps, rest, tempo</li>
-              <li>Training day headers like "Trening I Góra A" or "Day 1 - Upper"</li>
-              <li>Column headers are auto-detected and skipped</li>
-              <li>Works with most Polish and English training plan templates</li>
+              {tr.tips.map((tip: string) => <li key={tip}>{tip}</li>)}
             </ul>
           </div>
         </GlassCard>
@@ -265,14 +265,14 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
                   <FileSpreadsheet size={18} color="var(--accent-primary)" /> {preview.name}
                 </h3>
                 <p style={s.previewMeta}>
-                  {preview.days.length} days · {totalExercises} exercises · from {fileName}
+                  {t.programs.days(preview.days.length)} · {t.programs.exercises(totalExercises)} · {tr.from} {fileName}
                 </p>
               </div>
               <button
                 onClick={() => { setPreview(null); setFileName(''); }}
                 style={s.resetBtn}
               >
-                <X size={14} /> Choose different file
+                <X size={14} /> {tr.chooseDifferent}
               </button>
             </div>
           </GlassCard>
@@ -307,11 +307,11 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
             <div style={s.actions}>
               <p style={s.actionNote}>
                 <Check size={14} style={{ verticalAlign: 'middle', color: 'var(--accent-primary)' }} />
-                {' '}Program looks good? Import it and fine-tune in the editor.
+                {' '}{tr.confirmNote}
               </p>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button onClick={() => { setPreview(null); setFileName(''); }} style={s.cancelBtn}>
-                  Cancel
+                  {tr.cancel}
                 </button>
                 <motion.button
                   onClick={confirmImport}
@@ -319,7 +319,7 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Check size={16} /> Import & Edit
+                  <Check size={16} /> {tr.importBtn}
                 </motion.button>
               </div>
             </div>
