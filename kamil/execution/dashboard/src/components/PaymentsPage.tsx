@@ -9,6 +9,7 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { getLocale, formatCurrency } from '../lib/locale';
 import type { Client, Invoice, CoachingPlan } from '../types';
 
 interface PaymentsPageProps {
@@ -23,7 +24,7 @@ interface PaymentsPageProps {
 type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
-// @ts-ignore onUpdateInvoice reserved for future manual payment marking
+// onUpdateInvoice reserved for future manual payment marking
 export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
   const { lang, t } = useLang();
   const isMobile = useIsMobile();
@@ -47,8 +48,8 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
 
   // ── Summary stats ──
   const activeClients = clients.filter(c => c.status === 'active');
-  const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const formatPeriod = (d: Date) => `${monthShort[d.getMonth()]} ${d.getFullYear()}`;
+  // Use locale-aware month formatting for invoice period matching
+  const formatPeriod = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   const currentPeriod = formatPeriod(new Date());
   const prevDate = new Date();
   prevDate.setMonth(prevDate.getMonth() - 1);
@@ -77,7 +78,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
   const revenueDelta = getRevenueDelta(totalRevenue, lastMonthRevenue);
 
   // ── Date locale ──
-  const dateLocale = lang === 'pl' ? 'pl-PL' : 'en-US';
+  const dateLocale = getLocale(lang);
 
   // ── Filter + sort invoices ──
   const filtered = invoices.filter(inv => {
@@ -137,7 +138,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
             <DollarSign size={20} color="var(--accent-success)" />
           </div>
           <div style={styles.summaryLabel}>{t.payments.revenueThisMonth}</div>
-          <div style={styles.summaryValue}>${totalRevenue.toLocaleString()}</div>
+          <div style={styles.summaryValue}>{formatCurrency(totalRevenue, lang)}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-success)' }}>
             {t.payments.invoicesPaid(paidCount)} ({paidCount}/{totalCount})
           </div>
@@ -154,7 +155,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
             <Clock size={20} color="var(--accent-warm)" />
           </div>
           <div style={styles.summaryLabel}>{t.payments.pending}</div>
-          <div style={styles.summaryValue}>${pendingAmount.toLocaleString()}</div>
+          <div style={styles.summaryValue}>{formatCurrency(pendingAmount, lang)}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-warm)' }}>
             {t.payments.invoiceCount(thisMonth.filter(i => i.status === 'pending').length)}
           </div>
@@ -171,7 +172,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
             <AlertTriangle size={20} color="var(--accent-danger)" />
           </div>
           <div style={styles.summaryLabel}>{t.payments.overdue}</div>
-          <div style={styles.summaryValue}>${overdueAmount.toLocaleString()}</div>
+          <div style={styles.summaryValue}>{formatCurrency(overdueAmount, lang)}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--accent-danger)' }}>
             {t.payments.invoiceCount(thisMonth.filter(i => i.status === 'overdue').length)}
           </div>
@@ -188,7 +189,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
             <CheckCircle2 size={20} color="var(--accent-primary)" />
           </div>
           <div style={styles.summaryLabel}>{t.payments.allTimeRevenue}</div>
-          <div style={styles.summaryValue}>${allTimePaid.toLocaleString()}</div>
+          <div style={styles.summaryValue}>{formatCurrency(allTimePaid, lang)}</div>
           <div style={{ ...styles.summaryMeta, color: 'var(--text-tertiary)' }}>
             {activeClients.length} {t.payments.activeClients}
           </div>
@@ -295,7 +296,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                         <div style={styles.mobileCardMeta}>{inv.period} &middot; {inv.plan}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={styles.amount}>${inv.amount}</div>
+                        <div style={styles.amount}>{formatCurrency(inv.amount, lang)}</div>
                         <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
                           {statusLabel(inv.status)}
                         </span>
@@ -316,7 +317,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                       <span style={styles.planChip}>{inv.plan}</span>
                     </span>
                     <span style={{ ...styles.td, flex: 1, textAlign: 'right', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
-                      ${inv.amount}
+                      {formatCurrency(inv.amount, lang)}
                     </span>
                     <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '17px' }}>
                       {new Date(inv.dueDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
@@ -360,7 +361,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                           return (
                             <div key={h.id} style={styles.historyRow}>
                               <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '15px' }}>{h.period}</span>
-                              <span style={{ ...styles.td, flex: 1, fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>${h.amount}</span>
+                              <span style={{ ...styles.td, flex: 1, fontSize: '15px', fontWeight: 600, fontFamily: 'var(--font-display)' }}>{formatCurrency(h.amount, lang)}</span>
                               <span style={{ ...styles.td, flex: 1 }}>
                                 <span style={{ ...styles.statusBadge, color: hsc.color, background: hsc.bg, fontSize: '13px', padding: '2px 8px' }}>
                                   {h.status === 'paid' && <CheckCircle2 size={10} />}
@@ -444,7 +445,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                             }}
                           >
                             <div style={{ fontWeight: 600, fontSize: '16px' }}>{p.name}</div>
-                            <div style={{ fontSize: '14px', opacity: 0.7 }}>${p.price}{cycleSuffix}</div>
+                            <div style={{ fontSize: '14px', opacity: 0.7 }}>{formatCurrency(p.price, lang)}{cycleSuffix}</div>
                           </button>
                         );
                       })}

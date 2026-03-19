@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, Bell, MessageSquare, ClipboardCheck, DollarSign, Dumbbell, UserPlus, CheckCircle } from 'lucide-react';
 import { useLang } from '../i18n';
+import { getLocale } from '../lib/locale';
 import type { Page, AppNotification, NotificationType } from '../types';
 
 interface HeaderProps {
@@ -29,7 +30,7 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+  const locale = getLocale(lang);
   const today = new Date().toLocaleDateString(locale, {
     weekday: 'long',
     month: 'long',

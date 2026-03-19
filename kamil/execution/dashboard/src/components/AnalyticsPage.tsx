@@ -11,6 +11,7 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { getLocale } from '../lib/locale';
 import type { Client, Invoice, WorkoutLog, CheckIn } from '../types';
 
 interface AnalyticsPageProps {
@@ -25,7 +26,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
 
-  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+  const locale = getLocale(lang);
 
   // ── Revenue from real invoices ──
   const paidInvoices = invoices.filter(inv => inv.status === 'paid');

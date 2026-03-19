@@ -137,10 +137,11 @@ export default function ProgramBuilderPage({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [renamingDay, setRenamingDay] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  // @ts-ignore — prepared for save indicator feature
-  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(program || ''));
-  // @ts-ignore — prepared for save indicator feature
-  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
+  // Prepared for save indicator feature
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [savedSnapshot, _setSavedSnapshot] = useState(() => JSON.stringify(program || ''));
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [showSavedIndicator, _setShowSavedIndicator] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -176,7 +177,7 @@ export default function ProgramBuilderPage({
   }, [showSuggestions, quickShowSuggestions, closeSuggestions]);
 
   // Quick-add filtered suggestions
-  const quickFilteredSuggestions = quickName.trim()
+  const quickFilteredSuggestions = quickName.trim() && exerciseLibrary
     ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(quickName.toLowerCase())).slice(0, 6)
     : [];
 
@@ -323,7 +324,7 @@ export default function ProgramBuilderPage({
   };
 
   // ── Filtered suggestions ──
-  const filteredSuggestions = exerciseSearch.trim()
+  const filteredSuggestions = exerciseSearch.trim() && exerciseLibrary
     ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(exerciseSearch.toLowerCase())).slice(0, 8)
     : [];
 

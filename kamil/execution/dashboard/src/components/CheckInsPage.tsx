@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ClipboardCheck, Search, ChevronDown, ChevronUp,
@@ -12,6 +12,7 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { getLocale } from '../lib/locale';
 import type { Client, CheckIn, Message, Page } from '../types';
 
 interface CheckInsPageProps {
@@ -25,8 +26,8 @@ interface CheckInsPageProps {
 
 type FilterTab = 'pending' | 'flagged' | 'reviewed' | 'missed' | 'all';
 
-// ── Tiny inline sparkline ──
-function Sparkline({ data, color, height = 28, width = 100 }: { data: number[]; color: string; height?: number; width?: number }) {
+// ── Tiny inline sparkline (memoized to avoid re-renders when parent state changes) ──
+const Sparkline = React.memo(function Sparkline({ data, color, height = 28, width = 100 }: { data: number[]; color: string; height?: number; width?: number }) {
   if (data.length < 2) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
@@ -54,7 +55,7 @@ function Sparkline({ data, color, height = 28, width = 100 }: { data: number[]; 
       })()}
     </svg>
   );
-}
+});
 
 // ── Delta badge ──
 function DeltaBadge({ current, previous, unit, inverse }: { current: number; previous: number; unit: string; inverse?: boolean }) {
@@ -98,7 +99,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   const [messageSent, setMessageSent] = useState(false);
   const [showFlagInput, setShowFlagInput] = useState<string | null>(null);
 
-  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+  const locale = getLocale(lang);
 
   const moodIcons: Record<number, { icon: typeof Smile; color: string; label: string }> = {
     1: { icon: Angry, color: 'var(--accent-danger)', label: t.checkIns.moodLabels[1] },

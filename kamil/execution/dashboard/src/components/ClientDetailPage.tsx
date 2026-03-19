@@ -18,6 +18,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
+import { getLocale } from '../lib/locale';
 import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
 
 interface ClientDetailPageProps {
@@ -37,13 +38,13 @@ interface ClientDetailPageProps {
   onAddCheckIn: (checkIn: CheckIn) => void;
 }
 
-// @ts-ignore - onAddCheckIn scaffolded for upcoming check-in-from-coach feature
-export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
   const client = clients.find(c => c.id === clientId);
 
-  // All hooks must be called before any early return
+  // NOTE: All hooks must be called before any early return (React rules of hooks).
+  // The `if (!client) return null` below is intentionally placed after all hooks.
   const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | 'logMetrics' | 'assignProgram' | 'checkIn' | 'viewCheckIn' | null>(null);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
   const [messageText, setMessageText] = useState('');
@@ -90,13 +91,13 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
         .order('week_start', { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data?.day_assignments) setClientSchedule(data.day_assignments);
+      if (data?.day_assignments) setClientSchedule(data.day_assignments as Record<string, string>);
     })();
   }, [clientId]);
 
   if (!client) return null;
 
-  const dateLocale = lang === 'pl' ? 'pl-PL' : 'en-US';
+  const dateLocale = getLocale(lang);
 
   const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
   const weightData = client.metrics.weight.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));

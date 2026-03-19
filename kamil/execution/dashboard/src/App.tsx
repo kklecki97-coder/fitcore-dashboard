@@ -115,9 +115,11 @@ function App() {
       }
     });
 
+    // NOTE: Supabase RLS policies filter by coach_id at the DB level,
+    // so all queries here automatically return only this coach's data.
     const loadClients = async (): Promise<Client[]> => {
       const { data, error } = await supabase.from('clients').select('*').order('created_at');
-      if (error) { console.error('loadClients failed:', error); return []; }
+      if (error) { console.error('loadClients failed:', error); /* TODO: error tracking (Sentry) */ return []; }
       if (data) {
         // Load client_metrics time-series data
         const clientIds = data.map(r => r.id);
@@ -171,7 +173,7 @@ function App() {
       // Fix #15: Build name map instead of .find() per record
       const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
       const { data, error } = await supabase.from('messages').select('*').order('timestamp');
-      if (error) { console.error('loadMessages failed:', error); return; }
+      if (error) { console.error('loadMessages failed:', error); /* TODO: error tracking (Sentry) */ return; }
       if (data) {
         setAllMessages(data.map(r => ({
           id: r.id,
@@ -190,7 +192,7 @@ function App() {
     const loadInvoices = async (clientsList: Client[]) => {
       const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
       const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
-      if (error) { console.error('loadInvoices failed:', error); return; }
+      if (error) { console.error('loadInvoices failed:', error); /* TODO: error tracking (Sentry) */ return; }
       if (data) {
         setAllInvoices(data.map(r => ({
           id: r.id,
@@ -211,7 +213,7 @@ function App() {
     const loadCheckIns = async (clientsList: Client[]) => {
       const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
       const { data, error } = await supabase.from('check_ins').select('*').order('date', { ascending: false });
-      if (error) { console.error('loadCheckIns failed:', error); return; }
+      if (error) { console.error('loadCheckIns failed:', error); /* TODO: error tracking (Sentry) */ return; }
       if (data) {
         // Load photos for all check-ins
         const checkInIds = data.map(r => r.id);
@@ -272,7 +274,7 @@ function App() {
         .from('workout_programs')
         .select(`*, workout_days(*, exercises(*)), program_clients(client_id)`)
         .order('created_at');
-      if (error) { console.error('loadPrograms failed:', error); return; }
+      if (error) { console.error('loadPrograms failed:', error); /* TODO: error tracking (Sentry) */ return; }
       if (data) {
         setAllPrograms(data.map(p => ({
           id: p.id,
@@ -309,7 +311,7 @@ function App() {
 
     const loadWorkoutLogs = async () => {
       const { data, error } = await supabase.from('workout_logs').select('*, clients(name)').order('date', { ascending: false });
-      if (error) { console.error('loadWorkoutLogs failed:', error); return; }
+      if (error) { console.error('loadWorkoutLogs failed:', error); /* TODO: error tracking (Sentry) */ return; }
       if (data) {
         setAllWorkoutLogs(data.map(r => ({
           id: r.id,
@@ -325,7 +327,7 @@ function App() {
 
     const loadSetLogs = async () => {
       const { data, error } = await supabase.from('workout_set_logs').select('*').order('date', { ascending: false });
-      if (error) { console.error('loadSetLogs failed:', error); return; }
+      if (error) { console.error('loadSetLogs failed:', error); /* TODO: error tracking (Sentry) */ return; }
       if (data) {
         setAllSetLogs(data.map(r => ({
           id: r.id,
@@ -344,7 +346,7 @@ function App() {
 
     const loadPlans = async () => {
       const { data, error } = await supabase.from('coaching_plans').select('*').order('created_at');
-      if (error) { console.error('loadPlans failed:', error); return; }
+      if (error) { console.error('loadPlans failed:', error); /* TODO: error tracking (Sentry) */ return; }
       if (data) {
         setAllPlans(data.map(r => ({
           id: r.id,
@@ -546,7 +548,7 @@ function App() {
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
       const { error } = await supabase.from('clients').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdateClient failed:', error);
+      if (error) console.error('handleUpdateClient failed:', error); // TODO: error tracking (Sentry)
     }
   };
 
@@ -583,7 +585,7 @@ function App() {
       delivery_status: msg.deliveryStatus,
     });
     if (error) {
-      console.error('handleSendMessage failed:', error);
+      console.error('handleSendMessage failed:', error); // TODO: error tracking (Sentry)
       // Rollback optimistic update
       setAllMessages(prev => prev.filter(m => m.id !== msg.id));
     }
@@ -601,7 +603,7 @@ function App() {
       notes: program.notes || '',
       updated_at: new Date().toISOString(),
     });
-    if (r1.error) console.error('saveProgramToDb upsert:', r1.error);
+    if (r1.error) console.error('saveProgramToDb upsert:', r1.error); // TODO: error tracking (Sentry)
     // Sync program_clients junction table
     await supabase.from('program_clients').delete().eq('program_id', program.id);
     if (program.clientIds.length > 0) {
@@ -617,7 +619,7 @@ function App() {
         id: day.id, program_id: program.id, name: day.name, day_order: di,
       }));
       const { error: daysError } = await supabase.from('workout_days').insert(dayRows);
-      if (daysError) { console.error('saveProgramToDb days insert:', daysError); return; }
+      if (daysError) { console.error('saveProgramToDb days insert:', daysError); /* TODO: error tracking (Sentry) */ return; }
       // Batch insert all exercises across all days at once
       const exerciseRows = program.days.flatMap((day, _di) =>
         day.exercises.map((ex, ei) => ({
@@ -628,7 +630,7 @@ function App() {
       );
       if (exerciseRows.length > 0) {
         const { error: exError } = await supabase.from('exercises').insert(exerciseRows);
-        if (exError) console.error('saveProgramToDb exercises insert:', exError);
+        if (exError) console.error('saveProgramToDb exercises insert:', exError); // TODO: error tracking (Sentry)
       }
     }
   };
@@ -656,7 +658,7 @@ function App() {
     setAllPrograms(prev => prev.filter(p => p.id !== id));
     const { error } = await supabase.from('workout_programs').delete().eq('id', id);
     if (error) {
-      console.error('handleDeleteProgram failed:', error);
+      console.error('handleDeleteProgram failed:', error); // TODO: error tracking (Sentry)
       if (removed) setAllPrograms(prev => [...prev, removed]);
     }
   };
@@ -696,7 +698,7 @@ function App() {
     if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
     if (Object.keys(dbUpdates).length > 0) {
       const { error } = await supabase.from('invoices').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdateInvoice failed:', error);
+      if (error) console.error('handleUpdateInvoice failed:', error); // TODO: error tracking (Sentry)
     }
   };
 
@@ -715,7 +717,7 @@ function App() {
       plan: invoice.plan,
     });
     if (error) {
-      console.error('handleAddInvoice failed:', error);
+      console.error('handleAddInvoice failed:', error); // TODO: error tracking (Sentry)
       setAllInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
     } else {
       // Notify client via email (fire and forget)
@@ -738,7 +740,7 @@ function App() {
       is_active: plan.isActive,
     });
     if (error) {
-      console.error('handleAddPlan failed:', error);
+      console.error('handleAddPlan failed:', error); // TODO: error tracking (Sentry)
       setAllPlans(prev => prev.filter(p => p.id !== plan.id));
     }
   };
@@ -754,7 +756,7 @@ function App() {
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
       const { error } = await supabase.from('coaching_plans').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdatePlan failed:', error);
+      if (error) console.error('handleUpdatePlan failed:', error); // TODO: error tracking (Sentry)
     }
   };
 
@@ -763,7 +765,7 @@ function App() {
     setAllPlans(prev => prev.filter(p => p.id !== id));
     const { error } = await supabase.from('coaching_plans').delete().eq('id', id);
     if (error) {
-      console.error('handleDeletePlan failed:', error);
+      console.error('handleDeletePlan failed:', error); // TODO: error tracking (Sentry)
       if (removed) setAllPlans(prev => [...prev, removed]);
     }
   };
@@ -790,7 +792,7 @@ function App() {
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
       const { error } = await supabase.from('check_ins').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdateCheckIn failed:', error);
+      if (error) console.error('handleUpdateCheckIn failed:', error); // TODO: error tracking (Sentry)
     }
   };
 
@@ -817,7 +819,7 @@ function App() {
       flag_reason: checkIn.flagReason,
     });
     if (error) {
-      console.error('handleAddCheckIn failed:', error);
+      console.error('handleAddCheckIn failed:', error); // TODO: error tracking (Sentry)
       setAllCheckIns(prev => prev.filter(ci => ci.id !== checkIn.id));
     }
   };
@@ -978,7 +980,7 @@ function App() {
               if (!user) return;
               const path = `avatars/${user.id}`;
               const { error: uploadErr } = await supabase.storage.from('coach-avatars').upload(path, file, { upsert: true });
-              if (uploadErr) { console.error('Photo upload failed:', uploadErr); return; }
+              if (uploadErr) { console.error('Photo upload failed:', uploadErr); /* TODO: error tracking (Sentry) */ alert('Photo upload failed. Please try again.'); return; }
               const { data: urlData } = supabase.storage.from('coach-avatars').getPublicUrl(path);
               const url = urlData.publicUrl + '?t=' + Date.now(); // cache-bust
               await supabase.from('coaches').update({ avatar_url: url }).eq('id', user.id);
@@ -997,6 +999,8 @@ function App() {
     }
   };
 
+  // NOTE: All hooks are called above this point, before any early returns.
+  // This is intentional to satisfy React's rules of hooks (no conditional hook calls).
   if (authLoading || dataLoading) {
     return (
       <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>

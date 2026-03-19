@@ -4,6 +4,7 @@ import { Search, Send, ArrowLeft, X, MessageSquare, Check } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import { useLang } from '../i18n';
+import { getLocale } from '../lib/locale';
 import type { Client, Message } from '../types';
 
 // ── Delivery status checkmarks ──
@@ -70,7 +71,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ── Locale-aware helpers (need lang and t) ──
-  const locale = lang === 'pl' ? 'pl-PL' : 'en-US';
+  const locale = getLocale(lang);
 
   function formatRelativeTime(ts: string): string {
     const d = new Date(ts);

@@ -56,13 +56,14 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const [tfaQrSvg, setTfaQrSvg] = useState('');
   const [tfaSecret, setTfaSecret] = useState('');
   const [tfaFactorId, setTfaFactorId] = useState('');
-  // @ts-ignore - scaffolded for "Copied!" indicator on backup codes button
-  const [copiedBackup, setCopiedBackup] = useState(false);
+  // Scaffolded for "Copied!" indicator on backup codes button
+  const [_copiedBackup, setCopiedBackup] = useState(false);
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
   const [stripeConnected, setStripeConnected] = useState(false);
   const [stripeOnboarded, setStripeOnboarded] = useState(false);
+  const [stripeLoadError, setStripeLoadError] = useState(false);
 
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -93,11 +94,16 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
     const checkStripeConnect = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('coaches')
         .select('stripe_connect_id, stripe_connect_onboarded')
         .eq('id', session.user.id)
         .single();
+      if (error) {
+        console.error('Failed to load Stripe Connect status:', error); // TODO: error tracking (Sentry)
+        setStripeLoadError(true);
+        return;
+      }
       if (data?.stripe_connect_id) {
         setStripeConnected(true);
         setStripeOnboarded(data.stripe_connect_onboarded ?? false);
@@ -466,7 +472,14 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               ))}
             </div>
 
-            {stripeOnboarded ? (
+            {stripeLoadError ? (
+              <div style={{ ...styles.stripeBadge, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                <span style={{ ...styles.stripeBadgeText, color: '#ef4444' }}>
+                  <AlertTriangle size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                  Error loading Stripe status
+                </span>
+              </div>
+            ) : stripeOnboarded ? (
               <>
                 <div style={{ ...styles.stripeBadge, background: 'rgba(0, 229, 200, 0.1)', border: '1px solid rgba(0, 229, 200, 0.3)' }}>
                   <span style={{ ...styles.stripeBadgeText, color: '#00e5c8' }}>

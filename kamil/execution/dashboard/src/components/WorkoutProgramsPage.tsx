@@ -25,10 +25,8 @@ export default function WorkoutProgramsPage({
   const { t } = useLang();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
-  // @ts-ignore — prepared for filter UI
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  // @ts-ignore — prepared for filter UI
-  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus, _setFilterStatus] = useState<string>('all');
+  const [filterType, _setFilterType] = useState<string>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -50,24 +48,17 @@ export default function WorkoutProgramsPage({
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // @ts-ignore — prepared for status filter badges
-  const activeCount = programs.filter(p => p.status === 'active').length;
-  // @ts-ignore — prepared for status filter badges
-  const draftCount = programs.filter(p => p.status === 'draft').length;
-  // @ts-ignore — prepared for status filter badges
-  const templateCount = programs.filter(p => p.isTemplate).length;
+  // Prepared for status filter badges in the UI
+  void (programs.filter(p => p.status === 'active').length);
+  void (programs.filter(p => p.status === 'draft').length);
+  void (programs.filter(p => p.isTemplate).length);
 
-  // @ts-ignore — prepared for template save feature
-  const handleSaveAsTemplate = (id: string) => {
+  // Prepared for template save feature — void to suppress unused lint until UI is wired
+  void function handleSaveAsTemplate(id: string) {
     onDuplicateProgram(id);
-    // Mark the duplicate as a template after it's been created
     setTimeout(() => {
-      // The duplicate is the newest program (last in the array)
-      // We can't know its ID here, so update the original to trigger re-render
-      // and use onUpdateProgram to mark it as template
       const source = programs.find(p => p.id === id);
       if (!source) return;
-      // Find the copy by name suffix - it was just created by onDuplicateProgram
       const copy = [...programs].reverse().find(p => p.name === `${source.name} (Copy)`);
       if (copy) {
         onUpdateProgram(copy.id, { isTemplate: true, name: `${source.name} (Template)` });

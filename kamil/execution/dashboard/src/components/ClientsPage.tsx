@@ -223,7 +223,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
   const handleSaveEdit = () => {
     if (!editModal) return;
     const matchedPlan = plans.find(p => p.name === editModal.plan);
-    const rate = matchedPlan ? matchedPlan.price : ({ Basic: 99, Premium: 199, Elite: 299 }[editModal.plan] || 99);
+    const rate = matchedPlan ? matchedPlan.price : 0;
     onUpdateClient(editModal.clientId, {
       plan: editModal.plan,
       status: editModal.status,
