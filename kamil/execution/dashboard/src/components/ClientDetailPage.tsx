@@ -463,7 +463,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                 <span>{client.email}</span>
                 <span style={styles.dot} />
                 <Calendar size={13} color="var(--text-tertiary)" />
-                <span>Since {client.startDate}</span>
+                <span>{lang === 'pl' ? 'Od' : 'Since'} {client.startDate}</span>
               </div>
               <div style={{ ...styles.profileTags, flexWrap: 'wrap' }}>
                 <span style={{ ...styles.planTag, color: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).color, background: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).bg }}>
