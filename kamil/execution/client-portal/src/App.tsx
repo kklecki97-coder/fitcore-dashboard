@@ -35,6 +35,7 @@ function App() {
   const { t, lang } = useLang();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // ── Password recovery state ──
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -615,6 +616,7 @@ function App() {
       setMessages(prev => prev.filter(m => m.id !== msg.id));
       showError(t.errors?.messageFailed ?? 'Failed to send message');
     }
+    // Toast handled inline — no success toast for messages to avoid spamming
   };
 
   const handleSubmitCheckIn = async (ci: CheckIn) => {
@@ -719,7 +721,7 @@ function App() {
       }).catch(() => {}); // Silent - don't block check-in on email failure
     });
 
-    showToast(lang === 'pl' ? 'Check-in wysłany!' : 'Check-in submitted!', 'success');
+    showToast(t.toasts?.checkInSubmitted ?? 'Check-in submitted!', 'success');
   };
 
   const handleLogWorkout = async (type: string, date: string, durationMinutes?: number) => {
@@ -750,7 +752,10 @@ function App() {
       setWorkoutLogs(prev => prev.filter(l => l.id !== newLog.id));
       showError('Failed to log workout');
     } else {
-      showToast(lang === 'pl' ? 'Trening zaliczony!' : 'Workout logged!', 'success');
+      // Confetti celebration for completed workout!
+      showToast(t.toasts?.workoutCelebration ?? 'Beast mode! 💪', 'success');
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 100);
     }
   };
 
@@ -1206,6 +1211,9 @@ function App() {
         <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} isMobile={true} onLogout={handleLogout} unreadCount={messages.filter(m => m.isFromCoach && !m.isRead).length} />
       )}
     </div>
+
+    {/* Confetti celebration for workout completion */}
+    <Confetti active={showConfetti} />
 
     {/* Error toast - Fix #20: click to dismiss, 6s timeout */}
     {toastError && (
