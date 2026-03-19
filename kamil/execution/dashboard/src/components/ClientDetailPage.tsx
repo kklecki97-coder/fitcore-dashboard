@@ -1130,9 +1130,9 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>{t.clientDetail.status}</span>
                     <div style={styles.modalStatusPicker}>
-                      {(['active', 'paused', 'pending'] as const).map((s) => {
+                      {(['active', 'paused'] as const).map((s) => {
                         const isActive = editStatus === s;
-                        const colorMap = { active: 'var(--accent-success)', paused: 'var(--accent-warm)', pending: 'var(--accent-secondary)' };
+                        const colorMap: Record<string, string> = { active: 'var(--accent-success)', paused: 'var(--accent-warm)' };
                         return (
                           <button
                             key={s}
@@ -1146,6 +1146,11 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                           </button>
                         );
                       })}
+                      {editStatus === 'paused' && (
+                        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px', fontStyle: 'italic' }}>
+                          {lang === 'pl' ? 'Wstrzymany klient nie będzie otrzymywać faktur' : 'Paused clients will not receive invoices'}
+                        </div>
+                      )}
                     </div>
                   </div>
 
