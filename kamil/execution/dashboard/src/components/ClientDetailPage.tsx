@@ -78,6 +78,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
   // Load client's weekly schedule for calendar
   const [clientSchedule, setClientSchedule] = useState<Record<string, string>>({});
+  const [selectedCalDay, setSelectedCalDay] = useState<string | null>(null);
   useEffect(() => {
     if (!clientId) return;
     (async () => {
@@ -751,9 +752,12 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                     <div
                       key={dateKey}
                       title={entries ? entries.map(e => `${e.type} (${e.duration}min)`).join(', ') : dateKey}
+                      onClick={() => (entries || (isPlanned && !isFuture)) ? setSelectedCalDay(selectedCalDay === dateKey ? null : dateKey) : null}
                       style={{
                         ...styles.calCell,
                         ...(isMobile ? { minHeight: '36px', padding: '0 1px 3px' } : {}),
+                        ...((entries || (isPlanned && !isFuture)) ? { cursor: 'pointer' } : {}),
+                        ...(selectedCalDay === dateKey ? { boxShadow: '0 0 0 2px var(--accent-primary)', border: '1px solid var(--accent-primary)' } : {}),
                         ...(entries && allCompleted ? {
                           background: isToday ? 'rgba(32,219,164,0.18)' : 'rgba(32,219,164,0.12)',
                           border: `1px solid ${isToday ? 'rgba(32,219,164,0.5)' : 'rgba(32,219,164,0.35)'}`,
@@ -841,6 +845,108 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                   <span>Today</span>
                 </div>
               </div>
+
+              {/* Selected day detail panel */}
+              {selectedCalDay && (() => {
+                const dayEntries = logsByDate[selectedCalDay];
+                const dayDate = new Date(selectedCalDay);
+                const dayLabel = dayDate.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' });
+                const workoutType = dayEntries?.[0]?.type ?? '';
+
+                // Get the exercises for this workout day from the program
+                const clientProg = programs.find(p => p.clientIds.includes(client.id));
+                const programDay = clientProg?.days.find(d => d.name === workoutType);
+                const programExerciseNames = programDay ? programDay.exercises.map(e => e.name) : [];
+
+                // Filter set logs to only this day's exercises
+                const daySetLogs = setLogs
+                  .filter(l => l.clientId === client.id && l.date === selectedCalDay && l.completed)
+                  .filter(l => programExerciseNames.length === 0 || programExerciseNames.includes(l.exerciseName))
+                  .sort((a, b) => {
+                    // Sort by program exercise order
+                    const aIdx = programExerciseNames.indexOf(a.exerciseName);
+                    const bIdx = programExerciseNames.indexOf(b.exerciseName);
+                    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx || a.setNumber - b.setNumber;
+                    return a.exerciseName.localeCompare(b.exerciseName) || a.setNumber - b.setNumber;
+                  });
+
+                // Group set logs by exercise name (preserving order)
+                const exerciseGroups: [string, typeof daySetLogs][] = [];
+                const seen = new Set<string>();
+                for (const log of daySetLogs) {
+                  if (!seen.has(log.exerciseName)) {
+                    seen.add(log.exerciseName);
+                    exerciseGroups.push([log.exerciseName, daySetLogs.filter(l => l.exerciseName === log.exerciseName)]);
+                  }
+                }
+
+                // Filter out instruction/note rows (very long names are likely coach notes, not exercises)
+                const cleanGroups = exerciseGroups.filter(([name]) => name.length < 60);
+
+                return (
+                  <div style={{
+                    marginTop: '12px', borderRadius: '12px',
+                    background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
+                    overflow: 'hidden',
+                  }}>
+                    {/* Header */}
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '14px 16px', borderBottom: '1px solid var(--glass-border)',
+                      background: 'rgba(0,229,200,0.04)',
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{dayLabel}</div>
+                        {workoutType && (
+                          <div style={{ fontSize: '13px', color: 'var(--accent-primary)', fontWeight: 600, marginTop: '2px' }}>{workoutType}</div>
+                        )}
+                      </div>
+                      <button onClick={() => setSelectedCalDay(null)} style={{
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)',
+                        color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '14px',
+                        width: '28px', height: '28px', borderRadius: '8px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>×</button>
+                    </div>
+
+                    {/* Exercise list */}
+                    {cleanGroups.length > 0 ? (
+                      <div style={{ padding: '8px 0' }}>
+                        {cleanGroups.map(([name, sets], idx) => {
+                          const hasSomeWeight = sets.some(s => s.weight && s.weight !== '0' && s.weight !== '-');
+                          return (
+                            <div key={name} style={{
+                              display: 'flex', alignItems: 'center', gap: '12px',
+                              padding: '10px 16px',
+                              background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)',
+                            }}>
+                              <span style={{
+                                width: '24px', height: '24px', borderRadius: '6px',
+                                background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)', flexShrink: 0,
+                              }}>{idx + 1}</span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                                <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                  {hasSomeWeight
+                                    ? sets.map(s => `${s.weight}kg ×${s.reps}`).join('  /  ')
+                                    : `${sets.length} sets × ${sets[0]?.reps ?? '-'} reps`
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ padding: '20px 16px', fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                        {dayEntries ? (lang === 'pl' ? 'Brak szczegółów zestawów' : 'No set details logged') : (lang === 'pl' ? 'Zaplanowany trening' : 'Planned workout')}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </GlassCard>
 
           </div>
