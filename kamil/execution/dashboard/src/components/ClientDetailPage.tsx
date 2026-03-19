@@ -627,17 +627,30 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           .filter(w => w.clientId === client.id)
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-        const totalSessions = clientLogs.length;
         const completedSessions = clientLogs.filter(w => w.completed).length;
-        const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
-        const avgDuration = totalSessions > 0 ? Math.round(clientLogs.reduce((s, w) => s + w.duration, 0) / totalSessions) : 0;
-        const ringR = 18;
-        const ringC = 2 * Math.PI * ringR;
-        const ringOff = ringC - (completionRate / 100) * ringC;
+        const avgDuration = completedSessions > 0 ? Math.round(clientLogs.filter(w => w.completed).reduce((s, w) => s + w.duration, 0) / completedSessions) : 0;
 
         // Build month calendar data
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+
+        // Count planned sessions this month from schedule
+        const calYear = today.getFullYear();
+        const calMonth = today.getMonth();
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+        let plannedThisMonth = 0;
+        let completedThisMonth = 0;
+        for (let d = 1; d <= daysInMonth; d++) {
+          const cellDate = new Date(calYear, calMonth, d);
+          const dow = (cellDate.getDay() + 6) % 7;
+          if (clientSchedule[String(dow)]) plannedThisMonth++;
+          const dateKey = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          if (clientLogs.some(w => w.date === dateKey && w.completed)) completedThisMonth++;
+        }
+        const completionRate = plannedThisMonth > 0 ? Math.round((completedThisMonth / plannedThisMonth) * 100) : 0;
+        const ringR = 18;
+        const ringC = 2 * Math.PI * ringR;
+        const ringOff = ringC - (completionRate / 100) * ringC;
 
         const logsByDate: Record<string, WorkoutLog[]> = {};
         clientLogs.forEach(w => {
@@ -646,12 +659,8 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
         });
 
         // Current month grid
-        const calYear = today.getFullYear();
-        const calMonth = today.getMonth();
         const firstDay = new Date(calYear, calMonth, 1);
-        const lastDay = new Date(calYear, calMonth + 1, 0);
         const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
-        const daysInMonth = lastDay.getDate();
         const monthName = firstDay.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' });
 
         // Build 6-row x 7-col grid (pad with nulls)
@@ -677,7 +686,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
               <div style={styles.calStatsRow}>
                 <div style={styles.calStatCard}>
                   <Dumbbell size={16} color="var(--accent-primary)" />
-                  <span style={styles.calStatValue}>{completedSessions}</span>
+                  <span style={styles.calStatValue}>{completedThisMonth}/{plannedThisMonth}</span>
                   <span style={styles.calStatLabel}>sessions</span>
                 </div>
                 <div style={styles.calStatCard}>
@@ -723,7 +732,13 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                   // Check if this day has a planned workout from the client's schedule
                   const cellDate = new Date(calYear, calMonth, day);
                   const dow = (cellDate.getDay() + 6) % 7; // Mon=0, Sun=6
-                  const isPlanned = !!clientSchedule[String(dow)];
+                  const plannedDayId = clientSchedule[String(dow)];
+                  const isPlanned = !!plannedDayId;
+                  // Resolve planned workout name from program
+                  const clientProgram = programs.find(p => p.clientIds.includes(client.id));
+                  const plannedDayName = isPlanned && clientProgram
+                    ? clientProgram.days.find(d => d.id === plannedDayId)?.name ?? ''
+                    : '';
 
                   const allCompleted = entries?.every(e => e.completed);
                   const hasMissed = entries && !allCompleted;
@@ -738,22 +753,23 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       style={{
                         ...styles.calCell,
                         ...(isMobile ? { minHeight: '36px', padding: '0 1px 3px' } : {}),
-                        ...(isToday ? {
-                          background: 'rgba(0,229,200,0.08)',
-                          border: '1px solid rgba(0,229,200,0.25)',
-                          boxShadow: '0 0 8px rgba(0,229,200,0.1)',
-                        } : entries && !isFuture && allCompleted ? {
-                          background: '#20dba40F',
-                          border: '1px solid #20dba41F',
+                        ...(entries && allCompleted ? {
+                          background: isToday ? 'rgba(32,219,164,0.18)' : 'rgba(32,219,164,0.12)',
+                          border: `1px solid ${isToday ? 'rgba(32,219,164,0.5)' : 'rgba(32,219,164,0.35)'}`,
+                          boxShadow: isToday ? '0 0 8px rgba(32,219,164,0.15)' : 'none',
                         } : entries && !isFuture && hasMissed ? {
-                          background: '#e8637a0D',
-                          border: '1px solid #e8637a1A',
+                          background: 'rgba(239,68,68,0.08)',
+                          border: '1px solid rgba(239,68,68,0.25)',
                         } : isPlanned && !isFuture && !entries ? {
-                          background: 'rgba(239,68,68,0.06)',
-                          border: '1px solid rgba(239,68,68,0.15)',
+                          background: 'rgba(239,68,68,0.08)',
+                          border: '1px solid rgba(239,68,68,0.25)',
+                        } : isToday ? {
+                          background: isPlanned ? 'rgba(59,130,246,0.1)' : 'rgba(0,229,200,0.08)',
+                          border: `1px solid ${isPlanned ? 'rgba(59,130,246,0.3)' : 'rgba(0,229,200,0.25)'}`,
+                          boxShadow: '0 0 8px rgba(0,229,200,0.1)',
                         } : isPlanned && isFuture ? {
-                          background: 'rgba(0,229,200,0.04)',
-                          border: '1px solid rgba(0,229,200,0.1)',
+                          background: 'rgba(59,130,246,0.08)',
+                          border: '1px solid rgba(59,130,246,0.25)',
                         } : isFuture ? {
                           background: 'transparent',
                           border: '1px solid rgba(255,255,255,0.02)',
@@ -771,7 +787,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                           : entries && !isFuture && hasMissed ? '#e8637a'
                           : isPlanned && !isFuture && !entries ? '#e8637a'
                           : isToday ? 'var(--accent-primary)'
-                          : isPlanned && isFuture ? 'rgba(0,229,200,0.4)'
+                          : isPlanned && isFuture ? '#3b82f6'
                           : 'transparent',
                       }} />
                       <span style={{
@@ -784,14 +800,22 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       }}>
                         {day}
                       </span>
-                      {entries && !isFuture && (
+                      {entries && !isFuture ? (
                         <span style={{
                           ...styles.calSessionType,
                           color: allCompleted ? '#20dba4' : '#e8637a',
                         }}>
                           {shortType}
                         </span>
-                      )}
+                      ) : isPlanned && plannedDayName ? (
+                        <span style={{
+                          ...styles.calSessionType,
+                          color: isFuture ? '#3b82f6' : '#e8637a',
+                          fontSize: isMobile ? '6px' : '8px',
+                        }}>
+                          {plannedDayName.toUpperCase()}
+                        </span>
+                      ) : null}
                     </div>
                   );
                 })}
@@ -806,6 +830,10 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                 <div style={styles.calLegendItem}>
                   <div style={{ ...styles.calLegendDot, background: '#e8637a' }} />
                   <span>Missed</span>
+                </div>
+                <div style={styles.calLegendItem}>
+                  <div style={{ ...styles.calLegendDot, background: '#3b82f6' }} />
+                  <span>Planned</span>
                 </div>
                 <div style={styles.calLegendItem}>
                   <div style={{ ...styles.calLegendDot, background: 'var(--accent-primary)' }} />
