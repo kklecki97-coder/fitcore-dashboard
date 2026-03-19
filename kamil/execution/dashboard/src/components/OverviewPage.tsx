@@ -111,12 +111,22 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     }
     return false;
   });
-  const pendingCheckIns = clients.filter(c => {
-    if (!c.nextCheckIn || c.nextCheckIn === '-') return false;
-    const checkInDate = new Date(c.nextCheckIn);
-    checkInDate.setHours(0, 0, 0, 0);
-    return checkInDate <= today;
+  // Pending check-ins: scheduled check-ins where date is today or past
+  const pendingCheckInsList = checkIns.filter(ci => {
+    if (ci.status !== 'scheduled') return false;
+    const ciDate = new Date(ci.date);
+    ciDate.setHours(0, 0, 0, 0);
+    return ciDate <= today;
   });
+  // Also keep client-based fallback for the insights
+  const pendingCheckIns = pendingCheckInsList.length > 0
+    ? pendingCheckInsList.map(ci => clients.find(c => c.id === ci.clientId)).filter(Boolean) as Client[]
+    : clients.filter(c => {
+        if (!c.nextCheckIn || c.nextCheckIn === '-') return false;
+        const checkInDate = new Date(c.nextCheckIn);
+        checkInDate.setHours(0, 0, 0, 0);
+        return checkInDate <= today;
+      });
 
 
   // Daily quote - rotate by day of year
@@ -234,8 +244,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     },
     {
       label: t.overview.pendingCheckIns,
-      value: pendingCheckIns.length.toString(),
-      change: pendingCheckIns.length > 0 ? t.overview.dueToday : t.overview.allCaughtUp,
+      value: (pendingCheckInsList.length || pendingCheckIns.length).toString(),
+      change: (pendingCheckInsList.length || pendingCheckIns.length) > 0 ? t.overview.dueToday : t.overview.allCaughtUp,
       trend: 'neutral' as const,
       icon: CalendarCheck,
       color: 'var(--accent-warm)',
