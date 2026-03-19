@@ -178,7 +178,15 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
   }, 0);
   // @ts-ignore - scaffolded for progress bar UI
   const progressPct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
-  const allDone = completedSets === totalSets;
+  const allDone = completedSets === totalSets && totalSets > 0;
+
+  // Auto-log workout when all sets are completed
+  const alreadyLogged = workoutLogs.some(l => l.type === day.name && l.date === todayStr && l.completed);
+  useEffect(() => {
+    if (allDone && isTodaysWorkout && !alreadyLogged) {
+      onLogWorkout(day.name, todayStr);
+    }
+  }, [allDone, isTodaysWorkout, alreadyLogged]);
 
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);
