@@ -178,9 +178,10 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   ];
 
   const tooltipStyle = {
-    background: '#1a1d24', border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-    fontSize: '14px', color: '#e0e0e0',
+    background: '#0c1017', border: '1px solid rgba(0,229,200,0.15)',
+    borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 12px rgba(0,229,200,0.05)',
+    backdropFilter: 'blur(20px)',
+    fontSize: '13px', color: '#e0e0e0', padding: '10px 14px',
   };
 
   if (clients.length === 0) {
@@ -320,7 +321,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
               <BarChart data={planRevenue} layout="vertical">
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
                 <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={100} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
+                <Tooltip contentStyle={tooltipStyle} cursor={false} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
                 <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
                   {planRevenue.map((_, i) => (
                     <Cell key={i} fill={planColors[i % planColors.length]} />
