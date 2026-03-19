@@ -758,6 +758,8 @@ export const en = {
     welcomeTitle: 'Welcome to FitCore!',
     welcomeBody: 'Your dashboard is set up and ready to go',
     messageSentTo: (name: string) => `Message sent to ${name}`,
+    programSaved: 'Program saved!',
+    checkInReviewed: 'Check-in reviewed!',
   },
 
   lang: {

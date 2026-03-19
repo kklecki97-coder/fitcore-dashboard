@@ -682,7 +682,7 @@ function App() {
 
   // ── Program handlers ──
   const handleAddProgram = async (program: WorkoutProgram) => {
-    showToast(t.notifications?.programSaved ?? 'Program saved!', 'success');
+    showToast(t.notifications.programSaved, 'success');
     setAllPrograms(prev => [...prev, program]);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await saveProgramToDb(program, user.id);
@@ -746,7 +746,8 @@ function App() {
       if (!clientHasPriorPayment) {
         triggerConfetti();
       }
-      showToast(t.notifications?.paymentReceived?.() ?? 'Payment received!', 'success');
+      const amt = updates.amount ?? invoice?.amount ?? 0;
+      showToast(t.notifications.paymentReceived(`$${amt}`), 'success');
     }
     setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
     const dbUpdates: Record<string, unknown> = {};
@@ -1039,7 +1040,7 @@ function App() {
               onViewClient={handleViewClient}
               onSendMessage={handleSendMessage}
               onNavigate={handleNavigate}
-              onConfetti={() => showToast(t.notifications?.checkInReviewed ?? 'Check-in reviewed!', 'success')}
+              onConfetti={() => showToast(t.notifications.checkInReviewed, 'success')}
             />
           </ErrorBoundary>
         );

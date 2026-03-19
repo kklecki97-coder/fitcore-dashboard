@@ -760,6 +760,8 @@ export const pl: Translations = {
     welcomeTitle: 'Witaj w FitCore!',
     welcomeBody: 'Twój dashboard jest gotowy',
     messageSentTo: (name: string) => `Wiadomość wysłana do ${name}`,
+    programSaved: 'Program zapisany!',
+    checkInReviewed: 'Raport sprawdzony!',
   },
 
   lang: {
