@@ -13,6 +13,7 @@ import WorkoutProgramsPage from './components/WorkoutProgramsPage';
 import ProgramBuilderPage from './components/ProgramBuilderPage';
 import ProgramCreateChooser from './components/ProgramCreateChooser';
 import AIProgramCreator from './components/AIProgramCreator';
+import ProgramImporter from './components/ProgramImporter';
 import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
@@ -833,6 +834,7 @@ function App() {
           <ProgramCreateChooser
             onChooseManual={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
             onChooseAI={() => setCurrentPage('ai-program-creator')}
+            onChooseImport={() => setCurrentPage('program-import')}
             onBack={() => setCurrentPage('programs')}
           />
         );
@@ -842,6 +844,17 @@ function App() {
             clients={allClients}
             onGenerated={(program: WorkoutProgram) => {
               // AI generated a program - open it in the builder so coach can review & edit
+              handleAddProgram(program);
+              setSelectedProgramId(program.id);
+              setCurrentPage('program-builder');
+            }}
+            onBack={() => setCurrentPage('program-create-chooser')}
+          />
+        );
+      case 'program-import':
+        return (
+          <ProgramImporter
+            onImported={(program: WorkoutProgram) => {
               handleAddProgram(program);
               setSelectedProgramId(program.id);
               setCurrentPage('program-builder');
@@ -860,6 +873,7 @@ function App() {
               } else {
                 handleAddProgram(program);
               }
+              setCurrentPage('programs');
             }}
             onBack={handleBackFromProgram}
             backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}

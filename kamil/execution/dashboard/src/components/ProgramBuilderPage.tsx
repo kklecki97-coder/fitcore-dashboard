@@ -120,7 +120,7 @@ export default function ProgramBuilderPage({
     return {
       id: crypto.randomUUID(),
       name: '',
-      status: 'draft' as const,
+      status: 'active' as const,
       durationWeeks: 4,
       clientIds: [],
       days: [],
@@ -139,9 +139,16 @@ export default function ProgramBuilderPage({
   const [renameValue, setRenameValue] = useState('');
   const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(program || ''));
   const [showSavedIndicator, setShowSavedIndicator] = useState(false);
-  const [showStatusBanner, setShowStatusBanner] = useState(true);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Quick-add row state
+  const [quickName, setQuickName] = useState('');
+  const [quickSets, setQuickSets] = useState('3');
+  const [quickReps, setQuickReps] = useState('10');
+  const [quickShowSuggestions, setQuickShowSuggestions] = useState(false);
+  const quickNameRef = useRef<HTMLInputElement>(null);
+  const quickSuggestionsRef = useRef<HTMLDivElement>(null);
 
   const hasUnsavedChanges = JSON.stringify(draft) !== savedSnapshot;
 
@@ -151,14 +158,50 @@ export default function ProgramBuilderPage({
         inputRef.current && !inputRef.current.contains(e.target as Node)) {
       setShowSuggestions(false);
     }
+    if (quickSuggestionsRef.current && !quickSuggestionsRef.current.contains(e.target as Node) &&
+        quickNameRef.current && !quickNameRef.current.contains(e.target as Node)) {
+      setQuickShowSuggestions(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (showSuggestions) {
+    if (showSuggestions || quickShowSuggestions) {
       document.addEventListener('mousedown', closeSuggestions);
       return () => document.removeEventListener('mousedown', closeSuggestions);
     }
-  }, [showSuggestions, closeSuggestions]);
+  }, [showSuggestions, quickShowSuggestions, closeSuggestions]);
+
+  // Quick-add filtered suggestions
+  const quickFilteredSuggestions = quickName.trim()
+    ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(quickName.toLowerCase())).slice(0, 6)
+    : [];
+
+  // Quick-add submit
+  const submitQuickAdd = () => {
+    if (!quickName.trim()) return;
+    const ex: Exercise = {
+      id: crypto.randomUUID(),
+      name: quickName.trim(),
+      sets: parseInt(quickSets) || 3,
+      reps: quickReps || '10',
+      weight: '',
+      rpe: null,
+      tempo: '',
+      restSeconds: null,
+      notes: '',
+    };
+    setDraft(prev => {
+      const newDraft = JSON.parse(JSON.stringify(prev));
+      newDraft.days[activeDayIndex].exercises.push(ex);
+      return newDraft;
+    });
+    setQuickName('');
+    setQuickSets('3');
+    setQuickReps('10');
+    setQuickShowSuggestions(false);
+    // Refocus name input for rapid adding
+    setTimeout(() => quickNameRef.current?.focus(), 50);
+  };
 
   const activeDay: WorkoutDay | undefined = draft.days[activeDayIndex];
 
@@ -273,10 +316,6 @@ export default function ProgramBuilderPage({
     }
     const updated = { ...draft, updatedAt: new Date().toISOString().split('T')[0] };
     onSave(updated);
-    setSavedSnapshot(JSON.stringify(updated));
-    setDraft(updated);
-    setShowSavedIndicator(true);
-    setTimeout(() => setShowSavedIndicator(false), 3000);
   };
 
   // ── Filtered suggestions ──
@@ -292,32 +331,6 @@ export default function ProgramBuilderPage({
           <ArrowLeft size={16} /> {backLabel ?? t.programBuilder.backToPrograms}
         </motion.button>
       </div>
-
-      {/* Status Banner */}
-      <AnimatePresence>
-        {showStatusBanner && draft.status === 'draft' && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '12px 16px', borderRadius: '10px', marginBottom: '16px',
-              background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)',
-            }}
-          >
-            <span style={{ fontSize: '14px', color: '#eab308', fontWeight: 500, fontFamily: 'var(--font-display)' }}>
-              This program is in <strong>Draft</strong> mode. When you're happy with it, change the status to <strong>Active</strong> and save.
-            </span>
-            <button
-              onClick={() => setShowStatusBanner(false)}
-              style={{ background: 'transparent', border: 'none', color: '#eab308', cursor: 'pointer', padding: '4px', display: 'flex' }}
-            >
-              <X size={16} />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Saved Indicator */}
       <AnimatePresence>
@@ -365,18 +378,6 @@ export default function ProgramBuilderPage({
                 />
                 <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}></span>
               </div>
-            </div>
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>{t.programBuilder.status}</label>
-              <select
-                value={draft.status}
-                onChange={(e) => setDraft(prev => ({ ...prev, status: e.target.value as WorkoutProgram['status'] }))}
-                style={styles.select}
-              >
-                <option value="draft">{t.programBuilder.draft}</option>
-                <option value="active">{t.programBuilder.active}</option>
-                <option value="completed">{t.programBuilder.completed}</option>
-              </select>
             </div>
           </div>
         </div>
@@ -522,12 +523,83 @@ export default function ProgramBuilderPage({
           ) : (
             <div style={styles.emptyDay}>
               <Dumbbell size={32} color="var(--text-tertiary)" />
-              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '18px' }}></p>
-              <button onClick={openAddExercise} style={styles.addExerciseBtn}>
-                <Plus size={14} /> {t.programBuilder.addExercise}
-              </button>
+              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '18px' }}>
+                {t.programBuilder.noExercisesYet || 'No exercises yet. Use the quick-add below or click the + button for full details.'}
+              </p>
             </div>
           )}
+
+          {/* Quick-Add Row */}
+          <div style={styles.quickAddWrap}>
+            <div style={styles.quickAddRow}>
+              <div style={{ position: 'relative', flex: 2, minWidth: 0 }}>
+                <input
+                  ref={quickNameRef}
+                  type="text"
+                  value={quickName}
+                  onChange={(e) => {
+                    setQuickName(e.target.value);
+                    setQuickShowSuggestions(true);
+                  }}
+                  onFocus={() => { if (quickName.trim()) setQuickShowSuggestions(true); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') submitQuickAdd(); }}
+                  placeholder={t.programBuilder.searchExercises || 'Exercise name...'}
+                  style={{ ...styles.input, fontSize: '15px', padding: '8px 10px' }}
+                />
+                {quickShowSuggestions && quickFilteredSuggestions.length > 0 && (
+                  <div ref={quickSuggestionsRef} style={{ ...styles.suggestions, bottom: '100%', top: 'auto', marginBottom: '4px' }}>
+                    {quickFilteredSuggestions.map(name => (
+                      <button
+                        key={name}
+                        onClick={() => {
+                          setQuickName(name);
+                          setQuickShowSuggestions(false);
+                        }}
+                        style={styles.suggestionItem}
+                      >
+                        <Dumbbell size={13} color="var(--text-tertiary)" /> {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <input
+                type="number"
+                value={quickSets}
+                onChange={(e) => setQuickSets(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') submitQuickAdd(); }}
+                placeholder="Sets"
+                min={1}
+                max={20}
+                style={{ ...styles.input, fontSize: '15px', padding: '8px 10px', width: '64px', textAlign: 'center', flex: 'none' }}
+              />
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '15px', fontWeight: 600, userSelect: 'none' }}>×</span>
+              <input
+                type="text"
+                value={quickReps}
+                onChange={(e) => setQuickReps(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') submitQuickAdd(); }}
+                placeholder="Reps"
+                style={{ ...styles.input, fontSize: '15px', padding: '8px 10px', width: '80px', textAlign: 'center', flex: 'none' }}
+              />
+              <motion.button
+                onClick={submitQuickAdd}
+                style={{
+                  ...styles.addExerciseBtn,
+                  padding: '7px 10px',
+                  fontSize: '15px',
+                  opacity: quickName.trim() ? 1 : 0.4,
+                }}
+                whileHover={quickName.trim() ? { scale: 1.05 } : {}}
+                whileTap={quickName.trim() ? { scale: 0.95 } : {}}
+              >
+                <Plus size={14} />
+              </motion.button>
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+              Quick add — type name, sets × reps, press Enter. Click <Edit3 size={11} style={{ verticalAlign: 'middle' }} /> on any exercise to edit full details.
+            </span>
+          </div>
         </GlassCard>
       ) : (
         <GlassCard delay={0.15}>
@@ -1272,5 +1344,18 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     color: 'var(--text-on-accent)',
     flexShrink: 0,
+  },
+  // Quick-add row
+  quickAddWrap: {
+    padding: '12px 20px 16px',
+    borderTop: '1px solid var(--glass-border)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  quickAddRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
   },
 };

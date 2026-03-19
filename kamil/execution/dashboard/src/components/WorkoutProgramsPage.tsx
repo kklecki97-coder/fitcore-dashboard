@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Plus, MoreHorizontal, Copy, BookmarkPlus, Trash2, X,
-  Clock, Dumbbell, Eye,
+  Search, Plus, MoreHorizontal, Copy, Trash2, X,
+  Clock, Dumbbell, Eye, ChevronDown,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -29,6 +29,7 @@ export default function WorkoutProgramsPage({
   const [filterType, setFilterType] = useState<string>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const closeMenu = useCallback(() => setOpenMenuId(null), []);
   useEffect(() => {
@@ -87,19 +88,6 @@ export default function WorkoutProgramsPage({
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={styles.filterSelect}>
-            <option value="all">{t.programs.allStatus}</option>
-            <option value="active">{t.programs.active}</option>
-            <option value="draft">{t.programs.draft}</option>
-            <option value="completed">{t.programs.completed}</option>
-          </select>
-
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={styles.filterSelect}>
-            <option value="all">{t.programs.allTypes}</option>
-            <option value="program">{t.programs.programsType}</option>
-            <option value="template">{t.programs.templates}</option>
-          </select>
-
           <motion.button
             onClick={onAddProgram}
             style={styles.addBtn}
@@ -112,92 +100,96 @@ export default function WorkoutProgramsPage({
         </div>
       </div>
 
-      {/* Mini Stats */}
-      <div style={styles.statsRow}>
-        {[
-          { label: t.programs.statActive, value: activeCount, color: 'var(--accent-success)', bg: 'var(--accent-success-dim)' },
-          { label: t.programs.statDraft, value: draftCount, color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
-          { label: t.programs.statTemplates, value: templateCount, color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
-          { label: t.programs.statTotal, value: programs.length, color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
-        ].map(stat => (
-          <div key={stat.label} style={{ ...styles.statChip, background: stat.bg, color: stat.color }}>
-            <span style={styles.statValue}>{stat.value}</span>
-            <span style={styles.statLabel}>{stat.label}</span>
-          </div>
-        ))}
-      </div>
-
       {/* Program Cards Grid */}
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))' }}>
         {filtered.map((program, i) => {
+          const isExpanded = expandedId === program.id;
           return (
-            <GlassCard key={program.id} delay={i * 0.04} hover onClick={() => onViewProgram(program.id)}>
+            <GlassCard key={program.id} delay={i * 0.04} hover>
               <div style={styles.cardInner}>
                 {/* Header */}
                 <div style={styles.cardHeader}>
-                  <h3 style={styles.cardTitle}>{program.name}</h3>
-                  <div style={{ position: 'relative' }}>
+                  <h3 style={{ ...styles.cardTitle, cursor: 'pointer' }} onClick={() => onViewProgram(program.id)}>{program.name}</h3>
+                  <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === program.id ? null : program.id); }}
-                      style={styles.menuBtn}
+                      onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : program.id); }}
+                      style={{ ...styles.menuBtn, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}
+                      title="Show exercises"
                     >
-                      <MoreHorizontal size={16} />
+                      <ChevronDown size={16} />
                     </button>
-                    {openMenuId === program.id && (
-                      <div className="dropdown-menu" style={styles.dropdown} onClick={(e) => e.stopPropagation()}>
-                        <button style={styles.dropdownItem} onClick={() => { onViewProgram(program.id); setOpenMenuId(null); }}>
-                          <Eye size={14} /> {t.programs.viewEdit}
-                        </button>
-                        <button style={styles.dropdownItem} onClick={() => { onDuplicateProgram(program.id); setOpenMenuId(null); }}>
-                          <Copy size={14} /> {t.programs.duplicate}
-                        </button>
-                        {!program.isTemplate && (
-                          <button style={styles.dropdownItem} onClick={() => { handleSaveAsTemplate(program.id); setOpenMenuId(null); }}>
-                            <BookmarkPlus size={14} /> {t.programs.saveAsTemplate}
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === program.id ? null : program.id); }}
+                        style={styles.menuBtn}
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+                      {openMenuId === program.id && (
+                        <div className="dropdown-menu" style={styles.dropdown} onClick={(e) => e.stopPropagation()}>
+                          <button style={styles.dropdownItem} onClick={() => { onViewProgram(program.id); setOpenMenuId(null); }}>
+                            <Eye size={14} /> {t.programs.viewEdit}
                           </button>
-                        )}
-                        <div style={styles.dropdownDivider} />
-                        <button
-                          style={{ ...styles.dropdownItem, color: 'var(--accent-danger)' }}
-                          onClick={() => { setDeleteConfirm(program.id); setOpenMenuId(null); }}
-                        >
-                          <Trash2 size={14} /> {t.programs.delete}
-                        </button>
-                      </div>
-                    )}
+                          <button style={styles.dropdownItem} onClick={() => { onDuplicateProgram(program.id); setOpenMenuId(null); }}>
+                            <Copy size={14} /> {t.programs.duplicate}
+                          </button>
+                          <div style={styles.dropdownDivider} />
+                          <button
+                            style={{ ...styles.dropdownItem, color: 'var(--accent-danger)' }}
+                            onClick={() => { setDeleteConfirm(program.id); setOpenMenuId(null); }}
+                          >
+                            <Trash2 size={14} /> {t.programs.delete}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Badges */}
                 <div style={styles.badgeRow}>
-                  <span style={{
-                    ...styles.badge,
-                    color: program.status === 'active' ? 'var(--accent-success)' : program.status === 'draft' ? 'var(--accent-secondary)' : 'var(--text-tertiary)',
-                    background: program.status === 'active' ? 'var(--accent-success-dim)' : program.status === 'draft' ? 'var(--accent-secondary-dim)' : 'var(--bg-subtle-hover)',
-                  }}>
-                    {program.status === 'active' ? t.programs.active : program.status === 'draft' ? t.programs.draft : t.programs.completed}
-                  </span>
                   <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
                     <Clock size={11} /> {t.programs.weeks(program.durationWeeks)}
                   </span>
-                  {program.isTemplate && (
-                    <span style={{ ...styles.badge, color: 'var(--accent-warm)', background: 'var(--accent-warm-dim)' }}>
-                      {t.programs.template}
-                    </span>
-                  )}
-                </div>
-
-                {/* Summary */}
-                <div style={styles.summaryRow}>
-                  <Dumbbell size={13} color="var(--text-tertiary)" />
-                  <span style={styles.summaryText}>
-                    {t.programs.days(program.days.length)}, {t.programs.exercises(totalExercises(program))}
+                  <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
+                    <Dumbbell size={11} /> {t.programs.days(program.days.length)}, {t.programs.exercises(totalExercises(program))}
                   </span>
                 </div>
 
+                {/* Expandable Exercise Details */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={{ borderTop: '1px solid var(--glass-border)', padding: '12px 0 4px' }}>
+                        {program.days.map(day => (
+                          <div key={day.id} style={{ marginBottom: '10px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent-primary)', marginBottom: '4px' }}>
+                              {day.name}
+                            </div>
+                            {day.exercises.length > 0 ? day.exercises.map((ex, ei) => (
+                              <div key={ex.id} style={{ display: 'flex', gap: '6px', alignItems: 'baseline', padding: '2px 0', fontSize: '13px' }}>
+                                <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', minWidth: '18px' }}>{ei + 1}.</span>
+                                <span style={{ color: 'var(--text-primary)' }}>{ex.name}</span>
+                                <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>{ex.sets}×{ex.reps}</span>
+                              </div>
+                            )) : (
+                              <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>No exercises</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Footer */}
                 <div style={styles.cardFooter}>
-                  <span style={styles.dateText}>{t.programs.updated} {program.updatedAt}</span>
                   <span style={styles.dateText}>{t.programs.created} {program.createdAt}</span>
                 </div>
               </div>
@@ -341,6 +333,7 @@ const styles: Record<string, React.CSSProperties> = {
   grid: {
     display: 'grid',
     gap: '16px',
+    alignItems: 'start',
   },
   cardInner: {
     padding: '20px',

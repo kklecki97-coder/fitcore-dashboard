@@ -1,15 +1,16 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, Wrench } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wrench, FileSpreadsheet } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 
 interface ProgramCreateChooserProps {
   onChooseManual: () => void;
   onChooseAI: () => void;
+  onChooseImport: () => void;
   onBack: () => void;
 }
 
-export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onBack }: ProgramCreateChooserProps) {
+export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onChooseImport, onBack }: ProgramCreateChooserProps) {
   const isMobile = useIsMobile();
 
   return (
@@ -83,6 +84,36 @@ export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onBac
             </div>
           </motion.button>
         </GlassCard>
+
+        {/* Import Option */}
+        <GlassCard delay={0.2} hover>
+          <motion.button
+            onClick={onChooseImport}
+            style={s.choiceCard}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <div style={s.iconWrap}>
+              <div style={{ ...s.iconCircle, background: 'rgba(168, 85, 247, 0.15)' }}>
+                <FileSpreadsheet size={28} color="#a855f7" />
+              </div>
+            </div>
+            <h3 style={s.choiceTitle}>Import</h3>
+            <p style={s.choiceDesc}>
+              Upload an Excel or CSV file with an existing training plan.
+              Auto-parsed into days and exercises.
+            </p>
+            <div style={s.featureList}>
+              <span style={s.feature}>Excel & CSV</span>
+              <span style={s.feature}>Auto-detect days</span>
+              <span style={s.feature}>Preview before saving</span>
+              <span style={s.feature}>Edit after import</span>
+            </div>
+            <div style={s.choiceBtnImport}>
+              <FileSpreadsheet size={16} /> Import File
+            </div>
+          </motion.button>
+        </GlassCard>
       </div>
     </div>
   );
@@ -129,7 +160,7 @@ const s: Record<string, React.CSSProperties> = {
   grid: {
     display: 'flex',
     gap: '20px',
-    maxWidth: '800px',
+    maxWidth: '1100px',
     margin: '0 auto',
     width: '100%',
   },
@@ -204,6 +235,19 @@ const s: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-secondary)',
+    fontSize: '17px',
+    fontWeight: 600,
+    marginTop: '8px',
+  },
+  choiceBtnImport: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 28px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(168, 85, 247, 0.3)',
+    background: 'rgba(168, 85, 247, 0.1)',
+    color: '#a855f7',
     fontSize: '17px',
     fontWeight: 600,
     marginTop: '8px',
