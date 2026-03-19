@@ -89,6 +89,7 @@ export const pl: Translations = {
     dueToday: 'Termin dzisiaj',
     allCaughtUp: 'Wszystko zrobione',
     dashboardSummary: 'Podsumowanie',
+    aiAnalyzing: 'Analizuję dane Twojego biznesu...',
     revenueOverview: 'Przychody',
     monthlyRecurring: 'Miesięczny przychód cykliczny',
     revenue: 'Przychód',

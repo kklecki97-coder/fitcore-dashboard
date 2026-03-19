@@ -10,9 +10,8 @@ import {
   CalendarCheck,
   MessageSquare,
   Sparkles,
-  Flame,
-  Dumbbell,
-  Clock,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -20,6 +19,7 @@ import {
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useAIBriefing } from '../hooks/useAIBriefing';
 import { useLang } from '../i18n';
 import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, CheckIn } from '../types';
 
@@ -47,10 +47,10 @@ interface OverviewPageProps {
   onNavigate: (page: 'messages' | 'clients') => void;
 }
 
-// @ts-ignore - checkIns prop scaffolded for upcoming overview widgets
 export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const { briefing, loading: briefingLoading, refresh: refreshBriefing } = useAIBriefing(clients, invoices, workoutLogs, checkIns, messages, programs, lang);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -113,7 +113,6 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   });
   // Pending check-ins: check-ins that coach hasn't reviewed yet
   const pendingCheckInsList = checkIns.filter(ci => ci.reviewStatus === 'pending');
-  const pendingCheckIns = pendingCheckInsList.map(ci => clients.find(c => c.id === ci.clientId)).filter(Boolean) as Client[];
 
 
   // Daily quote - rotate by day of year
@@ -126,80 +125,13 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [new Date().toDateString(), t]);
 
-  // AI Summary - smart aggregation from real data
-  const insights = useMemo(() => {
-    const items: { icon: React.ElementType; text: string; color: string }[] = [];
-
-    // Active clients this week
-    const active = clients.filter(c => c.status === 'active');
-    items.push({
-      icon: Users,
-      text: t.overview.insightActiveWeek(active.length, clients.length),
-      color: 'var(--accent-primary)',
-    });
-
-    // Best streak
-    const topStreak = [...clients].sort((a, b) => b.streak - a.streak)[0];
-    if (topStreak && topStreak.streak > 0) {
-      items.push({
-        icon: Flame,
-        text: t.overview.insightStreak(topStreak.name, topStreak.streak),
-        color: 'var(--accent-warm)',
-      });
-    }
-
-    // PR / top progress
-    const topProgress = [...clients].sort((a, b) => b.progress - a.progress)[0];
-    if (topProgress) {
-      const latestBench = topProgress.metrics.benchPress[topProgress.metrics.benchPress.length - 1];
-      items.push({
-        icon: TrendingUp,
-        text: t.overview.insightLeading(topProgress.name, topProgress.progress, latestBench),
-        color: 'var(--accent-success)',
-      });
-    }
-
-    // Overdue check-ins
-    if (pendingCheckIns.length > 0) {
-      const names = pendingCheckIns.slice(0, 3).map(c => c.name.split(' ')[0]);
-      items.push({
-        icon: Clock,
-        text: t.overview.insightOverdue(pendingCheckIns.length, names.join(', ')),
-        color: 'var(--accent-danger)',
-      });
-    }
-
-    // Unread messages
-    if (unreadMessages.length > 0) {
-      items.push({
-        icon: MessageSquare,
-        text: t.overview.insightUnread(unreadMessages.length),
-        color: 'var(--accent-secondary)',
-      });
-    }
-
-    // Revenue trend
-    const revChange = prevMonth ? ((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100 : 0;
-    items.push({
-      icon: DollarSign,
-      text: revChange >= 0
-        ? t.overview.insightRevenueUp(Math.round(revChange))
-        : t.overview.insightRevenueDown(Math.abs(Math.round(revChange))),
-      color: revChange >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
-    });
-
-    // Active programs
-    const activePrograms = programs.filter(p => p.status === 'active' && !p.isTemplate);
-    if (activePrograms.length > 0) {
-      items.push({
-        icon: Dumbbell,
-        text: t.overview.insightPrograms(activePrograms.length),
-        color: 'var(--accent-primary)',
-      });
-    }
-
-    return items;
-  }, [clients, pendingCheckIns, unreadMessages, programs, lastMonth, prevMonth, t]);
+  // AI briefing fallback stats (when no API key or error)
+  const fallbackStats = useMemo(() => [
+    `${clients.filter(c => c.status === 'active').length} ${lang === 'pl' ? 'aktywnych klientow' : 'active clients'}, ${clients.filter(c => c.status === 'paused').length} ${lang === 'pl' ? 'wstrzymanych' : 'paused'}`,
+    `${lang === 'pl' ? 'Przychod w tym miesiacu' : 'Revenue this month'}: ${invoices.filter(i => i.status === 'paid' && i.period === new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })).reduce((s, i) => s + i.amount, 0)} ${lang === 'pl' ? 'zl' : '$'}`,
+    `${checkIns.filter(ci => ci.reviewStatus === 'pending').length} ${lang === 'pl' ? 'check-inow do przegladniecia' : 'check-ins to review'}`,
+    `${messages.filter(m => !m.isFromCoach && !m.isRead).length} ${lang === 'pl' ? 'nieprzeczytanych wiadomosci' : 'unread messages'}`,
+  ], [clients, invoices, checkIns, messages, lang]);
 
   const statCards = [
     {
@@ -383,33 +315,48 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         })}
       </div>
 
-      {/* Dashboard Summary */}
+      {/* AI Dashboard Summary */}
       <GlassCard delay={0.15}>
         <div style={styles.cardHeader}>
           <div style={styles.insightTitleRow}>
             <Sparkles size={15} color="var(--accent-primary)" />
             <h3 style={styles.cardTitle}>{t.overview.dashboardSummary}</h3>
           </div>
+          {!briefingLoading && briefing && (
+            <button onClick={refreshBriefing} style={styles.viewAllBtn} title={lang === 'pl' ? 'Odswiez' : 'Refresh'}>
+              <RefreshCw size={14} />
+            </button>
+          )}
         </div>
-        <div style={{ ...styles.insightList, ...(isMobile ? {} : { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 24px' }) }}>
-          {insights.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={i}
-                style={styles.insightRow}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.04 }}
-              >
-                <div style={{ ...styles.insightIcon, background: `${item.color}15` }}>
-                  <Icon size={14} color={item.color} />
-                </div>
-                <span style={styles.insightText}>{item.text}</span>
-              </motion.div>
-            );
-          })}
-        </div>
+        {briefingLoading ? (
+          <div style={{ padding: '20px 10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Loader2 size={16} className="spin" color="var(--accent-primary)" />
+            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+              {t.overview.aiAnalyzing}
+            </span>
+          </div>
+        ) : briefing ? (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              fontSize: '18px', color: 'var(--text-primary)', lineHeight: 1.7,
+              padding: '8px 10px', margin: 0, fontWeight: 400,
+            }}
+          >
+            {briefing}
+          </motion.p>
+        ) : (
+          <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {fallbackStats.map((stat, i) => (
+              <div key={i} style={{ fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', flexShrink: 0 }} />
+                {stat}
+              </div>
+            ))}
+          </div>
+        )}
       </GlassCard>
 
       {/* Revenue Chart */}

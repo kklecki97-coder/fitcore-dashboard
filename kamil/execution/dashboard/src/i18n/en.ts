@@ -87,6 +87,7 @@ export const en = {
     dueToday: 'Due today',
     allCaughtUp: 'All caught up',
     dashboardSummary: 'Dashboard Summary',
+    aiAnalyzing: 'Analyzing your business data...',
     revenueOverview: 'Revenue Overview',
     monthlyRecurring: 'Monthly recurring revenue',
     revenue: 'Revenue',
