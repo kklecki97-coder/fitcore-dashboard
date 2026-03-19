@@ -91,19 +91,21 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     };
   });
 
-  // ── Plan distribution ──
-  const planDistribution = [
-    { name: 'Elite', value: clients.filter(c => c.plan === 'Elite').length, color: '#f59e0b' },
-    { name: 'Premium', value: clients.filter(c => c.plan === 'Premium').length, color: '#6366f1' },
-    { name: 'Basic', value: clients.filter(c => c.plan === 'Basic').length, color: '#525a6e' },
-  ];
+  // ── Plan distribution (dynamic from actual client plans) ──
+  const planColors = ['#00e5c8', '#6366f1', '#f59e0b', '#e8637a', '#3b82f6', '#8b5cf6', '#10b981', '#525a6e'];
+  const uniquePlans = [...new Set(clients.map(c => c.plan).filter(Boolean))];
+  const planDistribution = uniquePlans.map((plan, i) => ({
+    name: plan,
+    value: clients.filter(c => c.plan === plan).length,
+    color: planColors[i % planColors.length],
+  }));
 
-  // Revenue by plan from actual invoices
-  const planRevenue = [
-    { name: 'Elite', revenue: paidInvoices.filter(inv => inv.plan === 'Elite').reduce((s, inv) => s + inv.amount, 0) },
-    { name: 'Premium', revenue: paidInvoices.filter(inv => inv.plan === 'Premium').reduce((s, inv) => s + inv.amount, 0) },
-    { name: 'Basic', revenue: paidInvoices.filter(inv => inv.plan === 'Basic').reduce((s, inv) => s + inv.amount, 0) },
-  ];
+  // Revenue by plan from actual invoices (dynamic)
+  const uniqueInvoicePlans = [...new Set(paidInvoices.map(inv => inv.plan).filter(Boolean))];
+  const planRevenue = uniqueInvoicePlans.map(plan => ({
+    name: plan,
+    revenue: paidInvoices.filter(inv => inv.plan === plan).reduce((s, inv) => s + inv.amount, 0),
+  }));
 
   // ── Retention chart ──
   const retentionData = revenueChartData.map((rd) => ({
