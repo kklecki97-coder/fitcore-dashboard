@@ -1066,7 +1066,6 @@ function App() {
 
   // Also show walkthrough on first login if onboarding was already done but walkthrough wasn't shown
   if (clientUser && clientUser.onboarded && !showWalkthrough && !localStorage.getItem('fitcore-client-walkthrough-done')) {
-    // Check once on mount
     if (!sessionStorage.getItem('fitcore-walkthrough-checked')) {
       sessionStorage.setItem('fitcore-walkthrough-checked', 'true');
       setTimeout(() => setShowWalkthrough(true), 1000);
