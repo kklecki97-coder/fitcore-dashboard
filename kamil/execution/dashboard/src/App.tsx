@@ -70,7 +70,9 @@ function App() {
   const [currentPage, _setCurrentPage] = useState<Page>(() => {
     try {
       const saved = sessionStorage.getItem('fitcore-page');
-      if (saved) return saved as Page;
+      // Don't restore pages that need context (like a selected client/program)
+      const contextPages: Page[] = ['client-detail', 'program-builder', 'ai-program-creator', 'program-import'];
+      if (saved && !contextPages.includes(saved as Page)) return saved as Page;
     } catch { /* ignore */ }
     return 'overview';
   });
