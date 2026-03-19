@@ -5,7 +5,7 @@ import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import type { Client, WorkoutLog, CheckIn } from '../types';
+import type { Client, WorkoutLog, CheckIn, WorkoutSetLog } from '../types';
 
 type TimePeriod = '1m' | '3m' | '6m' | 'all';
 
@@ -14,13 +14,14 @@ const CHART_RENDER_DELAY = 300;
 
 interface ProgressPageProps {
   client: Client;
-  // workoutLogs is used for future workout-based progress metrics (e.g. volume over time)
   workoutLogs: WorkoutLog[];
   checkIns: CheckIn[];
+  setLogs: WorkoutSetLog[];
 }
 
-export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkIns }: ProgressPageProps) {
-  void _workoutLogs; // scaffolded for future workout-based progress metrics
+// @ts-ignore — workoutLogs reserved for future volume-over-time charts
+export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkIns, setLogs }: ProgressPageProps) {
+  void _workoutLogs;
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const [chartsReady, setChartsReady] = useState(false);
@@ -81,12 +82,42 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
     { key: 'back', label: t.progress.back },
   ];
 
-  // ── Lift PRs ──
-  const allLifts = [
-    { name: 'Bench Press', values: metrics.benchPress, unit: 'kg' },
-    { name: 'Squat', values: metrics.squat, unit: 'kg' },
-    { name: 'Deadlift', values: metrics.deadlift, unit: 'kg' },
+  // ── Main 3 Lift PRs from workout set logs ──
+  // Match exercise names (EN + PL) to the 3 main compound lifts
+  const mainLiftPatterns: { key: string; label: string; patterns: string[] }[] = [
+    { key: 'bench', label: 'Bench Press', patterns: ['bench press', 'wyciskanie sztangi leżąc', 'wyciskanie leżąc', 'wyciskanie sztangi lezac', 'flat bench', 'bench'] },
+    { key: 'squat', label: 'Squat', patterns: ['squat', 'przysiad', 'back squat', 'front squat', 'przysiady'] },
+    { key: 'deadlift', label: 'Deadlift', patterns: ['deadlift', 'dead lift', 'martwy ciąg', 'martwy ciag', 'martwego ciągu', 'martwego ciagu'] },
   ];
+
+  const matchMainLift = (exerciseName: string): string | null => {
+    const lower = exerciseName.toLowerCase();
+    for (const lift of mainLiftPatterns) {
+      if (lift.patterns.some(p => lower.includes(p))) return lift.key;
+    }
+    return null;
+  };
+
+  const liftMap = new Map<string, number[]>();
+  const completedSets = setLogs.filter(l => l.completed && l.weight);
+  const sortedSets = [...completedSets].sort((a, b) => a.date.localeCompare(b.date));
+  for (const log of sortedSets) {
+    const w = parseFloat(log.weight);
+    if (isNaN(w) || w <= 0) continue;
+    const liftKey = matchMainLift(log.exerciseName);
+    if (!liftKey) continue; // Skip non-main lifts
+    if (!liftMap.has(liftKey)) liftMap.set(liftKey, []);
+    const vals = liftMap.get(liftKey)!;
+    const lastVal = vals.length > 0 ? vals[vals.length - 1] : 0;
+    if (vals.length === 0 || w !== lastVal) vals.push(w);
+  }
+
+  // Build the 3 main lifts array — show all 3 even if no data yet
+  const allLifts = mainLiftPatterns.map(lift => ({
+    name: lift.label,
+    values: liftMap.get(lift.key) ?? metrics[lift.key === 'bench' ? 'benchPress' : lift.key === 'squat' ? 'squat' : 'deadlift'] ?? [],
+    unit: 'kg',
+  }));
 
   // ── Goal progress - handle empty data gracefully ──
   const parseTarget = (text: string): number | null => {
@@ -158,6 +189,12 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
     if (!file) return;
 
     setPhotoError(null);
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    if (!allowedTypes.includes(file.type)) {
+      setPhotoError(t.progress.photoInvalidType);
+      e.target.value = '';
+      return;
+    }
     if (file.size > MAX_PHOTO_SIZE) {
       setPhotoError(t.progress.photoTooLarge);
       e.target.value = '';

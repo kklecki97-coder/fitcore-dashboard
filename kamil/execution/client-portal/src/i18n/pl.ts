@@ -187,6 +187,7 @@ export const pl: Translations = {
     challengesLabel: 'Wyzwania:',
     coachFeedback: 'Opinia Trenera',
     photoTooLarge: 'Zdjęcie musi mieć mniej niż 10 MB',
+    photoInvalidType: 'Dozwolone są tylko pliki graficzne (JPEG, PNG, WebP, HEIC).',
     photoReadError: 'Nie udało się odczytać zdjęcia. Spróbuj ponownie.',
     steps: 'kroków',
   },
@@ -225,6 +226,7 @@ export const pl: Translations = {
     uploadPhoto: 'Prześlij zdjęcie',
     uploading: 'Przesyłanie...',
     photoTooLarge: 'Zdjęcie musi być mniejsze niż 5MB',
+    photoInvalidType: 'Dozwolone są tylko pliki graficzne (JPEG, PNG, WebP, HEIC).',
   },
 
   messages: {

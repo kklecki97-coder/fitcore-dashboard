@@ -276,7 +276,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
               <button
                 style={{ ...styles.stepBtn, width: compact ? '34px' : '28px', height: compact ? '34px' : '28px' }}
                 onClick={() => updateEditValue(exercise.id, setNum, 'reps', Math.max(1, editVals.reps - 1))}
-                disabled={!isTodaysWorkout}
+                disabled={false}
               >
                 <Minus size={compact ? 14 : 12} />
               </button>
@@ -284,7 +284,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
               <button
                 style={{ ...styles.stepBtn, width: compact ? '34px' : '28px', height: compact ? '34px' : '28px' }}
                 onClick={() => updateEditValue(exercise.id, setNum, 'reps', editVals.reps + 1)}
-                disabled={!isTodaysWorkout}
+                disabled={false}
               >
                 <Plus size={compact ? 14 : 12} />
               </button>
@@ -297,10 +297,11 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
           ) : (
             <input
               type="text"
+              placeholder="kg"
               value={editVals.weight}
               onChange={(e) => updateEditValue(exercise.id, setNum, 'weight', e.target.value)}
               style={{ ...styles.weightInput, padding: compact ? '8px' : '6px 8px', fontSize: compact ? '15px' : '14px' }}
-              disabled={!isTodaysWorkout}
+              disabled={false}
             />
           )}
 
@@ -371,7 +372,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
               {[6, 7, 8, 9, 10].map(val => (
                 <button
                   key={val}
-                  disabled={!isTodaysWorkout}
+                  disabled={false}
                   style={{
                     ...styles.rpePill,
                     width: compact ? '38px' : '34px',
@@ -687,8 +688,24 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                 </div>
                 <span style={styles.focusTargetSep}>×</span>
                 <div style={styles.focusTargetBlock}>
-                  <span style={styles.focusTargetValue}>{currentExercise.weight}</span>
-                  <span style={styles.focusTargetLabel}>weight</span>
+                  <input
+                    type="text"
+                    placeholder="kg"
+                    value={getEditValues(currentExercise.id, currentSetNum, currentExercise).weight}
+                    onChange={(e) => updateEditValue(currentExercise.id, currentSetNum, 'weight', e.target.value)}
+                    style={{
+                      ...styles.focusTargetValue,
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      textAlign: 'center',
+                      outline: 'none',
+                      width: '100px',
+                      fontFamily: 'var(--font-mono)',
+                    }}
+                  />
+                  <span style={styles.focusTargetLabel}>weight (kg)</span>
                 </div>
               </div>
               {currentExercise.rpe && (

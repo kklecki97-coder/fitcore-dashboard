@@ -962,6 +962,7 @@ function App() {
             client={clientUser}
             workoutLogs={workoutLogs}
             checkIns={checkIns}
+            setLogs={setLogs}
           />
         );
       case 'invoices':

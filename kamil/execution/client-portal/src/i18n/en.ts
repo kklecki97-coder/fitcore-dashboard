@@ -185,6 +185,7 @@ export const en = {
     challengesLabel: 'Challenges:',
     coachFeedback: 'Coach Feedback',
     photoTooLarge: 'Photo must be under 10 MB',
+    photoInvalidType: 'Only image files (JPEG, PNG, WebP, HEIC) are allowed.',
     photoReadError: 'Failed to read photo. Please try again.',
     steps: 'steps',
   },
@@ -223,6 +224,7 @@ export const en = {
     uploadPhoto: 'Upload your photo',
     uploading: 'Uploading...',
     photoTooLarge: 'Photo must be under 5MB',
+    photoInvalidType: 'Only image files (JPEG, PNG, WebP, HEIC) are allowed.',
   },
 
   messages: {
