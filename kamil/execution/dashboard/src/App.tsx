@@ -21,7 +21,7 @@ import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { exerciseLibrary } from './data';
 import { supabase } from './lib/supabase';
-import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification, WorkoutLog, CoachingPlan } from './types';
+import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification, WorkoutLog, WorkoutSetLog, CoachingPlan } from './types';
 
 function App() {
   const { t } = useLang();
@@ -97,6 +97,7 @@ function App() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
   const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>([]);
   const [allWorkoutLogs, setAllWorkoutLogs] = useState<WorkoutLog[]>([]);
+  const [allSetLogs, setAllSetLogs] = useState<WorkoutSetLog[]>([]);
   const [allPlans, setAllPlans] = useState<CoachingPlan[]>([]);
 
   // ── Load data from Supabase on login ──
@@ -212,6 +213,34 @@ function App() {
       const { data, error } = await supabase.from('check_ins').select('*').order('date', { ascending: false });
       if (error) { console.error('loadCheckIns failed:', error); return; }
       if (data) {
+        // Load photos for all check-ins
+        const checkInIds = data.map(r => r.id);
+        const { data: photoData } = checkInIds.length > 0
+          ? await supabase.from('check_in_photos').select('*').in('check_in_id', checkInIds)
+          : { data: [] };
+
+        // Generate signed URLs on-the-fly from stored paths
+        const photosByCheckIn: Record<string, { url: string; label: string }[]> = {};
+        for (const p of (photoData ?? [])) {
+          if (!photosByCheckIn[p.check_in_id]) photosByCheckIn[p.check_in_id] = [];
+          let photoUrl = p.url;
+          if (photoUrl && !photoUrl.startsWith('http')) {
+            const { data: signedData } = await supabase.storage
+              .from('check-in-photos')
+              .createSignedUrl(photoUrl, 86400);
+            if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
+          } else if (photoUrl && photoUrl.includes('/storage/v1/')) {
+            const pathMatch = photoUrl.match(/\/check-in-photos\/(.+?)(\?|$)/);
+            if (pathMatch?.[1]) {
+              const { data: signedData } = await supabase.storage
+                .from('check-in-photos')
+                .createSignedUrl(decodeURIComponent(pathMatch[1]), 86400);
+              if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
+            }
+          }
+          photosByCheckIn[p.check_in_id].push({ url: photoUrl, label: p.label ?? '' });
+        }
+
         setAllCheckIns(data.map(r => ({
           id: r.id,
           clientId: r.client_id,
@@ -232,7 +261,7 @@ function App() {
           coachFeedback: r.coach_feedback ?? '',
           reviewStatus: r.review_status,
           flagReason: r.flag_reason ?? '',
-          photos: [],
+          photos: photosByCheckIn[r.id] ?? [],
           followUpNotes: [],
         })));
       }
@@ -294,6 +323,25 @@ function App() {
       }
     };
 
+    const loadSetLogs = async () => {
+      const { data, error } = await supabase.from('workout_set_logs').select('*').order('date', { ascending: false });
+      if (error) { console.error('loadSetLogs failed:', error); return; }
+      if (data) {
+        setAllSetLogs(data.map(r => ({
+          id: r.id,
+          date: r.date,
+          clientId: r.client_id,
+          exerciseId: r.exercise_id,
+          exerciseName: r.exercise_name,
+          setNumber: r.set_number,
+          reps: r.reps,
+          weight: r.weight ?? '',
+          completed: r.completed ?? false,
+          rpe: r.rpe,
+        })));
+      }
+    };
+
     const loadPlans = async () => {
       const { data, error } = await supabase.from('coaching_plans').select('*').order('created_at');
       if (error) { console.error('loadPlans failed:', error); return; }
@@ -320,6 +368,7 @@ function App() {
         loadCheckIns(clientsList),
         loadPrograms(),
         loadWorkoutLogs(),
+        loadSetLogs(),
         loadPlans(),
       ]).finally(() => setDataLoading(false));
     });
@@ -808,6 +857,7 @@ function App() {
             programs={allPrograms}
             plans={allPlans}
             workoutLogs={allWorkoutLogs}
+            setLogs={allSetLogs}
             checkIns={allCheckIns}
             onBack={handleBackFromClient}
             backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}

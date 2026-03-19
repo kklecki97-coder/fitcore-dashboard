@@ -18,7 +18,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn, CoachingPlan } from '../types';
+import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
 
 interface ClientDetailPageProps {
   clientId: string;
@@ -26,6 +26,7 @@ interface ClientDetailPageProps {
   programs: WorkoutProgram[];
   plans: CoachingPlan[];
   workoutLogs: WorkoutLog[];
+  setLogs: WorkoutSetLog[];
   checkIns: CheckIn[];
   onBack: () => void;
   backLabel?: string;
@@ -37,7 +38,7 @@ interface ClientDetailPageProps {
 }
 
 // @ts-ignore - onAddCheckIn scaffolded for upcoming check-in-from-coach feature
-export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
   const client = clients.find(c => c.id === clientId);
@@ -259,7 +260,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     // Header
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
-    doc.text('FitCore - Client Report', 14, y);
+    doc.text(lang === 'pl' ? 'FitCore - Raport Klienta' : 'FitCore - Client Report', 14, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -275,7 +276,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     y += 7;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${client.email}  |  ${client.plan} Plan  |  ${client.status}  |  Since ${client.startDate}`, 14, y);
+    doc.text(`${client.email}  |  ${client.plan} Plan  |  ${statusLabelMap[client.status]}  |  ${t.clientDetail.since} ${client.startDate}`, 14, y);
     y += 10;
 
     // Metrics
@@ -284,7 +285,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     y += 8;
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('Key Metrics', 14, y);
+    doc.text(lang === 'pl' ? 'Kluczowe Metryki' : 'Key Metrics', 14, y);
     y += 8;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -294,14 +295,14 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     const latSquat = client.metrics.squat[client.metrics.squat.length - 1];
     const latDeadlift = client.metrics.deadlift[client.metrics.deadlift.length - 1];
     const metrics = [
-      `Weight: ${latW ?? '-'} kg`,
-      `Body Fat: ${latBF ?? '-'}%`,
-      `Bench: ${latBench ?? '-'} kg`,
-      `Squat: ${latSquat ?? '-'} kg`,
-      `Deadlift: ${latDeadlift ?? '-'} kg`,
-      `Monthly Rate: $${client.monthlyRate}`,
-      `Progress: ${client.progress}%`,
-      `Streak: ${client.streak} days`,
+      `${t.clientDetail.weight}: ${latW ?? '-'} kg`,
+      `${t.clientDetail.bodyFat}: ${latBF ?? '-'}%`,
+      `${t.clientDetail.benchPress}: ${latBench ?? '-'} kg`,
+      `${t.clientDetail.squat}: ${latSquat ?? '-'} kg`,
+      `${t.clientDetail.deadlift}: ${latDeadlift ?? '-'} kg`,
+      `${t.clientDetail.monthlyRate}: $${client.monthlyRate}`,
+      `${lang === 'pl' ? 'Postęp' : 'Progress'}: ${client.progress}%`,
+      `${lang === 'pl' ? 'Passa' : 'Streak'}: ${client.streak} ${lang === 'pl' ? 'dni' : 'days'}`,
     ];
     metrics.forEach(m => { doc.text(m, 14, y); y += 6; });
     y += 4;
@@ -312,7 +313,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     y += 8;
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('Goals', 14, y);
+    doc.text(lang === 'pl' ? 'Cele' : 'Goals', 14, y);
     y += 8;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -463,7 +464,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                 <span>{client.email}</span>
                 <span style={styles.dot} />
                 <Calendar size={13} color="var(--text-tertiary)" />
-                <span>{lang === 'pl' ? 'Od' : 'Since'} {client.startDate}</span>
+                <span>{t.clientDetail.since} {client.startDate}</span>
               </div>
               <div style={{ ...styles.profileTags, flexWrap: 'wrap' }}>
                 <span style={{ ...styles.planTag, color: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).color, background: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).bg }}>
@@ -476,7 +477,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                 {client.streak > 0 && (
                   <span style={styles.streakTag}>
                     <Flame size={12} color="var(--accent-warm)" />
-                    {client.streak} day streak
+                    {client.streak} {t.clientDetail.dayStreak}
                   </span>
                 )}
                 {assignedPrograms.map(prog => (
@@ -508,7 +509,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
             </button>
             <button onClick={handleExportReport} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-primary)' }}>
               <Download size={15} />
-              Export
+              {t.clientDetail.export}
             </button>
           </div>
         </div>
@@ -541,7 +542,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           )}
         </GlassCard>
         <GlassCard delay={0.14} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Monthly Rate</div>
+          <div style={styles.metricLabel}>{t.clientDetail.monthlyRate}</div>
           <div style={styles.metricValue}>
             <DollarSign size={20} style={{ opacity: 0.5 }} />
             {client.monthlyRate}
@@ -1179,7 +1180,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                             );
                           })
                         : <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', padding: '10px 12px', border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center', width: '100%' }}>
-                            {lang === 'pl' ? 'Utwórz plany w Ustawieniach → Plany i Cennik' : 'Create plans in Settings → Plans & Pricing'}
+                            {t.clientDetail.createPlansHint}
                           </div>
                       )}
                     </div>
@@ -1206,7 +1207,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       })}
                       {editStatus === 'paused' && (
                         <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px', fontStyle: 'italic' }}>
-                          {lang === 'pl' ? 'Wstrzymany klient nie będzie otrzymywać faktur' : 'Paused clients will not receive invoices'}
+                          {t.clientDetail.pausedNoInvoices}
                         </div>
                       )}
                     </div>

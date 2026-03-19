@@ -141,6 +141,19 @@ export interface CheckIn {
   followUpNotes: { text: string; date: string }[];
 }
 
+export interface WorkoutSetLog {
+  id: string;
+  date: string;
+  clientId: string;
+  exerciseId: string;
+  exerciseName: string;
+  setNumber: number;
+  reps: number;
+  weight: string;
+  completed: boolean;
+  rpe?: number | null;
+}
+
 export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'program-create-chooser' | 'ai-program-creator' | 'program-import' | 'payments' | 'check-ins';
 
 export type Theme = 'dark' | 'light';
