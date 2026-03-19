@@ -14,6 +14,7 @@ import ProgressPage from './components/ProgressPage';
 import SettingsPage from './components/SettingsPage';
 import InvoicesPage from './components/InvoicesPage';
 import OnboardingPage from './components/OnboardingPage';
+import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
@@ -127,6 +128,7 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showResetPassword]);
 
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [currentPage, _setCurrentPage] = useState<ClientPage>(() => {
     try {
       const saved = sessionStorage.getItem('fitcore-client-page');
@@ -1051,9 +1053,24 @@ function App() {
     return (
       <OnboardingPage
         client={clientUser}
-        onComplete={(updates) => setClientUser(prev => prev ? { ...prev, ...updates } : null)}
+        onComplete={(updates) => {
+          setClientUser(prev => prev ? { ...prev, ...updates } : null);
+          // Show walkthrough after onboarding completes
+          if (!localStorage.getItem('fitcore-client-walkthrough-done')) {
+            setTimeout(() => setShowWalkthrough(true), 500);
+          }
+        }}
       />
     );
+  }
+
+  // Also show walkthrough on first login if onboarding was already done but walkthrough wasn't shown
+  if (clientUser && clientUser.onboarded && !showWalkthrough && !localStorage.getItem('fitcore-client-walkthrough-done')) {
+    // Check once on mount
+    if (!sessionStorage.getItem('fitcore-walkthrough-checked')) {
+      sessionStorage.setItem('fitcore-walkthrough-checked', 'true');
+      setTimeout(() => setShowWalkthrough(true), 1000);
+    }
   }
 
   return (
@@ -1178,6 +1195,19 @@ function App() {
       >
         {toastError}
       </div>
+    )}
+    {/* Client onboarding walkthrough */}
+    {showWalkthrough && (
+      <OnboardingWalkthrough
+        onComplete={() => {
+          setShowWalkthrough(false);
+          localStorage.setItem('fitcore-client-walkthrough-done', 'true');
+        }}
+        onSkip={() => {
+          setShowWalkthrough(false);
+          localStorage.setItem('fitcore-client-walkthrough-done', 'true');
+        }}
+      />
     )}
     </ErrorBoundary>
   );

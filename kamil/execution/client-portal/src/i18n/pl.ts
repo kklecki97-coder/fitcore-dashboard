@@ -229,6 +229,27 @@ export const pl: Translations = {
     photoInvalidType: 'Dozwolone są tylko pliki graficzne (JPEG, PNG, WebP, HEIC).',
   },
 
+  walkthrough: {
+    welcomeTitle: 'Witaj w FitCore!',
+    welcomeDesc: 'Twój trener przygotował dla Ciebie wszystko. Pokażemy Ci Twój portal.',
+    programTitle: 'Twój Program Treningowy',
+    programDesc: 'Tutaj znajdziesz swój plan treningowy. Śledź serie, zapisuj ciężary i oznaczaj treningi jako ukończone.',
+    calendarTitle: 'Kalendarz Treningów',
+    calendarDesc: 'Zobacz swój tygodniowy plan, ukończone treningi i nadchodzące sesje.',
+    progressTitle: 'Śledź Swoje Postępy',
+    progressDesc: 'Monitoruj rekordy siłowe, zmiany wagi, skład ciała i zdjęcia postępów.',
+    messagesTitle: 'Czat z Trenerem',
+    messagesDesc: 'Pisz do trenera bezpośrednio. Uzyskaj feedback, zadawaj pytania.',
+    invoicesTitle: 'Faktury i Płatności',
+    invoicesDesc: 'Przeglądaj faktury i płać jednym kliknięciem przez bezpieczny Stripe.',
+    doneTitle: 'Gotowe!',
+    doneDesc: 'Zacznij swój pierwszy trening. Twój trener jest tutaj, żeby Cię wspierać.',
+    start: 'Pokaż Mi',
+    next: 'Dalej',
+    skip: 'Pomiń',
+    finish: 'Zaczynam Trening',
+  },
+
   messages: {
     online: 'Online',
     today: 'Dziś',

@@ -1,0 +1,164 @@
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, X, Sparkles, Zap, CalendarDays, TrendingUp, MessageSquare, DollarSign, CheckCircle } from 'lucide-react';
+import { useLang } from '../i18n';
+
+interface WalkthroughStep {
+  target: string | null;
+  icon: React.ElementType;
+  titleKey: string;
+  descKey: string;
+  position: 'center' | 'right';
+}
+
+const STEPS: WalkthroughStep[] = [
+  { target: null, icon: Sparkles, titleKey: 'welcomeTitle', descKey: 'welcomeDesc', position: 'center' },
+  { target: '[data-tour="nav-program"]', icon: Zap, titleKey: 'programTitle', descKey: 'programDesc', position: 'right' },
+  { target: '[data-tour="nav-calendar"]', icon: CalendarDays, titleKey: 'calendarTitle', descKey: 'calendarDesc', position: 'right' },
+  { target: '[data-tour="nav-progress"]', icon: TrendingUp, titleKey: 'progressTitle', descKey: 'progressDesc', position: 'right' },
+  { target: '[data-tour="nav-messages"]', icon: MessageSquare, titleKey: 'messagesTitle', descKey: 'messagesDesc', position: 'right' },
+  { target: '[data-tour="nav-invoices"]', icon: DollarSign, titleKey: 'invoicesTitle', descKey: 'invoicesDesc', position: 'right' },
+  { target: null, icon: CheckCircle, titleKey: 'doneTitle', descKey: 'doneDesc', position: 'center' },
+];
+
+interface Props {
+  onComplete: () => void;
+  onSkip: () => void;
+}
+
+export default function OnboardingWalkthrough({ onComplete, onSkip }: Props) {
+  const { t } = useLang();
+  const [step, setStep] = useState(0);
+  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+
+  const currentStep = STEPS[step];
+  const isLastStep = step === STEPS.length - 1;
+  const isFirstStep = step === 0;
+
+  const updateTargetRect = useCallback(() => {
+    if (!currentStep.target) { setTargetRect(null); return; }
+    const el = document.querySelector(currentStep.target);
+    if (el) setTargetRect(el.getBoundingClientRect());
+  }, [currentStep.target]);
+
+  useEffect(() => {
+    updateTargetRect();
+    window.addEventListener('resize', updateTargetRect);
+    return () => window.removeEventListener('resize', updateTargetRect);
+  }, [updateTargetRect]);
+
+  const handleNext = () => {
+    if (isLastStep) onComplete();
+    else setStep(s => s + 1);
+  };
+
+  const texts = t.walkthrough;
+  const Icon = currentStep.icon;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={styles.overlay}
+        onClick={(e) => { if (e.target === e.currentTarget) onSkip(); }}
+      >
+        {targetRect && (
+          <div style={{
+            position: 'fixed',
+            left: targetRect.left - 6, top: targetRect.top - 6,
+            width: targetRect.width + 12, height: targetRect.height + 12,
+            borderRadius: '12px',
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.75)',
+            zIndex: 10001, pointerEvents: 'none',
+            border: '2px solid rgba(0,229,200,0.4)',
+            transition: 'all 0.3s ease',
+          }} />
+        )}
+
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          transition={{ duration: 0.3 }}
+          style={{
+            ...styles.card,
+            ...(currentStep.position === 'center' ? styles.cardCenter : {}),
+            ...(currentStep.position === 'right' && targetRect ? {
+              position: 'fixed',
+              left: targetRect.right + 20,
+              ...(targetRect.top > window.innerHeight / 2
+                ? { bottom: window.innerHeight - targetRect.top - targetRect.height / 2 }
+                : { top: targetRect.top }),
+              zIndex: 10002, maxHeight: '90vh',
+            } : {}),
+          }}
+        >
+          <div style={styles.stepIndicator}>
+            {STEPS.map((_, i) => (
+              <div key={i} style={{
+                width: i === step ? '24px' : '8px', height: '4px', borderRadius: '2px',
+                background: i === step ? 'var(--accent-primary)' : 'rgba(255,255,255,0.15)',
+                transition: 'all 0.3s',
+              }} />
+            ))}
+          </div>
+
+          <div style={styles.iconWrap}><Icon size={28} color="var(--accent-primary)" /></div>
+          <h3 style={styles.title}>{texts[currentStep.titleKey as keyof typeof texts] as string}</h3>
+          <p style={styles.desc}>{texts[currentStep.descKey as keyof typeof texts] as string}</p>
+
+          <div style={styles.actions}>
+            {!isFirstStep && !isLastStep && (
+              <button onClick={onSkip} style={styles.skipBtn}>{texts.skip as string}</button>
+            )}
+            <button onClick={handleNext} style={styles.nextBtn}>
+              {isLastStep ? (texts.finish as string) : isFirstStep ? (texts.start as string) : (texts.next as string)}
+              {!isLastStep && <ArrowRight size={16} />}
+            </button>
+          </div>
+
+          <button onClick={onSkip} style={styles.closeBtn}><X size={16} /></button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+const styles: Record<string, React.CSSProperties> = {
+  overlay: { position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  card: {
+    position: 'relative', background: '#0c1017', border: '1px solid rgba(0,229,200,0.2)',
+    borderRadius: '16px', padding: '28px 24px', maxWidth: '380px', width: '90vw',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '12px',
+    boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 24px rgba(0,229,200,0.08)',
+  },
+  cardCenter: { position: 'relative', zIndex: 10002 },
+  stepIndicator: { display: 'flex', gap: '4px', alignItems: 'center', marginBottom: '4px' },
+  iconWrap: {
+    width: '56px', height: '56px', borderRadius: '16px',
+    background: 'rgba(0,229,200,0.08)', border: '1px solid rgba(0,229,200,0.15)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  title: { fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 },
+  desc: { fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 },
+  actions: { display: 'flex', gap: '8px', marginTop: '8px', width: '100%', justifyContent: 'center' },
+  skipBtn: {
+    padding: '10px 20px', borderRadius: '10px', border: '1px solid var(--glass-border)',
+    background: 'transparent', color: 'var(--text-tertiary)', fontSize: '14px', fontWeight: 600,
+    fontFamily: 'var(--font-display)', cursor: 'pointer',
+  },
+  nextBtn: {
+    display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 24px', borderRadius: '10px',
+    border: 'none', background: 'var(--accent-primary)', color: 'var(--text-on-accent)',
+    fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-display)', cursor: 'pointer',
+    boxShadow: '0 0 16px rgba(0,229,200,0.2)',
+  },
+  closeBtn: {
+    position: 'absolute', top: '12px', right: '12px', width: '28px', height: '28px',
+    borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent',
+    color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+  },
+};

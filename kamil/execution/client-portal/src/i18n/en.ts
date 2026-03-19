@@ -227,6 +227,27 @@ export const en = {
     photoInvalidType: 'Only image files (JPEG, PNG, WebP, HEIC) are allowed.',
   },
 
+  walkthrough: {
+    welcomeTitle: 'Welcome to FitCore!',
+    welcomeDesc: 'Your coach has set everything up for you. Let us show you around your portal.',
+    programTitle: 'Your Workout Program',
+    programDesc: 'Your training program lives here. Track sets, log weight, and mark workouts as done.',
+    calendarTitle: 'Training Calendar',
+    calendarDesc: 'See your weekly schedule, completed workouts, and upcoming sessions at a glance.',
+    progressTitle: 'Track Your Progress',
+    progressDesc: 'Monitor your strength PRs, weight changes, body composition, and progress photos.',
+    messagesTitle: 'Chat With Your Coach',
+    messagesDesc: 'Message your coach directly. Get feedback, ask questions, stay connected.',
+    invoicesTitle: 'Invoices & Payments',
+    invoicesDesc: 'View your invoices and pay with one click via secure Stripe checkout.',
+    doneTitle: 'You\'re Ready!',
+    doneDesc: 'Start your first workout. Your coach is here to support you every step of the way.',
+    start: 'Show Me Around',
+    next: 'Next',
+    skip: 'Skip',
+    finish: 'Start Training',
+  },
+
   messages: {
     online: 'Online',
     today: 'Today',

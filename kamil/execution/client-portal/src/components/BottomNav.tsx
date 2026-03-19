@@ -113,6 +113,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
           return (
             <motion.button
               key={page}
+              data-tour={`nav-${page}`}
               onClick={() => onNavigate(page)}
               whileHover={{ x: 4 }}
               whileTap={{ scale: 0.97 }}
@@ -149,6 +150,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
 
         {/* Invoices */}
         <motion.button
+          data-tour="nav-invoices"
           onClick={() => onNavigate('invoices')}
           whileHover={{ x: 4 }}
           whileTap={{ scale: 0.97 }}
