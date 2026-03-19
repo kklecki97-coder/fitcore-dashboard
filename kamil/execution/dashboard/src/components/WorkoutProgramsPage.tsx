@@ -112,10 +112,11 @@ export default function WorkoutProgramsPage({
           const isExpanded = expandedId === program.id;
           const accent = cardAccents[i % cardAccents.length];
           return (
-            <GlassCard key={program.id} delay={i * 0.04} hover style={{ padding: 0, overflow: 'hidden' }}>
+            <GlassCard key={program.id} delay={i * 0.04} hover style={{ padding: 0 }}>
               {/* Accent gradient bar */}
               <div style={{
                 height: '3px',
+                borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
                 background: `linear-gradient(90deg, rgba(${accent.from}, 0.8), rgba(${accent.to}, 0.4), transparent)`,
               }} />
               <div style={{ ...styles.cardInner, padding: '20px 24px' }}>
