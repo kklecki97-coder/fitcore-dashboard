@@ -161,14 +161,16 @@ function generateInsights(
   // 2. STREAK HEALTH
   // ═══════════════════════════════════════════
 
-  if (client.streak >= 14) {
+  if (client.streak >= 7) {
     insights.push({
       id: 'streak-fire',
       icon: <Flame size={16} />,
-      title: `${client.streak}-day streak — on fire!`,
-      detail: 'Exceptional consistency. Consider recognizing this milestone with a message.',
+      title: `${client.streak}-day streak${client.streak >= 14 ? ' — on fire!' : ''}`,
+      detail: client.streak >= 14
+        ? 'Exceptional consistency. Consider recognizing this milestone with a message.'
+        : 'Good momentum building. Keep encouraging them.',
       severity: 'positive',
-      priority: 35,
+      priority: client.streak >= 14 ? 35 : 25,
     });
   }
 
@@ -341,14 +343,14 @@ function generateInsights(
   if (clientCheckIns.length > 0) {
     const lastCheckIn = clientCheckIns[clientCheckIns.length - 1];
     const daysSinceCheckIn = daysBetween(lastCheckIn.date, today);
-    if (daysSinceCheckIn > 10) {
+    if (daysSinceCheckIn > 7) {
       insights.push({
         id: 'checkin-overdue',
         icon: <AlertTriangle size={16} />,
         title: `No check-in in ${daysSinceCheckIn} days`,
         detail: 'Check-in overdue. Send a reminder to maintain accountability.',
-        severity: 'warning',
-        priority: 73,
+        severity: daysSinceCheckIn > 14 ? 'alert' : 'warning',
+        priority: daysSinceCheckIn > 14 ? 85 : 73,
       });
     }
   } else if (client.status === 'active') {
@@ -375,6 +377,73 @@ function generateInsights(
       severity: 'alert',
       priority: 88,
     });
+  }
+
+  // ═══════════════════════════════════════════
+  // 8. ALWAYS-ON SUMMARY INSIGHTS
+  // These ensure the card always shows useful info
+  // ═══════════════════════════════════════════
+
+  // Training volume summary (always show if any workouts exist)
+  if (clientLogs.length > 0) {
+    const totalSessions = clientLogs.filter(l => l.completed).length;
+    const daysSinceStart = client.startDate ? Math.max(1, daysBetween(client.startDate, today)) : 30;
+    const sessionsPerWeek = (totalSessions / daysSinceStart * 7).toFixed(1);
+    insights.push({
+      id: 'training-summary',
+      icon: <Activity size={16} />,
+      title: `${totalSessions} sessions logged — ${sessionsPerWeek}/week avg`,
+      detail: `Training since ${new Date(client.startDate || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}.`,
+      severity: 'info',
+      priority: 15,
+    });
+  }
+
+  // Body comp snapshot (show if we have any weight data)
+  const allWeights = client.metrics.weight;
+  if (allWeights.length >= 2) {
+    const totalChange = allWeights[allWeights.length - 1] - allWeights[0];
+    const direction = totalChange < 0 ? 'down' : totalChange > 0 ? 'up' : 'stable';
+    insights.push({
+      id: 'body-snapshot',
+      icon: direction === 'down' ? <TrendingDown size={16} /> : direction === 'up' ? <TrendingUp size={16} /> : <Activity size={16} />,
+      title: `Weight ${direction === 'stable' ? 'stable' : direction} ${Math.abs(totalChange).toFixed(1)}kg since start`,
+      detail: `${allWeights[0]}kg → ${allWeights[allWeights.length - 1]}kg across ${allWeights.length} measurements.`,
+      severity: direction === 'stable' ? 'info' : 'positive',
+      priority: 20,
+    });
+  }
+
+  // Check-in engagement rate
+  if (clientCheckIns.length >= 2) {
+    const firstCI = clientCheckIns[0].date;
+    const weeksSinceFirst = Math.max(1, daysBetween(firstCI, today) / 7);
+    const ciPerWeek = (clientCheckIns.length / weeksSinceFirst).toFixed(1);
+    insights.push({
+      id: 'checkin-rate',
+      icon: <Target size={16} />,
+      title: `${clientCheckIns.length} check-ins — ${ciPerWeek}/week`,
+      detail: clientCheckIns.length >= weeksSinceFirst * 0.8
+        ? 'Excellent check-in compliance.'
+        : 'Room to improve check-in consistency.',
+      severity: clientCheckIns.length >= weeksSinceFirst * 0.8 ? 'positive' : 'info',
+      priority: 18,
+    });
+  }
+
+  // Last active summary (always useful context)
+  if (client.lastActive) {
+    const daysInactive = daysBetween(client.lastActive, today);
+    if (daysInactive >= 3 && daysInactive < 7) {
+      insights.push({
+        id: 'last-active',
+        icon: <Activity size={16} />,
+        title: `Last active ${daysInactive} days ago`,
+        detail: 'Might be worth a quick check-in message.',
+        severity: 'info',
+        priority: 45,
+      });
+    }
   }
 
   // Sort by priority (highest first)
