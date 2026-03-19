@@ -113,13 +113,8 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     rate: clients.length > 0 ? Math.round((rd.clients / clients.length) * 1000) / 10 : 100,
   }));
 
-  // ── Progress distribution ──
-  const progressDistribution = [
-    { range: '0-25%', count: clients.filter(c => c.progress <= 25).length },
-    { range: '26-50%', count: clients.filter(c => c.progress > 25 && c.progress <= 50).length },
-    { range: '51-75%', count: clients.filter(c => c.progress > 50 && c.progress <= 75).length },
-    { range: '76-100%', count: clients.filter(c => c.progress > 75).length },
-  ];
+  // Currency helper
+  const fmtMoney = (v: number) => lang === 'pl' ? `${v.toLocaleString()} zł` : `$${v.toLocaleString()}`;
 
   // ── Per-client engagement data for table ──
   const clientEngagement = clients.map(client => {
@@ -142,7 +137,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   const statCards = [
     {
       label: t.analytics.monthlyRevenue,
-      value: `$${thisMonthRevenue.toLocaleString()}`,
+      value: fmtMoney(thisMonthRevenue),
       change: revenueChangePercent,
       changeLabel: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
       positive: revenueChangePercent >= 0,
@@ -152,7 +147,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     },
     {
       label: t.analytics.projectedAnnual,
-      value: `$${projectedAnnual.toLocaleString()}`,
+      value: fmtMoney(projectedAnnual),
       change: revenueChangePercent,
       changeLabel: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
       positive: revenueChangePercent >= 0,
@@ -162,7 +157,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     },
     {
       label: t.analytics.avgClientValue,
-      value: `$${avgClientValue}`,
+      value: fmtMoney(avgClientValue),
       change: 0,
       changeLabel: `${activePayingClients.length} ${t.payments.activeClients}`,
       positive: true,
@@ -279,7 +274,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
               <Activity size={18} color="var(--accent-success)" />
             </div>
             <div>
-              <div style={styles.engagementValue}>${totalCollected.toLocaleString()}</div>
+              <div style={styles.engagementValue}>{fmtMoney(totalCollected)}</div>
               <div style={styles.engagementLabel}>{t.payments.allTimeRevenue}</div>
             </div>
             <div style={styles.engagementMeta}>
@@ -294,60 +289,26 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
         </GlassCard>
       </div>
 
-      {/* Revenue Over Time + Plan Distribution */}
-      <div style={{ ...styles.chartRow, flexDirection: isMobile ? 'column' : 'row' }}>
-        <GlassCard delay={0.3} style={{ flex: 2 }}>
-          <h3 style={styles.chartTitle}>{t.analytics.revenueTrend}</h3>
-          <div style={{ height: isMobile ? 220 : 280, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueChartData}>
-                <defs>
-                  <linearGradient id="revenueGrad2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, t.overview.revenue]} />
-                <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-
-        <GlassCard delay={0.35} style={{ flex: 1 }}>
-          <h3 style={styles.chartTitle}>{t.analytics.planDistribution}</h3>
-          <div style={{ height: isMobile ? 220 : 280, marginTop: '8px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={planDistribution}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="45%"
-                  outerRadius={85}
-                  innerRadius={55}
-                  paddingAngle={4}
-                  strokeWidth={0}
-                >
-                  {planDistribution.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Legend
-                  verticalAlign="bottom"
-                  iconType="circle"
-                  iconSize={8}
-                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: '17px', fontFamily: 'Outfit' }}>{value}</span>}
-                />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [`${value} clients`, name]} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-      </div>
+      {/* Revenue Over Time */}
+      <GlassCard delay={0.3}>
+        <h3 style={styles.chartTitle}>{t.analytics.revenueTrend}</h3>
+        <div style={{ height: isMobile ? 220 : 280, marginTop: '16px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={revenueChartData}>
+              <defs>
+                <linearGradient id="revenueGrad2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
+              <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
+              <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </GlassCard>
 
       {/* Bottom Row */}
       <div style={{ ...styles.bottomRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
@@ -357,13 +318,13 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
           <div style={{ height: 220, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={planRevenue} layout="vertical">
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
-                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={70} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, t.overview.revenue]} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
+                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={100} />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
                 <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
-                  <Cell fill="#f59e0b" />
-                  <Cell fill="#6366f1" />
-                  <Cell fill="#525a6e" />
+                  {planRevenue.map((_, i) => (
+                    <Cell key={i} fill={planColors[i % planColors.length]} />
+                  ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -391,22 +352,35 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
           </div>
         </GlassCard>
 
-        {/* Progress Distribution */}
+        {/* Plan Distribution */}
         <GlassCard delay={0.5}>
-          <h3 style={styles.chartTitle}>{t.analytics.progressDistribution}</h3>
-          <div style={{ height: 220, marginTop: '16px' }}>
+          <h3 style={styles.chartTitle}>{t.analytics.planDistribution}</h3>
+          <div style={{ height: 220, marginTop: '8px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={progressDistribution}>
-                <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 15, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={36} name="Clients">
-                  <Cell fill="var(--accent-danger)" />
-                  <Cell fill="var(--accent-warm)" />
-                  <Cell fill="var(--accent-primary)" />
-                  <Cell fill="var(--accent-success)" />
-                </Bar>
-              </BarChart>
+              <PieChart>
+                <Pie
+                  data={planDistribution}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="45%"
+                  outerRadius={75}
+                  innerRadius={45}
+                  paddingAngle={4}
+                  strokeWidth={0}
+                >
+                  {planDistribution.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Legend
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: '15px', fontFamily: 'Outfit' }}>{value}</span>}
+                />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [`${value} clients`, name]} />
+              </PieChart>
             </ResponsiveContainer>
           </div>
         </GlassCard>
@@ -454,14 +428,14 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
               <span style={{ ...styles.tableCell, width: '80px' }}>
                 <span style={{
                   fontSize: '15px', fontWeight: 600, padding: '2px 8px', borderRadius: '12px',
-                  color: client.plan === 'Elite' ? 'var(--accent-warm)' : client.plan === 'Premium' ? 'var(--accent-secondary)' : 'var(--text-secondary)',
-                  background: client.plan === 'Elite' ? 'var(--accent-warm-dim)' : client.plan === 'Premium' ? 'var(--accent-secondary-dim)' : 'var(--bg-subtle-hover)',
+                  color: planColors[uniquePlans.indexOf(client.plan) % planColors.length] || 'var(--text-secondary)',
+                  background: `${planColors[uniquePlans.indexOf(client.plan) % planColors.length] || '#525a6e'}18`,
                 }}>
                   {client.plan}
                 </span>
               </span>
               <span style={{ ...styles.tableCell, width: '100px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                ${client.totalPaid.toLocaleString()}
+                {fmtMoney(client.totalPaid)}
               </span>
               <span style={{ ...styles.tableCell, width: '90px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{client.workoutsCompleted}</span>
