@@ -1166,12 +1166,6 @@ export default function App() {
             </div>
           </GlassCard>
 
-          {/* Competitor comparison note */}
-          <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
-              {t.pricing.competitorNote}
-            </p>
-          </div>
         </div>
       </Section>
 

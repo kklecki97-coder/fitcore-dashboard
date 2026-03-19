@@ -22,7 +22,7 @@ export const pl: Translations = {
     badge: 'Twój coaching zasługuje na więcej',
     title1: 'Klienci, programy, przychody.',
     title2: 'Jeden dashboard. Zero chaosu.',
-    subtitle: 'Wysyłasz treningi przez WhatsApp i trzymasz dane w arkuszach. Twoi klienci to widzą. I wyceniają Cię na tej podstawie.',
+    subtitle: 'Zarządzaj klientami, dostarczaj programy i pobieraj płatności — z jednego prostego dashboardu. Skup się na klientach — resztą zajmie się system.',
     ctaPrimary: 'Zobacz co dostajesz',
     ctaSecondary: 'Umów rozmowę',
   },
@@ -91,8 +91,8 @@ export const pl: Translations = {
   features: {
     clients: {
       badge: 'Zarządzanie klientami',
-      heading: 'Cała Twoja lista klientów - jeden ekran',
-      body: 'Postępy, plan, przychody, passa i ostatni raport - widoczne od razu. Filtruj po statusie, wyłapuj klientów, którzy potrzebują Twojej uwagi. Żaden nie umknie.',
+      heading: 'Żaden klient Ci nie umknie',
+      body: 'Postępy, plan, przychody, passa i ostatni raport - widoczne od razu. Filtruj po statusie, wyłapuj klientów, którzy potrzebują Twojej uwagi. Działaj zanim ktokolwiek wypadnie z radaru.',
       cta: 'Zacznij za darmo',
     },
     inbox: {
@@ -103,14 +103,14 @@ export const pl: Translations = {
     },
     workouts: {
       badge: 'Programy treningowe',
-      heading: 'Twórz programy, przypisuj w sekundy',
-      body: 'Biblioteka 50+ ćwiczeń z seriami, powtórzeniami, RPE, tempem i czasem odpoczynku. Zapisz jako szablon, duplikuj, przypisz jednym kliknięciem. Koniec z kopiowaniem ręcznie.',
+      heading: 'Dostarczaj programy w sekundy, nie godziny',
+      body: 'Biblioteka 50+ ćwiczeń z seriami, powtórzeniami, RPE, tempem i czasem odpoczynku. Zapisz jako szablon, duplikuj, przypisz jednym kliknięciem. Koniec z kopiowaniem treningów do WhatsAppa.',
       cta: 'Zacznij za darmo',
     },
     analytics: {
       badge: 'Analityka i przychody',
-      heading: 'Twoje liczby wreszcie w jednym miejscu',
-      body: 'Miesięczny przychód, prognoza roczna, wskaźnik retencji, średnia wartość klienta. Sprawdź, który plan przynosi najwięcej i którzy klienci napędzają Twój biznes. Decyzje na danych, nie na czuja.',
+      heading: 'Zobacz ile zarabiasz — i gdzie tracisz',
+      body: 'Miesięczny przychód, prognoza roczna, wskaźnik retencji, średnia wartość klienta. Sprawdź, który plan przynosi najwięcej, wyłap zagrożonych klientów zanim odejdą i podejmuj decyzje na danych — nie na czuja.',
       cta: 'Zacznij za darmo',
     },
   },
@@ -226,7 +226,7 @@ export const pl: Translations = {
 
   footer: {
     copyright: '© 2026 FitCore. Wszelkie prawa zastrzeżone.',
-    tagline: 'Panele stworzone na miarę dla trenerów fitness, którzy chcą się rozwijać.',
+    tagline: 'Wszystko czego potrzebujesz, żeby prowadzić coaching jak biznes — bez chaosu.',
     productTitle: 'Produkt',
     resourcesTitle: 'Zasoby',
     contactTitle: 'Kontakt',

@@ -20,7 +20,7 @@ export const en = {
     badge: 'Custom-Built for Your Coaching Business',
     title1: 'Your Clients, Programs & Revenue',
     title2: 'in One Dashboard',
-    subtitle: 'Everything you need to manage clients, deliver world-class programs, and grow your revenue - without the admin chaos.',
+    subtitle: 'Manage clients, deliver programs, and get paid — all from one simple dashboard. Less admin, more coaching, more revenue.',
     ctaPrimary: 'See What You Get',
     ctaSecondary: 'Book a Call',
   },
@@ -89,8 +89,8 @@ export const en = {
   features: {
     clients: {
       badge: 'Client Management',
-      heading: 'Your entire roster, one screen',
-      body: "Every client's progress, plan tier, revenue, streak, and last check-in \u2014 visible at a glance. Filter by status, spot who needs attention, and never lose track of anyone.",
+      heading: 'Never lose track of a client again',
+      body: "Every client's progress, plan tier, revenue, streak, and last check-in \u2014 visible at a glance. Filter by status, spot who needs attention, and act before anyone slips through the cracks.",
       cta: 'Get started',
     },
     inbox: {
@@ -101,14 +101,14 @@ export const en = {
     },
     workouts: {
       badge: 'Workout Programs',
-      heading: 'Build programs, assign in seconds',
-      body: '50+ exercise library with sets, reps, RPE, tempo, and rest periods. Save as templates, duplicate, and assign to any client with one click.',
+      heading: 'Deliver programs in seconds, not hours',
+      body: '50+ exercise library with sets, reps, RPE, tempo, and rest periods. Save as templates, duplicate, and assign to any client with one click. No more copy-pasting into WhatsApp.',
       cta: 'Get started',
     },
     analytics: {
       badge: 'Analytics & Revenue',
-      heading: 'Know your numbers',
-      body: 'Monthly revenue, projected annual, retention rate, average client value. See which plan tier drives the most income and who your top performers are.',
+      heading: 'See exactly how much you earn — and where you lose',
+      body: 'Monthly revenue, projected annual, retention rate, average client value. See which plan tier drives the most income, spot at-risk clients before they churn, and make decisions on data — not gut feeling.',
       cta: 'Get started',
     },
   },
@@ -224,7 +224,7 @@ export const en = {
 
   footer: {
     copyright: '\u00a9 2026 FitCore. All rights reserved.',
-    tagline: 'Custom-built dashboards for fitness coaches who want to scale.',
+    tagline: 'Everything you need to run your coaching business — without the chaos.',
     productTitle: 'Product',
     resourcesTitle: 'Resources',
     contactTitle: 'Contact',
