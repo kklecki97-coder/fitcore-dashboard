@@ -1,0 +1,18 @@
+{
+  "name": "FitCore Coach Dashboard",
+  "short_name": "FitCore",
+  "description": "Manage your coaching business — clients, programs, payments, analytics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07090e",
+  "theme_color": "#00e5c8",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/fitcore-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
