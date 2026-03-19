@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -18,10 +18,12 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import GlassCard from './GlassCard';
+import AnimatedNumber from './AnimatedNumber';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useAIBriefing } from '../hooks/useAIBriefing';
 import { useLang } from '../i18n';
+import { formatCurrency } from '../lib/locale';
 import { computeRevenueChartData, calculateRevenueChange } from '../utils/analytics';
 import { filterAtRiskClients } from '../utils/client-analysis';
 import { getDailyQuote } from '../utils/formatting';
@@ -49,9 +51,18 @@ interface OverviewPageProps {
   checkIns: CheckIn[];
   onViewClient: (id: string) => void;
   onNavigate: (page: 'messages' | 'clients') => void;
+  profileName?: string;
 }
 
-export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate }: OverviewPageProps) {
+function getTimeGreeting(t: { overview: { greetingMorning: (n: string) => string; greetingAfternoon: (n: string) => string; greetingEvening: (n: string) => string; greetingNight: (n: string) => string } }, name: string): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return t.overview.greetingMorning(name);
+  if (hour >= 12 && hour < 18) return t.overview.greetingAfternoon(name);
+  if (hour >= 18 && hour < 22) return t.overview.greetingEvening(name);
+  return t.overview.greetingNight(name);
+}
+
+export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate, profileName }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const { briefing, loading: briefingLoading, refresh: refreshBriefing } = useAIBriefing(clients, invoices, workoutLogs, checkIns, messages, programs, lang);
@@ -62,6 +73,17 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     const timer = setTimeout(() => setReady(true), 500);
     return () => clearTimeout(timer);
   }, []);
+
+  // Time-based greeting
+  const coachFirstName = profileName ? profileName.split(' ')[0] : '';
+  const greeting = coachFirstName ? getTimeGreeting(t, coachFirstName) : '';
+  const todayFormatted = new Date().toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
   const activeClients = clients.filter(c => c.status === 'active').length;
   const pendingClients = clients.filter(c => c.status === 'pending').length;
   const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
@@ -98,10 +120,12 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     `${messages.filter(m => !m.isFromCoach && !m.isRead).length} ${lang === 'pl' ? 'nieprzeczytanych wiadomosci' : 'unread messages'}`,
   ], [clients, invoices, checkIns, messages, lang]);
 
+  const fmtCurrency = useCallback((n: number) => formatCurrency(n, lang), [lang]);
+
   const statCards = [
     {
       label: t.overview.activeClients,
-      value: activeClients.toString(),
+      numericValue: activeClients,
       change: pendingClients > 0 ? t.overview.pending(pendingClients) : t.overview.stable,
       trend: pendingClients > 0 ? 'neutral' as const : 'up' as const,
       icon: Users,
@@ -110,7 +134,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     },
     {
       label: t.overview.monthlyRevenue,
-      value: `$${totalRevenue.toLocaleString()}`,
+      numericValue: totalRevenue,
+      format: fmtCurrency,
       change: revenueChange >= 0 ? `+${revenueChange}%` : `${revenueChange}%`,
       trend: revenueChange >= 0 ? 'up' as const : 'down' as const,
       icon: DollarSign,
@@ -119,7 +144,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     },
     {
       label: t.overview.atRiskClients,
-      value: atRiskClients.length.toString(),
+      numericValue: atRiskClients.length,
       change: atRiskClients.length > 0 ? t.overview.needsAttention : t.overview.allGood,
       trend: atRiskClients.length > 0 ? 'down' as const : 'up' as const,
       icon: AlertTriangle,
@@ -128,7 +153,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     },
     {
       label: t.overview.pendingCheckIns,
-      value: pendingCheckInsList.length.toString(),
+      numericValue: pendingCheckInsList.length,
       change: pendingCheckInsList.length > 0 ? t.overview.dueToday : t.overview.allCaughtUp,
       trend: 'neutral' as const,
       icon: CalendarCheck,
@@ -141,11 +166,22 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   if (ready && clients.length === 0) {
     return (
       <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', alignItems: 'center', justifyContent: 'center' }}>
+        {greeting && (
+          <motion.div
+            style={styles.greetingSection}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <h1 style={{ ...styles.greetingText, fontSize: isMobile ? '22px' : '28px' }}>{greeting}</h1>
+            <p style={styles.greetingDate}>{todayFormatted}</p>
+          </motion.div>
+        )}
         <motion.div
           style={styles.quoteBar}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.4, delay: greeting ? 0.15 : 0 }}
         >
           <span style={styles.quoteText}>"{dailyQuote.text}"</span>
           <span style={styles.quoteAuthor}> - {dailyQuote.author}</span>
@@ -241,12 +277,25 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      {/* Daily Motivation - Top of Page */}
+      {/* Personalized Greeting */}
+      {greeting && (
+        <motion.div
+          style={styles.greetingSection}
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          <h1 style={{ ...styles.greetingText, fontSize: isMobile ? '22px' : '28px' }}>{greeting}</h1>
+          <p style={styles.greetingDate}>{todayFormatted}</p>
+        </motion.div>
+      )}
+
+      {/* Daily Motivation */}
       <motion.div
         style={styles.quoteBar}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.4, delay: greeting ? 0.15 : 0 }}
       >
         <span style={styles.quoteText}>"{dailyQuote.text}"</span>
         <span style={styles.quoteAuthor}> - {dailyQuote.author}</span>
@@ -273,7 +322,9 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
                   </div>
                 )}
               </div>
-              <div style={{ ...styles.statValue, fontSize: isMobile ? '22px' : '28px' }}>{stat.value}</div>
+              <div style={{ ...styles.statValue, fontSize: isMobile ? '22px' : '28px' }}>
+                <AnimatedNumber value={stat.numericValue} format={stat.format} />
+              </div>
               <div style={styles.statLabel}>{stat.label}</div>
             </GlassCard>
           );
@@ -386,7 +437,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}
-                tickFormatter={(v) => `$${v}`}
+                tickFormatter={(v) => formatCurrency(v, lang)}
               />
               <Tooltip
                 contentStyle={{
@@ -399,7 +450,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
                 }}
                 labelStyle={{ color: '#8b92a5' }}
                 itemStyle={{ color: '#00e5c8' }}
-                formatter={(value) => [`$${value}`, t.overview.revenue]}
+                formatter={(value) => [formatCurrency(value as number, lang), t.overview.revenue]}
               />
               <Area
                 type="monotone"
@@ -588,6 +639,27 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '20px',
     overflowY: 'auto',
     height: 'calc(100vh - var(--header-height))',
+  },
+  greetingSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  greetingText: {
+    fontSize: '28px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    color: 'var(--text-primary)',
+    letterSpacing: '-0.5px',
+    lineHeight: 1.2,
+    margin: 0,
+  },
+  greetingDate: {
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-display)',
+    margin: 0,
+    textTransform: 'capitalize',
   },
   statsGrid: {
     display: 'grid',
