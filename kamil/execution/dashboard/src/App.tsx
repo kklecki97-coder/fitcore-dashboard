@@ -21,6 +21,11 @@ import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import { useToast } from './components/Toast';
 import CommandPalette from './components/CommandPalette';
 import Confetti from './components/Confetti';
+import {
+  ClientsPageSkeleton, MessagesPageSkeleton, AnalyticsPageSkeleton,
+  ProgramsPageSkeleton, PaymentsPageSkeleton, CheckInsPageSkeleton,
+  StatCardSkeleton,
+} from './components/Skeleton';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { exerciseLibrary } from './data';
@@ -108,6 +113,19 @@ function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
   const triggerConfetti = () => setConfettiKey(k => k + 1);
+  const prevClientCount = useRef(0);
+
+  // ── Client milestone confetti (10, 25, 50, 100 clients) ──
+  useEffect(() => {
+    const milestones = [10, 25, 50, 100];
+    const prev = prevClientCount.current;
+    const curr = allClients.length;
+    if (prev > 0 && curr > prev && milestones.some(m => prev < m && curr >= m)) {
+      triggerConfetti();
+      showToast(`Milestone: ${curr} clients!`, 'success');
+    }
+    prevClientCount.current = curr;
+  }, [allClients.length]);
 
   // ── Load data from Supabase on login ──
   useEffect(() => {
@@ -664,7 +682,7 @@ function App() {
 
   // ── Program handlers ──
   const handleAddProgram = async (program: WorkoutProgram) => {
-    triggerConfetti();
+    showToast(t.notifications?.programSaved ?? 'Program saved!', 'success');
     setAllPrograms(prev => [...prev, program]);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await saveProgramToDb(program, user.id);
@@ -719,8 +737,17 @@ function App() {
 
   // ── Invoice handlers ──
   const handleUpdateInvoice = async (id: string, updates: Partial<Invoice>) => {
-    // Check if this is a payment — trigger confetti
-    if (updates.status === 'paid') triggerConfetti();
+    if (updates.status === 'paid') {
+      // Confetti only for first payment from this client
+      const invoice = allInvoices.find(inv => inv.id === id);
+      const clientHasPriorPayment = invoice && allInvoices.some(
+        inv => inv.clientId === invoice.clientId && inv.status === 'paid' && inv.id !== id
+      );
+      if (!clientHasPriorPayment) {
+        triggerConfetti();
+      }
+      showToast(t.notifications?.paymentReceived?.() ?? 'Payment received!', 'success');
+    }
     setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
     const dbUpdates: Record<string, unknown> = {};
     if (updates.status !== undefined) dbUpdates.status = updates.status;
@@ -877,7 +904,7 @@ function App() {
     // Each page wrapped in ErrorBoundary so one page crash doesn't kill the whole app
     switch (currentPage) {
       case 'overview':
-        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} /></ErrorBoundary>;
       case 'clients':
         return (
           <ErrorBoundary>
@@ -1012,7 +1039,7 @@ function App() {
               onViewClient={handleViewClient}
               onSendMessage={handleSendMessage}
               onNavigate={handleNavigate}
-              onConfetti={triggerConfetti}
+              onConfetti={() => showToast(t.notifications?.checkInReviewed ?? 'Check-in reviewed!', 'success')}
             />
           </ErrorBoundary>
         );
@@ -1056,19 +1083,40 @@ function App() {
           </ErrorBoundary>
         );
       default:
-        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} /></ErrorBoundary>;
     }
   };
 
   // NOTE: All hooks are called above this point, before any early returns.
   // This is intentional to satisfy React's rules of hooks (no conditional hook calls).
-  if (authLoading || dataLoading) {
+  if (authLoading) {
     return (
       <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>{dataLoading ? 'Loading data...' : 'Loading...'}</div>
+        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>Loading...</div>
       </div>
     );
   }
+
+  // Skeleton loading: show app shell with shimmer content while data loads
+  const renderSkeleton = () => {
+    switch (currentPage) {
+      case 'clients': case 'client-detail': return <ClientsPageSkeleton isMobile={isMobile} />;
+      case 'messages': return <MessagesPageSkeleton isMobile={isMobile} />;
+      case 'analytics': return <AnalyticsPageSkeleton isMobile={isMobile} />;
+      case 'programs': case 'program-builder': return <ProgramsPageSkeleton isMobile={isMobile} />;
+      case 'payments': return <PaymentsPageSkeleton isMobile={isMobile} />;
+      case 'check-ins': return <CheckInsPageSkeleton isMobile={isMobile} />;
+      default: // Overview skeleton
+        return (
+          <div style={{ padding: isMobile ? '16px' : '24px 32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: '12px' }}>
+              {Array.from({ length: 4 }, (_, i) => <StatCardSkeleton key={i} />)}
+            </div>
+            <StatCardSkeleton />
+          </div>
+        );
+    }
+  };
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={handleLogin} />;
@@ -1117,14 +1165,14 @@ function App() {
         />
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPage + selectedClientId + selectedProgramId}
+            key={dataLoading ? 'skeleton' : currentPage + selectedClientId + selectedProgramId}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             style={styles.content}
           >
-            {renderPage()}
+            {dataLoading ? renderSkeleton() : renderPage()}
           </motion.div>
         </AnimatePresence>
       </div>
