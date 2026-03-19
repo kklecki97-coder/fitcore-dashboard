@@ -82,6 +82,7 @@ export interface WorkoutProgram {
   clientIds: string[];
   days: WorkoutDay[];
   isTemplate: boolean;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -129,7 +130,7 @@ export interface CheckIn {
   followUpNotes: { text: string; date: string }[];
 }
 
-export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';
+export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';
 
 export type Theme = 'dark' | 'light';
 

@@ -6,6 +6,7 @@ import DemoModeBadge from './components/DemoModeBadge';
 import DemoToast from './components/DemoToast';
 import DashboardApp from './dashboard/DashboardApp';
 import ClientApp from './portal/ClientApp';
+import { I18nProvider } from './portal/i18n';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -54,7 +55,7 @@ function App() {
                 transition={{ duration: 0.2 }}
                 style={styles.viewInner}
               >
-                <ClientApp />
+                <I18nProvider><ClientApp /></I18nProvider>
               </motion.div>
             )}
           </AnimatePresence>

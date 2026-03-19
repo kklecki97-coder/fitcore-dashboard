@@ -1,7 +1,43 @@
-import { Flame, Calendar, TrendingDown, Dumbbell, MessageSquare, ArrowRight, Send, ClipboardCheck, Target } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingDown, Dumbbell, Send, ClipboardCheck, ArrowRight, Check, X, MessageSquare, ChevronDown, Zap } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage } from '../types';
+import { useLang } from '../i18n';
+import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage, WeeklySchedule } from '../types';
+
+// Same color palette as CalendarPage
+const WORKOUT_COLORS = [
+  { r: 59, g: 130, b: 246 },   // blue
+  { r: 249, g: 115, b: 22 },   // orange
+  { r: 168, g: 85, b: 247 },   // purple
+  { r: 234, g: 179, b: 8 },    // yellow
+  { r: 236, g: 72, b: 153 },   // pink
+  { r: 20, g: 184, b: 166 },   // teal
+];
+
+// Same label extraction as CalendarPage - group same workout types to same color
+const extractLabel = (name: string): string => {
+  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[\-–\-:]\s*/i, '');
+  const s = stripped.toLowerCase();
+  if (s.includes('push')) return 'Push';
+  if (s.includes('pull')) return 'Pull';
+  if (s.includes('upper')) return 'Upper';
+  if (s.includes('lower')) return 'Lower';
+  if (s.includes('legs') || s.includes('leg day')) return 'Legs';
+  const hasBjj = s.includes('jiu') || s.includes('bjj') || s.includes('grappling');
+  const hasBoxing = s.includes('box');
+  const hasMma = s.includes('mma');
+  if (hasBjj && hasBoxing) return 'BJJ + Box';
+  if (hasBjj && hasMma) return 'BJJ + MMA';
+  if (hasBjj) return 'BJJ';
+  if (hasBoxing) return 'Boxing';
+  if (hasMma) return 'MMA';
+  if (s.includes('strength') || s.includes('full body') || s.includes('gym')) return 'Gym';
+  if (s.includes('cardio')) return 'Cardio';
+  if (s.includes('hiit')) return 'HIIT';
+  if (s.includes('yoga') || s.includes('stretch')) return 'Yoga';
+  return stripped.length > 8 ? stripped.slice(0, 8) : stripped;
+};
 
 interface HomePageProps {
   client: Client;
@@ -11,170 +47,201 @@ interface HomePageProps {
   messages: Message[];
   coachName: string;
   onNavigate: (page: ClientPage) => void;
+  weeklySchedule: WeeklySchedule | null;
+  onUpdateSchedule: (assignments: Record<string, string>) => void;
 }
 
-export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate }: HomePageProps) {
+// @ts-ignore - onUpdateSchedule scaffolded for weekly schedule feature
+export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule }: HomePageProps) {
   const isMobile = useIsMobile();
+  const { t } = useLang();
 
-  // ── Today's workout day (based on day-of-week, not completion count) ──
-  const todayDayIndex = (() => {
-    if (!program || program.days.length === 0) return 0;
-    const dayOfWeek = new Date().getDay(); // 0=Sun,1=Mon...6=Sat
-    // Map Mon–Sat to program days, Sunday = rest
-    const mondayBased = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0=Mon...6=Sun
-    return mondayBased % program.days.length;
+  const [showAllWeeks, setShowAllWeeks] = useState(false);
+
+  // ── Workout color map - same workout types share a color ──
+  const dayColorMap: Record<string, number> = {};
+  if (program) {
+    const labelToColor: Record<string, number> = {};
+    let nextColor = 0;
+    program.days.forEach((d) => {
+      const label = extractLabel(d.name);
+      if (!(label in labelToColor)) {
+        labelToColor[label] = nextColor % WORKOUT_COLORS.length;
+        nextColor++;
+      }
+      dayColorMap[d.id] = labelToColor[label];
+    });
+  }
+
+  // ── Today's workout day (schedule-aware) ──
+  // DEV OVERRIDE: pretend today is Friday (mondayBased=4) for demo purposes
+  // Remove before deploying!
+  const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
+  const dayAssignments = weeklySchedule?.dayAssignments ?? {};
+  const todayMondayBased = DEV_DAY_OVERRIDE ?? (() => {
+    const dow = new Date().getDay();
+    return dow === 0 ? 6 : dow - 1;
   })();
-  const todayWorkout = program?.days[todayDayIndex];
-
-  // ── Next check-in ──
-  const nextCheckIn = checkIns.find(ci => ci.status === 'scheduled');
-  const daysUntilCheckIn = nextCheckIn
-    ? Math.ceil((new Date(nextCheckIn.date).getTime() - new Date().getTime()) / 86400000)
+  const todayAssignedId = dayAssignments[String(todayMondayBased)];
+  const todayWorkout = todayAssignedId && program
+    ? program.days.find(d => d.id === todayAssignedId) ?? null
     : null;
-  // Progress ring for check-in (7-day cycle)
-  const checkInProgress = daysUntilCheckIn !== null
-    ? Math.max(0, Math.min(1, 1 - daysUntilCheckIn / 7))
-    : 0;
-
-  // ── Latest coach feedback ──
-  const latestReviewed = checkIns
-    .filter(ci => ci.reviewStatus === 'reviewed' && ci.coachFeedback)
-    .sort((a, b) => b.date.localeCompare(a.date))[0];
 
   // ── Weight trend ──
   const weights = client.metrics.weight;
+  const currentWeight = weights[weights.length - 1];
   const weightChange = weights.length >= 2 ? weights[weights.length - 1] - weights[weights.length - 2] : 0;
 
-  // ── Weekly training calendar (Mon–Sun) ──
+  // ── Quick action badges ──
+  const daysUntilCheckIn = (() => {
+    const next = checkIns.find(ci => ci.status === 'scheduled');
+    if (!next) return null;
+    return Math.ceil((new Date(next.date).getTime() - new Date().getTime()) / 86400000);
+  })();
+  const checkInDueNow = daysUntilCheckIn !== null && daysUntilCheckIn <= 1;
+
+  // ── Weekly training calendar (Mon-Sun) ──
+  const localDateStr = (dt: Date) => {
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  };
   const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun,1=Mon...6=Sat
+  const dayOfWeek = today.getDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   const monday = new Date(today);
   monday.setDate(today.getDate() + mondayOffset);
   monday.setHours(0, 0, 0, 0);
-
-  // Build a schedule preview: for today & future, show the next workout name
-  const todayStr = today.toISOString().split('T')[0];
-  let upcomingDayIdx = todayDayIndex;
+  const todayStr = localDateStr(today);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = localDateStr(d);
     const log = workoutLogs.find(w => w.date === dateStr);
-    const isToday = dateStr === todayStr;
-    const isPast = d < today && !isToday;
-    const isFuture = d > today;
+    const isToday = DEV_DAY_OVERRIDE !== null ? i === DEV_DAY_OVERRIDE : dateStr === todayStr;
+    const isPast = DEV_DAY_OVERRIDE !== null ? i < DEV_DAY_OVERRIDE : (d < today && !isToday);
+    const assignedId = dayAssignments[String(i)];
+    const assignedDay = assignedId && program ? program.days.find(dd => dd.id === assignedId) : null;
+    const isTraining = !!assignedDay;
+    const isRest = !isTraining && !log;
 
-    // Show scheduled workout name for today and future days
-    let scheduledName = '';
-    if ((isToday || isFuture) && program && program.days.length > 0 && !log) {
-      scheduledName = program.days[upcomingDayIdx % program.days.length].name
-        .replace('Upper Body ', 'Upper ')
-        .replace('Lower Body ', 'Lower ');
-      upcomingDayIdx++;
-    } else if (log) {
-      // If there's already a log for today, advance the index
-      if (isToday || isFuture) upcomingDayIdx++;
-    }
+    // Short label for the workout
+    const shortLabel = assignedDay ? extractLabel(assignedDay.name) : '';
 
-    return { day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i], date: d.getDate(), dateStr, log, isToday, isPast, isFuture, scheduledName };
+    const colorIdx = assignedId ? (dayColorMap[assignedId] ?? -1) : -1;
+
+    // Only count as missed if program has actually started
+    const programStartDate = program ? new Date(program.createdAt) : null;
+    const programStarted = programStartDate ? d >= programStartDate : false;
+    const missed = isPast && isTraining && !log && programStarted;
+
+    return { day: t.home.weekDays[i], date: d.getDate(), dateStr, log, isToday, isPast, isTraining, isRest, missed, dayIdx: i, shortLabel, colorIdx };
   });
 
-  // ── Goal progress (parse from goal strings) ──
-  const goalProgress = client.goals.map(goal => {
-    if (goal.toLowerCase().includes('80kg') || goal.toLowerCase().includes('weight')) {
-      const start = weights[0];
-      const current = weights[weights.length - 1];
-      const target = 80;
-      const pct = Math.min(100, Math.round(((start - current) / (start - target)) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current}kg → ${target}kg` };
-    }
-    if (goal.toLowerCase().includes('bench') && goal.toLowerCase().includes('100')) {
-      const presses = client.metrics.benchPress;
-      const current = presses[presses.length - 1];
-      const target = 100;
-      const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current}kg / ${target}kg` };
-    }
-    if (goal.toLowerCase().includes('sleep')) {
-      const latestCI = checkIns.filter(ci => ci.sleepHours !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
-      const current = latestCI?.sleepHours ?? 0;
-      const target = 7;
-      const pct = Math.min(100, Math.round((current / target) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${current}h / ${target}h` };
-    }
-    // Default fallback
-    return { goal, progress: Math.round(client.progress * 0.7), label: 'In progress' };
-  });
+  // ── This week's progress ──
+  const totalTrainingDays = Object.keys(dayAssignments).length;
+  const completedThisWeek = weekDays.filter(wd => wd.log?.completed).length;
 
-  // ── Last coach message ──
+  // ── Program progress ──
+  const programWeeks = program?.durationWeeks ?? 0;
+  const programStartTime = program ? new Date(program.createdAt).getTime() : 0;
+  const msElapsed = Date.now() - programStartTime;
+  const weeksElapsed = program && msElapsed > 0 ? Math.ceil(msElapsed / (7 * 86400000)) : 0;
+  const currentWeek = Math.min(Math.max(weeksElapsed, 0), programWeeks);
+  const progressPct = programWeeks > 0 && currentWeek > 0 ? Math.round((currentWeek / programWeeks) * 100) : 0;
+
+  // ── Full program consistency (all weeks including future) ──
+  const allProgramWeeks = Array.from({ length: programWeeks }, (_, i) => {
+    const weekNum = i + 1;
+    const isCurrent = weekNum === currentWeek;
+    const isFuture = weekNum > currentWeek;
+    const weeksAgo = currentWeek - weekNum;
+    const weekMonday = new Date(monday);
+    weekMonday.setDate(weekMonday.getDate() - weeksAgo * 7);
+    const weekDates = Array.from({ length: 7 }, (_, j) => {
+      const d = new Date(weekMonday);
+      d.setDate(weekMonday.getDate() + j);
+      return d.toISOString().split('T')[0];
+    });
+    const completed = isFuture ? 0 : workoutLogs.filter(l => weekDates.includes(l.date) && l.completed).length;
+    return { completed, target: totalTrainingDays || 3, weekNum, isCurrent, isFuture };
+  });
+  const recentWeeks = allProgramWeeks.filter(w => !w.isFuture).slice(-4);
+
+  // ── Smart motivational line ──
+  const motiveLine = (() => {
+    if (currentWeek === 0 && program) {
+      const startDate = new Date(program.createdAt + 'T00:00:00');
+      const daysUntil = Math.ceil((startDate.getTime() - Date.now()) / 86400000);
+      if (daysUntil <= 1) return 'Your program starts tomorrow - get ready!';
+      if (daysUntil <= 7) return `Your program begins in ${daysUntil} days - time to prepare`;
+      return 'New program coming soon - stay ready';
+    }
+    const remaining = totalTrainingDays - completedThisWeek;
+    const perfectWeeks = recentWeeks.filter(w => w.completed >= w.target).length;
+    if (completedThisWeek >= totalTrainingDays && totalTrainingDays > 0) return 'Perfect week - you crushed it!';
+    if (remaining === 1) return '1 workout away from a perfect week';
+    if (perfectWeeks >= 3) return 'You\'re on a roll - ' + perfectWeeks + ' perfect weeks';
+    if (client.streak >= 10) return client.streak + ' workouts straight - keep the fire alive';
+    if (weightChange < 0) return Math.abs(weightChange).toFixed(1) + 'kg down - the work is paying off';
+    if (completedThisWeek > 0) return 'You\'re ahead of schedule - keep pushing';
+    return 'New week, new gains - let\'s go';
+  })();
+
+  // ── Latest coach message ──
   const lastCoachMsg = messages.filter(m => m.isFromCoach).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
 
-  // ── Quick action badges ──
-  const checkInDueNow = daysUntilCheckIn !== null && daysUntilCheckIn <= 1;
-  const unreadMessages = messages.filter(m => m.isFromCoach && !m.isRead).length;
-
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px 12px' : '24px' }}>
-      {/* ── Welcome ── */}
+    <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
+      {/* ── Greeting ── */}
       <div style={styles.welcome}>
-        <h1 style={styles.greeting}>Hey {client.name.split(' ')[0]}</h1>
-        <p style={styles.motivational}>Keep pushing - consistency beats perfection.</p>
-      </div>
-
-      {/* ── Stats Row ── */}
-      <div style={styles.statsRow}>
-        <GlassCard delay={0.05} style={styles.statCard}>
-          <div style={styles.statIcon}><TrendingDown size={16} color="var(--accent-success)" /></div>
-          <div style={styles.statValue}>{weights[weights.length - 1]} <span style={styles.statUnit}>kg</span></div>
-          <div style={{
-            ...styles.statLabel,
-            color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
-          }}>
-            {weightChange <= 0 ? '↓' : '↑'} {Math.abs(weightChange).toFixed(1)}kg
-          </div>
-        </GlassCard>
-
-        <GlassCard delay={0.08} style={styles.statCard}>
-          <div style={styles.statIcon}><Flame size={16} color="var(--accent-warm)" /></div>
-          <div style={styles.statValue}>{client.streak}</div>
-          <div style={styles.statLabel}>day streak</div>
-        </GlassCard>
-
-        <GlassCard delay={0.1} style={styles.statCard}>
-          <div style={styles.statIcon}>
-            <div style={{
-              width: '16px', height: '16px', borderRadius: '50%',
-              background: `conic-gradient(var(--accent-primary) ${client.progress * 3.6}deg, var(--glass-border) 0deg)`,
-            }} />
-          </div>
-          <div style={styles.statValue}>{client.progress}<span style={styles.statUnit}>%</span></div>
-          <div style={styles.statLabel}>progress</div>
-        </GlassCard>
+        <h1 style={styles.greeting}>{t.home.greeting(client.name.split(' ')[0])}</h1>
       </div>
 
       {/* ── Today's Workout ── */}
       <GlassCard delay={0.05} style={styles.workoutCard}>
         <div style={styles.cardHeader}>
-          <div style={styles.cardIcon}><Dumbbell size={18} /></div>
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            <div style={{
+              ...styles.cardIcon,
+              animation: todayWorkout ? 'icon-pulse 2s ease-in-out infinite' : 'icon-pulse 4s ease-in-out infinite',
+            }}><Dumbbell size={20} /></div>
+            {!todayWorkout && (
+              <>
+                {[0, 1, 2].map(i => (
+                  <span key={i} style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -6 + i * 8,
+                    fontSize: [12, 15, 18][i],
+                    fontWeight: 800,
+                    color: 'var(--text-tertiary)',
+                    animation: `zzz-float 2.4s ${i * 0.6}s ease-out infinite`,
+                    pointerEvents: 'none',
+                  }}>z</span>
+                ))}
+              </>
+            )}
+          </div>
           <div>
-            <div style={styles.cardTitle}>Today's Workout</div>
-            <div style={styles.cardSub}>{todayWorkout?.name || 'Rest Day'}</div>
+            <div style={styles.cardTitle}>{t.home.todaysWorkout}</div>
+            <div style={styles.cardSub}>{todayWorkout?.name || t.home.restDay}</div>
           </div>
         </div>
         {todayWorkout ? (
           <>
             <div style={styles.workoutMeta}>
-              <span>{todayWorkout.exercises.length} exercises</span>
-              <span>~60 min</span>
+              <span>{todayWorkout.exercises.length} {t.home.exercises}</span>
+              <span>{t.home.approxTime}</span>
             </div>
             <button style={styles.startBtn} onClick={() => onNavigate('program')}>
-              Start Workout <ArrowRight size={16} />
+              {t.home.startWorkout} <ArrowRight size={16} />
             </button>
           </>
         ) : (
-          <p style={styles.restText}>Rest day - recover and come back stronger tomorrow.</p>
+          <p style={styles.restText}>{t.home.restText}</p>
         )}
       </GlassCard>
 
@@ -182,193 +249,277 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       <div style={styles.quickActions}>
         <button style={styles.quickBtn} onClick={() => onNavigate('program')}>
           <div style={{ ...styles.quickIcon, background: 'var(--accent-warm-dim)', color: 'var(--accent-warm)' }}>
-            <Dumbbell size={18} />
+            <Zap size={22} />
           </div>
-          <span style={styles.quickLabel}>Log Workout</span>
+          <span style={styles.quickLabel}>{t.home.logWorkout}</span>
         </button>
         <button style={styles.quickBtn} onClick={() => onNavigate('check-in')}>
-          <div style={{ ...styles.quickIconWrap }}>
+          <div style={styles.quickIconWrap}>
             <div style={{ ...styles.quickIcon, background: 'var(--accent-secondary-dim)', color: 'var(--accent-secondary)' }}>
-              <ClipboardCheck size={18} />
+              <ClipboardCheck size={22} />
             </div>
             {checkInDueNow && <div style={styles.quickBadge} />}
           </div>
-          <span style={styles.quickLabel}>Check-In</span>
+          <span style={styles.quickLabel}>{t.home.checkIn}</span>
         </button>
         <button style={styles.quickBtn} onClick={() => onNavigate('messages')}>
-          <div style={{ ...styles.quickIconWrap }}>
-            <div style={{ ...styles.quickIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
-              <Send size={18} />
-            </div>
-            {unreadMessages > 0 && <div style={styles.quickBadge} />}
+          <div style={{ ...styles.quickIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
+            <Send size={22} />
           </div>
-          <span style={styles.quickLabel}>Message</span>
+          <span style={styles.quickLabel}>{t.home.message}</span>
         </button>
       </div>
 
-      {/* ── Weekly Training Calendar ── */}
+      {/* ── This Week ── */}
       <GlassCard delay={0.1}>
+        {/* Week progress header */}
+        {totalTrainingDays > 0 && (
+          <div style={styles.weekHeader}>
+            <span style={styles.weekHeaderLabel}>This Week</span>
+            <span style={styles.weekHeaderProgress}>
+              {completedThisWeek}/{totalTrainingDays} workouts
+            </span>
+          </div>
+        )}
+        {Object.keys(dayAssignments).length === 0 && program && (
+          <div style={styles.planPrompt}>{t.home.planYourWeek}</div>
+        )}
         <div style={styles.weekRow}>
           {weekDays.map(wd => {
             const completed = wd.log?.completed;
-            const missed = wd.log && !wd.log.completed;
-            const workoutLabel = wd.scheduledName || (wd.log ? wd.log.type.replace('Upper Body ', 'Upper ').replace('Lower Body ', 'Lower ') : '');
+            const c = wd.colorIdx >= 0 ? WORKOUT_COLORS[wd.colorIdx] : null;
+            const rgb = c ? `${c.r},${c.g},${c.b}` : '';
+
+            let cellBg = 'var(--bg-subtle)';
+            let cellBorder = '1px solid transparent';
+            let cellShadow: string | undefined;
+            let cellOpacity = 1;
+
+            if (wd.isToday) {
+              cellBg = 'rgba(0,229,200,0.08)';
+              cellBorder = '1px solid rgba(0,229,200,0.25)';
+              cellShadow = '0 0 12px rgba(0,229,200,0.1)';
+            } else if (completed && c) {
+              cellBg = `rgba(${rgb},0.12)`;
+              cellBorder = `1px solid rgba(${rgb},0.2)`;
+            } else if (completed) {
+              cellBg = 'rgba(34,197,94,0.06)';
+              cellBorder = '1px solid rgba(34,197,94,0.12)';
+            } else if (wd.missed && c) {
+              cellBg = `rgba(${rgb},0.08)`;
+              cellBorder = `1px solid rgba(${rgb},0.15)`;
+              cellOpacity = 0.45;
+            } else if (wd.isTraining && c) {
+              cellBg = `rgba(${rgb},0.06)`;
+              cellBorder = `1px solid rgba(${rgb},0.12)`;
+            } else if (wd.isTraining) {
+              cellBg = 'rgba(59,130,246,0.06)';
+              cellBorder = '1px solid rgba(59,130,246,0.12)';
+            }
+
+            if (wd.isRest && wd.isPast) cellOpacity = 0.3;
+            else if (wd.isRest) cellOpacity = 0.5;
+
+            const numColor = wd.isToday ? 'var(--accent-primary)' :
+                             completed && c ? `rgb(${rgb})` :
+                             completed ? 'var(--accent-success)' :
+                             wd.missed ? 'var(--text-secondary)' :
+                             wd.isTraining ? 'var(--text-primary)' :
+                             'var(--text-tertiary)';
 
             return (
-              <div key={wd.dateStr} style={{
-                ...styles.weekDay,
-                ...(wd.isToday ? styles.weekDayToday : {}),
-                ...(completed ? styles.weekDayDone : {}),
-                ...(missed ? styles.weekDayFail : {}),
-                opacity: wd.isPast && !wd.log ? 0.4 : 1,
-              }}>
-                {/* Status bar top edge */}
-                <div style={{
-                  ...styles.weekStatusBar,
-                  background: completed ? 'var(--accent-success)' :
-                              missed ? 'var(--accent-danger)' :
-                              wd.isToday ? 'var(--accent-primary)' : 'transparent',
-                }} />
-
+              <div
+                key={wd.dateStr}
+                style={{
+                  ...styles.weekDay,
+                  background: cellBg,
+                  border: cellBorder,
+                  boxShadow: cellShadow,
+                  opacity: cellOpacity,
+                }}
+              >
                 <div style={styles.weekDayLabel}>{wd.day}</div>
-
                 <div style={{
                   ...styles.weekDayNum,
-                  color: wd.isToday ? 'var(--accent-primary)' :
-                         completed ? 'var(--accent-success)' :
-                         missed ? 'var(--accent-danger)' :
-                         'var(--text-secondary)',
+                  color: numColor,
                 }}>
                   {wd.date}
                 </div>
-
-                {/* Workout name tag */}
-                {workoutLabel && (
-                  <div style={{
-                    ...styles.weekWorkoutTag,
-                    color: completed ? 'var(--accent-success)' :
-                           wd.isToday ? 'var(--accent-primary)' :
-                           'var(--text-tertiary)',
-                  }}>
-                    {workoutLabel}
-                  </div>
-                )}
+                <div style={{
+                  ...styles.weekWorkoutTag,
+                  color: completed && c ? `rgb(${rgb})` : completed ? 'var(--accent-success)' : wd.missed && c ? `rgba(${rgb},0.7)` : 'var(--text-tertiary)',
+                }}>
+                  {completed ? <Check size={12} /> : wd.missed ? <X size={10} /> : wd.isToday && wd.isTraining && wd.shortLabel ? <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>{wd.shortLabel}</span> : ''}
+                </div>
               </div>
             );
           })}
         </div>
+
+        {/* ── Weight inline footer ── */}
+        <div style={styles.weightFooter}>
+          <TrendingDown size={14} color="var(--accent-success)" />
+          <span style={styles.weightValue}>{currentWeight}</span>
+          <span style={styles.weightUnit}>kg</span>
+          <span style={{
+            ...styles.weightTrend,
+            color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
+          }}>
+            {weightChange <= 0 ? '↓' : '↑'}{Math.abs(weightChange).toFixed(1)}
+          </span>
+        </div>
+
       </GlassCard>
 
-      {/* ── Goal Progress ── */}
-      <GlassCard delay={0.2}>
-        <div style={{ ...styles.cardHeader, marginBottom: '16px' }}>
-          <div style={{ ...styles.cardIcon, background: 'var(--accent-success-dim, rgba(34,197,94,0.1))', color: 'var(--accent-success)' }}>
-            <Target size={18} />
-          </div>
-          <div style={styles.cardTitle}>Goals</div>
-        </div>
-        <div style={styles.goalsList}>
-          {goalProgress.map((g, i) => (
-            <div key={i} style={styles.goalItem}>
-              <div style={styles.goalTop}>
-                <div style={styles.goalName}>{g.goal}</div>
-                <div style={styles.goalPct}>{g.progress}%</div>
-              </div>
-              <div style={styles.goalBarBg}>
-                <div style={{
-                  ...styles.goalBarFill,
-                  width: `${g.progress}%`,
-                  background: g.progress >= 90 ? 'var(--accent-success)' : g.progress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-                }} />
-              </div>
-              <div style={styles.goalLabel}>{g.label}</div>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
 
-      {/* ── Next Check-In (prominent with progress ring) ── */}
-      {nextCheckIn && (
-        <GlassCard delay={0.3} hover onClick={() => onNavigate('check-in')}>
-          <div style={styles.checkInRow}>
-            <div style={styles.checkInRing}>
-              <svg width="54" height="54" viewBox="0 0 54 54">
-                <circle cx="27" cy="27" r="22" fill="none" stroke="var(--glass-border)" strokeWidth="3" />
-                <circle cx="27" cy="27" r="22" fill="none" stroke="var(--accent-secondary)" strokeWidth="3"
-                  strokeDasharray={`${checkInProgress * 138.2} 138.2`}
+      {/* ── Program Progress ── */}
+      {program && programWeeks > 0 && (
+        <GlassCard delay={0.15}>
+          <div style={styles.progressRow}>
+            {/* SVG Ring */}
+            <div style={styles.ringWrap}>
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="30" fill="none" stroke="var(--glass-border)" strokeWidth="5" />
+                <circle
+                  cx="36" cy="36" r="30"
+                  fill="none"
+                  stroke="var(--accent-primary)"
+                  strokeWidth="5"
                   strokeLinecap="round"
-                  transform="rotate(-90 27 27)"
+                  strokeDasharray={`${2 * Math.PI * 30}`}
+                  strokeDashoffset={`${2 * Math.PI * 30 * (1 - progressPct / 100)}`}
+                  transform="rotate(-90 36 36)"
+                  style={{ transition: 'stroke-dashoffset 1s ease' }}
                 />
               </svg>
-              <div style={styles.checkInRingIcon}>
-                <Calendar size={18} color="var(--accent-secondary)" />
+              <div style={styles.ringLabel}>
+                <span style={styles.ringPct}>{progressPct}%</span>
               </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={styles.cardTitle}>Next Check-In</div>
-              <div style={styles.checkInDue}>
-                {daysUntilCheckIn !== null && daysUntilCheckIn <= 0
-                  ? 'Due today - submit now!'
-                  : daysUntilCheckIn === 1
-                    ? 'Due tomorrow'
-                    : `Due in ${daysUntilCheckIn} days`}
+
+            {/* Text details */}
+            <div style={styles.progressInfo}>
+              <div style={styles.progressTitle}>{program.name}</div>
+              <div style={styles.progressWeek}>{currentWeek > 0 ? `Week ${currentWeek} of ${programWeeks}` : `Starts ${new Date(program.createdAt + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</div>
+              <div style={styles.progressBar}>
+                <div style={{ ...styles.progressBarFill, width: `${progressPct}%` }} />
               </div>
+            </div>
+          </div>
+
+          {/* Motivational line */}
+          <div style={styles.motiveLine}>{motiveLine}</div>
+
+          {/* Weekly consistency - collapsed: last 4 with dots, expanded: grid of squares */}
+          {!showAllWeeks ? (
+            <div style={styles.consistencyRow}>
+              {recentWeeks.map((w) => {
+                const isPerfect = w.completed >= w.target;
+                return (
+                  <div key={w.weekNum} style={{
+                    ...styles.consistencyWeek,
+                    ...(w.isCurrent ? styles.consistencyWeekCurrent : {}),
+                  }}>
+                    <div style={styles.consistencyDots}>
+                      {Array.from({ length: w.target }, (_, j) => (
+                        <div
+                          key={j}
+                          style={{
+                            ...styles.consistencyDot,
+                            background: j < w.completed ? 'var(--accent-success)' : 'rgba(255,255,255,0.15)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <span style={{
+                      ...styles.consistencyFraction,
+                      color: isPerfect ? 'var(--accent-success)' : 'var(--text-tertiary)',
+                    }}>
+                      {w.completed}/{w.target}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={styles.weekGrid}>
+              {allProgramWeeks.map((w) => {
+                const isPerfect = !w.isFuture && w.completed >= w.target;
+                const pct = w.isFuture ? 0 : w.target > 0 ? w.completed / w.target : 0;
+                return (
+                  <div
+                    key={w.weekNum}
+                    style={{
+                      ...styles.weekSquare,
+                      ...(w.isCurrent ? styles.weekSquareCurrent : {}),
+                      background: w.isCurrent
+                        ? 'rgba(0,229,200,0.1)'
+                        : w.isFuture
+                          ? 'rgba(255,255,255,0.03)'
+                          : isPerfect
+                            ? 'rgba(34,197,94,0.15)'
+                            : pct > 0
+                              ? 'rgba(34,197,94,0.07)'
+                              : 'rgba(255,255,255,0.04)',
+                      border: w.isCurrent
+                        ? '2px solid var(--accent-primary)'
+                        : '1px solid var(--glass-border)',
+                      opacity: w.isFuture ? 0.4 : 1,
+                    }}
+                  >
+                    <span style={{
+                      ...styles.weekSquareNum,
+                      color: w.isCurrent ? 'var(--accent-primary)' : isPerfect ? 'var(--accent-success)' : 'var(--text-secondary)',
+                    }}>
+                      {w.weekNum}
+                    </span>
+                    <span style={{
+                      ...styles.weekSquareSub,
+                      color: w.isFuture ? 'var(--text-tertiary)' : isPerfect ? 'var(--accent-success)' : w.isCurrent ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                    }}>
+                      {w.isFuture ? '-' : `${w.completed}/${w.target}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Expand/collapse arrow */}
+          <button
+            style={styles.expandBtn}
+            onClick={() => setShowAllWeeks(!showAllWeeks)}
+          >
+            <ChevronDown
+              size={20}
+              style={{
+                transition: 'transform 0.2s',
+                transform: showAllWeeks ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            />
+          </button>
+        </GlassCard>
+      )}
+
+      {/* ── Latest from Coach ── */}
+      {lastCoachMsg && (
+        <GlassCard delay={0.2} hover onClick={() => onNavigate('messages')}>
+          <div style={styles.coachRow}>
+            <div style={styles.coachIcon}>
+              <MessageSquare size={18} />
+            </div>
+            <div style={styles.coachContent}>
+              <div style={styles.coachName}>{coachName}</div>
+              <p style={styles.coachText}>
+                {lastCoachMsg.text.length > 80 ? lastCoachMsg.text.slice(0, 80) + '...' : lastCoachMsg.text}
+              </p>
             </div>
             <ArrowRight size={16} color="var(--text-tertiary)" />
           </div>
         </GlassCard>
       )}
-
-      {/* ── From Your Coach (merged message + feedback) ── */}
-      {(lastCoachMsg || latestReviewed) && (
-        <GlassCard delay={0.4}>
-          <div style={{ ...styles.cardHeader, marginBottom: '14px' }}>
-            <div style={{ ...styles.cardIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
-              <MessageSquare size={18} />
-            </div>
-            <div style={styles.cardTitle}>From {coachName}</div>
-          </div>
-
-          {/* Latest message */}
-          {lastCoachMsg && (
-            <div style={styles.coachSection} onClick={() => onNavigate('messages')}>
-              <div style={styles.coachSectionLabel}>Latest Message</div>
-              <p style={styles.coachMsgText}>
-                {lastCoachMsg.text.length > 120 ? lastCoachMsg.text.slice(0, 120) + '…' : lastCoachMsg.text}
-              </p>
-              <div style={styles.coachSectionTime}>{formatRelative(new Date(lastCoachMsg.timestamp))}</div>
-            </div>
-          )}
-
-          {/* Check-in feedback */}
-          {latestReviewed && (
-            <div style={{ ...styles.coachSection, ...(lastCoachMsg ? { marginTop: '14px', borderTop: '1px solid var(--glass-border)', paddingTop: '14px' } : {}) }} onClick={() => onNavigate('check-in')}>
-              <div style={styles.coachSectionLabel}>Check-In Feedback</div>
-              <p style={styles.feedbackText}>{latestReviewed.coachFeedback}</p>
-              <div style={styles.coachSectionTime}>
-                {new Date(latestReviewed.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </div>
-            </div>
-          )}
-        </GlassCard>
-      )}
-
     </div>
   );
-}
-
-function formatRelative(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  if (diffD === 1) return 'Yesterday';
-  if (diffD < 7) return `${diffD}d ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 // ── Styles ──
@@ -378,34 +529,32 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '24px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '18px',
+    gap: '20px',
     minHeight: '100%',
   },
-  welcome: { marginBottom: '4px' },
+
+  // ── Welcome ──
+  welcome: { marginBottom: '2px' },
   greeting: {
-    fontSize: '32px',
+    fontSize: '34px',
     fontWeight: 700,
     letterSpacing: '-0.5px',
     color: 'var(--text-primary)',
-  },
-  motivational: {
-    fontSize: '15px',
-    color: 'var(--text-secondary)',
-    marginTop: '4px',
+    margin: 0,
   },
 
   // ── Quick Actions ──
   quickActions: {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '10px',
+    gap: '12px',
   },
   quickBtn: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '10px',
-    padding: '16px 8px',
+    gap: '12px',
+    padding: '20px 8px',
     borderRadius: 'var(--radius-md)',
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-card)',
@@ -415,9 +564,9 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-primary)',
   },
   quickIcon: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -437,7 +586,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '2px solid var(--bg-card)',
   },
   quickLabel: {
-    fontSize: '13px',
+    fontSize: '15px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
   },
@@ -451,8 +600,8 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '12px',
   },
   cardIcon: {
-    width: '40px',
-    height: '40px',
+    width: '44px',
+    height: '44px',
     borderRadius: 'var(--radius-md)',
     background: 'var(--accent-warm-dim)',
     color: 'var(--accent-warm)',
@@ -462,30 +611,30 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   cardTitle: {
-    fontSize: '16px',
+    fontSize: '18px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
   cardSub: {
-    fontSize: '13px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
-    marginTop: '1px',
+    marginTop: '2px',
   },
   workoutMeta: {
     display: 'flex',
     gap: '16px',
-    fontSize: '14px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
     marginBottom: '16px',
   },
   startBtn: {
     width: '100%',
-    padding: '12px',
+    padding: '14px',
     border: 'none',
     borderRadius: 'var(--radius-md)',
     background: 'var(--accent-primary)',
     color: '#07090e',
-    fontSize: '15px',
+    fontSize: '16px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     display: 'flex',
@@ -496,7 +645,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 0 16px var(--accent-primary-dim)',
   },
   restText: {
-    fontSize: '14px',
+    fontSize: '15px',
     color: 'var(--text-secondary)',
     fontStyle: 'italic',
   },
@@ -514,193 +663,278 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '2px',
-    padding: '0 2px 8px',
-    borderRadius: '8px',
+    gap: '3px',
+    padding: '8px 2px 10px',
+    borderRadius: '10px',
     background: 'var(--bg-subtle)',
     border: '1px solid transparent',
     position: 'relative',
     overflow: 'hidden',
     transition: 'all 0.2s',
   },
-  weekDayToday: {
-    background: 'rgba(0,229,200,0.08)',
-    border: '1px solid rgba(0,229,200,0.25)',
-    boxShadow: '0 0 12px rgba(0,229,200,0.1)',
-  },
-  weekDayDone: {
-    background: 'rgba(34,197,94,0.06)',
-    border: '1px solid rgba(34,197,94,0.12)',
-  },
-  weekDayFail: {
-    background: 'rgba(239,68,68,0.05)',
-    border: '1px solid rgba(239,68,68,0.1)',
-  },
   weekStatusBar: {
     width: '100%',
     height: '2px',
     borderRadius: '0 0 2px 2px',
-    marginBottom: '4px',
+    marginBottom: '2px',
   },
   weekDayLabel: {
-    fontSize: '10px',
+    fontSize: '12px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
     letterSpacing: '0.3px',
   },
   weekDayNum: {
-    fontSize: '16px',
+    fontSize: '18px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
     lineHeight: 1,
   },
+  weekHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '12px',
+  },
+  weekHeaderLabel: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  weekHeaderProgress: {
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-mono)',
+    color: 'var(--accent-primary)',
+  },
   weekWorkoutTag: {
-    fontSize: '9px',
+    fontSize: '11px',
     fontWeight: 600,
     textAlign: 'center',
     lineHeight: 1.2,
-    maxWidth: '100%',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    letterSpacing: '0.2px',
     textTransform: 'uppercase',
+    letterSpacing: '0.2px',
+    minHeight: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  planPrompt: {
+    fontSize: '12px',
+    fontWeight: 500,
+    color: 'var(--accent-primary)',
+    textAlign: 'center',
+    marginBottom: '10px',
+    opacity: 0.8,
   },
 
-  // ── Stats Row ──
-  statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '12px',
-  },
-  statCard: {
-    padding: '18px',
-    textAlign: 'center',
-  },
-  statIcon: {
+  // ── Weight Footer (inside Week card) ──
+  weightFooter: {
     display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '8px',
+    alignItems: 'baseline',
+    gap: '6px',
+    marginTop: '14px',
+    paddingTop: '12px',
+    borderTop: '1px solid var(--glass-border)',
   },
-  statValue: {
-    fontSize: '28px',
+  weightValue: {
+    fontSize: '20px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
     color: 'var(--text-primary)',
   },
-  statUnit: {
-    fontSize: '15px',
+  weightUnit: {
+    fontSize: '14px',
     fontWeight: 400,
     color: 'var(--text-secondary)',
   },
-  statLabel: {
-    fontSize: '12px',
-    color: 'var(--text-secondary)',
-    fontWeight: 500,
-    marginTop: '2px',
+  weightTrend: {
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-mono)',
+    marginLeft: '2px',
   },
 
-  // ── Check-In (prominent) ──
-  checkInRow: {
+  // ── Program Progress ──
+  progressRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '14px',
+    gap: '16px',
   },
-  checkInRing: {
+  ringWrap: {
     position: 'relative',
-    width: '54px',
-    height: '54px',
+    width: '72px',
+    height: '72px',
     flexShrink: 0,
   },
-  checkInRingIcon: {
+  ringLabel: {
     position: 'absolute',
     inset: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkInDue: {
-    fontSize: '14px',
-    color: 'var(--accent-secondary)',
-    fontWeight: 500,
-    marginTop: '2px',
-  },
-
-  // ── Goals ──
-  goalsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  goalItem: {},
-  goalTop: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '6px',
-  },
-  goalName: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: 'var(--text-primary)',
-  },
-  goalPct: {
-    fontSize: '13px',
-    fontWeight: 600,
+  ringPct: {
+    fontSize: '18px',
+    fontWeight: 700,
     fontFamily: 'var(--font-mono)',
-    color: 'var(--text-secondary)',
+    color: 'var(--accent-primary)',
   },
-  goalBarBg: {
-    height: '5px',
-    borderRadius: '2px',
-    background: 'var(--glass-border)',
+  progressInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  progressTitle: {
+    fontSize: '16px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+    marginBottom: '2px',
+  },
+  progressWeek: {
+    fontSize: '14px',
+    fontWeight: 500,
+    color: 'var(--text-secondary)',
+    marginBottom: '10px',
+  },
+  progressBar: {
+    height: '6px',
+    borderRadius: '3px',
+    background: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
   },
-  goalBarFill: {
+  progressBarFill: {
     height: '100%',
-    borderRadius: '2px',
-    transition: 'width 0.6s ease',
-  },
-  goalLabel: {
-    fontSize: '12px',
-    color: 'var(--text-tertiary)',
-    marginTop: '4px',
+    borderRadius: '3px',
+    background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))',
+    transition: 'width 1s ease',
   },
 
-  // ── From Your Coach ──
-  coachSection: {
+  // ── Motivational + Consistency ──
+  motiveLine: {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: 'var(--accent-primary)',
+    marginTop: '14px',
+    paddingTop: '12px',
+    borderTop: '1px solid var(--glass-border)',
+  },
+  consistencyRow: {
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginTop: '12px',
+  },
+  consistencyWeek: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '4px 2px',
+    borderRadius: '8px',
+  },
+  consistencyWeekCurrent: {
+    background: 'rgba(0,229,200,0.08)',
+    border: '1px solid rgba(0,229,200,0.2)',
+    padding: '8px 10px',
+    borderRadius: '10px',
+    boxShadow: '0 0 12px rgba(0,229,200,0.12)',
+  },
+  consistencyDots: {
+    display: 'flex',
+    gap: '4px',
+  },
+  consistencyDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '50%',
+  },
+  consistencyFraction: {
+    fontSize: '11px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+  },
+  weekGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: '8px',
+    marginTop: '12px',
+  },
+  weekSquare: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    aspectRatio: '1.2',
+    borderRadius: '10px',
+    gap: '2px',
+  },
+  weekSquareCurrent: {
+    boxShadow: '0 0 12px rgba(0,229,200,0.15)',
+  },
+  weekSquareNum: {
+    fontSize: '15px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+  },
+  weekSquareSub: {
+    fontSize: '10px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-mono)',
+  },
+  expandBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    padding: '8px 0 0',
+    marginTop: '10px',
+    border: 'none',
+    borderTop: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
     cursor: 'pointer',
   },
-  coachSectionLabel: {
-    fontSize: '11px',
+
+  // ── Coach Preview ──
+  coachRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  coachIcon: {
+    width: '44px',
+    height: '44px',
+    borderRadius: '50%',
+    background: 'var(--accent-primary-dim)',
+    color: 'var(--accent-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  coachContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  coachName: {
+    fontSize: '13px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    marginBottom: '6px',
+    letterSpacing: '0.3px',
+    marginBottom: '3px',
   },
-  coachMsgText: {
-    fontSize: '14px',
+  coachText: {
+    fontSize: '15px',
     color: 'var(--text-secondary)',
-    lineHeight: 1.6,
-    borderLeft: '2px solid var(--accent-primary)',
-    paddingLeft: '12px',
-  },
-  coachSectionTime: {
-    fontSize: '11px',
-    color: 'var(--text-tertiary)',
-    fontFamily: 'var(--font-mono)',
-    marginTop: '6px',
-  },
-
-  // ── Feedback ──
-  feedbackText: {
-    fontSize: '14px',
-    color: 'var(--text-secondary)',
-    lineHeight: 1.6,
-    borderLeft: '2px solid var(--accent-primary)',
-    paddingLeft: '12px',
-    marginTop: '4px',
+    lineHeight: 1.4,
+    margin: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
   },
 };

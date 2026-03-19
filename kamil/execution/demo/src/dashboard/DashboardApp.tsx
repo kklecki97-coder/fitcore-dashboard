@@ -7,7 +7,6 @@ import ClientsPage from './components/ClientsPage';
 import ClientDetailPage from './components/ClientDetailPage';
 import MessagesPage from './components/MessagesPage';
 import AnalyticsPage from './components/AnalyticsPage';
-import SchedulePage from './components/SchedulePage';
 import SettingsPage from './components/SettingsPage';
 import AddClientPage from './components/AddClientPage';
 import WorkoutProgramsPage from './components/WorkoutProgramsPage';
@@ -15,7 +14,7 @@ import ProgramBuilderPage from './components/ProgramBuilderPage';
 import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import useIsMobile from './hooks/useIsMobile';
-import { clients as initialClients, messages as initialMessages, scheduleToday, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs, invoices as initialInvoices, checkIns as initialCheckIns } from './data';
+import { clients as initialClients, messages as initialMessages, workoutPrograms as initialPrograms, exerciseLibrary, workoutLogs, invoices as initialInvoices, checkIns as initialCheckIns } from './data';
 import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification } from './types';
 import { useDemo } from '../context/DemoContext';
 
@@ -40,49 +39,6 @@ export default function DashboardApp() {
   const [allInvoices, setAllInvoices] = useState<Invoice[]>(initialInvoices);
   const [allCheckIns, setAllCheckIns] = useState<CheckIn[]>(initialCheckIns);
 
-  // @ts-ignore - scaffolded for schedule features
-  const todayKey = new Date().toISOString().split('T')[0];
-  const [sessionsByDate, setSessionsByDate] = useState<Record<string, typeof scheduleToday>>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tKey = today.toISOString().split('T')[0];
-
-    const dow = today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - dow + (dow === 0 ? -6 : 1));
-
-    const clientPool = [
-      { client: 'Marcus Chen', type: 'Upper Body' },
-      { client: 'Sarah Williams', type: 'Lower Body' },
-      { client: 'Jake Morrison', type: 'Squat Day' },
-      { client: 'Tom Bradley', type: 'Full Body' },
-      { client: 'David Park', type: 'Push Day' },
-      { client: 'Aisha Patel', type: 'Pull Day' },
-    ];
-    const times = ['07:00', '09:00', '11:00', '14:00', '16:00'];
-
-    const weekSessions: Record<string, typeof scheduleToday> = {
-      [tKey]: scheduleToday,
-    };
-
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const key = d.toISOString().split('T')[0];
-      if (key === tKey) continue;
-
-      const isPast = d < today;
-      weekSessions[key] = times.slice(0, 3 + (i % 3)).map((time, j) => ({
-        time,
-        client: clientPool[(i + j) % clientPool.length].client,
-        type: clientPool[(i + j) % clientPool.length].type,
-        status: (isPast ? 'completed' : 'upcoming') as 'completed' | 'upcoming' | 'current',
-        duration: [45, 60, 60, 90, 45][j % 5],
-      }));
-    }
-
-    return weekSessions;
-  });
 
   // Settings state
   const [profileName, setProfileName] = useState('Coach Kamil');
@@ -192,7 +148,6 @@ export default function DashboardApp() {
     'add-client': 'Clients',
     'messages': 'Messages',
     'analytics': 'Analytics',
-    'schedule': 'Schedule',
     'settings': 'Settings',
     'programs': 'Programs',
     'program-builder': 'Programs',
@@ -348,7 +303,6 @@ export default function DashboardApp() {
         return (
           <WorkoutProgramsPage
             programs={allPrograms}
-            clients={allClients}
             onViewProgram={handleViewProgram}
             onAddProgram={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
             onDeleteProgram={handleDeleteProgram}
@@ -360,7 +314,6 @@ export default function DashboardApp() {
         return (
           <ProgramBuilderPage
             program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : null}
-            clients={allClients}
             exerciseLibrary={exerciseLibrary}
             onSave={(program: WorkoutProgram) => {
               if (allPrograms.find(p => p.id === program.id)) {
@@ -368,7 +321,7 @@ export default function DashboardApp() {
               } else {
                 handleAddProgram(program);
               }
-              setCurrentPage(previousPage);
+              setCurrentPage('programs');
               setSelectedProgramId('');
             }}
             onBack={handleBackFromProgram}
@@ -395,8 +348,6 @@ export default function DashboardApp() {
             onNavigate={handleNavigate}
           />
         );
-      case 'schedule':
-        return <SchedulePage clients={allClients} programs={allPrograms} sessionsByDate={sessionsByDate} onSessionsChange={setSessionsByDate} onViewClient={handleViewClient} />;
       case 'settings':
         return (
           <SettingsPage

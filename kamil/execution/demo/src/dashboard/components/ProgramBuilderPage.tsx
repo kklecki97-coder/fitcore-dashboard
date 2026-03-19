@@ -2,16 +2,53 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Save, Plus, Minus, Trash2, X, ChevronUp, ChevronDown,
-  Edit3, Clock, Users, Dumbbell, Check, Copy,
+  Edit3, Clock, Dumbbell, Check, Copy,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, WorkoutProgram, WorkoutDay, Exercise } from '../types';
+import type { WorkoutProgram, WorkoutDay, Exercise } from '../types';
+
+// Inline translations (demo has no i18n system)
+const t = {
+  programBuilder: {
+    backToPrograms: 'Back to Programs',
+    saveProgram: 'Save Program',
+    programName: 'Program Name',
+    durationWeeks: 'Duration (weeks)',
+    addDay: 'Add Day',
+    removeDay: 'Remove Day',
+    duplicateDay: 'Duplicate Day',
+    addExercise: 'Add Exercise',
+    editExercise: 'Edit Exercise',
+    removeExercise: 'Remove Exercise',
+    moveUp: 'Move Up',
+    moveDown: 'Move Down',
+    exerciseName: 'Exercise Name',
+    sets: 'Sets',
+    reps: 'Reps',
+    rpe: 'RPE',
+    tempo: 'Tempo',
+    restSeconds: 'Rest (seconds)',
+    searchExercises: 'Search exercises...',
+    enterProgramName: 'Please enter a program name.',
+    removeDayConfirm: (day: string) => `Remove "${day}" and all its exercises?`,
+    save: 'Save',
+    cancel: 'Cancel',
+    programNotes: 'Program Notes',
+    programNotesPlaceholder: 'General notes, instructions, progression rules...',
+    noExercisesYet: 'No exercises yet. Use the quick-add below or click + for full details.',
+    noDaysYet: 'No workout days yet. Add your first day to get started.',
+    quickAddHint: 'Quick add — type name, sets × reps, press Enter. Click pencil icon to edit details.',
+  },
+  programs: {
+    days: (n: number) => `${n} day${n === 1 ? '' : 's'}`,
+    exercises: (n: number) => `${n} exercise${n === 1 ? '' : 's'}`,
+    weeks: (n: number) => `${n}w`,
+  },
+};
 
 interface ProgramBuilderPageProps {
   program: WorkoutProgram | null;
-  clients: Client[];
   exerciseLibrary: string[];
   onSave: (program: WorkoutProgram) => void;
   onBack: () => void;
@@ -98,9 +135,8 @@ const pbStepperStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-let _idCounter = 0;
 const emptyExercise = (): Exercise => ({
-  id: `e${++_idCounter}-${Math.random().toString(36).slice(2, 6)}`,
+  id: crypto.randomUUID(),
   name: '',
   sets: 3,
   reps: '10',
@@ -112,16 +148,16 @@ const emptyExercise = (): Exercise => ({
 });
 
 export default function ProgramBuilderPage({
-  program, clients, exerciseLibrary, onSave, onBack, backLabel = 'Back to Programs',
+  program, exerciseLibrary, onSave, onBack, backLabel,
 }: ProgramBuilderPageProps) {
   const isMobile = useIsMobile();
 
   const [draft, setDraft] = useState<WorkoutProgram>(() => {
     if (program) return JSON.parse(JSON.stringify(program));
     return {
-      id: `wp${++_idCounter}`,
+      id: crypto.randomUUID(),
       name: '',
-      status: 'draft' as const,
+      status: 'active' as const,
       durationWeeks: 4,
       clientIds: [],
       days: [],
@@ -136,11 +172,22 @@ export default function ProgramBuilderPage({
   const [exerciseForm, setExerciseForm] = useState<Exercise>(emptyExercise());
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [assignModal, setAssignModal] = useState(false);
   const [renamingDay, setRenamingDay] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(program || ''));
+  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Quick-add row state
+  const [quickName, setQuickName] = useState('');
+  const [quickSets, setQuickSets] = useState('3');
+  const [quickReps, setQuickReps] = useState('10');
+  const [quickShowSuggestions, setQuickShowSuggestions] = useState(false);
+  const quickNameRef = useRef<HTMLInputElement>(null);
+  const quickSuggestionsRef = useRef<HTMLDivElement>(null);
+
+  const hasUnsavedChanges = JSON.stringify(draft) !== savedSnapshot;
 
   // Close suggestions on outside click
   const closeSuggestions = useCallback((e: MouseEvent) => {
@@ -148,14 +195,50 @@ export default function ProgramBuilderPage({
         inputRef.current && !inputRef.current.contains(e.target as Node)) {
       setShowSuggestions(false);
     }
+    if (quickSuggestionsRef.current && !quickSuggestionsRef.current.contains(e.target as Node) &&
+        quickNameRef.current && !quickNameRef.current.contains(e.target as Node)) {
+      setQuickShowSuggestions(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (showSuggestions) {
+    if (showSuggestions || quickShowSuggestions) {
       document.addEventListener('mousedown', closeSuggestions);
       return () => document.removeEventListener('mousedown', closeSuggestions);
     }
-  }, [showSuggestions, closeSuggestions]);
+  }, [showSuggestions, quickShowSuggestions, closeSuggestions]);
+
+  // Quick-add filtered suggestions
+  const quickFilteredSuggestions = quickName.trim()
+    ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(quickName.toLowerCase())).slice(0, 6)
+    : [];
+
+  // Quick-add submit
+  const submitQuickAdd = () => {
+    if (!quickName.trim()) return;
+    const ex: Exercise = {
+      id: crypto.randomUUID(),
+      name: quickName.trim(),
+      sets: parseInt(quickSets) || 3,
+      reps: quickReps || '10',
+      weight: '',
+      rpe: null,
+      tempo: '',
+      restSeconds: null,
+      notes: '',
+    };
+    setDraft(prev => {
+      const newDraft = JSON.parse(JSON.stringify(prev));
+      newDraft.days[activeDayIndex].exercises.push(ex);
+      return newDraft;
+    });
+    setQuickName('');
+    setQuickSets('3');
+    setQuickReps('10');
+    setQuickShowSuggestions(false);
+    // Refocus name input for rapid adding
+    setTimeout(() => quickNameRef.current?.focus(), 50);
+  };
 
   const activeDay: WorkoutDay | undefined = draft.days[activeDayIndex];
 
@@ -164,7 +247,7 @@ export default function ProgramBuilderPage({
   // ── Day management ──
   const addDay = () => {
     const newDay: WorkoutDay = {
-      id: `wd${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       name: `Day ${draft.days.length + 1}`,
       exercises: [],
     };
@@ -173,7 +256,7 @@ export default function ProgramBuilderPage({
   };
 
   const removeDay = (index: number) => {
-    if (!window.confirm(`Remove "${draft.days[index].name}" and all its exercises?`)) return;
+    if (!window.confirm(t.programBuilder.removeDayConfirm(draft.days[index].name))) return;
     setDraft(prev => ({ ...prev, days: prev.days.filter((_, i) => i !== index) }));
     if (activeDayIndex >= draft.days.length - 1) {
       setActiveDayIndex(Math.max(0, draft.days.length - 2));
@@ -184,11 +267,11 @@ export default function ProgramBuilderPage({
     const source = draft.days[index];
     const newDay: WorkoutDay = {
       ...JSON.parse(JSON.stringify(source)),
-      id: `wd${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       name: `${source.name} (Copy)`,
       exercises: source.exercises.map(e => ({
         ...e,
-        id: `e${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: crypto.randomUUID(),
       })),
     };
     setDraft(prev => ({
@@ -262,23 +345,14 @@ export default function ProgramBuilderPage({
     });
   };
 
-  // ── Client assignment ──
-  const toggleClient = (clientId: string) => {
-    setDraft(prev => ({
-      ...prev,
-      clientIds: prev.clientIds.includes(clientId)
-        ? prev.clientIds.filter(id => id !== clientId)
-        : [...prev.clientIds, clientId],
-    }));
-  };
-
   // ── Save ──
   const handleSave = () => {
     if (!draft.name.trim()) {
-      alert('Please enter a program name.');
+      alert(t.programBuilder.enterProgramName);
       return;
     }
-    onSave({ ...draft, updatedAt: new Date().toISOString().split('T')[0] });
+    const updated = { ...draft, updatedAt: new Date().toISOString().split('T')[0] };
+    onSave(updated);
   };
 
   // ── Filtered suggestions ──
@@ -286,24 +360,41 @@ export default function ProgramBuilderPage({
     ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(exerciseSearch.toLowerCase())).slice(0, 8)
     : [];
 
-  const assignedClients = draft.clientIds
-    .map(id => clients.find(c => c.id === id))
-    .filter(Boolean) as Client[];
-
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
       {/* Back Bar */}
       <div style={styles.topBar}>
         <motion.button onClick={onBack} style={styles.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-          <ArrowLeft size={16} /> {backLabel}
+          <ArrowLeft size={16} /> {backLabel ?? t.programBuilder.backToPrograms}
         </motion.button>
       </div>
+
+      {/* Saved Indicator */}
+      <AnimatePresence>
+        {showSavedIndicator && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '12px 16px', borderRadius: '10px', marginBottom: '16px',
+              background: 'rgba(0, 229, 200, 0.1)', border: '1px solid rgba(0, 229, 200, 0.3)',
+            }}
+          >
+            <Check size={16} color="var(--accent-primary)" />
+            <span style={{ fontSize: '14px', color: 'var(--accent-primary)', fontWeight: 500, fontFamily: 'var(--font-display)' }}>
+              Program saved successfully!
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Program Metadata */}
       <GlassCard delay={0.05}>
         <div style={{ ...styles.metaCard, flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={{ ...styles.fieldGroup, flex: 1 }}>
-            <label style={styles.label}>Program Name</label>
+            <label style={styles.label}>{t.programBuilder.programName}</label>
             <input
               type="text"
               value={draft.name}
@@ -314,7 +405,7 @@ export default function ProgramBuilderPage({
           </div>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>Duration</label>
+              <label style={styles.label}>{t.programBuilder.durationWeeks}</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <NumberStepper
                   value={draft.durationWeeks}
@@ -322,44 +413,12 @@ export default function ProgramBuilderPage({
                   min={1} max={52} placeholder="8"
                   style={{ width: '130px' }}
                 />
-                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>weeks</span>
+                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}></span>
               </div>
-            </div>
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Status</label>
-              <select
-                value={draft.status}
-                onChange={(e) => setDraft(prev => ({ ...prev, status: e.target.value as WorkoutProgram['status'] }))}
-                style={styles.select}
-              >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-              </select>
             </div>
           </div>
         </div>
 
-        {/* Assigned Clients */}
-        <div style={styles.assignRow}>
-          <Users size={14} color="var(--text-tertiary)" />
-          {assignedClients.length > 0 ? (
-            <div style={styles.chipGroup}>
-              {assignedClients.map(c => (
-                <span key={c.id} style={styles.clientChip}>
-                  <span style={{ ...styles.chipAvatar, background: getAvatarColor(c.id) }}>{getInitials(c.name)}</span>
-                  {c.name}
-                  <button onClick={() => toggleClient(c.id)} style={styles.chipRemove}><X size={12} /></button>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span style={{ fontSize: '18px', color: 'var(--text-tertiary)' }}>No clients assigned</span>
-          )}
-          <button onClick={() => setAssignModal(true)} style={styles.assignBtn}>
-            <Plus size={13} /> Assign
-          </button>
-        </div>
       </GlassCard>
 
       {/* Day Tabs */}
@@ -397,20 +456,20 @@ export default function ProgramBuilderPage({
                     <button onClick={() => startRenameDay(i)} style={styles.tinyBtn} title="Rename">
                       <Edit3 size={12} />
                     </button>
-                    <button onClick={() => duplicateDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-secondary)' }} title="Duplicate day">
+                    <button onClick={() => duplicateDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-secondary)' }} title={t.programBuilder.duplicateDay}>
                       <Copy size={12} />
                     </button>
                   </>
                 )}
                 {draft.days.length > 1 && activeDayIndex === i && (
-                  <button onClick={() => removeDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-danger)' }} title="Remove day">
+                  <button onClick={() => removeDay(i)} style={{ ...styles.tinyBtn, color: 'var(--accent-danger)' }} title={t.programBuilder.removeDay}>
                     <X size={12} />
                   </button>
                 )}
               </div>
             ))}
             <button onClick={addDay} style={styles.addDayBtn}>
-              <Plus size={14} /> Add Day
+              <Plus size={14} /> {t.programBuilder.addDay}
             </button>
           </div>
         </div>
@@ -426,7 +485,7 @@ export default function ProgramBuilderPage({
               <span style={styles.exerciseCount}>{activeDay.exercises.length}</span>
             </div>
             <motion.button onClick={openAddExercise} style={styles.addExerciseBtn} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Plus size={14} /> Add Exercise
+              <Plus size={14} /> {t.programBuilder.addExercise}
             </motion.button>
           </div>
 
@@ -448,11 +507,6 @@ export default function ProgramBuilderPage({
                         <span style={styles.prescriptionChip}>
                           {ex.sets} × {ex.reps}
                         </span>
-                        {ex.weight && (
-                          <span style={{ ...styles.prescriptionChip, color: 'var(--accent-primary)' }}>
-                            {ex.weight}
-                          </span>
-                        )}
                         {ex.rpe !== null && (
                           <span style={{
                             ...styles.prescriptionChip,
@@ -462,11 +516,10 @@ export default function ProgramBuilderPage({
                           </span>
                         )}
                       </div>
-                      {(ex.tempo || ex.restSeconds || ex.notes) && (
+                      {(ex.tempo || ex.restSeconds) && (
                         <div style={styles.detailRow}>
-                          {ex.tempo && <span style={styles.detailText}>Tempo: {ex.tempo}</span>}
-                          {ex.restSeconds && <span style={styles.detailText}>Rest: {ex.restSeconds}s</span>}
-                          {ex.notes && <span style={{ ...styles.detailText, fontStyle: 'italic', color: 'var(--text-secondary)' }}>{ex.notes}</span>}
+                          {ex.tempo && <span style={styles.detailText}>{t.programBuilder.tempo}: {ex.tempo}</span>}
+                          {ex.restSeconds && <span style={styles.detailText}>{t.programBuilder.restSeconds}: {ex.restSeconds}s</span>}
                         </div>
                       )}
                     </div>
@@ -475,6 +528,7 @@ export default function ProgramBuilderPage({
                         onClick={() => moveExercise(i, 'up')}
                         style={{ ...styles.actionBtn, opacity: i === 0 ? 0.25 : 1 }}
                         disabled={i === 0}
+                        title={t.programBuilder.moveUp}
                       >
                         <ChevronUp size={14} />
                       </button>
@@ -482,13 +536,14 @@ export default function ProgramBuilderPage({
                         onClick={() => moveExercise(i, 'down')}
                         style={{ ...styles.actionBtn, opacity: i === activeDay.exercises.length - 1 ? 0.25 : 1 }}
                         disabled={i === activeDay.exercises.length - 1}
+                        title={t.programBuilder.moveDown}
                       >
                         <ChevronDown size={14} />
                       </button>
-                      <button onClick={() => openEditExercise(i)} style={styles.actionBtn}>
+                      <button onClick={() => openEditExercise(i)} style={styles.actionBtn} title={t.programBuilder.editExercise}>
                         <Edit3 size={14} />
                       </button>
-                      <button onClick={() => removeExercise(i)} style={{ ...styles.actionBtn, color: 'var(--accent-danger)' }}>
+                      <button onClick={() => removeExercise(i)} style={{ ...styles.actionBtn, color: 'var(--accent-danger)' }} title={t.programBuilder.removeExercise}>
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -499,39 +554,134 @@ export default function ProgramBuilderPage({
           ) : (
             <div style={styles.emptyDay}>
               <Dumbbell size={32} color="var(--text-tertiary)" />
-              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '18px' }}>No exercises yet</p>
-              <button onClick={openAddExercise} style={styles.addExerciseBtn}>
-                <Plus size={14} /> Add Exercise
-              </button>
+              <p style={{ color: 'var(--text-secondary)', margin: '8px 0 12px', fontSize: '18px' }}>
+                {t.programBuilder.noExercisesYet || 'No exercises yet. Use the quick-add below or click the + button for full details.'}
+              </p>
             </div>
           )}
+
+          {/* Quick-Add Row */}
+          <div style={styles.quickAddWrap}>
+            <div style={styles.quickAddRow}>
+              <div style={{ position: 'relative', flex: 2, minWidth: 0 }}>
+                <input
+                  ref={quickNameRef}
+                  type="text"
+                  value={quickName}
+                  onChange={(e) => {
+                    setQuickName(e.target.value);
+                    setQuickShowSuggestions(true);
+                  }}
+                  onFocus={() => { if (quickName.trim()) setQuickShowSuggestions(true); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') submitQuickAdd(); }}
+                  placeholder={t.programBuilder.searchExercises || 'Exercise name...'}
+                  style={{ ...styles.input, fontSize: '15px', padding: '8px 10px' }}
+                />
+                {quickShowSuggestions && quickFilteredSuggestions.length > 0 && (
+                  <div ref={quickSuggestionsRef} style={{ ...styles.suggestions, bottom: '100%', top: 'auto', marginBottom: '4px' }}>
+                    {quickFilteredSuggestions.map(name => (
+                      <button
+                        key={name}
+                        onClick={() => {
+                          setQuickName(name);
+                          setQuickShowSuggestions(false);
+                        }}
+                        style={styles.suggestionItem}
+                      >
+                        <Dumbbell size={13} color="var(--text-tertiary)" /> {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <input
+                type="number"
+                value={quickSets}
+                onChange={(e) => setQuickSets(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') submitQuickAdd(); }}
+                placeholder="Sets"
+                min={1}
+                max={20}
+                style={{ ...styles.input, fontSize: '15px', padding: '8px 10px', width: '64px', textAlign: 'center', flex: 'none' }}
+              />
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '15px', fontWeight: 600, userSelect: 'none' }}>×</span>
+              <input
+                type="text"
+                value={quickReps}
+                onChange={(e) => setQuickReps(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') submitQuickAdd(); }}
+                placeholder="Reps"
+                style={{ ...styles.input, fontSize: '15px', padding: '8px 10px', width: '80px', textAlign: 'center', flex: 'none' }}
+              />
+              <motion.button
+                onClick={submitQuickAdd}
+                style={{
+                  ...styles.addExerciseBtn,
+                  padding: '7px 10px',
+                  fontSize: '15px',
+                  opacity: quickName.trim() ? 1 : 0.4,
+                }}
+                whileHover={quickName.trim() ? { scale: 1.05 } : {}}
+                whileTap={quickName.trim() ? { scale: 0.95 } : {}}
+              >
+                <Plus size={14} />
+              </motion.button>
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+              {t.programBuilder.quickAddHint}
+            </span>
+          </div>
         </GlassCard>
       ) : (
         <GlassCard delay={0.15}>
           <div style={styles.emptyDay}>
             <Dumbbell size={40} color="var(--text-tertiary)" />
             <p style={{ color: 'var(--text-secondary)', margin: '12px 0', fontSize: '20px' }}>
-              No workout days yet. Add your first day to get started.
+              {t.programBuilder.noDaysYet}
             </p>
             <button onClick={addDay} style={styles.addExerciseBtn}>
-              <Plus size={14} /> Add Day
+              <Plus size={14} /> {t.programBuilder.addDay}
             </button>
           </div>
         </GlassCard>
       )}
 
-      {/* Bottom Summary Bar */}
+      {/* Program Notes */}
       <GlassCard delay={0.2}>
+        <div style={{ padding: '16px 20px' }}>
+          <label style={{ ...styles.label, marginBottom: '6px', display: 'block' }}>{t.programBuilder.programNotes || 'Program Notes'}</label>
+          <textarea
+            value={draft.notes || ''}
+            onChange={(e) => setDraft(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder={t.programBuilder.programNotesPlaceholder || 'General notes, instructions, progression rules...'}
+            rows={3}
+            style={styles.textarea}
+          />
+        </div>
+      </GlassCard>
+
+      {/* Bottom Summary Bar */}
+      <GlassCard delay={0.25}>
         <div style={styles.bottomBar}>
           <div style={styles.summaryChips}>
-            <span style={styles.summaryChip}><Dumbbell size={13} /> {draft.days.length} {draft.days.length === 1 ? 'day' : 'days'}</span>
-            <span style={styles.summaryChip}>{totalExercises} exercises</span>
-            <span style={styles.summaryChip}><Clock size={13} /> {draft.durationWeeks} weeks</span>
+            <span style={styles.summaryChip}><Dumbbell size={13} /> {t.programs.days(draft.days.length)}</span>
+            <span style={styles.summaryChip}>{t.programs.exercises(totalExercises)}</span>
+            <span style={styles.summaryChip}><Clock size={13} /> {t.programs.weeks(draft.durationWeeks)}</span>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={onBack} style={styles.cancelBtnBottom}>Cancel</button>
-            <motion.button onClick={handleSave} style={styles.saveBtnBottom} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Save size={14} /> Save
+            <button onClick={onBack} style={styles.cancelBtnBottom}>{t.programBuilder.cancel}</button>
+            <motion.button
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges}
+              style={{
+                ...styles.saveBtnBottom,
+                opacity: hasUnsavedChanges ? 1 : 0.35,
+                cursor: hasUnsavedChanges ? 'pointer' : 'default',
+              }}
+              whileHover={hasUnsavedChanges ? { scale: 1.02 } : {}}
+              whileTap={hasUnsavedChanges ? { scale: 0.98 } : {}}
+            >
+              {showSavedIndicator ? <><Check size={14} /> Saved!</> : <><Save size={14} /> {t.programBuilder.saveProgram}</>}
             </motion.button>
           </div>
         </div>
@@ -549,13 +699,13 @@ export default function ProgramBuilderPage({
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>{exerciseModal.editing ? 'Edit Exercise' : 'Add Exercise'}</h3>
+                <h3 style={styles.modalTitle}>{exerciseModal.editing ? t.programBuilder.editExercise : t.programBuilder.addExercise}</h3>
                 <button onClick={() => setExerciseModal(null)} style={styles.closeBtn}><X size={16} /></button>
               </div>
               <div style={styles.modalBody}>
                 {/* Exercise Name with autocomplete */}
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Exercise Name</label>
+                  <label style={styles.label}>{t.programBuilder.exerciseName}</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       ref={inputRef}
@@ -567,7 +717,7 @@ export default function ProgramBuilderPage({
                         setShowSuggestions(true);
                       }}
                       onFocus={() => { if (exerciseSearch.trim()) setShowSuggestions(true); }}
-                      placeholder="Search or type exercise name..."
+                      placeholder={t.programBuilder.searchExercises}
                       style={styles.input}
                     />
                     {showSuggestions && filteredSuggestions.length > 0 && (
@@ -593,7 +743,7 @@ export default function ProgramBuilderPage({
                 {/* Sets + Reps */}
                 <div style={styles.fieldRow}>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Sets</label>
+                    <label style={styles.label}>{t.programBuilder.sets}</label>
                     <NumberStepper
                       value={exerciseForm.sets}
                       onChange={(v) => setExerciseForm(prev => ({ ...prev, sets: parseInt(v) || 1 }))}
@@ -601,7 +751,7 @@ export default function ProgramBuilderPage({
                     />
                   </div>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Reps</label>
+                    <label style={styles.label}>{t.programBuilder.reps}</label>
                     <input
                       type="text"
                       value={exerciseForm.reps}
@@ -612,42 +762,18 @@ export default function ProgramBuilderPage({
                   </div>
                 </div>
 
-                {/* Weight + RPE */}
+                {/* RPE + Rest */}
                 <div style={styles.fieldRow}>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Weight / Load</label>
-                    <input
-                      type="text"
-                      value={exerciseForm.weight}
-                      onChange={(e) => setExerciseForm(prev => ({ ...prev, weight: e.target.value }))}
-                      placeholder='e.g. 80kg, BW'
-                      style={styles.input}
-                    />
-                  </div>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>RPE (1-10)</label>
+                    <label style={styles.label}>{t.programBuilder.rpe} (1-10)</label>
                     <NumberStepper
                       value={exerciseForm.rpe ?? ''}
                       onChange={(v) => setExerciseForm(prev => ({ ...prev, rpe: v ? parseInt(v) : null }))}
                       min={1} max={10} placeholder="7"
                     />
                   </div>
-                </div>
-
-                {/* Tempo + Rest */}
-                <div style={styles.fieldRow}>
                   <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Tempo</label>
-                    <input
-                      type="text"
-                      value={exerciseForm.tempo}
-                      onChange={(e) => setExerciseForm(prev => ({ ...prev, tempo: e.target.value }))}
-                      placeholder='e.g. 3-1-2-0'
-                      style={styles.input}
-                    />
-                  </div>
-                  <div style={{ ...styles.fieldGroup, flex: 1 }}>
-                    <label style={styles.label}>Rest (seconds)</label>
+                    <label style={styles.label}>{t.programBuilder.restSeconds}</label>
                     <NumberStepper
                       value={exerciseForm.restSeconds ?? ''}
                       onChange={(v) => setExerciseForm(prev => ({ ...prev, restSeconds: v ? parseInt(v) : null }))}
@@ -656,27 +782,27 @@ export default function ProgramBuilderPage({
                   </div>
                 </div>
 
-                {/* Notes */}
+                {/* Tempo */}
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Notes</label>
-                  <textarea
-                    value={exerciseForm.notes}
-                    onChange={(e) => setExerciseForm(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Exercise-specific coaching cues..."
-                    rows={2}
-                    style={styles.textarea}
+                  <label style={styles.label}>{t.programBuilder.tempo}</label>
+                  <input
+                    type="text"
+                    value={exerciseForm.tempo}
+                    onChange={(e) => setExerciseForm(prev => ({ ...prev, tempo: e.target.value }))}
+                    placeholder='e.g. 3-1-2-0'
+                    style={styles.input}
                   />
                 </div>
               </div>
               <div style={styles.modalActions}>
-                <button onClick={() => setExerciseModal(null)} style={styles.cancelBtnModal}>Cancel</button>
+                <button onClick={() => setExerciseModal(null)} style={styles.cancelBtnModal}>{t.programBuilder.cancel}</button>
                 <motion.button
                   onClick={saveExercise}
                   style={{ ...styles.primaryBtn, opacity: exerciseForm.name.trim() ? 1 : 0.4 }}
                   whileHover={exerciseForm.name.trim() ? { scale: 1.02 } : {}}
                   whileTap={exerciseForm.name.trim() ? { scale: 0.98 } : {}}
                 >
-                  <Check size={14} /> {exerciseModal.editing ? 'Save Changes' : 'Add Exercise'}
+                  <Check size={14} /> {exerciseModal.editing ? t.programBuilder.save : t.programBuilder.addExercise}
                 </motion.button>
               </div>
             </motion.div>
@@ -684,57 +810,6 @@ export default function ProgramBuilderPage({
         )}
       </AnimatePresence>
 
-      {/* ═══ Assign to Clients Modal ═══ */}
-      <AnimatePresence>
-        {assignModal && (
-          <motion.div style={styles.overlayCenter} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAssignModal(false)}>
-            <motion.div
-              style={{ ...styles.modalCentered, maxWidth: '440px' }}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Assign Program</h3>
-                <button onClick={() => setAssignModal(false)} style={styles.closeBtn}><X size={16} /></button>
-              </div>
-              <div style={{ ...styles.modalBody, maxHeight: '400px', overflowY: 'auto' }}>
-                {clients.filter(c => c.status === 'active').map(client => {
-                  const isAssigned = draft.clientIds.includes(client.id);
-                  return (
-                    <button
-                      key={client.id}
-                      onClick={() => toggleClient(client.id)}
-                      style={{
-                        ...styles.clientRow,
-                        background: isAssigned ? 'var(--accent-primary-dim)' : 'transparent',
-                        borderColor: isAssigned ? 'rgba(0, 229, 200, 0.15)' : 'var(--glass-border)',
-                      }}
-                    >
-                      <div style={{ ...styles.clientAvatar, background: getAvatarColor(client.id) }}>
-                        {getInitials(client.name)}
-                      </div>
-                      <div style={styles.clientInfo}>
-                        <span style={styles.clientName}>{client.name}</span>
-                        <span style={styles.clientPlan}>{client.plan}</span>
-                      </div>
-                      {isAssigned && (
-                        <div style={styles.checkCircle}><Check size={12} /></div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <div style={styles.modalActions}>
-                <button onClick={() => setAssignModal(false)} style={styles.primaryBtn}>
-                  Done
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -1290,5 +1365,18 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     color: 'var(--text-on-accent)',
     flexShrink: 0,
+  },
+  // Quick-add row
+  quickAddWrap: {
+    padding: '12px 20px 16px',
+    borderTop: '1px solid var(--glass-border)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  quickAddRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
   },
 };

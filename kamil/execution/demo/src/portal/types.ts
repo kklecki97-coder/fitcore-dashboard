@@ -16,13 +16,13 @@ export interface Client {
     squat: number[];
     deadlift: number[];
   };
+  height: number | null;
   goals: string[];
   notes: string;
   lastActive: string;
   streak: number;
+  onboarded: boolean;
 }
-
-export type MessageChannel = 'telegram' | 'whatsapp' | 'email' | 'instagram';
 
 export interface Message {
   id: string;
@@ -33,7 +33,14 @@ export interface Message {
   timestamp: string;
   isRead: boolean;
   isFromCoach: boolean;
-  channel?: MessageChannel;
+  type?: 'text' | 'workout-complete';
+  workoutSummary?: {
+    dayName: string;
+    duration: string;
+    exercises: number;
+    sets: string;
+    volume?: string;
+  };
 }
 
 export interface WorkoutLog {
@@ -113,6 +120,25 @@ export interface WorkoutSetLog {
   rpe?: number | null;
 }
 
-export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages';
+export interface WeeklySchedule {
+  id: string;
+  clientId: string;
+  weekStart: string;       // YYYY-MM-DD (Monday)
+  dayAssignments: Record<string, string>;  // { "0": "workout-day-id", "2": "workout-day-id" } - key is 0=Mon..6=Sun
+}
+
+export interface Invoice {
+  id: string;
+  clientId: string;
+  amount: number;
+  status: 'paid' | 'pending' | 'overdue';
+  dueDate: string;
+  paidDate: string | null;
+  period: string;
+  plan: 'Basic' | 'Premium' | 'Elite';
+  paymentUrl: string | null;
+}
+
+export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar' | 'invoices';
 
 export type Theme = 'dark' | 'light';

@@ -1,5 +1,6 @@
-import { Home, Dumbbell, ClipboardCheck, TrendingUp, MessageSquare, LogOut } from 'lucide-react';
+import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
 
 interface BottomNavProps {
@@ -7,39 +8,80 @@ interface BottomNavProps {
   onNavigate: (page: ClientPage) => void;
   isMobile: boolean;
   onLogout?: () => void;
+  unreadCount?: number;
 }
 
-const navItems: { icon: typeof Home; label: string; page: ClientPage }[] = [
-  { icon: Home, label: 'Home', page: 'home' },
-  { icon: Dumbbell, label: 'Program', page: 'program' },
-  { icon: ClipboardCheck, label: 'Check-In', page: 'check-in' },
-  { icon: TrendingUp, label: 'Progress', page: 'progress' },
-  { icon: MessageSquare, label: 'Messages', page: 'messages' },
-];
+const navIcons: Record<string, typeof Home> = {
+  home: Home,
+  program: Zap,
+  calendar: CalendarDays,
+  'check-in': ClipboardCheck,
+  progress: TrendingUp,
+  messages: MessageSquare,
+  invoices: DollarSign,
+  settings: Settings,
+};
 
-export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout }: BottomNavProps) {
+const navPages: ClientPage[] = ['home', 'calendar', 'program', 'progress', 'messages'];
+
+export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout, unreadCount = 0 }: BottomNavProps) {
+  const { t } = useLang();
+
+  const navLabels: Record<string, string> = {
+    home: t.nav.home,
+    program: t.nav.program,
+    calendar: t.nav.calendar,
+    'check-in': t.nav.checkIn,
+    progress: t.nav.progress,
+    messages: t.nav.messages,
+    invoices: t.nav.invoices || 'Invoices',
+    settings: t.nav.settings,
+  };
+
   if (isMobile) {
     return (
       <nav style={styles.bottomBar}>
-        {navItems.map((item) => {
-          const active = currentPage === item.page;
-          const Icon = item.icon;
+        {navPages.map((page) => {
+          const active = currentPage === page;
+          const Icon = navIcons[page];
+          const isCenter = page === 'program';
+
+          if (isCenter) {
+            return (
+              <button
+                key={page}
+                onClick={() => onNavigate(page)}
+                style={styles.centerBtn}
+              >
+                <Icon size={24} />
+              </button>
+            );
+          }
+
           return (
             <button
-              key={item.page}
-              onClick={() => onNavigate(item.page)}
+              key={page}
+              onClick={() => onNavigate(page)}
               style={{
                 ...styles.bottomItem,
                 color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
               }}
             >
-              <Icon size={20} />
-              <span style={{
-                ...styles.bottomLabel,
-                opacity: active ? 1 : 0,
-                maxHeight: active ? '16px' : '0px',
-              }}>
-                {item.label}
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <Icon size={20} />
+                {page === 'messages' && unreadCount > 0 && (
+                  <span style={styles.unreadBadge}>{unreadCount}</span>
+                )}
+              </div>
+              <span
+                style={{
+                  ...styles.bottomLabel,
+                  opacity: active ? 1 : 0,
+                  maxHeight: active ? '16px' : '0px',
+                }}
+                aria-hidden={!active}
+              >
+                {navLabels[page]}
               </span>
             </button>
           );
@@ -48,25 +90,37 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
     );
   }
 
-  // Desktop: slim left sidebar
+  // Desktop: labeled left sidebar
   return (
     <nav style={styles.sideNav}>
+      {/* Logo */}
+      <div style={styles.logoWrap}>
+        <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 36, height: 36, borderRadius: '50%' }} />
+        <div>
+          <div style={styles.logoTitle}>FitCore</div>
+          <div style={styles.logoSub}>CLIENT PORTAL</div>
+        </div>
+      </div>
+
+      {/* Menu label */}
+      <div style={styles.menuLabel}>MENU</div>
+
+      {/* Nav items */}
       <div style={styles.sideNavItems}>
-        {navItems.map((item) => {
-          const active = currentPage === item.page;
-          const Icon = item.icon;
+        {navPages.map((page) => {
+          const active = currentPage === page;
+          const Icon = navIcons[page];
           return (
             <motion.button
-              key={item.page}
-              onClick={() => onNavigate(item.page)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+              key={page}
+              onClick={() => onNavigate(page)}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.97 }}
               style={{
                 ...styles.sideItem,
                 color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
                 background: active ? 'var(--accent-primary-dim)' : 'transparent',
               }}
-              title={item.label}
             >
               {active && (
                 <motion.div
@@ -75,27 +129,91 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout 
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
-              <Icon size={20} />
+              <div style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+                <Icon size={20} style={{ opacity: active ? 1 : 0.5 }} />
+                {page === 'messages' && unreadCount > 0 && (
+                  <span style={styles.unreadBadge}>{unreadCount}</span>
+                )}
+              </div>
+              <span style={{ fontSize: '14px', fontWeight: active ? 600 : 500, opacity: active ? 1 : 0.6 }}>
+                {navLabels[page]}
+              </span>
             </motion.button>
           );
         })}
       </div>
 
-      {onLogout && (
+      {/* Bottom section: invoices + settings + logout */}
+      <div style={styles.bottomSection}>
+        <div style={styles.divider} />
+
+        {/* Invoices */}
         <motion.button
-          onClick={onLogout}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
+          onClick={() => onNavigate('invoices')}
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.97 }}
           style={{
             ...styles.sideItem,
-            color: 'var(--text-tertiary)',
-            background: 'transparent',
+            color: currentPage === 'invoices' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            background: currentPage === 'invoices' ? 'var(--accent-primary-dim)' : 'transparent',
           }}
-          title="Log out"
         >
-          <LogOut size={18} />
+          {currentPage === 'invoices' && (
+            <motion.div
+              layoutId="nav-indicator"
+              style={styles.activeBar}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <DollarSign size={20} style={{ opacity: currentPage === 'invoices' ? 1 : 0.5, flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: currentPage === 'invoices' ? 600 : 500, opacity: currentPage === 'invoices' ? 1 : 0.6 }}>
+            {navLabels.invoices}
+          </span>
         </motion.button>
-      )}
+
+        {/* Settings */}
+        <motion.button
+          onClick={() => onNavigate('settings')}
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            ...styles.sideItem,
+            color: currentPage === 'settings' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            background: currentPage === 'settings' ? 'var(--accent-primary-dim)' : 'transparent',
+          }}
+        >
+          {currentPage === 'settings' && (
+            <motion.div
+              layoutId="nav-indicator"
+              style={styles.activeBar}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <Settings size={20} style={{ opacity: currentPage === 'settings' ? 1 : 0.5, flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: currentPage === 'settings' ? 600 : 500, opacity: currentPage === 'settings' ? 1 : 0.6 }}>
+            {navLabels.settings}
+          </span>
+        </motion.button>
+
+        {/* Logout */}
+        {onLogout && (
+          <motion.button
+            onClick={onLogout}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              ...styles.sideItem,
+              color: 'var(--text-tertiary)',
+              background: 'transparent',
+            }}
+          >
+            <LogOut size={18} style={{ opacity: 0.5, flexShrink: 0 }} />
+            <span style={{ fontSize: '14px', fontWeight: 500, opacity: 0.6 }}>
+              {t.nav.logOut}
+            </span>
+          </motion.button>
+        )}
+      </div>
     </nav>
   );
 }
@@ -137,6 +255,20 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.2s',
     overflow: 'hidden',
   },
+  centerBtn: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '14px',
+    background: 'var(--accent-primary)',
+    color: '#07090e',
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 0 16px rgba(0,229,200,0.3)',
+    flexShrink: 0,
+  },
 
   // Desktop side nav
   sideNav: {
@@ -145,36 +277,63 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: '16px',
-    paddingBottom: '16px',
+    padding: '20px 12px 16px',
     background: 'var(--bg-secondary)',
     borderRight: '1px solid var(--glass-border)',
+  },
+  logoWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '0 8px',
+    marginBottom: '24px',
+  },
+  logoTitle: {
+    fontSize: '18px',
+    fontWeight: 700,
+    letterSpacing: '-0.5px',
+    color: 'var(--text-primary)',
+    lineHeight: 1.2,
+  },
+  logoSub: {
+    fontSize: '9px',
+    fontWeight: 600,
+    letterSpacing: '1.2px',
+    color: 'var(--accent-primary)',
+    textTransform: 'uppercase',
+  },
+  menuLabel: {
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '1px',
+    color: 'var(--text-tertiary)',
+    padding: '0 8px',
+    marginBottom: '8px',
   },
   sideNavItems: {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
-    gap: '8px',
+    gap: '4px',
+    flex: 1,
   },
   sideItem: {
     position: 'relative',
-    width: '44px',
-    height: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 12px',
     borderRadius: 'var(--radius-md)',
     border: 'none',
     background: 'transparent',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     cursor: 'pointer',
     fontFamily: 'var(--font-display)',
     transition: 'all 0.15s',
+    textAlign: 'left',
+    width: '100%',
   },
   activeBar: {
     position: 'absolute',
-    left: '-2px',
+    left: '0px',
     top: '50%',
     transform: 'translateY(-50%)',
     width: '3px',
@@ -182,5 +341,33 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '0 3px 3px 0',
     background: 'var(--accent-primary)',
     boxShadow: '0 0 8px var(--accent-primary-glow)',
+  },
+  bottomSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  divider: {
+    height: '1px',
+    background: 'var(--glass-border)',
+    margin: '8px 0',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: '-6px',
+    right: '-8px',
+    minWidth: '18px',
+    height: '18px',
+    borderRadius: '9px',
+    background: 'var(--accent-danger)',
+    color: '#fff',
+    fontSize: '11px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 4px',
+    lineHeight: 1,
   },
 };

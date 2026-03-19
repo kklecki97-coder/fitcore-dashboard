@@ -1,17 +1,42 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Plus, MoreHorizontal, Copy, BookmarkPlus, Trash2, X,
-  Clock, Users, Dumbbell, Eye,
+  Search, Plus, MoreHorizontal, Copy, Trash2, X,
+  Clock, Dumbbell, Eye, ChevronDown,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
-import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, WorkoutProgram } from '../types';
+import type { WorkoutProgram } from '../types';
+
+// Inline translations (demo has no i18n system)
+const t = {
+  programs: {
+    searchPlaceholder: 'Search programs...',
+    newProgram: 'New Program',
+    new: 'New',
+    viewEdit: 'View / Edit',
+    duplicate: 'Duplicate',
+    delete: 'Delete',
+    deleteProgram: 'Delete Program',
+    deleteConfirm: (name: string) => `Are you sure you want to delete "${name}"?`,
+    cannotBeUndone: 'This action cannot be undone.',
+    confirmDelete: 'Delete',
+    cancel: 'Cancel',
+    noProgramsYet: 'No programs yet. Create your first one!',
+    noProgramsMatch: 'No programs match your search.',
+    days: (n: number) => `${n} day${n === 1 ? '' : 's'}`,
+    exercises: (n: number) => `${n} exercise${n === 1 ? '' : 's'}`,
+    weeks: (n: number) => `${n}w`,
+    created: 'Created',
+  },
+  programBuilder: {
+    showExercises: 'Show exercises',
+    noExercises: 'No exercises',
+  },
+};
 
 interface WorkoutProgramsPageProps {
   programs: WorkoutProgram[];
-  clients: Client[];
   onViewProgram: (id: string) => void;
   onAddProgram: () => void;
   onDeleteProgram: (id: string) => void;
@@ -20,7 +45,7 @@ interface WorkoutProgramsPageProps {
 }
 
 export default function WorkoutProgramsPage({
-  programs, clients, onViewProgram, onAddProgram,
+  programs, onViewProgram, onAddProgram,
   onDeleteProgram, onDuplicateProgram, onUpdateProgram,
 }: WorkoutProgramsPageProps) {
   const isMobile = useIsMobile();
@@ -29,6 +54,7 @@ export default function WorkoutProgramsPage({
   const [filterType, setFilterType] = useState<string>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const closeMenu = useCallback(() => setOpenMenuId(null), []);
   useEffect(() => {
@@ -50,9 +76,6 @@ export default function WorkoutProgramsPage({
   const activeCount = programs.filter(p => p.status === 'active').length;
   const draftCount = programs.filter(p => p.status === 'draft').length;
   const templateCount = programs.filter(p => p.isTemplate).length;
-
-  const getClientNames = (ids: string[]) =>
-    ids.map(id => clients.find(c => c.id === id)).filter(Boolean) as Client[];
 
   const handleSaveAsTemplate = (id: string) => {
     onDuplicateProgram(id);
@@ -82,7 +105,7 @@ export default function WorkoutProgramsPage({
           <Search size={16} color="var(--text-tertiary)" />
           <input
             type="text"
-            placeholder="Search programs..."
+            placeholder={t.programs.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={styles.searchInput}
@@ -90,19 +113,6 @@ export default function WorkoutProgramsPage({
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={styles.filterSelect}>
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="completed">Completed</option>
-          </select>
-
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} style={styles.filterSelect}>
-            <option value="all">All Types</option>
-            <option value="program">Programs</option>
-            <option value="template">Templates</option>
-          </select>
-
           <motion.button
             onClick={onAddProgram}
             style={styles.addBtn}
@@ -110,122 +120,102 @@ export default function WorkoutProgramsPage({
             whileTap={{ scale: 0.98 }}
           >
             <Plus size={16} />
-            <span>{isMobile ? 'New' : 'New Program'}</span>
+            <span>{isMobile ? t.programs.new : t.programs.newProgram}</span>
           </motion.button>
         </div>
-      </div>
-
-      {/* Mini Stats */}
-      <div style={styles.statsRow}>
-        {[
-          { label: 'Active', value: activeCount, color: 'var(--accent-success)', bg: 'var(--accent-success-dim)' },
-          { label: 'Draft', value: draftCount, color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
-          { label: 'Templates', value: templateCount, color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
-          { label: 'Total', value: programs.length, color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
-        ].map(stat => (
-          <div key={stat.label} style={{ ...styles.statChip, background: stat.bg, color: stat.color }}>
-            <span style={styles.statValue}>{stat.value}</span>
-            <span style={styles.statLabel}>{stat.label}</span>
-          </div>
-        ))}
       </div>
 
       {/* Program Cards Grid */}
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))' }}>
         {filtered.map((program, i) => {
-          const assignedClients = getClientNames(program.clientIds);
+          const isExpanded = expandedId === program.id;
           return (
-            <GlassCard key={program.id} delay={i * 0.04} hover onClick={() => onViewProgram(program.id)}>
+            <GlassCard key={program.id} delay={i * 0.04} hover>
               <div style={styles.cardInner}>
                 {/* Header */}
                 <div style={styles.cardHeader}>
-                  <h3 style={styles.cardTitle}>{program.name}</h3>
-                  <div style={{ position: 'relative' }}>
+                  <h3 style={{ ...styles.cardTitle, cursor: 'pointer' }} onClick={() => onViewProgram(program.id)}>{program.name}</h3>
+                  <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === program.id ? null : program.id); }}
-                      style={styles.menuBtn}
+                      onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : program.id); }}
+                      style={{ ...styles.menuBtn, transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}
+                      title={t.programBuilder.showExercises}
                     >
-                      <MoreHorizontal size={16} />
+                      <ChevronDown size={16} />
                     </button>
-                    {openMenuId === program.id && (
-                      <div className="dropdown-menu" style={styles.dropdown} onClick={(e) => e.stopPropagation()}>
-                        <button style={styles.dropdownItem} onClick={() => { onViewProgram(program.id); setOpenMenuId(null); }}>
-                          <Eye size={14} /> View / Edit
-                        </button>
-                        <button style={styles.dropdownItem} onClick={() => { onDuplicateProgram(program.id); setOpenMenuId(null); }}>
-                          <Copy size={14} /> Duplicate
-                        </button>
-                        {!program.isTemplate && (
-                          <button style={styles.dropdownItem} onClick={() => { handleSaveAsTemplate(program.id); setOpenMenuId(null); }}>
-                            <BookmarkPlus size={14} /> Save as Template
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === program.id ? null : program.id); }}
+                        style={styles.menuBtn}
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+                      {openMenuId === program.id && (
+                        <div className="dropdown-menu" style={styles.dropdown} onClick={(e) => e.stopPropagation()}>
+                          <button style={styles.dropdownItem} onClick={() => { onViewProgram(program.id); setOpenMenuId(null); }}>
+                            <Eye size={14} /> {t.programs.viewEdit}
                           </button>
-                        )}
-                        <div style={styles.dropdownDivider} />
-                        <button
-                          style={{ ...styles.dropdownItem, color: 'var(--accent-danger)' }}
-                          onClick={() => { setDeleteConfirm(program.id); setOpenMenuId(null); }}
-                        >
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      </div>
-                    )}
+                          <button style={styles.dropdownItem} onClick={() => { onDuplicateProgram(program.id); setOpenMenuId(null); }}>
+                            <Copy size={14} /> {t.programs.duplicate}
+                          </button>
+                          <div style={styles.dropdownDivider} />
+                          <button
+                            style={{ ...styles.dropdownItem, color: 'var(--accent-danger)' }}
+                            onClick={() => { setDeleteConfirm(program.id); setOpenMenuId(null); }}
+                          >
+                            <Trash2 size={14} /> {t.programs.delete}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Badges */}
                 <div style={styles.badgeRow}>
-                  <span style={{
-                    ...styles.badge,
-                    color: program.status === 'active' ? 'var(--accent-success)' : program.status === 'draft' ? 'var(--accent-secondary)' : 'var(--text-tertiary)',
-                    background: program.status === 'active' ? 'var(--accent-success-dim)' : program.status === 'draft' ? 'var(--accent-secondary-dim)' : 'var(--bg-subtle-hover)',
-                  }}>
-                    {program.status}
+                  <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
+                    <Clock size={11} /> {t.programs.weeks(program.durationWeeks)}
                   </span>
                   <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
-                    <Clock size={11} /> {program.durationWeeks}w
-                  </span>
-                  {program.isTemplate && (
-                    <span style={{ ...styles.badge, color: 'var(--accent-warm)', background: 'var(--accent-warm-dim)' }}>
-                      Template
-                    </span>
-                  )}
-                </div>
-
-                {/* Assigned Clients */}
-                <div style={styles.clientsRow}>
-                  <Users size={13} color="var(--text-tertiary)" />
-                  {assignedClients.length > 0 ? (
-                    <div style={styles.avatarGroup}>
-                      {assignedClients.slice(0, 4).map(c => (
-                        <div key={c.id} style={{ ...styles.miniAvatar, background: getAvatarColor(c.id) }}>
-                          {getInitials(c.name)}
-                        </div>
-                      ))}
-                      {assignedClients.length > 4 && (
-                        <span style={styles.moreClients}>+{assignedClients.length - 4}</span>
-                      )}
-                      <span style={styles.clientNames}>
-                        {assignedClients.slice(0, 2).map(c => c.name.split(' ')[0]).join(', ')}
-                        {assignedClients.length > 2 ? ` +${assignedClients.length - 2}` : ''}
-                      </span>
-                    </div>
-                  ) : (
-                    <span style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>Unassigned</span>
-                  )}
-                </div>
-
-                {/* Summary */}
-                <div style={styles.summaryRow}>
-                  <Dumbbell size={13} color="var(--text-tertiary)" />
-                  <span style={styles.summaryText}>
-                    {program.days.length} {program.days.length === 1 ? 'day' : 'days'}, {totalExercises(program)} exercises
+                    <Dumbbell size={11} /> {t.programs.days(program.days.length)}, {t.programs.exercises(totalExercises(program))}
                   </span>
                 </div>
+
+                {/* Expandable Exercise Details */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={{ borderTop: '1px solid var(--glass-border)', padding: '12px 0 4px' }}>
+                        {program.days.map(day => (
+                          <div key={day.id} style={{ marginBottom: '10px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent-primary)', marginBottom: '4px' }}>
+                              {day.name}
+                            </div>
+                            {day.exercises.length > 0 ? day.exercises.map((ex, ei) => (
+                              <div key={ex.id} style={{ display: 'flex', gap: '6px', alignItems: 'baseline', padding: '2px 0', fontSize: '13px' }}>
+                                <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', minWidth: '18px' }}>{ei + 1}.</span>
+                                <span style={{ color: 'var(--text-primary)' }}>{ex.name}</span>
+                                <span style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>{ex.sets}×{ex.reps}</span>
+                              </div>
+                            )) : (
+                              <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>{t.programBuilder.noExercises}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Footer */}
                 <div style={styles.cardFooter}>
-                  <span style={styles.dateText}>Updated {program.updatedAt}</span>
-                  <span style={styles.dateText}>Created {program.createdAt}</span>
+                  <span style={styles.dateText}>{t.programs.created} {program.createdAt}</span>
                 </div>
               </div>
             </GlassCard>
@@ -237,7 +227,7 @@ export default function WorkoutProgramsPage({
         <div style={styles.empty}>
           <Dumbbell size={40} color="var(--text-tertiary)" />
           <p style={{ color: 'var(--text-secondary)', marginTop: '12px' }}>
-            {programs.length === 0 ? 'No programs yet. Create your first one!' : 'No programs match your filters.'}
+            {programs.length === 0 ? t.programs.noProgramsYet : t.programs.noProgramsMatch}
           </p>
         </div>
       )}
@@ -260,23 +250,22 @@ export default function WorkoutProgramsPage({
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
             >
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Delete Program</h3>
+                <h3 style={styles.modalTitle}>{t.programs.deleteProgram}</h3>
                 <button onClick={() => setDeleteConfirm(null)} style={styles.closeBtn}><X size={16} /></button>
               </div>
               <div style={styles.modalBody}>
                 <p style={{ fontSize: '20px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>
-                    {programs.find(p => p.id === deleteConfirm)?.name}
-                  </strong>? This action cannot be undone.
+                  {t.programs.deleteConfirm(programs.find(p => p.id === deleteConfirm)?.name ?? '')}
+                  {' '}{t.programs.cannotBeUndone}
                 </p>
               </div>
               <div style={styles.modalActions}>
-                <button onClick={() => setDeleteConfirm(null)} style={styles.cancelBtn}>Cancel</button>
+                <button onClick={() => setDeleteConfirm(null)} style={styles.cancelBtn}>{t.programs.cancel}</button>
                 <button
                   onClick={() => { onDeleteProgram(deleteConfirm); setDeleteConfirm(null); }}
                   style={styles.deleteBtn}
                 >
-                  <Trash2 size={14} /> Delete
+                  <Trash2 size={14} /> {t.programs.delete}
                 </button>
               </div>
             </motion.div>
@@ -369,6 +358,7 @@ const styles: Record<string, React.CSSProperties> = {
   grid: {
     display: 'grid',
     gap: '16px',
+    alignItems: 'start',
   },
   cardInner: {
     padding: '20px',
@@ -447,37 +437,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '3px 10px',
     borderRadius: '20px',
     textTransform: 'capitalize',
-  },
-  clientsRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  avatarGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-  },
-  miniAvatar: {
-    width: '24px',
-    height: '24px',
-    borderRadius: '6px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '13px',
-    fontWeight: 700,
-    color: 'var(--text-on-accent)',
-  },
-  moreClients: {
-    fontSize: '15px',
-    color: 'var(--text-tertiary)',
-    marginLeft: '2px',
-  },
-  clientNames: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
-    marginLeft: '4px',
   },
   summaryRow: {
     display: 'flex',

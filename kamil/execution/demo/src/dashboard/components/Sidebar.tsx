@@ -28,7 +28,6 @@ const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = 
   { icon: ClipboardCheck, label: 'Check-Ins', page: 'check-ins' },
   { icon: CreditCard, label: 'Payments', page: 'payments' },
   { icon: BarChart3, label: 'Analytics', page: 'analytics' },
-  { icon: CalendarDays, label: 'Schedule', page: 'schedule' },
 ];
 
 export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach Kamil', onLogout }: SidebarProps) {
@@ -108,14 +107,6 @@ export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach 
           <span style={{ opacity: 0.6 }}>Log Out</span>
         </button>
 
-        {/* Coach Profile */}
-        <div style={styles.coachCard}>
-          <div style={styles.coachAvatar}>{profileName.charAt(0).toUpperCase()}</div>
-          <div>
-            <div style={styles.coachName}>{profileName}</div>
-            <div style={styles.coachPlan}>Pro Plan</div>
-          </div>
-        </div>
       </div>
     </aside>
   );

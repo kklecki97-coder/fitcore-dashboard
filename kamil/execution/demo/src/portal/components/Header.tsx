@@ -1,29 +1,37 @@
-import { Sun, Moon } from 'lucide-react';
-import type { Theme } from '../types';
+import { Settings } from 'lucide-react';
+import { useLang } from '../i18n';
+import type { ClientPage } from '../types';
 
 interface HeaderProps {
   clientName: string;
-  theme: Theme;
-  onThemeChange: (t: Theme) => void;
+  currentPage: ClientPage;
+  onNavigate: (page: ClientPage) => void;
 }
 
-export default function Header({ clientName, theme, onThemeChange }: HeaderProps) {
+export default function Header({ clientName, currentPage, onNavigate }: HeaderProps) {
+  const { t } = useLang();
+
   return (
     <div style={styles.header}>
       <div style={styles.left}>
-        <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+        <img src="/fitcore-logo.png" alt="FitCore" style={{ width: 36, height: 36, borderRadius: '50%' }} />
         <div>
-          <div style={styles.title}>FitCore</div>
+          <div style={styles.title}>{t.header.brandName}</div>
           <div style={styles.subtitle}>{clientName}</div>
         </div>
       </div>
-      <button
-        style={styles.themeBtn}
-        onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
-        title="Toggle theme"
-      >
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-      </button>
+      <div style={styles.right}>
+        <button
+          style={{
+            ...styles.settingsBtn,
+            color: currentPage === 'settings' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+          }}
+          onClick={() => onNavigate(currentPage === 'settings' ? 'home' : 'settings')}
+          title="Settings"
+        >
+          <Settings size={20} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -44,35 +52,28 @@ const styles: Record<string, React.CSSProperties> = {
   left: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
+    gap: '12px',
   },
-  logoIcon: {
-    width: '32px',
-    height: '32px',
-    borderRadius: 'var(--radius-sm)',
-    background: 'var(--accent-primary)',
+  right: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    color: '#07090e',
-    boxShadow: '0 0 16px var(--accent-primary-dim)',
   },
   title: {
-    fontSize: '16px',
+    fontSize: '18px',
     fontWeight: 700,
     letterSpacing: '-0.3px',
     color: 'var(--text-primary)',
   },
   subtitle: {
-    fontSize: '11px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
     fontWeight: 500,
   },
-  themeBtn: {
-    width: '44px',
-    height: '44px',
+  settingsBtn: {
+    width: '40px',
+    height: '40px',
     borderRadius: 'var(--radius-sm)',
-    border: '1px solid var(--glass-border)',
+    border: 'none',
     background: 'transparent',
     color: 'var(--text-secondary)',
     display: 'flex',
