@@ -95,6 +95,9 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const atRiskClients = clients.filter(c => {
     if (c.status === 'paused') return true;
     // No workouts logged in last 7 days
@@ -108,10 +111,6 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
     }
     return false;
   });
-
-  // Pending check-ins: next check-in is today or overdue (not "-")
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
   const pendingCheckIns = clients.filter(c => {
     if (!c.nextCheckIn || c.nextCheckIn === '-') return false;
     const checkInDate = new Date(c.nextCheckIn);
