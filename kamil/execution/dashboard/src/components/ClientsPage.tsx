@@ -270,7 +270,6 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
               <option value="all">{t.clients.allStatuses}</option>
               <option value="active">{t.clients.active}</option>
               <option value="paused">{t.clients.paused}</option>
-              <option value="pending">{t.clients.pending}</option>
             </select>
           </div>
           <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
@@ -305,11 +304,6 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
           <span style={{ color: 'var(--accent-warm)' }}>
             {allClients.filter(c => c.status === 'paused').length}
           </span> {t.clients.paused}
-        </div>
-        <div style={styles.miniStat}>
-          <span style={{ color: 'var(--accent-secondary)' }}>
-            {allClients.filter(c => c.status === 'pending').length}
-          </span> {t.clients.pending}
         </div>
         <div style={styles.miniStat}>
           <span style={{ color: 'var(--text-primary)' }}>
