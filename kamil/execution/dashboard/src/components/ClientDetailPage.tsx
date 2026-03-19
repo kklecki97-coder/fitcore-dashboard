@@ -19,7 +19,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import { calculateMetricChange, buildLiftData, buildClientRadarData } from '../utils/client-metrics';
+import { calculateMetricChange, buildClientRadarData } from '../utils/client-metrics';
 import { getLocale } from '../lib/locale';
 import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
 
@@ -102,10 +102,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   const dateLocale = getLocale(lang);
 
   const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
-  const weightData = client.metrics.weight.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));
   const bfData = client.metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
-
-  const liftData = buildLiftData(client, months);
 
   const weightMetric = calculateMetricChange(client.metrics.weight);
   const hasWeight = client.metrics.weight.length > 0;
@@ -565,57 +562,21 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
         </GlassCard>
       </div>
 
-      {/* Charts */}
-      <div style={{ ...styles.chartsGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
-        {/* Weight + Body Fat */}
-        <GlassCard delay={0.2}>
-          <h3 style={styles.chartTitle}>{t.clientDetail.weight} & {t.clientDetail.bodyFat} Trend</h3>
-          <div style={{ height: 240, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={weightData}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} />
-                <Tooltip
-                  contentStyle={{
-                    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
-                    borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
-                    fontSize: '18px', fontFamily: 'Outfit',
-                  }}
-                />
-                <Line type="monotone" dataKey="value" stroke="#00e5c8" strokeWidth={2.5} dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} name={`${t.clientDetail.weight} (kg)`} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-
-        {/* Lifts */}
-        <GlassCard delay={0.25}>
-          <h3 style={styles.chartTitle}>{t.clientDetail.strengthProfile}</h3>
-          <div style={{ height: 240, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={liftData}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={[(min: number) => Math.floor(min - 5), (max: number) => Math.ceil(max + 5)]} />
-                <Tooltip
-                  contentStyle={{
-                    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
-                    borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
-                    fontSize: '18px', fontFamily: 'Outfit',
-                  }}
-                />
-                <Line type="monotone" dataKey="bench" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name={`${t.clientDetail.benchPress} (kg)`} />
-                <Line type="monotone" dataKey="squat" stroke="#00e5c8" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name={`${t.clientDetail.squat} (kg)`} />
-                <Line type="monotone" dataKey="deadlift" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} name={`${t.clientDetail.deadlift} (kg)`} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div style={styles.chartLegend}>
-            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#6366f1' }} />{t.clientDetail.benchPress}</span>
-            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#00e5c8' }} />{t.clientDetail.squat}</span>
-            <span style={styles.legendItem}><span style={{ ...styles.legendDot, background: '#f59e0b' }} />{t.clientDetail.deadlift}</span>
-          </div>
-        </GlassCard>
-      </div>
+      {/* Smart Insights (replaces weight/bf trend + strength profile charts) */}
+      <ClientInsights
+        client={client}
+        workoutLogs={workoutLogs}
+        setLogs={setLogs}
+        checkIns={checkIns}
+        program={assignedPrograms.find(p => p.status === 'active') ?? assignedPrograms[0] ?? null}
+        t={{
+          insightsTitle: t.clientDetail.insightsTitle,
+          insightsSub: t.clientDetail.insightsSub,
+          showMore: t.clientDetail.showMore,
+          showLess: t.clientDetail.showLess,
+          noInsights: t.clientDetail.noInsights,
+        }}
+      />
 
       {/* Training History */}
       {(() => {
@@ -1085,22 +1046,6 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           </GlassCard>
         );
       })()}
-
-      {/* Smart Insights */}
-      <ClientInsights
-        client={client}
-        workoutLogs={workoutLogs}
-        setLogs={setLogs}
-        checkIns={checkIns}
-        program={assignedPrograms.find(p => p.status === 'active') ?? assignedPrograms[0] ?? null}
-        t={{
-          insightsTitle: t.clientDetail.insightsTitle,
-          insightsSub: t.clientDetail.insightsSub,
-          showMore: t.clientDetail.showMore,
-          showLess: t.clientDetail.showLess,
-          noInsights: t.clientDetail.noInsights,
-        }}
-      />
 
       {/* Activity Timeline */}
       {client.activityLog && client.activityLog.length > 0 && (
