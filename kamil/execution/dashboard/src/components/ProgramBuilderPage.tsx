@@ -7,6 +7,7 @@ import {
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { useToast } from './Toast';
 import type { WorkoutProgram, WorkoutDay, Exercise } from '../types';
 
 interface ProgramBuilderPageProps {
@@ -114,6 +115,7 @@ export default function ProgramBuilderPage({
 }: ProgramBuilderPageProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
+  const { showToast } = useToast();
 
   const [draft, setDraft] = useState<WorkoutProgram>(() => {
     if (program) return JSON.parse(JSON.stringify(program));
@@ -316,7 +318,7 @@ export default function ProgramBuilderPage({
   // ── Save ──
   const handleSave = () => {
     if (!draft.name.trim()) {
-      alert(t.programBuilder.enterProgramName);
+      showToast(t.programBuilder.enterProgramName, 'error');
       return;
     }
     const updated = { ...draft, updatedAt: new Date().toISOString().split('T')[0] };

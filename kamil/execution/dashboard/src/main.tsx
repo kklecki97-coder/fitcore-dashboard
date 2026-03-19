@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { I18nProvider, useLang } from './i18n'
+import { ToastProvider } from './components/Toast'
 import './index.css'
 import App from './App.tsx'
 
@@ -50,9 +51,11 @@ function AppRoutes() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </ToastProvider>
     </I18nProvider>
   </StrictMode>,
 )

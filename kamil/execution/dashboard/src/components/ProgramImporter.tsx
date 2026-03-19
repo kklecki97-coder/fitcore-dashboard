@@ -174,7 +174,7 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
             </ul>
           </div>
         </GlassCard>
-      ) : (
+      ) : preview ? (
         <>
           {/* Preview */}
           <GlassCard delay={0.1}>
@@ -263,7 +263,7 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
             </div>
           </GlassCard>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

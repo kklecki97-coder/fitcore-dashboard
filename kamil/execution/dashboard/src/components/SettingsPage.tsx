@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, User, Bell, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Eye, EyeOff, Package, Plus, Edit3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useToast } from './Toast';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
@@ -35,6 +36,7 @@ type SettingsTab = 'profile' | 'payments' | 'notifications' | 'security' | 'appe
 export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, notifications, onNotificationsChange, plans, onAddPlan, onUpdatePlan, onDeletePlan }: SettingsPageProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
+  const { showToast } = useToast();
 
   // Tab state
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
@@ -129,13 +131,13 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
       const { data, error } = await supabase.functions.invoke('create-connect-account');
       if (error) {
         console.error('Stripe Connect error:', error);
-        alert('Stripe Connect error: ' + (error.message || JSON.stringify(error)));
+        showToast('Stripe Connect error: ' + (error.message || JSON.stringify(error)), 'error');
         setStripeConnectLoading(false);
         return;
       }
       if (data?.error) {
         console.error('Stripe Connect error:', data.error);
-        alert('Stripe Connect error: ' + data.error);
+        showToast('Stripe Connect error: ' + data.error, 'error');
         setStripeConnectLoading(false);
         return;
       }
@@ -150,7 +152,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
       }
     } catch (err) {
       console.error('Stripe Connect error:', err);
-      alert('Stripe Connect error: ' + (err instanceof Error ? err.message : String(err)));
+      showToast('Stripe Connect error: ' + (err instanceof Error ? err.message : String(err)), 'error');
     }
     setStripeConnectLoading(false);
   };
