@@ -448,8 +448,8 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                 <span>Since {client.startDate}</span>
               </div>
               <div style={{ ...styles.profileTags, flexWrap: 'wrap' }}>
-                <span style={{ ...styles.planTag, color: planColors[client.plan].color, background: planColors[client.plan].bg }}>
-                  {planLabelMap[client.plan]}
+                <span style={{ ...styles.planTag, color: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).color, background: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).bg }}>
+                  {planLabelMap[client.plan] || client.plan}
                 </span>
                 <span style={styles.statusTag}>
                   {client.status === 'active' && <Flame size={12} color="var(--accent-success)" />}

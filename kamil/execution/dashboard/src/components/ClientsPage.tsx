@@ -181,31 +181,31 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
     }
   };
 
-  const planBadge = (plan: Client['plan']) => {
+  const planBadge = (plan: string) => {
     const colors: Record<string, { color: string; bg: string }> = {
       Elite: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
       Premium: { color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
       Basic: { color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
     };
-    return colors[plan];
+    return colors[plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' };
   };
 
-  const statusLabel = (status: Client['status']) => {
-    const map: Record<Client['status'], string> = {
+  const statusLabel = (status: string) => {
+    const map: Record<string, string> = {
       active: t.clients.active,
       paused: t.clients.paused,
       pending: t.clients.pending,
     };
-    return map[status];
+    return map[status] || status;
   };
 
-  const planLabel = (plan: Client['plan']) => {
-    const map: Record<Client['plan'], string> = {
+  const planLabel = (plan: string) => {
+    const map: Record<string, string> = {
       Basic: t.clients.basic,
       Premium: t.clients.premium,
       Elite: t.clients.elite,
     };
-    return map[plan];
+    return map[plan] || plan;
   };
 
   const handleTogglePause = (clientId: string) => {
