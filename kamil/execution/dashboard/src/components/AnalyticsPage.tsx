@@ -178,9 +178,9 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   ];
 
   const tooltipStyle = {
-    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
-    borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
-    fontSize: '18px',
+    background: '#1a1d24', border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '10px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+    fontSize: '14px', color: '#e0e0e0',
   };
 
   if (clients.length === 0) {
