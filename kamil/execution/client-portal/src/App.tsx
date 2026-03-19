@@ -176,12 +176,9 @@ function App() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(null);
   const { showToast } = useToast();
-  const [toastError, setToastError] = useState<string | null>(null);
 
   const showError = (msg: string) => {
     showToast(msg, 'error');
-    setToastError(msg);
-    setTimeout(() => setToastError(null), 6000);
   };
 
 
@@ -1242,20 +1239,6 @@ function App() {
     {/* Confetti celebration for workout completion */}
     <Confetti active={showConfetti} />
 
-    {/* Error toast - Fix #20: click to dismiss, 6s timeout */}
-    {toastError && (
-      <div
-        onClick={() => setToastError(null)}
-        style={{
-          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          background: '#dc2626', color: '#fff', padding: '12px 24px', borderRadius: 12,
-          fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-display)',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.4)', zIndex: 9999, cursor: 'pointer',
-        }}
-      >
-        {toastError}
-      </div>
-    )}
     {/* Client onboarding walkthrough */}
     {showWalkthrough && (
       <OnboardingWalkthrough
