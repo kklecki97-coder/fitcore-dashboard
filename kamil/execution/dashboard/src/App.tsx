@@ -100,6 +100,7 @@ function App() {
   const [allWorkoutLogs, setAllWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [allSetLogs, setAllSetLogs] = useState<WorkoutSetLog[]>([]);
   const [allPlans, setAllPlans] = useState<CoachingPlan[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // ── Load data from Supabase on login ──
   useEffect(() => {
@@ -373,7 +374,13 @@ function App() {
         loadWorkoutLogs(),
         loadSetLogs(),
         loadPlans(),
-      ]).finally(() => setDataLoading(false));
+      ]).finally(() => {
+        setDataLoading(false);
+        // Show onboarding for first-time coaches (no clients, not seen before)
+        if (clientsList.length === 0 && !localStorage.getItem('fitcore-onboarding-done')) {
+          setShowOnboarding(true);
+        }
+      });
     });
   }, [isLoggedIn]);
 
@@ -1096,6 +1103,20 @@ function App() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Onboarding walkthrough for new coaches */}
+      {showOnboarding && (
+        <OnboardingWalkthrough
+          onComplete={() => {
+            setShowOnboarding(false);
+            localStorage.setItem('fitcore-onboarding-done', 'true');
+          }}
+          onSkip={() => {
+            setShowOnboarding(false);
+            localStorage.setItem('fitcore-onboarding-done', 'true');
+          }}
+        />
+      )}
     </div>
     </ErrorBoundary>
   );

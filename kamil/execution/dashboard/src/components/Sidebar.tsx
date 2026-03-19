@@ -77,6 +77,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarPr
           return (
             <motion.button
               key={item.page}
+              data-tour={`nav-${item.page}`}
               onClick={() => onNavigate(item.page)}
               style={{
                 ...styles.navItem,
@@ -109,6 +110,7 @@ export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarPr
         </button>
 
         <motion.button
+          data-tour="nav-settings"
           onClick={() => onNavigate('settings')}
           style={{
             ...styles.navItem,
