@@ -102,8 +102,12 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
             ...(currentStep.position === 'right' && targetRect ? {
               position: 'fixed',
               left: targetRect.right + 20,
-              top: targetRect.top + targetRect.height / 2 - 80,
+              // If target is in bottom half of screen, show tooltip above it
+              ...(targetRect.top > window.innerHeight / 2
+                ? { bottom: window.innerHeight - targetRect.top - targetRect.height / 2 }
+                : { top: targetRect.top }),
               zIndex: 10002,
+              maxHeight: '90vh',
             } : {}),
           }}
         >
