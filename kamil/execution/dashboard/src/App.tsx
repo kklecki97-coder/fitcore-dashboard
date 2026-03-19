@@ -17,6 +17,7 @@ import ProgramImporter from './components/ProgramImporter';
 import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
+import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { exerciseLibrary } from './data';
@@ -702,6 +703,12 @@ function App() {
     }
   };
 
+  const handleDeleteInvoice = async (id: string) => {
+    setAllInvoices(prev => prev.filter(inv => inv.id !== id));
+    const { error } = await supabase.from('invoices').delete().eq('id', id);
+    if (error) console.error('handleDeleteInvoice failed:', error);
+  };
+
   const handleAddInvoice = async (invoice: Invoice) => {
     setAllInvoices(prev => [...prev, invoice]);
     const { data: { user } } = await supabase.auth.getUser();
@@ -836,166 +843,188 @@ function App() {
   };
 
   const renderPage = () => {
+    // Each page wrapped in ErrorBoundary so one page crash doesn't kill the whole app
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
       case 'clients':
         return (
-          <ClientsPage
-            clients={allClients}
-            programs={allPrograms}
-            plans={allPlans}
-            onViewClient={handleViewClient}
-            onNavigate={handleNavigate}
-            onUpdateClient={handleUpdateClient}
-            onDeleteClient={handleDeleteClient}
-          />
+          <ErrorBoundary>
+            <ClientsPage
+              clients={allClients}
+              programs={allPrograms}
+              plans={allPlans}
+              onViewClient={handleViewClient}
+              onNavigate={handleNavigate}
+              onUpdateClient={handleUpdateClient}
+              onDeleteClient={handleDeleteClient}
+            />
+          </ErrorBoundary>
         );
       case 'client-detail':
         return (
-          <ClientDetailPage
-            clientId={selectedClientId}
-            clients={allClients}
-            programs={allPrograms}
-            plans={allPlans}
-            workoutLogs={allWorkoutLogs}
-            setLogs={allSetLogs}
-            checkIns={allCheckIns}
-            onBack={handleBackFromClient}
-            backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
-            onUpdateClient={handleUpdateClient}
-            onSendMessage={handleSendMessage}
-            onUpdateProgram={handleUpdateProgram}
-            onUpdateCheckIn={handleUpdateCheckIn}
-            onAddCheckIn={handleAddCheckIn}
-          />
+          <ErrorBoundary>
+            <ClientDetailPage
+              clientId={selectedClientId}
+              clients={allClients}
+              programs={allPrograms}
+              plans={allPlans}
+              workoutLogs={allWorkoutLogs}
+              setLogs={allSetLogs}
+              checkIns={allCheckIns}
+              onBack={handleBackFromClient}
+              backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
+              onUpdateClient={handleUpdateClient}
+              onSendMessage={handleSendMessage}
+              onUpdateProgram={handleUpdateProgram}
+              onUpdateCheckIn={handleUpdateCheckIn}
+              onAddCheckIn={handleAddCheckIn}
+            />
+          </ErrorBoundary>
         );
       case 'messages':
-        return <MessagesPage isMobile={isMobile} clients={allClients} messages={allMessages} onSendMessage={handleSendMessage} />;
+        return <ErrorBoundary><MessagesPage isMobile={isMobile} clients={allClients} messages={allMessages} onSendMessage={handleSendMessage} /></ErrorBoundary>;
       case 'analytics':
-        return <AnalyticsPage clients={allClients} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} />;
+        return <ErrorBoundary><AnalyticsPage clients={allClients} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} /></ErrorBoundary>;
       case 'programs':
         return (
-          <WorkoutProgramsPage
-            programs={allPrograms}
-            onViewProgram={handleViewProgram}
-            onAddProgram={() => { setSelectedProgramId(''); setCurrentPage('program-create-chooser'); }}
-            onDeleteProgram={handleDeleteProgram}
-            onDuplicateProgram={handleDuplicateProgram}
-            onUpdateProgram={handleUpdateProgram}
-          />
+          <ErrorBoundary>
+            <WorkoutProgramsPage
+              programs={allPrograms}
+              onViewProgram={handleViewProgram}
+              onAddProgram={() => { setSelectedProgramId(''); setCurrentPage('program-create-chooser'); }}
+              onDeleteProgram={handleDeleteProgram}
+              onDuplicateProgram={handleDuplicateProgram}
+              onUpdateProgram={handleUpdateProgram}
+            />
+          </ErrorBoundary>
         );
       case 'program-create-chooser':
         return (
-          <ProgramCreateChooser
-            onChooseManual={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
-            onChooseAI={() => setCurrentPage('ai-program-creator')}
-            onChooseImport={() => setCurrentPage('program-import')}
-            onBack={() => setCurrentPage('programs')}
-          />
+          <ErrorBoundary>
+            <ProgramCreateChooser
+              onChooseManual={() => { setSelectedProgramId(''); setCurrentPage('program-builder'); }}
+              onChooseAI={() => setCurrentPage('ai-program-creator')}
+              onChooseImport={() => setCurrentPage('program-import')}
+              onBack={() => setCurrentPage('programs')}
+            />
+          </ErrorBoundary>
         );
       case 'ai-program-creator':
         return (
-          <AIProgramCreator
-            clients={allClients}
-            onGenerated={(program: WorkoutProgram) => {
-              // AI generated a program - open it in the builder so coach can review & edit
-              handleAddProgram(program);
-              setSelectedProgramId(program.id);
-              setCurrentPage('program-builder');
-            }}
-            onBack={() => setCurrentPage('program-create-chooser')}
-          />
+          <ErrorBoundary>
+            <AIProgramCreator
+              clients={allClients}
+              onGenerated={(program: WorkoutProgram) => {
+                // AI generated a program - open it in the builder so coach can review & edit
+                handleAddProgram(program);
+                setSelectedProgramId(program.id);
+                setCurrentPage('program-builder');
+              }}
+              onBack={() => setCurrentPage('program-create-chooser')}
+            />
+          </ErrorBoundary>
         );
       case 'program-import':
         return (
-          <ProgramImporter
-            onImported={(program: WorkoutProgram) => {
-              handleAddProgram(program);
-              setSelectedProgramId(program.id);
-              setCurrentPage('program-builder');
-            }}
-            onBack={() => setCurrentPage('program-create-chooser')}
-          />
+          <ErrorBoundary>
+            <ProgramImporter
+              onImported={(program: WorkoutProgram) => {
+                handleAddProgram(program);
+                setSelectedProgramId(program.id);
+                setCurrentPage('program-builder');
+              }}
+              onBack={() => setCurrentPage('program-create-chooser')}
+            />
+          </ErrorBoundary>
         );
       case 'program-builder':
         return (
-          <ProgramBuilderPage
-            program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : null}
-            exerciseLibrary={exerciseLibrary}
-            onSave={(program: WorkoutProgram) => {
-              if (allPrograms.find(p => p.id === program.id)) {
-                handleUpdateProgram(program.id, program);
-              } else {
-                handleAddProgram(program);
-              }
-              setCurrentPage('programs');
-            }}
-            onBack={handleBackFromProgram}
-            backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
-          />
+          <ErrorBoundary>
+            <ProgramBuilderPage
+              program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : null}
+              exerciseLibrary={exerciseLibrary}
+              onSave={(program: WorkoutProgram) => {
+                if (allPrograms.find(p => p.id === program.id)) {
+                  handleUpdateProgram(program.id, program);
+                } else {
+                  handleAddProgram(program);
+                }
+                setCurrentPage('programs');
+              }}
+              onBack={handleBackFromProgram}
+              backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
+            />
+          </ErrorBoundary>
         );
       case 'payments':
         return (
-          <PaymentsPage
-            clients={allClients}
-            invoices={allInvoices}
-            plans={allPlans}
-            onUpdateInvoice={handleUpdateInvoice}
-            onAddInvoice={handleAddInvoice}
-            onViewClient={handleViewClient}
-          />
+          <ErrorBoundary>
+            <PaymentsPage
+              clients={allClients}
+              invoices={allInvoices}
+              plans={allPlans}
+              onUpdateInvoice={handleUpdateInvoice}
+              onAddInvoice={handleAddInvoice}
+              onDeleteInvoice={handleDeleteInvoice}
+              onViewClient={handleViewClient}
+            />
+          </ErrorBoundary>
         );
       case 'check-ins':
         return (
-          <CheckInsPage
-            clients={allClients}
-            checkIns={allCheckIns}
-            onUpdateCheckIn={handleUpdateCheckIn}
-            onViewClient={handleViewClient}
-            onSendMessage={handleSendMessage}
-            onNavigate={handleNavigate}
-          />
+          <ErrorBoundary>
+            <CheckInsPage
+              clients={allClients}
+              checkIns={allCheckIns}
+              onUpdateCheckIn={handleUpdateCheckIn}
+              onViewClient={handleViewClient}
+              onSendMessage={handleSendMessage}
+              onNavigate={handleNavigate}
+            />
+          </ErrorBoundary>
         );
       case 'settings':
         return (
-          <SettingsPage
-            theme={theme}
-            onThemeChange={setTheme}
-            profileName={profileName}
-            profileEmail={profileEmail}
-            onProfileChange={async (name, email) => {
-              setProfileName(name);
-              setProfileEmail(email);
-              // Persist to Supabase Auth + coaches table
-              await supabase.auth.updateUser({ data: { name } });
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                await supabase.from('coaches').update({ name }).eq('id', user.id);
-              }
-            }}
-            profilePhoto={profilePhoto}
-            onPhotoChange={async (file: File) => {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user) return;
-              const path = `avatars/${user.id}`;
-              const { error: uploadErr } = await supabase.storage.from('coach-avatars').upload(path, file, { upsert: true });
-              if (uploadErr) { console.error('Photo upload failed:', uploadErr); /* TODO: error tracking (Sentry) */ alert('Photo upload failed. Please try again.'); return; }
-              const { data: urlData } = supabase.storage.from('coach-avatars').getPublicUrl(path);
-              const url = urlData.publicUrl + '?t=' + Date.now(); // cache-bust
-              await supabase.from('coaches').update({ avatar_url: url }).eq('id', user.id);
-              setProfilePhoto(url);
-            }}
-            notifications={notifications}
-            onNotificationsChange={setNotifications}
-            plans={allPlans}
-            onAddPlan={handleAddPlan}
-            onUpdatePlan={handleUpdatePlan}
-            onDeletePlan={handleDeletePlan}
-          />
+          <ErrorBoundary>
+            <SettingsPage
+              theme={theme}
+              onThemeChange={setTheme}
+              profileName={profileName}
+              profileEmail={profileEmail}
+              onProfileChange={async (name, email) => {
+                setProfileName(name);
+                setProfileEmail(email);
+                // Persist to Supabase Auth + coaches table
+                await supabase.auth.updateUser({ data: { name } });
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  await supabase.from('coaches').update({ name }).eq('id', user.id);
+                }
+              }}
+              profilePhoto={profilePhoto}
+              onPhotoChange={async (file: File) => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+                const path = `avatars/${user.id}`;
+                const { error: uploadErr } = await supabase.storage.from('coach-avatars').upload(path, file, { upsert: true });
+                if (uploadErr) { console.error('Photo upload failed:', uploadErr); /* TODO: error tracking (Sentry) */ alert('Photo upload failed. Please try again.'); return; }
+                const { data: urlData } = supabase.storage.from('coach-avatars').getPublicUrl(path);
+                const url = urlData.publicUrl + '?t=' + Date.now(); // cache-bust
+                await supabase.from('coaches').update({ avatar_url: url }).eq('id', user.id);
+                setProfilePhoto(url);
+              }}
+              notifications={notifications}
+              onNotificationsChange={setNotifications}
+              plans={allPlans}
+              onAddPlan={handleAddPlan}
+              onUpdatePlan={handleUpdatePlan}
+              onDeletePlan={handleDeletePlan}
+            />
+          </ErrorBoundary>
         );
       default:
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
     }
   };
 

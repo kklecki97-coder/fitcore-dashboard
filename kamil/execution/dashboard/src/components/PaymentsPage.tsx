@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, CheckCircle2, Clock, AlertTriangle,
   Search, Filter, Send, X, ChevronDown, ChevronUp,
-  TrendingUp, TrendingDown,
+  TrendingUp, TrendingDown, Trash2,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
@@ -18,6 +18,7 @@ interface PaymentsPageProps {
   plans: CoachingPlan[];
   onUpdateInvoice: (id: string, updates: Partial<Invoice>) => void;
   onAddInvoice: (invoice: Invoice) => void;
+  onDeleteInvoice: (id: string) => void;
   onViewClient: (id: string) => void;
 }
 
@@ -25,7 +26,7 @@ type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
 // onUpdateInvoice reserved for future manual payment marking
-export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
+export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onDeleteInvoice, onViewClient }: PaymentsPageProps) {
   const { lang, t } = useLang();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
@@ -37,6 +38,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
   const [reminderDraft, setReminderDraft] = useState('');
   const [reminderSent, setReminderSent] = useState(false);
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; clientName: string; period: string; amount: number } | null>(null);
 
   // ── Status label helper ──
   const statusLabel = (s: string) => {
@@ -295,11 +297,20 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                         <div style={styles.clientNameLink} onClick={(e) => { e.stopPropagation(); onViewClient(inv.clientId); }}>{inv.clientName}</div>
                         <div style={styles.mobileCardMeta}>{inv.period} &middot; {inv.plan}</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={styles.amount}>{formatCurrency(inv.amount, lang)}</div>
-                        <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
-                          {statusLabel(inv.status)}
-                        </span>
+                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div>
+                          <div style={styles.amount}>{formatCurrency(inv.amount, lang)}</div>
+                          <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
+                            {statusLabel(inv.status)}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: inv.id, clientName: inv.clientName, period: inv.period, amount: inv.amount }); }}
+                          style={styles.deleteBtn}
+                          title={t.payments.deleteInvoice ?? 'Delete invoice'}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -339,6 +350,13 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </span>
                       )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ id: inv.id, clientName: inv.clientName, period: inv.period, amount: inv.amount }); }}
+                        style={styles.deleteBtn}
+                        title={t.payments.deleteInvoice ?? 'Delete invoice'}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </span>
                   </>
                 )}
@@ -547,6 +565,51 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                     </div>
                   </>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Invoice Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={styles.modalOverlay}
+            onClick={() => setDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              style={{ ...styles.modal, width: isMobile ? 'calc(100% - 32px)' : '400px' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={styles.modalHeader}>
+                <h3 style={{ ...styles.modalTitle, fontSize: '18px' }}>{t.payments.deleteInvoice ?? 'Delete Invoice'}</h3>
+                <button style={styles.closeBtn} onClick={() => setDeleteConfirm(null)}><X size={16} /></button>
+              </div>
+              <div style={styles.modalBody}>
+                <p style={{ fontSize: '15px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                  {t.payments.deleteConfirmMessage
+                    ? t.payments.deleteConfirmMessage(deleteConfirm.clientName, deleteConfirm.period, formatCurrency(deleteConfirm.amount, lang))
+                    : `Are you sure you want to delete the invoice for ${deleteConfirm.clientName} (${deleteConfirm.period} — ${formatCurrency(deleteConfirm.amount, lang)})? This cannot be undone.`}
+                </p>
+                <div style={styles.modalActions}>
+                  <button onClick={() => setDeleteConfirm(null)} style={styles.cancelBtn}>
+                    {t.common.cancel}
+                  </button>
+                  <button
+                    onClick={() => { onDeleteInvoice(deleteConfirm.id); setDeleteConfirm(null); }}
+                    style={styles.deletePrimaryBtn}
+                  >
+                    <Trash2 size={14} />
+                    {t.payments.delete ?? 'Delete'}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -996,6 +1059,35 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
     marginBottom: '8px',
+  },
+  deleteBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '30px',
+    height: '30px',
+    borderRadius: '6px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    flexShrink: 0,
+    opacity: 0.5,
+  },
+  deletePrimaryBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-danger)',
+    border: 'none',
+    color: '#fff',
+    fontSize: '18px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
   },
   historyRow: {
     display: 'flex',
