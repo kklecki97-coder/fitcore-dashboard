@@ -117,6 +117,10 @@ export const pl: Translations = {
     welcomeTitle: 'Witaj w FitCore',
     welcomeSub: 'Dodaj pierwszego klienta, aby rozpocząć. Dashboard ożyje z prawdziwymi danymi.',
     getStarted: 'Dodaj pierwszego klienta',
+    greetingMorning: (name: string) => `Dzień dobry, ${name}`,
+    greetingAfternoon: (name: string) => `Miłego popołudnia, ${name}`,
+    greetingEvening: (name: string) => `Dobry wieczór, ${name}`,
+    greetingNight: (name: string) => `Nocna sesja, ${name}`,
   },
 
   clients: {

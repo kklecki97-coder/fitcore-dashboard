@@ -115,6 +115,10 @@ export const en = {
     welcomeTitle: 'Welcome to FitCore',
     welcomeSub: 'Add your first client to get started. Your dashboard will come alive with real data.',
     getStarted: 'Add Your First Client',
+    greetingMorning: (name: string) => `Good morning, ${name}`,
+    greetingAfternoon: (name: string) => `Good afternoon, ${name}`,
+    greetingEvening: (name: string) => `Good evening, ${name}`,
+    greetingNight: (name: string) => `Burning the midnight oil, ${name}`,
   },
 
   clients: {
