@@ -25,6 +25,7 @@ export const pl: Translations = {
     subtitle: 'Zarządzaj klientami, dostarczaj programy i pobieraj płatności — z jednego prostego dashboardu. Skup się na klientach — resztą zajmie się system.',
     ctaPrimary: 'Zobacz co dostajesz',
     ctaSecondary: 'Umów rozmowę',
+    ctaDemo: 'Wypróbuj Demo',
   },
 
   pain: {

@@ -23,6 +23,7 @@ export const en = {
     subtitle: 'Manage clients, deliver programs, and get paid — all from one simple dashboard. Less admin, more coaching, more revenue.',
     ctaPrimary: 'See What You Get',
     ctaSecondary: 'Book a Call',
+    ctaDemo: 'Try Live Demo',
   },
 
   pain: {

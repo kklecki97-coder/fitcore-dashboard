@@ -511,12 +511,24 @@ export default function App() {
             >
               {t.hero.ctaPrimary} <ArrowRight size={18} />
             </a>
-            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+            <a href="https://demofitcore.tech" target="_blank" rel="noopener noreferrer" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
-              color: 'var(--text-primary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
+              background: 'var(--bg-card)', border: '1px solid rgba(0, 229, 200, 0.3)',
+              color: 'var(--accent-primary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
               fontWeight: 600, fontSize: 16, textDecoration: 'none', letterSpacing: 0.3,
               backdropFilter: 'blur(20px)', transition: 'border-color 0.2s, transform 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.3)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {t.hero.ctaDemo} <ArrowRight size={18} />
+            </a>
+            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: 'transparent', border: '1px solid var(--glass-border)',
+              color: 'var(--text-secondary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
+              fontWeight: 600, fontSize: 16, textDecoration: 'none', letterSpacing: 0.3,
+              transition: 'border-color 0.2s, transform 0.2s',
             }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--glass-border-hover)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--glass-border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
