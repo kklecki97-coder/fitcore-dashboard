@@ -700,15 +700,18 @@ function App() {
     };
     setWorkoutLogs(prev => [...prev, newLog]);
     if (USE_MOCK_DATA) return;
-    const { error } = await supabase.from('workout_logs').insert({
+    console.log('DEBUG workout_logs insert:', { id: newLog.id, client_id: clientUser.id, type: newLog.type, date: newLog.date });
+    const { error, data: insertData } = await supabase.from('workout_logs').insert({
       id: newLog.id,
       client_id: clientUser.id,
       type: newLog.type,
       duration: newLog.duration,
       date: newLog.date,
       completed: true,
-    });
+    }).select();
+    console.log('DEBUG workout_logs result:', { insertData, error });
     if (error) {
+      console.error('workout_logs insert failed:', error);
       setWorkoutLogs(prev => prev.filter(l => l.id !== newLog.id));
       showError('Failed to log workout');
     }
