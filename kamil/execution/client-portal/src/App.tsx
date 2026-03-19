@@ -710,7 +710,7 @@ function App() {
     });
   };
 
-  const handleLogWorkout = async (type: string, date: string) => {
+  const handleLogWorkout = async (type: string, date: string, durationMinutes?: number) => {
     if (!clientUser) {
       showError('Failed to log workout');
       return;
@@ -720,7 +720,7 @@ function App() {
       clientId: clientUser.id,
       clientName: clientUser.name,
       type,
-      duration: 0,
+      duration: durationMinutes ?? 0,
       date,
       completed: true,
     };

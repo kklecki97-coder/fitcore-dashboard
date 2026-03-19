@@ -9,7 +9,7 @@ interface ProgramPageProps {
   program: WorkoutProgram | null;
   setLogs: WorkoutSetLog[];
   onLogSet: (log: WorkoutSetLog) => void;
-  onLogWorkout: (type: string, date: string) => void;
+  onLogWorkout: (type: string, date: string, durationMinutes?: number) => void;
   onRemoveWorkout: (type: string, date: string) => void;
   onRemoveLog: (exerciseId: string, setNumber: number, date: string) => void;
   onUpdateLog: (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => void;
@@ -181,7 +181,8 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
   const alreadyLogged = workoutLogs.some(l => l.type === day.name && l.date === todayStr && l.completed);
   useEffect(() => {
     if (allDone && isTodaysWorkout && !alreadyLogged) {
-      onLogWorkout(day.name, todayStr);
+      const durationMin = workoutElapsed > 0 ? Math.round(workoutElapsed / 60) : undefined;
+      onLogWorkout(day.name, todayStr, durationMin);
     }
   }, [allDone, isTodaysWorkout, alreadyLogged]);
 
@@ -833,7 +834,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                 </div>
               </div>
               <button
-                onClick={() => onLogWorkout(day.name, todayStr)}
+                onClick={() => onLogWorkout(day.name, todayStr, workoutElapsed > 0 ? Math.round(workoutElapsed / 60) : undefined)}
                 style={{
                   ...styles.actionBtn,
                   width: '100%', maxWidth: '280px', justifyContent: 'center',
