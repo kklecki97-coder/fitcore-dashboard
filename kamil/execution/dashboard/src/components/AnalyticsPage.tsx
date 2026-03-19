@@ -320,7 +320,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
               <BarChart data={planRevenue} layout="vertical">
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
                 <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={100} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,0.03)' }} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
                 <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
                   {planRevenue.map((_, i) => (
                     <Cell key={i} fill={planColors[i % planColors.length]} />
