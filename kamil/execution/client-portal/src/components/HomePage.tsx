@@ -51,10 +51,11 @@ interface HomePageProps {
   onUpdateSchedule: (assignments: Record<string, string>) => void;
 }
 
-// @ts-ignore - onUpdateSchedule scaffolded for weekly schedule feature
-export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule }: HomePageProps) {
+// onUpdateSchedule is scaffolded for weekly schedule feature
+export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule: _onUpdateSchedule }: HomePageProps) {
+  void _onUpdateSchedule; // scaffolded for inline schedule editing on home page
   const isMobile = useIsMobile();
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   const [showAllWeeks, setShowAllWeeks] = useState(false);
 
@@ -74,11 +75,8 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   }
 
   // ── Today's workout day (schedule-aware) ──
-  // DEV OVERRIDE: pretend today is Friday (mondayBased=4) for demo purposes
-  // Remove before deploying!
-  const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
   const dayAssignments = weeklySchedule?.dayAssignments ?? {};
-  const todayMondayBased = DEV_DAY_OVERRIDE ?? (() => {
+  const todayMondayBased = (() => {
     const dow = new Date().getDay();
     return dow === 0 ? 6 : dow - 1;
   })();
@@ -120,8 +118,8 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
     d.setDate(monday.getDate() + i);
     const dateStr = localDateStr(d);
     const log = workoutLogs.find(w => w.date === dateStr);
-    const isToday = DEV_DAY_OVERRIDE !== null ? i === DEV_DAY_OVERRIDE : dateStr === todayStr;
-    const isPast = DEV_DAY_OVERRIDE !== null ? i < DEV_DAY_OVERRIDE : (d < today && !isToday);
+    const isToday = dateStr === todayStr;
+    const isPast = d < today && !isToday;
     const assignedId = dayAssignments[String(i)];
     const assignedDay = assignedId && program ? program.days.find(dd => dd.id === assignedId) : null;
     const isTraining = !!assignedDay;
@@ -175,19 +173,19 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
     if (currentWeek === 0 && program) {
       const startDate = new Date(program.createdAt + 'T00:00:00');
       const daysUntil = Math.ceil((startDate.getTime() - Date.now()) / 86400000);
-      if (daysUntil <= 1) return 'Your program starts tomorrow - get ready!';
-      if (daysUntil <= 7) return `Your program begins in ${daysUntil} days - time to prepare`;
-      return 'New program coming soon - stay ready';
+      if (daysUntil <= 1) return t.home.motiveProgramStartsTomorrow;
+      if (daysUntil <= 7) return t.home.motiveProgramStartsIn(daysUntil);
+      return t.home.motiveNewProgramSoon;
     }
     const remaining = totalTrainingDays - completedThisWeek;
     const perfectWeeks = recentWeeks.filter(w => w.completed >= w.target).length;
-    if (completedThisWeek >= totalTrainingDays && totalTrainingDays > 0) return 'Perfect week - you crushed it!';
-    if (remaining === 1) return '1 workout away from a perfect week';
-    if (perfectWeeks >= 3) return 'You\'re on a roll - ' + perfectWeeks + ' perfect weeks';
-    if (client.streak >= 10) return client.streak + ' workouts straight - keep the fire alive';
-    if (weightChange < 0) return Math.abs(weightChange).toFixed(1) + 'kg down - the work is paying off';
-    if (completedThisWeek > 0) return 'You\'re ahead of schedule - keep pushing';
-    return 'New week, new gains - let\'s go';
+    if (completedThisWeek >= totalTrainingDays && totalTrainingDays > 0) return t.home.motivePerfectWeek;
+    if (remaining === 1) return t.home.motiveOneLeft;
+    if (perfectWeeks >= 3) return t.home.motiveOnARoll(perfectWeeks);
+    if (client.streak >= 10) return t.home.motiveStreak(client.streak);
+    if (weightChange < 0) return t.home.motiveWeightDown(Math.abs(weightChange).toFixed(1));
+    if (completedThisWeek > 0) return t.home.motiveAhead;
+    return t.home.motiveNewWeek;
   })();
 
   // ── Latest coach message ──
@@ -234,7 +232,13 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
           <>
             <div style={styles.workoutMeta}>
               <span>{todayWorkout.exercises.length} {t.home.exercises}</span>
-              <span>{t.home.approxTime}</span>
+              <span>{(() => {
+                // Calculate approximate time: ~2 min per set + rest between sets
+                const totalSets = todayWorkout.exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0);
+                const avgRestSec = todayWorkout.exercises.reduce((sum, ex) => sum + (ex.restSeconds ?? 60), 0) / (todayWorkout.exercises.length || 1);
+                const approxMin = Math.round((totalSets * 2) + (totalSets * avgRestSec / 60));
+                return t.home.approxTime(approxMin > 0 ? approxMin : 60);
+              })()}</span>
             </div>
             <button style={styles.startBtn} onClick={() => onNavigate('program')}>
               {t.home.startWorkout} <ArrowRight size={16} />
@@ -275,9 +279,9 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         {/* Week progress header */}
         {totalTrainingDays > 0 && (
           <div style={styles.weekHeader}>
-            <span style={styles.weekHeaderLabel}>This Week</span>
+            <span style={styles.weekHeaderLabel}>{t.home.thisWeek}</span>
             <span style={styles.weekHeaderProgress}>
-              {completedThisWeek}/{totalTrainingDays} workouts
+              {completedThisWeek}/{totalTrainingDays} {t.home.workouts}
             </span>
           </div>
         )}
@@ -400,7 +404,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             {/* Text details */}
             <div style={styles.progressInfo}>
               <div style={styles.progressTitle}>{program.name}</div>
-              <div style={styles.progressWeek}>{currentWeek > 0 ? `Week ${currentWeek} of ${programWeeks}` : `Starts ${new Date(program.createdAt + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</div>
+              <div style={styles.progressWeek}>{currentWeek > 0 ? `${t.home.weekOf} ${currentWeek} ${t.home.of} ${programWeeks}` : `${t.home.starts} ${new Date(program.createdAt + 'T00:00:00').toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</div>
               <div style={styles.progressBar}>
                 <div style={{ ...styles.progressBarFill, width: `${progressPct}%` }} />
               </div>

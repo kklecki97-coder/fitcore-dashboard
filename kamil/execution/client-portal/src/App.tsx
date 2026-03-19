@@ -116,6 +116,17 @@ function App() {
     }
   };
 
+  // Close password reset modal on Escape key (#29)
+  useEffect(() => {
+    if (!showResetPassword) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleCloseResetModal();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showResetPassword]);
+
   const [currentPage, _setCurrentPage] = useState<ClientPage>(() => {
     try {
       const saved = sessionStorage.getItem('fitcore-client-page');
@@ -164,6 +175,8 @@ function App() {
 
 
   // ── Load all client data from Supabase on login ──
+  // NOTE: console.error calls below are intentional for debugging. These should be
+  // replaced with an error tracking service (e.g. Sentry) in production. (#32)
   const loadData = useCallback(async () => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -310,9 +323,13 @@ function App() {
         if (photoUrl && photoUrl.includes('/storage/v1/object/public/')) {
           const storagePath = photoUrl.split('/storage/v1/object/public/check-in-photos/')[1];
           if (storagePath) {
-            const { data: signedData } = await supabase.storage
+            const { data: signedData, error: signedUrlError } = await supabase.storage
               .from('check-in-photos')
-              .createSignedUrl(storagePath, 3600); // 1 hour expiry
+              .createSignedUrl(storagePath, 86400); // 24 hour expiry (#4)
+            if (signedUrlError) {
+              // TODO: Replace with error tracking service (e.g. Sentry) (#32)
+              console.error('Failed to generate signed URL for check-in photo:', signedUrlError);
+            }
             if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
           }
         }
@@ -411,6 +428,9 @@ function App() {
     }
 
     // Load weekly schedule
+    // NOTE: Week start is computed from local time. If coach and client are in different
+    // timezones, the "current week" could differ. This is acceptable for now - a future
+    // improvement could store the client's timezone and compute accordingly. (#20)
     const nowDate = new Date();
     const nowDow = nowDate.getDay(); // 0=Sun
     const mondayOff = nowDow === 0 ? -6 : 1 - nowDow;
@@ -514,7 +534,7 @@ function App() {
   useEffect(() => { clientUserRef.current = clientUser; }, [clientUser]);
 
   useEffect(() => {
-    if (!isLoggedIn || !clientUser) return;
+    if (!isLoggedIn || !clientUser?.id) return; // null check on clientUser.id (#15)
 
     const channel = supabase
       .channel('client-messages')
@@ -641,7 +661,9 @@ function App() {
     for (const photo of photosWithFiles) {
       const file = (photo as { url: string; label: string; file: File }).file;
       const ext = file.name.split('.').pop() ?? 'jpg';
-      const path = `${ci.clientId}/${ci.id}/${photo.label.replace(/\s+/g, '_')}.${ext}`;
+      // Sanitize label to prevent path traversal or invalid characters (#21)
+      const safeLabel = photo.label.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const path = `${ci.clientId}/${ci.id}/${safeLabel}.${ext}`;
 
       const { error: uploadErr } = await supabase.storage
         .from('check-in-photos')
@@ -653,9 +675,13 @@ function App() {
       }
 
       // Use signed URL instead of public URL
-      const { data: signedData } = await supabase.storage
+      const { data: signedData, error: signedUrlErr } = await supabase.storage
         .from('check-in-photos')
-        .createSignedUrl(path, 3600);
+        .createSignedUrl(path, 86400); // 24 hour expiry (#4)
+      if (signedUrlErr) {
+        // TODO: Replace with error tracking service (#32)
+        console.error('Failed to generate signed URL for uploaded photo:', signedUrlErr);
+      }
 
       if (signedData?.signedUrl) {
         await supabase.from('check_in_photos').insert({
@@ -818,7 +844,9 @@ function App() {
       day_assignments: assignments,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let data: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let error: any = null;
 
     if (prev?.id) {

@@ -32,7 +32,6 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
 
   // Password
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordUpdating, setPasswordUpdating] = useState(false);
@@ -75,26 +74,13 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
 
     setPasswordUpdating(true);
 
-    // Verify current password
-    const { error: verifyError } = await supabase.auth.signInWithPassword({
-      email: client.email,
-      password: currentPassword,
-    });
-
-    if (verifyError) {
-      setPasswordError(s.currentPasswordWrong);
-      setPasswordUpdating(false);
-      return;
-    }
-
-    // Update password
+    // User is already authenticated, so we can update directly (#3/#10)
     const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
 
     if (updateError) {
       setPasswordError(updateError.message);
     } else {
       setPasswordSuccess(true);
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => {
@@ -168,18 +154,6 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
         ) : (
           <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={styles.field}>
-              <label style={styles.label}>{s.currentPassword}</label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={e => setCurrentPassword(e.target.value)}
-                placeholder="••••••••"
-                style={styles.input}
-                required
-                autoFocus
-              />
-            </div>
-            <div style={styles.field}>
               <label style={styles.label}>{s.newPassword}</label>
               <input
                 type="password"
@@ -231,13 +205,12 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
                 onClick={() => {
                   setShowPasswordForm(false);
                   setPasswordError('');
-                  setCurrentPassword('');
                   setNewPassword('');
                   setConfirmPassword('');
                 }}
                 style={styles.btnGhost}
               >
-                Cancel
+                {s.cancelPasswordChange}
               </button>
             </div>
           </form>
@@ -361,7 +334,7 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={styles.label}>
-                      {s.type} <strong>{client.email}</strong> {s.typeToConfirm}
+                      {s.type} <strong style={{ userSelect: 'all', cursor: 'text' }}>{client.email}</strong> {s.typeToConfirm}
                     </label>
                     <input
                       type="text"
@@ -369,6 +342,7 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
                       onChange={(e) => setDeleteConfirmEmail(e.target.value)}
                       placeholder={client.email}
                       style={styles.input}
+                      autoComplete="off"
                     />
                   </div>
 

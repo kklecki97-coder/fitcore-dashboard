@@ -9,17 +9,23 @@ import type { Client, WorkoutLog, CheckIn } from '../types';
 
 type TimePeriod = '1m' | '3m' | '6m' | 'all';
 
+/** Delay before rendering charts to allow container to settle */
+const CHART_RENDER_DELAY = 300;
+
 interface ProgressPageProps {
   client: Client;
+  // workoutLogs is used for future workout-based progress metrics (e.g. volume over time)
   workoutLogs: WorkoutLog[];
   checkIns: CheckIn[];
 }
 
-// @ts-ignore - workoutLogs scaffolded for future workout-based progress metrics
-export default function ProgressPage({ client, workoutLogs, checkIns }: ProgressPageProps) {
+export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkIns }: ProgressPageProps) {
+  void _workoutLogs; // scaffolded for future workout-based progress metrics
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const [chartsReady, setChartsReady] = useState(false);
+  const [localCheckIns, setLocalCheckIns] = useState(checkIns);
+  useEffect(() => { setLocalCheckIns(checkIns); }, [checkIns]);
   const [bodyTab, setBodyTab] = useState<'weight' | 'bodyFat'>('weight');
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
   const [photoPose, setPhotoPose] = useState<'front' | 'side' | 'back'>('front');
@@ -28,7 +34,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const [uploadTarget, setUploadTarget] = useState<'week1' | 'latest'>('week1');
 
   useEffect(() => {
-    const timer = setTimeout(() => setChartsReady(true), 300);
+    const timer = setTimeout(() => setChartsReady(true), CHART_RENDER_DELAY);
     return () => clearTimeout(timer);
   }, []);
 
@@ -57,7 +63,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   const bodyFatData = sliceByPeriod(allBodyFatData);
 
   // Progress photos - check-in photos from DB
-  const checkInPhotos = checkIns
+  const checkInPhotos = localCheckIns
     .filter(ci => ci.photos && ci.photos.length > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
   const firstPhotos = checkInPhotos[0];
@@ -70,9 +76,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
   };
 
   const poses: Array<{ key: 'front' | 'side' | 'back'; label: string }> = [
-    { key: 'front', label: 'Front' },
-    { key: 'side', label: 'Side' },
-    { key: 'back', label: 'Back' },
+    { key: 'front', label: t.progress.front },
+    { key: 'side', label: t.progress.side },
+    { key: 'back', label: t.progress.back },
   ];
 
   // ── Lift PRs ──
@@ -151,20 +157,39 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
     setUploading(true);
     try {
       const ext = file.name.split('.').pop() || 'jpg';
-      const path = `${client.id}/${uploadTarget}-${photoPose}-${Date.now()}.${ext}`;
+      // Sanitize label for path construction
+      const safeLabel = photoPose.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const path = `${client.id}/${uploadTarget}-${safeLabel}-${Date.now()}.${ext}`;
       const { error: uploadErr } = await supabase.storage.from('progress-photos').upload(path, file, { upsert: true });
       if (uploadErr) { console.error('Photo upload failed:', uploadErr); return; }
 
-      const { data: urlData } = supabase.storage.from('progress-photos').getPublicUrl(path);
-      const photoUrl = urlData.publicUrl;
+      // Use signed URL instead of public URL (#6)
+      const { data: signedData, error: signError } = await supabase.storage
+        .from('progress-photos')
+        .createSignedUrl(path, 86400); // 24 hour expiry
+      if (signError) {
+        console.error('Failed to generate signed URL:', signError);
+        return;
+      }
+      const photoUrl = signedData?.signedUrl;
+      if (!photoUrl) return;
 
       // Find the target check-in to attach the photo to
-      const targetCheckIn = uploadTarget === 'week1' ? firstPhotos : (latestPhotos ?? checkIns.sort((a, b) => b.date.localeCompare(a.date))[0]);
+      const targetCheckIn = uploadTarget === 'week1' ? firstPhotos : (latestPhotos ?? localCheckIns.sort((a, b) => b.date.localeCompare(a.date))[0]);
       if (targetCheckIn) {
-        const updatedPhotos = [...(targetCheckIn.photos || []), { url: photoUrl, label: photoPose }];
-        await supabase.from('check_ins').update({ photos: updatedPhotos }).eq('id', targetCheckIn.id);
-        // Reload page to show new photo
-        window.location.reload();
+        // Insert into check_in_photos table (not check_ins.photos column)
+        await supabase.from('check_in_photos').insert({
+          check_in_id: targetCheckIn.id,
+          url: photoUrl,
+          label: photoPose,
+        });
+
+        // Update local state instead of reloading (#12)
+        setLocalCheckIns(prev => prev.map(ci =>
+          ci.id === targetCheckIn.id
+            ? { ...ci, photos: [...(ci.photos || []), { url: photoUrl, label: photoPose }] }
+            : ci
+        ));
       }
     } catch (err) {
       console.error('Photo upload error:', err);
@@ -179,7 +204,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
 
       {/* ── 1. STRENGTH ── */}
       <div style={styles.strengthSection}>
-        <div style={styles.strengthLabel}>Strength</div>
+        <div style={styles.strengthLabel}>{t.progress.strength}</div>
         <div style={{ ...styles.liftRow, gridTemplateColumns: `repeat(${allLifts.length}, 1fr)` }}>
           {allLifts.map((lift, i) => {
             const current = lift.values.length > 0 ? lift.values[lift.values.length - 1] : null;
@@ -215,7 +240,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
               }}
             >
               <Scale size={13} />
-              Weight
+              {t.progress.weight}
             </button>
             <button
               onClick={() => setBodyTab('bodyFat')}
@@ -225,7 +250,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
               }}
             >
               <Droplets size={13} />
-              Body Fat
+              {t.progress.bodyFat}
             </button>
           </div>
           <button
@@ -253,7 +278,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                 <YAxis domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontSize: '12px', color: 'var(--text-primary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-                  formatter={(val) => [`${val} kg`, 'Weight']}
+                  formatter={(val) => [`${val} kg`, t.progress.weight]}
                 />
                 <Area type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2.5} fill="url(#weightGrad)" dot={{ fill: 'var(--accent-primary)', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: 'var(--accent-primary)', stroke: 'var(--bg-card)', strokeWidth: 2 }} />
               </AreaChart>
@@ -271,14 +296,14 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
                 <YAxis domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontSize: '12px', color: 'var(--text-primary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-                  formatter={(val) => [`${val}%`, 'Body Fat']}
+                  formatter={(val) => [`${val}%`, t.progress.bodyFat]}
                 />
                 <Area type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2.5} fill="url(#bfGrad)" dot={{ fill: 'var(--accent-secondary)', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: 'var(--accent-secondary)', stroke: 'var(--bg-card)', strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
             <div style={styles.emptyChart}>
-              <span style={styles.emptyText}>Not enough data yet</span>
+              <span style={styles.emptyText}>{t.progress.notEnoughData}</span>
             </div>
           )}
         </div>
@@ -289,7 +314,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
         <GlassCard delay={0.3}>
           <div style={styles.goalsHeader}>
             <Target size={16} color="var(--accent-primary)" />
-            <span style={styles.goalsTitle}>Goals</span>
+            <span style={styles.goalsTitle}>{t.progress.goals}</span>
             <span style={styles.goalsCount}>
               {goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}
             </span>
@@ -318,7 +343,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
       <GlassCard delay={0.35}>
         <div style={styles.photosHeader}>
           <Camera size={16} color="var(--accent-primary)" />
-          <span style={styles.photosTitle}>Progress Photos</span>
+          <span style={styles.photosTitle}>{t.progress.progressPhotos}</span>
           <div style={styles.poseTabs}>
             {poses.map(p => (
               <button
@@ -338,20 +363,19 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
         <div style={styles.photoCompare}>
           {/* Week 1 / Starting photo */}
           <div style={styles.photoSide}>
-            <div style={styles.photoDateLabel}>Week 1</div>
+            <div style={styles.photoDateLabel}>{t.progress.week1}</div>
             {(() => {
               const userSrc = getPhotoForPose(firstPhotos, photoPose);
-              const ciDate = firstPhotos ? new Date(firstPhotos.date) : null;
-              const ciWeight = firstPhotos?.weight;
-              const placeholderSrc = `/photos/week1-${photoPose}.jpg`;
+              const ciDate = firstPhotos?.date ? new Date(firstPhotos.date) : null;
+              const ciWeight = firstPhotos?.weight ?? null;
               if (userSrc) {
                 return (
                   <>
                     <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
-                      <img src={userSrc} alt={`Week 1 ${photoPose}`} style={styles.photoImg} />
+                      <img src={userSrc} alt={`${t.progress.week1} ${photoPose}`} style={styles.photoImg} />
                     </div>
                     <div style={styles.photoMeta}>
-                      {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight ? ` · ${ciWeight}kg` : ''}
+                      {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
                     </div>
                   </>
                 );
@@ -359,10 +383,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
               return (
                 <>
                   <div style={styles.photoFrame} onClick={() => handlePhotoUpload('week1')}>
-                    <img src={placeholderSrc} alt="" style={{ ...styles.photoImg, opacity: 0.15, filter: 'blur(2px)' }} />
                     <div style={styles.photoPlaceholder}>
                       <Upload size={20} color="var(--accent-primary)" style={{ opacity: 0.6 }} />
-                      <span style={styles.photoUploadText}>{uploading ? 'Uploading...' : 'Upload your photo'}</span>
+                      <span style={styles.photoUploadText}>{uploading ? t.progress.uploading : t.progress.uploadPhoto}</span>
                     </div>
                   </div>
                   <div style={styles.photoMeta}>
@@ -375,20 +398,19 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
 
           {/* Latest / Current photo */}
           <div style={styles.photoSide}>
-            <div style={styles.photoDateLabel}>Latest</div>
+            <div style={styles.photoDateLabel}>{t.progress.latest}</div>
             {(() => {
               const userSrc = getPhotoForPose(latestPhotos ?? undefined, photoPose);
-              const ciDate = latestPhotos ? new Date(latestPhotos.date) : null;
-              const ciWeight = latestPhotos?.weight;
-              const placeholderSrc = `/photos/week12-${photoPose}.jpg`;
+              const ciDate = latestPhotos?.date ? new Date(latestPhotos.date) : null;
+              const ciWeight = latestPhotos?.weight ?? null;
               if (userSrc) {
                 return (
                   <>
                     <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
-                      <img src={userSrc} alt={`Latest ${photoPose}`} style={styles.photoImg} />
+                      <img src={userSrc} alt={`${t.progress.latest} ${photoPose}`} style={styles.photoImg} />
                     </div>
                     <div style={styles.photoMeta}>
-                      {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight ? ` · ${ciWeight}kg` : ''}
+                      {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
                     </div>
                   </>
                 );
@@ -396,10 +418,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns }: Progress
               return (
                 <>
                   <div style={styles.photoFrame} onClick={() => handlePhotoUpload('latest')}>
-                    <img src={placeholderSrc} alt="" style={{ ...styles.photoImg, opacity: 0.15, filter: 'blur(2px)' }} />
                     <div style={styles.photoPlaceholder}>
                       <Upload size={20} color="var(--accent-primary)" style={{ opacity: 0.6 }} />
-                      <span style={styles.photoUploadText}>{uploading ? 'Uploading...' : 'Upload your photo'}</span>
+                      <span style={styles.photoUploadText}>{uploading ? t.progress.uploading : t.progress.uploadPhoto}</span>
                     </div>
                   </div>
                   <div style={styles.photoMeta} />

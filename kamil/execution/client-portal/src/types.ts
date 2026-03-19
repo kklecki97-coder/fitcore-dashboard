@@ -101,6 +101,7 @@ export interface CheckIn {
   wins: string;
   challenges: string;
   coachFeedback: string;
+  /** Photos attached to this check-in. URL may be a signed URL (expires after 24h) or public URL. Label is the pose (front/side/back). (#44) */
   photos: { url: string; label: string }[];
   reviewStatus: 'pending' | 'reviewed' | 'flagged';
   flagReason: string;
@@ -136,6 +137,7 @@ export interface Invoice {
   paidDate: string | null;
   period: string;
   plan: 'Basic' | 'Premium' | 'Elite';
+  /** Payment URL - should be validated before redirecting (must be https:// Stripe URL) (#35) */
   paymentUrl: string | null;
 }
 

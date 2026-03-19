@@ -65,9 +65,6 @@ const localDateStr = (d: Date) => {
   return `${y}-${m}-${day}`;
 };
 
-// DEV ONLY: set to monday-based day index (0=Mon..6=Sun) to pretend today is that day, or null for real date
-const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
-
 export default function CalendarPage({ program, workoutLogs, weeklySchedule, onUpdateSchedule }: CalendarPageProps) {
   const isMobile = useIsMobile();
   const currentWeekRef = useRef<HTMLDivElement>(null);
@@ -99,16 +96,7 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule, onU
   startMonday.setDate(startMonday.getDate() - (startDow === 0 ? 6 : startDow - 1));
   startMonday.setHours(0, 0, 0, 0);
 
-  // Current week calculation - shift "today" when DEV_DAY_OVERRIDE is set
-  const realToday = new Date();
-  const today = (() => {
-    if (DEV_DAY_OVERRIDE === null) return realToday;
-    const realMondayBased = realToday.getDay() === 0 ? 6 : realToday.getDay() - 1;
-    const shift = DEV_DAY_OVERRIDE - realMondayBased;
-    const d = new Date(realToday);
-    d.setDate(d.getDate() + shift);
-    return d;
-  })();
+  const today = new Date();
   const todayStr = localDateStr(today);
   const todayMonday = new Date(today);
   const todayDow = todayMonday.getDay();

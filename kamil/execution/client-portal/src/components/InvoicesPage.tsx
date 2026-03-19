@@ -12,9 +12,13 @@ interface InvoicesPageProps {
 
 export default function InvoicesPage({ invoices }: InvoicesPageProps) {
   const isMobile = useIsMobile();
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [payingId, setPayingId] = useState<string | null>(null);
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  const currencySymbol = lang === 'pl' ? 'zł' : '$';
+  const formatAmount = (amount: number) => lang === 'pl' ? `${amount} ${currencySymbol}` : `${currencySymbol}${amount}`;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -28,27 +32,48 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
     }
   }, []);
 
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch {
+      return false;
+    }
+  };
+
   const handlePay = async (invoiceId: string) => {
     setPayingId(invoiceId);
+    setPaymentError(null);
     try {
       const { data, error } = await supabase.functions.invoke('create-invoice-checkout', {
         body: { invoiceId },
       });
       if (error) {
-        alert(lang === 'pl' ? 'Błąd płatności. Spróbuj ponownie.' : 'Payment error. Please try again.');
+        setPaymentError(t.errors?.paymentError ?? 'Payment error. Please try again.');
         return;
       }
       if (data?.url) {
+        // Validate URL before redirecting (#5)
+        if (!isValidUrl(data.url)) {
+          setPaymentError(t.errors?.invalidPaymentUrl ?? 'Invalid payment link.');
+          return;
+        }
         window.location.href = data.url;
       } else if (data?.error) {
-        alert(data.error);
+        setPaymentError(data.error);
       }
     } catch {
-      alert(lang === 'pl' ? 'Coś poszło nie tak.' : 'Something went wrong.');
+      setPaymentError(t.errors?.somethingWentWrong ?? 'Something went wrong.');
     } finally {
       setPayingId(null);
     }
   };
+
+  // Sort invoices with secondary sort by id for stable ordering (#19)
+  const sortedInvoices = [...invoices].sort((a, b) => {
+    const dateCompare = (b.dueDate || '').localeCompare(a.dueDate || '');
+    return dateCompare !== 0 ? dateCompare : a.id.localeCompare(b.id);
+  });
 
   const outstanding = invoices
     .filter(i => i.status === 'pending' || i.status === 'overdue')
@@ -175,7 +200,7 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
     <div style={s.page}>
       <h1 style={s.title}>
         <DollarSign size={22} style={{ verticalAlign: 'middle', marginRight: 8, color: 'var(--accent-primary)' }} />
-        {lang === 'pl' ? 'Faktury' : 'Invoices'}
+        {t.invoices?.title ?? (lang === 'pl' ? 'Faktury' : 'Invoices')}
       </h1>
 
       {/* Payment Banner */}
@@ -190,11 +215,31 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
             <CheckCircle2 size={18} color={paymentBanner === 'success' ? '#22c55e' : '#f59e0b'} />
             <span style={{ fontSize: '14px', fontWeight: 600, color: paymentBanner === 'success' ? '#22c55e' : '#f59e0b' }}>
               {paymentBanner === 'success'
-                ? (lang === 'pl' ? 'Płatność zakończona sukcesem!' : 'Payment successful!')
-                : (lang === 'pl' ? 'Płatność anulowana.' : 'Payment cancelled.')}
+                ? (t.invoices?.paymentSuccessful ?? 'Payment successful!')
+                : (t.invoices?.paymentCancelled ?? 'Payment cancelled.')}
             </span>
           </div>
           <button onClick={() => setPaymentBanner(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Inline error state (replaces alert) */}
+      {paymentError && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 16px', borderRadius: '10px',
+          background: 'rgba(239, 68, 68, 0.08)',
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={18} color="#ef4444" />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: '#ef4444' }}>
+              {paymentError}
+            </span>
+          </div>
+          <button onClick={() => setPaymentError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
             <X size={16} />
           </button>
         </div>
@@ -204,17 +249,17 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
       <div style={s.summaryRow}>
         <GlassCard delay={0}>
           <div style={s.summaryCard}>
-            <div style={s.summaryLabel}>{lang === 'pl' ? 'Do zapłaty' : 'Outstanding'}</div>
+            <div style={s.summaryLabel}>{t.invoices?.outstanding ?? 'Outstanding'}</div>
             <div style={{ ...s.summaryValue, color: outstanding > 0 ? '#f59e0b' : '#22c55e' }}>
-              ${outstanding.toFixed(0)}
+              {formatAmount(Number(outstanding.toFixed(0)))}
             </div>
           </div>
         </GlassCard>
         <GlassCard delay={0.1}>
           <div style={s.summaryCard}>
-            <div style={s.summaryLabel}>{lang === 'pl' ? 'Ostatnia płatność' : 'Last Payment'}</div>
+            <div style={s.summaryLabel}>{t.invoices?.lastPayment ?? 'Last Payment'}</div>
             <div style={s.summaryValue}>
-              {lastPaid ? `$${lastPaid.amount}` : '-'}
+              {lastPaid ? formatAmount(lastPaid.amount) : '-'}
             </div>
             {lastPaid?.paidDate && (
               <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
@@ -226,27 +271,27 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
       </div>
 
       {/* Invoice List */}
-      {invoices.length === 0 ? (
+      {sortedInvoices.length === 0 ? (
         <GlassCard delay={0.2}>
           <div style={s.empty}>
-            {lang === 'pl' ? 'Brak faktur' : 'No invoices yet'}
+            {t.invoices?.noInvoices ?? 'No invoices yet'}
           </div>
         </GlassCard>
       ) : (
         <GlassCard delay={0.2}>
-          {invoices.map((inv, i) => {
+          {sortedInvoices.map((inv, i) => {
             const cfg = statusConfig[inv.status];
             const Icon = cfg.icon;
             return (
-              <div key={inv.id} style={{ ...s.invoiceRow, borderBottom: i === invoices.length - 1 ? 'none' : s.invoiceRow.borderBottom }}>
+              <div key={inv.id} style={{ ...s.invoiceRow, borderBottom: i === sortedInvoices.length - 1 ? 'none' : s.invoiceRow.borderBottom }}>
                 <div style={s.invoiceLeft}>
                   <div style={s.invoicePeriod}>{inv.period}</div>
                   <div style={s.invoiceMeta}>
-                    {inv.plan} {lang === 'pl' ? 'plan' : 'plan'} · {lang === 'pl' ? 'Termin' : 'Due'}: {formatDate(inv.dueDate)}
+                    {inv.plan} {t.invoices?.plan ?? 'plan'} · {t.invoices?.due ?? 'Due'}: {formatDate(inv.dueDate)}
                   </div>
                 </div>
                 <div style={s.invoiceRight}>
-                  <div style={s.invoiceAmount}>${inv.amount}</div>
+                  <div style={s.invoiceAmount}>{formatAmount(inv.amount)}</div>
                   <div style={getBadgeStyle(inv.status)}>
                     <Icon size={12} />
                     {cfg.label}
@@ -260,7 +305,7 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
                       {payingId === inv.id
                         ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
                         : <DollarSign size={14} />}
-                      {lang === 'pl' ? 'Zapłać' : 'Pay Now'}
+                      {payingId === inv.id ? (t.invoices?.loadingCheckout ?? 'Loading...') : (t.invoices?.payNow ?? 'Pay Now')}
                     </button>
                   )}
                   {inv.status === 'paid' && inv.paidDate && (

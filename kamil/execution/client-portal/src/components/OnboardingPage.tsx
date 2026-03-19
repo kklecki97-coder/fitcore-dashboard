@@ -41,10 +41,10 @@ export default function OnboardingPage({ client, onComplete }: OnboardingPagePro
     goalHealth: ob.goalHealth,
   };
 
+  // Store goal KEYS (not translated labels) so they are language-independent (#25/#37)
   const toggleGoal = (key: string) => {
-    const label = goalLabels[key];
     setSelectedGoals(prev =>
-      prev.includes(label) ? prev.filter(g => g !== label) : [...prev, label]
+      prev.includes(key) ? prev.filter(g => g !== key) : [...prev, key]
     );
   };
 
@@ -213,7 +213,7 @@ export default function OnboardingPage({ client, onComplete }: OnboardingPagePro
               <div style={styles.goalGrid}>
                 {GOAL_KEYS.map((key, i) => {
                   const label = goalLabels[key];
-                  const selected = selectedGoals.includes(label);
+                  const selected = selectedGoals.includes(key);
                   return (
                     <motion.button
                       key={key}

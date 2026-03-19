@@ -22,14 +22,11 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
   const { t } = useLang();
 
   // ── Compute today's workout day index (schedule-aware) ──
-  // DEV OVERRIDE: pretend today is Friday (mondayBased=4) so we can demo all 3 workout types
-  // Remove this override before deploying!
-  const DEV_DAY_OVERRIDE: number | null = null; // set to 0-6 (Mon-Sun) for demo, null for real date
   const dayAssignments = weeklySchedule?.dayAssignments ?? {};
   const todayDayIndex = (() => {
     if (!program || program.days.length === 0) return 0;
     const dayOfWeek = new Date().getDay();
-    const mondayBased = DEV_DAY_OVERRIDE ?? (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+    const mondayBased = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const assignedId = dayAssignments[String(mondayBased)];
     if (assignedId) {
       const idx = program.days.findIndex(d => d.id === assignedId);
@@ -132,7 +129,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
 
   const isTodaysWorkout = selectedDay === todayDayIndex && (() => {
     const dow = new Date().getDay();
-    const mondayBased = DEV_DAY_OVERRIDE ?? (dow === 0 ? 6 : dow - 1);
+    const mondayBased = dow === 0 ? 6 : dow - 1;
     return !!dayAssignments[String(mondayBased)];
   })();
 
@@ -732,7 +729,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
   // ── Rest day check ──
   const hasTodayWorkout = (() => {
     const dow = new Date().getDay();
-    const mondayBased = DEV_DAY_OVERRIDE ?? (dow === 0 ? 6 : dow - 1);
+    const mondayBased = dow === 0 ? 6 : dow - 1;
     return !!dayAssignments[String(mondayBased)];
   })();
 
