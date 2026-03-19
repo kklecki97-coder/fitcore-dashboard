@@ -45,7 +45,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   const [activeModal, setActiveModal] = useState<'message' | 'editPlan' | 'notes' | 'logMetrics' | 'assignProgram' | 'checkIn' | 'viewCheckIn' | null>(null);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
   const [messageText, setMessageText] = useState('');
-  const [editPlan, setEditPlan] = useState<'Basic' | 'Premium' | 'Elite'>(client?.plan ?? 'Basic');
+  const [editPlan, setEditPlan] = useState<string>(client?.plan ?? 'Basic');
   const [editStatus, setEditStatus] = useState<'active' | 'paused' | 'pending'>(client?.status ?? 'active');
   const [editNotes, setEditNotes] = useState('');
   const [showNoteInput, setShowNoteInput] = useState(false);
@@ -160,13 +160,14 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   };
 
   const handleSavePlan = () => {
-    const rateMap: Record<string, number> = { Basic: 99, Premium: 199, Elite: 299 };
+    const matchedPlan = plans.find(p => p.name === editPlan);
+    const rate = matchedPlan ? matchedPlan.price : 0;
     const changes: string[] = [];
-    if (editPlan !== client.plan) changes.push(t.clientDetail.planChanged(planLabelMap[client.plan], planLabelMap[editPlan]));
+    if (editPlan !== client.plan) changes.push(t.clientDetail.planChanged(planLabelMap[client.plan] || client.plan, planLabelMap[editPlan] || editPlan));
     if (editStatus !== client.status) changes.push(t.clientDetail.statusChanged(statusLabelMap[client.status], statusLabelMap[editStatus]));
     const desc = changes.length > 0 ? changes.join(', ') : t.clientDetail.planSaved;
     onUpdateClient(client.id, {
-      plan: editPlan, status: editStatus, monthlyRate: rateMap[editPlan],
+      plan: editPlan, status: editStatus, monthlyRate: rate,
       activityLog: [{ type: 'plan', description: desc, date: new Date().toISOString() }, ...(client.activityLog || [])],
     });
     setActiveModal(null);
@@ -1119,23 +1120,9 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                               </button>
                             );
                           })
-                        : (['Basic', 'Premium', 'Elite'] as const).map(p => {
-                            const isActive = editPlan === p;
-                            const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
-                            return (
-                              <button
-                                key={p}
-                                onClick={() => setEditPlan(p)}
-                                style={{
-                                  ...styles.modalPlanOption,
-                                  ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--bg-subtle)' } : {}),
-                                }}
-                              >
-                                <div style={{ fontWeight: 600, fontSize: '16px' }}>{p}</div>
-                                <div style={{ fontSize: '14px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
-                              </button>
-                            );
-                          })
+                        : <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', padding: '10px 12px', border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center', width: '100%' }}>
+                            {lang === 'pl' ? 'Utwórz plany w Ustawieniach → Plany i Cennik' : 'Create plans in Settings → Plans & Pricing'}
+                          </div>
                       )}
                     </div>
                   </div>

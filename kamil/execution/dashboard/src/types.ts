@@ -3,7 +3,7 @@ export interface Client {
   name: string;
   avatar: string;
   email: string;
-  plan: 'Basic' | 'Premium' | 'Elite';
+  plan: string;
   status: 'active' | 'paused' | 'pending';
   startDate: string;
   nextCheckIn: string;

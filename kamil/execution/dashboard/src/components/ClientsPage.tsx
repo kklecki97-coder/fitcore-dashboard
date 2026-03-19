@@ -25,7 +25,7 @@ interface ClientsPageProps {
 
 export default function ClientsPage({ clients: allClients, programs, plans, onViewClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
   const isMobile = useIsMobile();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -40,7 +40,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [invitePlan, setInvitePlan] = useState<'Basic' | 'Premium' | 'Elite'>('Basic');
+  const [invitePlan, setInvitePlan] = useState<string>(plans.length > 0 ? plans[0].name : 'Basic');
   const [inviteGenerating, setInviteGenerating] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ success: boolean; link?: string; error?: string } | null>(null);
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -222,11 +222,12 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
 
   const handleSaveEdit = () => {
     if (!editModal) return;
-    const rateMap: Record<string, number> = { Basic: 99, Premium: 199, Elite: 299 };
+    const matchedPlan = plans.find(p => p.name === editModal.plan);
+    const rate = matchedPlan ? matchedPlan.price : ({ Basic: 99, Premium: 199, Elite: 299 }[editModal.plan] || 99);
     onUpdateClient(editModal.clientId, {
       plan: editModal.plan,
       status: editModal.status,
-      monthlyRate: rateMap[editModal.plan],
+      monthlyRate: rate,
     });
     setEditModal(null);
   };
@@ -538,23 +539,9 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
                             </button>
                           );
                         })
-                      : (['Basic', 'Premium', 'Elite'] as const).map(p => {
-                          const isActive = editModal.plan === p;
-                          const rateMap = { Basic: 99, Premium: 199, Elite: 299 };
-                          return (
-                            <button
-                              key={p}
-                              onClick={() => setEditModal({ ...editModal, plan: p })}
-                              style={{
-                                ...styles.modalPlanOption,
-                                ...(isActive ? { borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)', background: 'var(--bg-subtle)' } : {}),
-                              }}
-                            >
-                              <div style={{ fontWeight: 600, fontSize: '16px' }}>{p}</div>
-                              <div style={{ fontSize: '14px', opacity: 0.7 }}>${rateMap[p]}/mo</div>
-                            </button>
-                          );
-                        })
+                      : <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', padding: '10px 12px', border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center', width: '100%' }}>
+                            {lang === 'pl' ? 'Utwórz plany w Ustawieniach → Plany i Cennik' : 'Create plans in Settings → Plans & Pricing'}
+                          </div>
                     )}
                   </div>
                 </div>
@@ -738,11 +725,11 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
                   <div style={styles.inviteField}>
                     <label style={styles.inviteFieldLabel}>{t.settings.invitePlan}</label>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {(plans.filter(p => p.isActive).length > 0
+                      {plans.filter(p => p.isActive).length > 0
                         ? plans.filter(p => p.isActive).map((p) => (
                             <button
                               key={p.id}
-                              onClick={() => setInvitePlan(p.name as typeof invitePlan)}
+                              onClick={() => setInvitePlan(p.name)}
                               style={{
                                 flex: 1,
                                 padding: '10px 12px',
@@ -760,29 +747,15 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
                               {p.name}
                             </button>
                           ))
-                        : (['Basic', 'Premium', 'Elite'] as const).map((p) => (
-                            <button
-                              key={p}
-                              onClick={() => setInvitePlan(p)}
-                              style={{
-                                flex: 1,
-                                padding: '10px 12px',
-                                borderRadius: 'var(--radius-sm)',
-                                border: `1.5px solid ${invitePlan === p ? 'var(--accent-primary)' : 'var(--glass-border)'}`,
-                                background: invitePlan === p ? 'rgba(0,229,200,0.08)' : 'transparent',
-                                color: invitePlan === p ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                fontFamily: 'var(--font-display)',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s',
-                              }}
-                            >
-                              {p}
-                            </button>
-                          ))
-                      )}
+                        : <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', padding: '10px 12px', border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
+                            {lang === 'pl' ? 'Utwórz plany w Ustawieniach → Plany i Cennik' : 'Create plans in Settings → Plans & Pricing'}
+                          </div>
+                      }
                     </div>
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '6px 12px', background: 'rgba(0,229,200,0.05)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(0,229,200,0.1)' }}>
+                    {lang === 'pl' ? 'Fakturę dla klienta możesz utworzyć po rejestracji w zakładce Płatności' : 'You can create an invoice for this client after they register in the Payments tab'}
                   </div>
 
                   {inviteResult?.error && (
