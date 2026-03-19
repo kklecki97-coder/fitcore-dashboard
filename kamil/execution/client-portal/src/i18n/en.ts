@@ -13,7 +13,7 @@ export const en = {
     invalidCredentials: 'Invalid email or password',
     signingIn: 'Signing in…',
     signIn: 'Sign In',
-    demoHint: 'Demo: marcus@email.com / client123',
+    demoHint: '',
     haveInvite: 'Have an invite link?',
     forgotPassword: 'Forgot password?',
     sendResetLink: 'Send Reset Link',

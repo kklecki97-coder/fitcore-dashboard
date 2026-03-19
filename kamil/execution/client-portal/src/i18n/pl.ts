@@ -15,7 +15,7 @@ export const pl: Translations = {
     invalidCredentials: 'Nieprawidłowy e-mail lub hasło',
     signingIn: 'Logowanie…',
     signIn: 'Zaloguj się',
-    demoHint: 'Demo: marcus@email.com / client123',
+    demoHint: '',
     haveInvite: 'Masz link zaproszenia?',
     forgotPassword: 'Zapomniałeś hasła?',
     sendResetLink: 'Wyślij link resetujący',
