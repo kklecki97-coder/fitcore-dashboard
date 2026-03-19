@@ -231,6 +231,11 @@ export const pl: Translations = {
     monthlyRate: 'Stawka Miesięczna',
     createPlansHint: 'Utwórz plany w Ustawieniach → Plany i Cennik',
     pausedNoInvoices: 'Wstrzymany klient nie będzie otrzymywać faktur',
+    insightsTitle: 'Inteligentne Spostrzeżenia',
+    insightsSub: 'Automatycznie wykryte wzorce i rekomendacje',
+    showMore: 'Pokaż więcej',
+    showLess: 'Pokaż mniej',
+    noInsights: 'Brak spostrzeżeń — dane ujawnią wzorce z czasem.',
   },
 
   checkIns: {

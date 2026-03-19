@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import jsPDF from 'jspdf';
 import GlassCard from './GlassCard';
+import ClientInsights from './ClientInsights';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
@@ -1084,6 +1085,22 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           </GlassCard>
         );
       })()}
+
+      {/* Smart Insights */}
+      <ClientInsights
+        client={client}
+        workoutLogs={workoutLogs}
+        setLogs={setLogs}
+        checkIns={checkIns}
+        program={assignedPrograms.find(p => p.status === 'active') ?? assignedPrograms[0] ?? null}
+        t={{
+          insightsTitle: t.clientDetail.insightsTitle,
+          insightsSub: t.clientDetail.insightsSub,
+          showMore: t.clientDetail.showMore,
+          showLess: t.clientDetail.showLess,
+          noInsights: t.clientDetail.noInsights,
+        }}
+      />
 
       {/* Activity Timeline */}
       {client.activityLog && client.activityLog.length > 0 && (

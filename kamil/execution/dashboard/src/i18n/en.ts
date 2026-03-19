@@ -229,6 +229,11 @@ export const en = {
     monthlyRate: 'Monthly Rate',
     createPlansHint: 'Create plans in Settings → Plans & Pricing',
     pausedNoInvoices: 'Paused clients will not receive invoices',
+    insightsTitle: 'Smart Insights',
+    insightsSub: 'Auto-detected patterns & recommendations',
+    showMore: 'Show more',
+    showLess: 'Show less',
+    noInsights: 'No insights yet — data will surface patterns over time.',
   },
 
   checkIns: {
