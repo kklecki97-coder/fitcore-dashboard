@@ -73,6 +73,10 @@ export const pl: Translations = {
 
   home: {
     greeting: (name: string) => `Hej ${name}`,
+    greetingMorning: (name: string) => `Dzień dobry, ${name}`,
+    greetingAfternoon: (name: string) => `Miłego popołudnia, ${name}`,
+    greetingEvening: (name: string) => `Dobry wieczór, ${name}`,
+    greetingNight: (name: string) => `Nocny marek, ${name}`,
     motivational: 'Działaj dalej - regularność wygrywa.',
     dayStreak: 'dni z rzędu',
     progress: 'postęp',
@@ -117,6 +121,17 @@ export const pl: Translations = {
     weekOf: 'Tydzień',
     of: 'z',
     starts: 'Start',
+  },
+
+  toasts: {
+    checkInSubmitted: 'Check-in wysłany!',
+    messageSent: 'Wiadomość wysłana!',
+    paymentCompleted: 'Płatność zakończona!',
+    workoutLogged: 'Trening zapisany!',
+    profileSaved: 'Profil zapisany!',
+    passwordUpdated: 'Hasło zaktualizowane!',
+    workoutCelebration: 'Maszyna! 💪',
+    scheduleUpdated: 'Plan zaktualizowany!',
   },
 
   program: {
@@ -255,6 +270,7 @@ export const pl: Translations = {
     today: 'Dziś',
     yesterday: 'Wczoraj',
     placeholder: 'Napisz do trenera…',
+    coachTyping: 'Trener pisze…',
   },
 
   error: {

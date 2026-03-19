@@ -71,6 +71,10 @@ export const en = {
 
   home: {
     greeting: (name: string) => `Hey ${name}`,
+    greetingMorning: (name: string) => `Good morning, ${name}`,
+    greetingAfternoon: (name: string) => `Good afternoon, ${name}`,
+    greetingEvening: (name: string) => `Good evening, ${name}`,
+    greetingNight: (name: string) => `Night owl mode, ${name}`,
     motivational: 'Keep pushing - consistency beats perfection.',
     dayStreak: 'day streak',
     progress: 'progress',
@@ -115,6 +119,17 @@ export const en = {
     weekOf: 'Week',
     of: 'of',
     starts: 'Starts',
+  },
+
+  toasts: {
+    checkInSubmitted: 'Check-in submitted!',
+    messageSent: 'Message sent!',
+    paymentCompleted: 'Payment completed!',
+    workoutLogged: 'Workout logged!',
+    profileSaved: 'Profile saved!',
+    passwordUpdated: 'Password updated!',
+    workoutCelebration: 'Beast mode! 💪',
+    scheduleUpdated: 'Schedule updated!',
   },
 
   program: {
@@ -253,6 +268,7 @@ export const en = {
     today: 'Today',
     yesterday: 'Yesterday',
     placeholder: 'Message your coach…',
+    coachTyping: 'Coach is typing…',
   },
 
   error: {

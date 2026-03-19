@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { TrendingDown, Dumbbell, Send, ClipboardCheck, ArrowRight, Check, X, MessageSquare, ChevronDown, Zap } from 'lucide-react';
 import GlassCard from './GlassCard';
+import AnimatedNumber from './AnimatedNumber';
+import StreakFlame from './StreakFlame';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage, WeeklySchedule } from '../types';
@@ -168,11 +170,30 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   // ── Latest coach message ──
   const lastCoachMsg = messages.filter(m => m.isFromCoach).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
 
+  // ── Dynamic time-based greeting ──
+  const dynamicGreeting = (() => {
+    const hour = new Date().getHours();
+    const firstName = client.name.split(' ')[0];
+    if (hour >= 5 && hour < 12) return t.home.greetingMorning(firstName);
+    if (hour >= 12 && hour < 18) return t.home.greetingAfternoon(firstName);
+    if (hour >= 18 && hour < 22) return t.home.greetingEvening(firstName);
+    return t.home.greetingNight(firstName);
+  })();
+
   return (
     <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
       {/* ── Greeting ── */}
       <div style={styles.welcome}>
-        <h1 style={styles.greeting}>{t.home.greeting(client.name.split(' ')[0])}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={styles.greeting}>{dynamicGreeting}</h1>
+          {client.streak >= 3 && <StreakFlame streak={client.streak} size={28} />}
+        </div>
+        {client.streak >= 3 && (
+          <div style={styles.streakBadge}>
+            <AnimatedNumber value={client.streak} duration={1200} />
+            <span style={{ marginLeft: '4px' }}>{t.home.dayStreak}</span>
+          </div>
+        )}
       </div>
 
       {/* ── Today's Workout ── */}
@@ -340,7 +361,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         {/* ── Weight inline footer ── */}
         <div style={styles.weightFooter}>
           <TrendingDown size={14} color="var(--accent-success)" />
-          <span style={styles.weightValue}>{currentWeight}</span>
+          <span style={styles.weightValue}><AnimatedNumber value={currentWeight ?? 0} duration={1200} format={(n) => n.toFixed(1)} /></span>
           <span style={styles.weightUnit}>kg</span>
           <span style={{
             ...styles.weightTrend,
@@ -522,6 +543,19 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.5px',
     color: 'var(--text-primary)',
     margin: 0,
+  },
+  streakBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    marginTop: '6px',
+    fontSize: '14px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    color: '#f97316',
+    background: 'rgba(249,115,22,0.1)',
+    border: '1px solid rgba(249,115,22,0.2)',
+    borderRadius: '20px',
+    padding: '4px 12px',
   },
 
   // ── Quick Actions ──

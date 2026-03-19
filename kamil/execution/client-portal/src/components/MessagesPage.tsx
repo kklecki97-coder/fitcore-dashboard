@@ -10,9 +10,10 @@ interface MessagesPageProps {
   coachName: string;
   clientId: string;
   clientName: string;
+  coachTyping?: boolean;
 }
 
-export default function MessagesPage({ messages, onSendMessage, coachName, clientId, clientName }: MessagesPageProps) {
+export default function MessagesPage({ messages, onSendMessage, coachName, clientId, clientName, coachTyping = false }: MessagesPageProps) {
   const { t, lang } = useLang();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -181,6 +182,39 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
             })}
           </div>
         ))}
+        {/* Typing indicator */}
+        {coachTyping && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '4px' }}
+          >
+            <div style={{
+              ...styles.msgBubble,
+              background: 'var(--bg-elevated)',
+              borderColor: 'var(--glass-border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 16px',
+            }}>
+              <div style={styles.typingDots}>
+                {[0, 1, 2].map(i => (
+                  <motion.div
+                    key={i}
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                    style={styles.typingDot}
+                  />
+                ))}
+              </div>
+              <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                {t.messages.coachTyping}
+              </span>
+            </div>
+          </motion.div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { TrendingUp, Target, Scale, Droplets, Camera, X } from 'lucide-react';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
 import GlassCard from './GlassCard';
+import AnimatedNumber from './AnimatedNumber';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
@@ -240,7 +241,7 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
               <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={styles.liftCard}>
                 <div style={styles.liftName}>{lift.name}</div>
                 <div style={styles.liftValue}>
-                  {current !== null ? current : '-'}<span style={styles.liftUnit}>{lift.unit}</span>
+                  {current !== null ? <AnimatedNumber value={current} duration={1200} /> : '-'}<span style={styles.liftUnit}>{lift.unit}</span>
                 </div>
                 {totalGain > 0 && (
                   <div style={styles.liftGain}>

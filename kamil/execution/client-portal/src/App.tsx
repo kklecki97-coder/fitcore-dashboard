@@ -32,7 +32,7 @@ import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, Workou
 const USE_MOCK_DATA = false;
 
 function App() {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -596,6 +596,32 @@ function App() {
     return () => { supabase.removeChannel(channel); };
   }, [isLoggedIn, clientUser]);
 
+  // ── Coach typing indicator via Supabase Realtime broadcast ──
+  const [coachTyping, setCoachTyping] = useState(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn || !clientUser?.id) return;
+
+    const typingChannel = supabase
+      .channel(`typing-${clientUser.id}`)
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (payload.payload?.isCoach) {
+          setCoachTyping(true);
+          // Clear previous timeout
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          // Auto-clear after 3 seconds of no typing event
+          typingTimeoutRef.current = setTimeout(() => setCoachTyping(false), 3000);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(typingChannel);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [isLoggedIn, clientUser]);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('fitcore-client-theme', theme);
@@ -986,6 +1012,7 @@ function App() {
               coachName={coachName}
               clientId={clientUser.id}
               clientName={clientUser.name}
+              coachTyping={coachTyping}
             />
           </ErrorBoundary>
         );

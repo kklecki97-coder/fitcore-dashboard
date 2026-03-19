@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, AlertTriangle, Loader2, X, Receipt, CreditCard } f
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { useToast } from './Toast';
 import { supabase } from '../lib/supabase';
 import { isValidUrl } from '../utils/validation';
 import type { Invoice } from '../types';
@@ -14,6 +15,7 @@ interface InvoicesPageProps {
 export default function InvoicesPage({ invoices }: InvoicesPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
+  const { showToast } = useToast();
   const [payingId, setPayingId] = useState<string | null>(null);
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
@@ -26,6 +28,9 @@ export default function InvoicesPage({ invoices }: InvoicesPageProps) {
     const payment = params.get('payment');
     if (payment === 'success' || payment === 'cancelled') {
       setPaymentBanner(payment);
+      if (payment === 'success') {
+        showToast(t.toasts?.paymentCompleted ?? 'Payment completed!', 'success');
+      }
       const url = new URL(window.location.href);
       url.searchParams.delete('payment');
       window.history.replaceState({}, '', url.toString());
