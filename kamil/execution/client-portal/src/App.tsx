@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Lock, CheckCircle, RefreshCw } from 'lucide-react';
 import ErrorBoundary from './components/ErrorBoundary';
+import Confetti from './components/Confetti';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import LoginPage from './components/LoginPage';
@@ -15,6 +16,12 @@ import SettingsPage from './components/SettingsPage';
 import InvoicesPage from './components/InvoicesPage';
 import OnboardingPage from './components/OnboardingPage';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
+import { useToast } from './components/Toast';
+import {
+  HomePageSkeleton, ProgramPageSkeleton, CheckInPageSkeleton,
+  ProgressPageSkeleton, MessagesPageSkeleton, CalendarPageSkeleton,
+  InvoicesPageSkeleton,
+} from './components/Skeleton';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
@@ -25,7 +32,7 @@ import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, Workou
 const USE_MOCK_DATA = false;
 
 function App() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -167,10 +174,11 @@ function App() {
   const [setLogs, setSetLogs] = useState<WorkoutSetLog[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(null);
+  const { showToast } = useToast();
   const [toastError, setToastError] = useState<string | null>(null);
 
-  // Fix #20: Longer toast duration (6s) and click-to-dismiss
   const showError = (msg: string) => {
+    showToast(msg, 'error');
     setToastError(msg);
     setTimeout(() => setToastError(null), 6000);
   };
@@ -710,6 +718,8 @@ function App() {
         }),
       }).catch(() => {}); // Silent - don't block check-in on email failure
     });
+
+    showToast(lang === 'pl' ? 'Check-in wysłany!' : 'Check-in submitted!', 'success');
   };
 
   const handleLogWorkout = async (type: string, date: string, durationMinutes?: number) => {
@@ -739,6 +749,8 @@ function App() {
     if (error) {
       setWorkoutLogs(prev => prev.filter(l => l.id !== newLog.id));
       showError('Failed to log workout');
+    } else {
+      showToast(lang === 'pl' ? 'Trening zaliczony!' : 'Workout logged!', 'success');
     }
   };
 
@@ -901,6 +913,20 @@ function App() {
   const renderPage = () => {
     if (!clientUser) return null;
 
+    // Show skeleton while data loads
+    if (dataLoading) {
+      switch (currentPage) {
+        case 'home': return <HomePageSkeleton isMobile={isMobile} />;
+        case 'program': return <ProgramPageSkeleton isMobile={isMobile} />;
+        case 'check-in': return <CheckInPageSkeleton isMobile={isMobile} />;
+        case 'progress': return <ProgressPageSkeleton isMobile={isMobile} />;
+        case 'messages': return <MessagesPageSkeleton isMobile={isMobile} />;
+        case 'calendar': return <CalendarPageSkeleton isMobile={isMobile} />;
+        case 'invoices': return <InvoicesPageSkeleton isMobile={isMobile} />;
+        default: return <HomePageSkeleton isMobile={isMobile} />;
+      }
+    }
+
     // Each page wrapped in ErrorBoundary so one page crash doesn't kill the whole app
     switch (currentPage) {
       case 'home':
@@ -1005,10 +1031,10 @@ function App() {
   };
 
   // Fix #21: Show retry button when data load fails
-  if (authLoading || dataLoading) {
+  if (authLoading) {
     return (
       <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>{dataLoading ? 'Loading data...' : 'Loading...'}</div>
+        <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>Loading...</div>
       </div>
     );
   }
