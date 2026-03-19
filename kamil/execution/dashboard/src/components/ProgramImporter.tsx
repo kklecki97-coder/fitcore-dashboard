@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Upload, FileSpreadsheet, Check, AlertTriangle, Dumbbell, X } from 'lucide-react';
+import { ArrowLeft, Upload, FileSpreadsheet, Check, AlertTriangle, Dumbbell, X, Sparkles, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { WorkoutProgram, WorkoutDay, Exercise } from '../types';
+import { parseWorkbookRows } from '../utils/import-parser';
+import { aiReviewImport } from '../utils/ai-import-review';
+import type { WorkoutProgram } from '../types';
 
 interface ProgramImporterProps {
   onImported: (program: WorkoutProgram) => void;
@@ -16,132 +18,7 @@ interface ProgramImporterProps {
 function parseWorkbook(wb: XLSX.WorkBook): WorkoutProgram {
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-
-  const days: WorkoutDay[] = [];
-  let currentDay: WorkoutDay | null = null;
-
-  for (const row of rows) {
-    const cells = row.map(c => String(c ?? '').trim());
-    const joined = cells.join('').toLowerCase();
-
-    // Skip empty rows
-    if (!joined) continue;
-
-    // Skip instruction/header rows
-    if (joined.startsWith('instrukcja') || joined.startsWith('progresja') ||
-        joined.includes('w każdej serii') || joined.includes('serie rozgrzewkowe') ||
-        joined.includes('ćwiczenia powinny') || joined.includes('nie zmieniaj') ||
-        joined.includes('serie każdego') || joined.includes('treningi wykonujesz') ||
-        joined.includes('do każdego ćwiczenia') || joined.includes('1 sekunda') ||
-        joined.includes('raz w tygodniu') || joined.includes('na razie będzie') ||
-        joined.includes('z tygodnia na') || joined.includes('ilość powtórzeń') ||
-        joined.includes('następnie dodajesz') || joined.includes('jeżeli dojdziesz') ||
-        joined.includes('zwiększać od')) {
-      continue;
-    }
-
-    // Detect day/training header: "Trening I", "Trening II", "Day 1", etc.
-    // or lines like "Góra A", "Dół B", etc.
-    const firstCell = cells[0];
-    const isTrainingHeader = /^trening\s/i.test(firstCell) ||
-      (/^(g[oó]ra|d[oó][lł]|upper|lower|push|pull|legs|full)/i.test(firstCell) && !cells[1]);
-
-    if (isTrainingHeader) {
-      // Start a new day
-      const dayName = cells.filter(c => c).join(' ').replace(/\s+/g, ' ');
-      currentDay = {
-        id: crypto.randomUUID(),
-        name: dayName,
-        exercises: [],
-      };
-      days.push(currentDay);
-      continue;
-    }
-
-    // Detect column header rows (Numer, Nazwa, etc.) — skip them
-    if (/^numer/i.test(firstCell) || /^#/i.test(firstCell) ||
-        /^nazwa/i.test(cells[1] || '')) {
-      continue;
-    }
-
-    // Try to parse exercise row
-    // Expected formats:
-    // [number, name, sets, reps, rest, tempo, notes, link]
-    // or [name, sets, reps, rest, tempo, notes]
-    if (!currentDay) continue;
-
-    let name = '';
-    let sets = 3;
-    let reps = '10';
-    let restSeconds: number | null = null;
-    let tempo = '';
-    let notes = '';
-
-    // Detect if first cell is a number (row index)
-    const firstIsNum = /^\d+\.?$/.test(firstCell);
-    const offset = firstIsNum ? 1 : 0;
-
-    name = cells[offset] || '';
-    if (!name) continue;
-
-    // Parse sets
-    const setsStr = cells[offset + 1] || '';
-    const parsedSets = parseInt(setsStr);
-    if (!isNaN(parsedSets) && parsedSets > 0 && parsedSets <= 20) {
-      sets = parsedSets;
-    }
-
-    // Parse reps (could be "8-12", "6--8", "AMRAP", etc.)
-    reps = (cells[offset + 2] || '10').replace(/--/g, '-');
-
-    // Parse rest (could be "90s", "120s", "150", etc.)
-    const restStr = cells[offset + 3] || '';
-    const restMatch = restStr.match(/(\d+)/);
-    if (restMatch) {
-      restSeconds = parseInt(restMatch[1]);
-    }
-
-    // Parse tempo (e.g. "2/0/1/0", "3-1-2-0")
-    tempo = cells[offset + 4] || '';
-
-    // Parse notes
-    notes = cells[offset + 5] || '';
-
-    // Skip link column (offset + 6)
-
-    const exercise: Exercise = {
-      id: crypto.randomUUID(),
-      name,
-      sets,
-      reps,
-      weight: '',
-      rpe: null,
-      tempo,
-      restSeconds,
-      notes,
-    };
-    currentDay.exercises.push(exercise);
-  }
-
-  // Generate program name from sheet name or first day
-  const sheetName = wb.SheetNames[0];
-  const programName = sheetName && sheetName.length > 3
-    ? sheetName.replace(/[_-]/g, ' ')
-    : days.length > 0
-      ? 'Imported Program'
-      : 'Empty Program';
-
-  return {
-    id: crypto.randomUUID(),
-    name: programName,
-    status: 'draft',
-    durationWeeks: 4,
-    clientIds: [],
-    days,
-    isTemplate: false,
-    createdAt: new Date().toISOString().split('T')[0],
-    updatedAt: new Date().toISOString().split('T')[0],
-  };
+  return parseWorkbookRows(rows, wb.SheetNames[0]);
 }
 
 export default function ProgramImporter({ onImported, onBack }: ProgramImporterProps) {
@@ -152,10 +29,13 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
   const [preview, setPreview] = useState<WorkoutProgram | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
+  const [aiReviewing, setAiReviewing] = useState(false);
+  const [aiStats, setAiStats] = useState<{ notesFound: number; exercisesKept: number } | null>(null);
 
   const handleFile = async (file: File) => {
     setError(null);
     setFileName(file.name);
+    setAiStats(null);
 
     try {
       const buffer = await file.arrayBuffer();
@@ -167,7 +47,23 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
         return;
       }
 
-      setPreview(program);
+      // AI review step — classify exercises vs notes
+      const originalExCount = program.days.reduce((s, d) => s + d.exercises.length, 0);
+      setAiReviewing(true);
+      try {
+        const reviewed = await aiReviewImport(program);
+        const reviewedExCount = reviewed.days.reduce((s, d) => s + d.exercises.length, 0);
+        const notesFound = originalExCount - reviewedExCount;
+        if (notesFound > 0) {
+          setAiStats({ notesFound, exercisesKept: reviewedExCount });
+        }
+        setPreview(reviewed);
+      } catch {
+        // AI failed — use original parse
+        setPreview(program);
+      } finally {
+        setAiReviewing(false);
+      }
     } catch {
       setError(tr.errorParse);
     }
@@ -203,7 +99,30 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
         <p style={s.subtitle}>{tr.subtitle}</p>
       </div>
 
-      {!preview ? (
+      {/* AI Reviewing State */}
+      {aiReviewing && (
+        <GlassCard delay={0.1}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '48px 24px' }}>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            >
+              <Sparkles size={36} color="var(--accent-primary)" />
+            </motion.div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                AI is reviewing your program...
+              </p>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                Separating exercises from coach notes & instructions
+              </p>
+            </div>
+            <Loader2 size={20} color="var(--text-tertiary)" style={{ animation: 'spin 1s linear infinite' }} />
+          </div>
+        </GlassCard>
+      )}
+
+      {!preview && !aiReviewing ? (
         <GlassCard delay={0.1}>
           <div
             style={s.dropZone}
@@ -276,6 +195,25 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
               </button>
             </div>
           </GlassCard>
+
+          {/* AI Review Stats */}
+          {aiStats && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '12px 16px', borderRadius: '10px',
+                background: 'rgba(0, 229, 200, 0.08)',
+                border: '1px solid rgba(0, 229, 200, 0.2)',
+              }}
+            >
+              <Sparkles size={16} color="var(--accent-primary)" />
+              <span style={{ fontSize: '14px', color: 'var(--accent-primary)', fontWeight: 500 }}>
+                AI moved {aiStats.notesFound} note{aiStats.notesFound !== 1 ? 's' : ''} into exercise details — {aiStats.exercisesKept} exercises kept
+              </span>
+            </motion.div>
+          )}
 
           {preview.days.map((day, di) => (
             <GlassCard key={day.id} delay={0.1 + di * 0.05}>
