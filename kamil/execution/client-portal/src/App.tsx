@@ -1032,6 +1032,7 @@ function App() {
               workoutLogs={workoutLogs}
               checkIns={checkIns}
               setLogs={setLogs}
+              coachName={coachName}
             />
           </ErrorBoundary>
         );

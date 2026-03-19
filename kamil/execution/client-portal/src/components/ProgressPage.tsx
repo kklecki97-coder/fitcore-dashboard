@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Target, Scale, Droplets, Camera, X } from 'lucide-react';
+import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2 } from 'lucide-react';
+import ShareProgressCard from './ShareProgressCard';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
 import GlassCard from './GlassCard';
 import AnimatedNumber from './AnimatedNumber';
@@ -19,14 +20,14 @@ interface ProgressPageProps {
   workoutLogs: WorkoutLog[];
   checkIns: CheckIn[];
   setLogs: WorkoutSetLog[];
+  coachName?: string;
 }
 
-// @ts-ignore — workoutLogs reserved for future volume-over-time charts
-export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkIns, setLogs }: ProgressPageProps) {
-  void _workoutLogs;
+export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, coachName }: ProgressPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const [chartsReady, setChartsReady] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
   const [localCheckIns, setLocalCheckIns] = useState(checkIns);
   useEffect(() => { setLocalCheckIns(checkIns); }, [checkIns]);
   const [bodyTab, setBodyTab] = useState<'weight' | 'bodyFat'>('weight');
@@ -226,8 +227,52 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
     }
   };
 
+  // Compute share card data
+  const weeksIn = client.startDate ? Math.max(1, Math.floor((Date.now() - new Date(client.startDate).getTime()) / (7 * 24 * 60 * 60 * 1000))) : 0;
+  const weightChange = startWeight && currentWeight ? Math.round((currentWeight - startWeight) * 10) / 10 : null;
+  const totalWorkoutsCompleted = workoutLogs.filter(w => w.completed).length;
+  const completionRate = workoutLogs.length > 0 ? Math.round((totalWorkoutsCompleted / workoutLogs.length) * 100) : 0;
+  const getBestLift = (key: string) => {
+    const vals = liftMap.get(key);
+    return vals && vals.length > 0 ? Math.max(...vals) : null;
+  };
+
   return (
     <div style={{ ...styles.page, padding: isMobile ? '20px 16px 100px' : '24px 24px 80px' }}>
+
+      {/* Share Progress Button */}
+      <button
+        onClick={() => setShowShareCard(true)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          width: '100%', padding: '12px', borderRadius: '10px',
+          background: 'rgba(0,229,200,0.06)', border: '1px solid rgba(0,229,200,0.2)',
+          color: 'var(--accent-primary)', fontSize: '14px', fontWeight: 600,
+          fontFamily: 'var(--font-display)', cursor: 'pointer',
+          transition: 'all 0.15s', marginBottom: '4px',
+        }}
+      >
+        <Share2 size={16} />
+        {lang === 'pl' ? 'Udostępnij swoje postępy' : 'Share My Progress'}
+      </button>
+
+      {/* Share Card Modal */}
+      {showShareCard && (
+        <ShareProgressCard
+          clientName={client.name}
+          coachName={coachName || 'Coach'}
+          weeksIn={weeksIn}
+          weightChange={weightChange}
+          currentWeight={currentWeight}
+          benchPR={getBestLift('bench')}
+          squatPR={getBestLift('squat')}
+          deadliftPR={getBestLift('deadlift')}
+          workoutsCompleted={totalWorkoutsCompleted}
+          completionRate={completionRate}
+          streak={0}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
 
       {/* ── 1. STRENGTH ── */}
       <div style={styles.strengthSection}>
