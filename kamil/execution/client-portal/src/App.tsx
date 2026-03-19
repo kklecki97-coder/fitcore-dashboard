@@ -314,22 +314,24 @@ function App() {
         ? await supabase.from('check_in_photos').select('*').in('check_in_id', checkInIds)
         : { data: [] };
 
-      // Fix #1: Use signed URLs instead of public URLs for photos
+      // Generate signed URLs on-the-fly from stored paths (never expire in DB)
       const photosByCheckIn: Record<string, { url: string; label: string }[]> = {};
       for (const p of (photoData ?? [])) {
         if (!photosByCheckIn[p.check_in_id]) photosByCheckIn[p.check_in_id] = [];
         let photoUrl = p.url;
-        // If URL is a public Supabase storage URL, generate a signed one instead
-        if (photoUrl && photoUrl.includes('/storage/v1/object/public/')) {
-          const storagePath = photoUrl.split('/storage/v1/object/public/check-in-photos/')[1];
-          if (storagePath) {
-            const { data: signedData, error: signedUrlError } = await supabase.storage
+        // If stored value is a path (not a full URL), generate a signed URL
+        if (photoUrl && !photoUrl.startsWith('http')) {
+          const { data: signedData } = await supabase.storage
+            .from('check-in-photos')
+            .createSignedUrl(photoUrl, 86400);
+          if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
+        } else if (photoUrl && photoUrl.includes('/storage/v1/')) {
+          // Legacy: extract path from old full URLs and regenerate
+          const pathMatch = photoUrl.match(/\/check-in-photos\/(.+?)(\?|$)/);
+          if (pathMatch?.[1]) {
+            const { data: signedData } = await supabase.storage
               .from('check-in-photos')
-              .createSignedUrl(storagePath, 86400); // 24 hour expiry (#4)
-            if (signedUrlError) {
-              // TODO: Replace with error tracking service (e.g. Sentry) (#32)
-              console.error('Failed to generate signed URL for check-in photo:', signedUrlError);
-            }
+              .createSignedUrl(decodeURIComponent(pathMatch[1]), 86400);
             if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
           }
         }
@@ -656,10 +658,18 @@ function App() {
       }
     }
 
-    // Fix #1: Upload photos using signed URLs instead of public URLs
-    const photosWithFiles = ci.photos.filter((p: { url: string; label: string; file?: File }) => p.file);
+    // Upload photos — store path in DB, generate signed URLs on load
+    const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_PHOTOS = 5;
+    const photosWithFiles = ci.photos
+      .filter((p: { url: string; label: string; file?: File }) => p.file)
+      .slice(0, MAX_PHOTOS); // Limit to 5 photos per check-in
     for (const photo of photosWithFiles) {
       const file = (photo as { url: string; label: string; file: File }).file;
+      if (file.size > MAX_PHOTO_SIZE) {
+        console.warn(`Photo ${photo.label} skipped: ${(file.size / 1024 / 1024).toFixed(1)}MB exceeds 5MB limit`);
+        continue;
+      }
       const ext = file.name.split('.').pop() ?? 'jpg';
       // Sanitize label to prevent path traversal or invalid characters (#21)
       const safeLabel = photo.label.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -674,22 +684,12 @@ function App() {
         continue;
       }
 
-      // Use signed URL instead of public URL
-      const { data: signedData, error: signedUrlErr } = await supabase.storage
-        .from('check-in-photos')
-        .createSignedUrl(path, 86400); // 24 hour expiry (#4)
-      if (signedUrlErr) {
-        // TODO: Replace with error tracking service (#32)
-        console.error('Failed to generate signed URL for uploaded photo:', signedUrlErr);
-      }
-
-      if (signedData?.signedUrl) {
-        await supabase.from('check_in_photos').insert({
-          check_in_id: ci.id,
-          url: signedData.signedUrl,
-          label: photo.label,
-        });
-      }
+      // Store the storage path (not a signed URL) — signed URLs generated on-the-fly when loading
+      await supabase.from('check_in_photos').insert({
+        check_in_id: ci.id,
+        url: path,
+        label: photo.label,
+      });
     }
 
     // Notify coach via email (fire-and-forget)

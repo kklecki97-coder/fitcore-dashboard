@@ -222,6 +222,7 @@ export const en = {
     notEnoughData: 'Not enough data yet',
     uploadPhoto: 'Upload your photo',
     uploading: 'Uploading...',
+    photoTooLarge: 'Photo must be under 5MB',
   },
 
   messages: {

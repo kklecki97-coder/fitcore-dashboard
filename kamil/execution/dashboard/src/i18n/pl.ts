@@ -221,6 +221,12 @@ export const pl: Translations = {
     status: 'Status',
     save: 'Zapisz',
     cancel: 'Anuluj',
+    since: 'Od',
+    dayStreak: 'dni passy',
+    export: 'Eksport',
+    monthlyRate: 'Stawka Miesięczna',
+    createPlansHint: 'Utwórz plany w Ustawieniach → Plany i Cennik',
+    pausedNoInvoices: 'Wstrzymany klient nie będzie otrzymywać faktur',
   },
 
   checkIns: {

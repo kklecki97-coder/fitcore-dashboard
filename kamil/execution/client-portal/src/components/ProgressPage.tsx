@@ -150,9 +150,19 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
     photoInputRef.current?.click();
   };
 
+  const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setPhotoError(null);
+    if (file.size > MAX_PHOTO_SIZE) {
+      setPhotoError(t.progress.photoTooLarge);
+      e.target.value = '';
+      return;
+    }
 
     setUploading(true);
     try {
@@ -163,31 +173,27 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
       const { error: uploadErr } = await supabase.storage.from('progress-photos').upload(path, file, { upsert: true });
       if (uploadErr) { console.error('Photo upload failed:', uploadErr); return; }
 
-      // Use signed URL instead of public URL (#6)
-      const { data: signedData, error: signError } = await supabase.storage
+      // Store path (not signed URL) — signed URLs generated on-the-fly when loading
+      // Generate a signed URL for immediate display
+      const { data: signedData } = await supabase.storage
         .from('progress-photos')
-        .createSignedUrl(path, 86400); // 24 hour expiry
-      if (signError) {
-        console.error('Failed to generate signed URL:', signError);
-        return;
-      }
-      const photoUrl = signedData?.signedUrl;
-      if (!photoUrl) return;
+        .createSignedUrl(path, 86400);
+      const displayUrl = signedData?.signedUrl || path;
 
       // Find the target check-in to attach the photo to
       const targetCheckIn = uploadTarget === 'week1' ? firstPhotos : (latestPhotos ?? localCheckIns.sort((a, b) => b.date.localeCompare(a.date))[0]);
       if (targetCheckIn) {
-        // Insert into check_in_photos table (not check_ins.photos column)
+        // Store path in DB (not the signed URL)
         await supabase.from('check_in_photos').insert({
           check_in_id: targetCheckIn.id,
-          url: photoUrl,
+          url: path,
           label: photoPose,
         });
 
-        // Update local state instead of reloading (#12)
+        // Update local state with signed URL for immediate display
         setLocalCheckIns(prev => prev.map(ci =>
           ci.id === targetCheckIn.id
-            ? { ...ci, photos: [...(ci.photos || []), { url: photoUrl, label: photoPose }] }
+            ? { ...ci, photos: [...(ci.photos || []), { url: displayUrl, label: photoPose }] }
             : ci
         ));
       }
@@ -360,6 +366,11 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
           </div>
         </div>
         <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+        {photoError && (
+          <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontSize: '13px', marginBottom: '8px' }}>
+            {photoError}
+          </div>
+        )}
         <div style={styles.photoCompare}>
           {/* Week 1 / Starting photo */}
           <div style={styles.photoSide}>

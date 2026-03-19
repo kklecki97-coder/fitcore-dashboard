@@ -224,6 +224,7 @@ export const pl: Translations = {
     notEnoughData: 'Za mało danych',
     uploadPhoto: 'Prześlij zdjęcie',
     uploading: 'Przesyłanie...',
+    photoTooLarge: 'Zdjęcie musi być mniejsze niż 5MB',
   },
 
   messages: {

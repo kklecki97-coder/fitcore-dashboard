@@ -219,6 +219,12 @@ export const en = {
     status: 'Status',
     save: 'Save',
     cancel: 'Cancel',
+    since: 'Since',
+    dayStreak: 'day streak',
+    export: 'Export',
+    monthlyRate: 'Monthly Rate',
+    createPlansHint: 'Create plans in Settings → Plans & Pricing',
+    pausedNoInvoices: 'Paused clients will not receive invoices',
   },
 
   checkIns: {
