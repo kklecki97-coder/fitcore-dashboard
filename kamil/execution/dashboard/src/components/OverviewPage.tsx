@@ -22,6 +22,9 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useAIBriefing } from '../hooks/useAIBriefing';
 import { useLang } from '../i18n';
+import { computeRevenueChartData, calculateRevenueChange } from '../utils/analytics';
+import { filterAtRiskClients } from '../utils/client-analysis';
+import { getDailyQuote } from '../utils/formatting';
 import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, CheckIn } from '../types';
 
 const QUOTE_AUTHORS = [
@@ -65,67 +68,27 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const unreadMessages = messages.filter(m => !m.isRead && !m.isFromCoach);
 
   // Compute revenue chart from real invoices
-  const revenueData = useMemo(() => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const now = new Date();
-    const months: { month: string; revenue: number; clients: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const label = monthNames[d.getMonth()];
-      const paidInvoices = invoices.filter(inv => {
-        if (inv.status !== 'paid' || !inv.paidDate) return false;
-        const pd = new Date(inv.paidDate);
-        return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
-      });
-      months.push({
-        month: label,
-        revenue: paidInvoices.reduce((sum, inv) => sum + inv.amount, 0),
-        clients: new Set(paidInvoices.map(inv => inv.clientId)).size,
-      });
-    }
-    return months;
-  }, [invoices]);
+  const revenueData = useMemo(() => computeRevenueChartData(invoices), [invoices]);
 
   const lastMonth = revenueData[revenueData.length - 1];
   const prevMonth = revenueData[revenueData.length - 2];
-  const revenueChange = prevMonth && prevMonth.revenue > 0
-    ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100)
-    : 0;
+  const revenueChange = calculateRevenueChange(lastMonth.revenue, prevMonth?.revenue ?? 0);
 
   // At-risk: based on real data - paused, no workouts in 7 days, or overdue check-in
+  const atRiskClients = filterAtRiskClients(clients, workoutLogs);
+  // Used for at-risk reason display below
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
-  const atRiskClients = clients.filter(c => {
-    if (c.status === 'paused') return true;
-    // No workouts logged in last 7 days
-    const recentWorkouts = workoutLogs.filter(w => w.clientId === c.id && w.date >= sevenDaysAgoStr);
-    if (recentWorkouts.length === 0) return true;
-    // Overdue check-in
-    if (c.nextCheckIn && c.nextCheckIn !== '-') {
-      const checkInDate = new Date(c.nextCheckIn);
-      checkInDate.setHours(0, 0, 0, 0);
-      if (checkInDate < today) return true;
-    }
-    return false;
-  });
   // Pending check-ins: check-ins that coach hasn't reviewed yet
   const pendingCheckInsList = checkIns.filter(ci => ci.reviewStatus === 'pending');
 
 
   // Daily quote - rotate by day of year
-  const dailyQuote = useMemo(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
-    const idx = dayOfYear % t.overview.quotes.length;
-    return { text: t.overview.quotes[idx], author: QUOTE_AUTHORS[idx] };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [new Date().toDateString(), t]);
+  const dailyQuote = useMemo(() => getDailyQuote(t.overview.quotes, QUOTE_AUTHORS), [new Date().toDateString(), t]);
 
   // AI briefing fallback stats (when no API key or error)
   const fallbackStats = useMemo(() => [

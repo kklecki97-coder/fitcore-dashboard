@@ -13,6 +13,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { getLocale } from '../lib/locale';
+import { sparklinePoints } from '../utils/sparklines';
 import type { Client, CheckIn, Message, Page } from '../types';
 
 interface CheckInsPageProps {
@@ -22,6 +23,7 @@ interface CheckInsPageProps {
   onViewClient: (id: string) => void;
   onSendMessage: (msg: Message) => void;
   onNavigate?: (page: Page) => void; // kept for future use
+  onConfetti?: () => void;
 }
 
 type FilterTab = 'pending' | 'flagged' | 'reviewed' | 'missed' | 'all';
@@ -29,14 +31,10 @@ type FilterTab = 'pending' | 'flagged' | 'reviewed' | 'missed' | 'all';
 // ── Tiny inline sparkline (memoized to avoid re-renders when parent state changes) ──
 const Sparkline = React.memo(function Sparkline({ data, color, height = 28, width = 100 }: { data: number[]; color: string; height?: number; width?: number }) {
   if (data.length < 2) return null;
+  const points = sparklinePoints(data, height, width);
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
-  const points = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * width;
-    const y = height - ((v - min) / range) * (height - 4) - 2;
-    return `${x},${y}`;
-  }).join(' ');
   return (
     <svg width={width} height={height} style={{ display: 'block' }}>
       <polyline
@@ -85,7 +83,7 @@ function ScoreBar({ value, max = 10, color }: { value: number; max?: number; col
   );
 }
 
-export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onSendMessage, onNavigate: _onNavigate }: CheckInsPageProps) {
+export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onSendMessage, onNavigate: _onNavigate, onConfetti }: CheckInsPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
   const [filter, setFilter] = useState<FilterTab>('pending');
@@ -197,6 +195,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
     onUpdateCheckIn(id, { reviewStatus: 'reviewed', coachFeedback: feedback });
     setExpandedId(null);
     setFeedbackDrafts(prev => { const n = { ...prev }; delete n[id]; return n; });
+    onConfetti?.();
   };
 
   const handleFlag = (id: string) => {

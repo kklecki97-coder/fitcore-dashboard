@@ -779,6 +779,21 @@ export const en = {
     elite: 'Elite',
     min: 'min',
   },
+
+  commandPalette: {
+    placeholder: 'Search clients, pages, actions...',
+    clients: 'Clients',
+    pages: 'Pages',
+    actions: 'Actions',
+    noResults: 'No results found',
+    navigate: 'navigate',
+    select: 'select',
+    close: 'close',
+    inviteClient: 'Invite Client',
+    createProgram: 'Create Program',
+    aiProgram: 'AI Program Builder',
+    importProgram: 'Import from Excel',
+  },
 };
 
 export type Translations = typeof en;

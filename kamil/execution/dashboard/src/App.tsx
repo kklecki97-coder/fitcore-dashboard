@@ -18,6 +18,9 @@ import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
+import { useToast } from './components/Toast';
+import CommandPalette from './components/CommandPalette';
+import Confetti from './components/Confetti';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { exerciseLibrary } from './data';
@@ -26,6 +29,7 @@ import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, Ap
 
 function App() {
   const { t } = useLang();
+  const { showToast } = useToast();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -85,6 +89,7 @@ function App() {
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [previousPage, setPreviousPage] = useState<Page>('clients');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isMobile = useIsMobile();
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('fitcore-theme');
@@ -101,6 +106,8 @@ function App() {
   const [allSetLogs, setAllSetLogs] = useState<WorkoutSetLog[]>([]);
   const [allPlans, setAllPlans] = useState<CoachingPlan[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [confettiKey, setConfettiKey] = useState(0);
+  const triggerConfetti = () => setConfettiKey(k => k + 1);
 
   // ── Load data from Supabase on login ──
   useEffect(() => {
@@ -515,6 +522,18 @@ function App() {
     localStorage.setItem('fitcore-theme', theme);
   }, [theme]);
 
+  // ── Ctrl+K / Cmd+K to open Command Palette ──
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(o => !o);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   // Close sidebar on navigation (mobile)
   const handleNavigate = (page: Page) => {
     setCurrentPage(page);
@@ -645,6 +664,7 @@ function App() {
 
   // ── Program handlers ──
   const handleAddProgram = async (program: WorkoutProgram) => {
+    triggerConfetti();
     setAllPrograms(prev => [...prev, program]);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await saveProgramToDb(program, user.id);
@@ -699,6 +719,8 @@ function App() {
 
   // ── Invoice handlers ──
   const handleUpdateInvoice = async (id: string, updates: Partial<Invoice>) => {
+    // Check if this is a payment — trigger confetti
+    if (updates.status === 'paid') triggerConfetti();
     setAllInvoices(prev => prev.map(inv => inv.id === id ? { ...inv, ...updates } : inv));
     const dbUpdates: Record<string, unknown> = {};
     if (updates.status !== undefined) dbUpdates.status = updates.status;
@@ -733,7 +755,9 @@ function App() {
     if (error) {
       console.error('handleAddInvoice failed:', error); // TODO: error tracking (Sentry)
       setAllInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
+      showToast('Failed to create invoice', 'error');
     } else {
+      showToast('Invoice created & client notified', 'success');
       // Notify client via email (fire and forget)
       supabase.functions.invoke('notify-invoice', { body: { invoiceId: invoice.id } })
         .catch(() => { /* silent — email is best-effort */ });
@@ -988,6 +1012,7 @@ function App() {
               onViewClient={handleViewClient}
               onSendMessage={handleSendMessage}
               onNavigate={handleNavigate}
+              onConfetti={triggerConfetti}
             />
           </ErrorBoundary>
         );
@@ -1015,7 +1040,7 @@ function App() {
                 if (!user) return;
                 const path = `avatars/${user.id}`;
                 const { error: uploadErr } = await supabase.storage.from('coach-avatars').upload(path, file, { upsert: true });
-                if (uploadErr) { console.error('Photo upload failed:', uploadErr); /* TODO: error tracking (Sentry) */ alert('Photo upload failed. Please try again.'); return; }
+                if (uploadErr) { console.error('Photo upload failed:', uploadErr); /* TODO: error tracking (Sentry) */ showToast('Photo upload failed. Please try again.', 'error'); return; }
                 const { data: urlData } = supabase.storage.from('coach-avatars').getPublicUrl(path);
                 const url = urlData.publicUrl + '?t=' + Date.now(); // cache-bust
                 await supabase.from('coaches').update({ avatar_url: url }).eq('id', user.id);
@@ -1117,6 +1142,16 @@ function App() {
           }}
         />
       )}
+      {/* Command Palette (Ctrl+K) */}
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        onNavigate={handleNavigate}
+        onViewClient={handleViewClient}
+        clients={allClients}
+      />
+      {/* Confetti on milestones */}
+      <Confetti key={confettiKey} active={confettiKey > 0} />
     </div>
     </ErrorBoundary>
   );

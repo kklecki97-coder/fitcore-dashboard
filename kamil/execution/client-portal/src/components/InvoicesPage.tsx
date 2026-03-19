@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, CheckCircle2, Clock, AlertTriangle, Loader2, X, Receipt, CreditCard } from 'lucide-react';
+import { CheckCircle2, Clock, AlertTriangle, Loader2, X, Receipt, CreditCard } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';

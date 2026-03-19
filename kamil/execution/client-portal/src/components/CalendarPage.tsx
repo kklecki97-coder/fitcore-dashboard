@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import type { WorkoutProgram, WorkoutLog, WeeklySchedule } from '../types';
+import { extractLabel } from '../utils/workout-labels';
 
 interface CalendarPageProps {
   program: WorkoutProgram | null;
@@ -13,39 +14,6 @@ interface CalendarPageProps {
 }
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-// Extract a short label from a workout day name like "Monday - Boxing + Jiu-Jitsu" → "BJJ + Box"
-const extractLabel = (name: string): string => {
-  // Strip leading day-of-week prefix (e.g. "Monday - ", "Wed - ")
-  const stripped = name.replace(/^(mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\s*[\-–\-:]\s*/i, '');
-  const s = stripped.toLowerCase();
-
-  // Keyword matching for common workout types
-  if (s.includes('push')) return 'Push';
-  if (s.includes('pull')) return 'Pull';
-  if (s.includes('upper')) return 'Upper';
-  if (s.includes('lower')) return 'Lower';
-  if (s.includes('legs') || s.includes('leg day')) return 'Legs';
-
-  // Martial arts / combat
-  const hasBjj = s.includes('jiu') || s.includes('bjj') || s.includes('grappling');
-  const hasBoxing = s.includes('box');
-  const hasMma = s.includes('mma');
-  if (hasBjj && hasBoxing) return 'BJJ + Box';
-  if (hasBjj && hasMma) return 'BJJ + MMA';
-  if (hasBjj) return 'BJJ';
-  if (hasBoxing) return 'Boxing';
-  if (hasMma) return 'MMA';
-
-  // Strength / gym
-  if (s.includes('strength') || s.includes('full body') || s.includes('gym')) return 'Gym';
-  if (s.includes('cardio')) return 'Cardio';
-  if (s.includes('hiit')) return 'HIIT';
-  if (s.includes('yoga') || s.includes('stretch')) return 'Yoga';
-
-  // Fallback: use the stripped name (without day prefix), truncated
-  return stripped.length > 8 ? stripped.slice(0, 8) : stripped;
-};
 
 // Color palette for workout types (up to 6 distinct workouts)
 const WORKOUT_COLORS = [
@@ -58,12 +26,7 @@ const WORKOUT_COLORS = [
 ];
 
 // Local date string (avoids timezone shift from toISOString)
-const localDateStr = (d: Date) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
+import { localDateStr } from '../utils/date-helpers';
 
 export default function CalendarPage({ program, workoutLogs, weeklySchedule, onUpdateSchedule }: CalendarPageProps) {
   const isMobile = useIsMobile();

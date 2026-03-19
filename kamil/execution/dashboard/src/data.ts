@@ -1,20 +1,7 @@
 import type { Client, Message, RevenueData, WorkoutLog, WorkoutProgram, Invoice, CheckIn } from './types';
 
-const avatarColors = [
-  '#00e5c8', '#6366f1', '#f59e0b', '#ef4444', '#22c55e',
-  '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6',
-  '#a855f7', '#3b82f6', '#10b981', '#f43f5e', '#84cc16',
-  '#0ea5e9', '#d946ef', '#facc15', '#64748b', '#fb923c',
-];
-
-export function getInitials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase();
-}
-
-export function getAvatarColor(id: string): string {
-  const idx = id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
-  return avatarColors[idx % avatarColors.length];
-}
+// Re-export from utils/formatting so existing imports continue to work
+export { getInitials, getAvatarColor } from './utils/formatting';
 
 // WARNING: This is mock/seed data for development only.
 // Production components should load data from Supabase, not from these exports.

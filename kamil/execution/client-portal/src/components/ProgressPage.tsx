@@ -5,6 +5,7 @@ import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
+import { matchMainLift, MAIN_LIFT_PATTERNS, parseTarget } from '../utils/lift-matching';
 import type { Client, WorkoutLog, CheckIn, WorkoutSetLog } from '../types';
 
 type TimePeriod = '1m' | '3m' | '6m' | 'all';
@@ -83,20 +84,6 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
   ];
 
   // ── Main 3 Lift PRs from workout set logs ──
-  // Match exercise names (EN + PL) to the 3 main compound lifts
-  const mainLiftPatterns: { key: string; label: string; patterns: string[] }[] = [
-    { key: 'bench', label: 'Bench Press', patterns: ['bench press', 'wyciskanie sztangi leżąc', 'wyciskanie leżąc', 'wyciskanie sztangi lezac', 'flat bench', 'bench'] },
-    { key: 'squat', label: 'Squat', patterns: ['squat', 'przysiad', 'back squat', 'front squat', 'przysiady'] },
-    { key: 'deadlift', label: 'Deadlift', patterns: ['deadlift', 'dead lift', 'martwy ciąg', 'martwy ciag', 'martwego ciągu', 'martwego ciagu'] },
-  ];
-
-  const matchMainLift = (exerciseName: string): string | null => {
-    const lower = exerciseName.toLowerCase();
-    for (const lift of mainLiftPatterns) {
-      if (lift.patterns.some(p => lower.includes(p))) return lift.key;
-    }
-    return null;
-  };
 
   const liftMap = new Map<string, number[]>();
   const completedSets = setLogs.filter(l => l.completed && l.weight);
@@ -113,17 +100,13 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
   }
 
   // Build the 3 main lifts array — show all 3 even if no data yet
-  const allLifts = mainLiftPatterns.map(lift => ({
+  const allLifts = MAIN_LIFT_PATTERNS.map(lift => ({
     name: lift.label,
     values: liftMap.get(lift.key) ?? metrics[lift.key === 'bench' ? 'benchPress' : lift.key === 'squat' ? 'squat' : 'deadlift'] ?? [],
     unit: 'kg',
   }));
 
   // ── Goal progress - handle empty data gracefully ──
-  const parseTarget = (text: string): number | null => {
-    const match = text.match(/(\d+(?:\.\d+)?)\s*kg/i) || text.match(/(\d+(?:\.\d+)?)/);
-    return match ? parseFloat(match[1]) : null;
-  };
 
   const goalProgress = client.goals.map(goal => {
     const g = goal.toLowerCase();

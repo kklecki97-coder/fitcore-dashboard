@@ -137,24 +137,15 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   const sendToAI = async (apiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>) => {
     setLoading(true);
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-      if (!apiKey) throw new Error('Anthropic API key not configured');
       // Separate system message from conversation messages for Claude API
       const systemMsg = apiMessages.find(m => m.role === 'system')?.content || '';
       const conversationMsgs = apiMessages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 1000 }),
+      const { data, error: fnError } = await supabase.functions.invoke('anthropic-proxy', {
+        body: { system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 1000 },
       });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
-      const data = await res.json();
-      let text = (data.content?.[0]?.text || '').trim();
+      if (fnError) throw new Error(fnError.message || 'Edge function error');
+      if (data?.error) throw new Error(data.error);
+      let text = (data?.content?.[0]?.text || '').trim();
       if (text.includes('[READY]')) {
         setAiReady(true);
         text = text.replace(/\s*\[READY\]\s*/g, '').trim();
@@ -181,22 +172,13 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
     const apiMessages = getConversationMessages();
     apiMessages.push({ role: 'user', content: GENERATE_PROMPT });
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-      if (!apiKey) throw new Error('Anthropic API key not configured');
       const systemMsg = apiMessages.find(m => m.role === 'system')?.content || '';
       const conversationMsgs = apiMessages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 4000 }),
+      const { data, error: fnError } = await supabase.functions.invoke('anthropic-proxy', {
+        body: { system: systemMsg, messages: conversationMsgs, temperature: 0.7, max_tokens: 4000 },
       });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error?.message || `API error: ${res.status}`); }
-      const data = await res.json();
+      if (fnError) throw new Error(fnError.message || 'Edge function error');
+      if (data?.error) throw new Error(data.error);
       const content = (data.content?.[0]?.text || '').trim();
       const jsonStr = content.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
       const generated = JSON.parse(jsonStr);

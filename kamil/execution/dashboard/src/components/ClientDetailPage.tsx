@@ -18,6 +18,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
+import { calculateMetricChange, buildLiftData, buildClientRadarData } from '../utils/client-metrics';
 import { getLocale } from '../lib/locale';
 import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
 
@@ -103,36 +104,27 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   const weightData = client.metrics.weight.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));
   const bfData = client.metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
 
-  const liftData = client.metrics.benchPress.map((_, i) => ({
-    month: months[i] || `M${i}`,
-    bench: client.metrics.benchPress[i],
-    squat: client.metrics.squat[i],
-    deadlift: client.metrics.deadlift[i],
-  }));
+  const liftData = buildLiftData(client, months);
 
+  const weightMetric = calculateMetricChange(client.metrics.weight);
   const hasWeight = client.metrics.weight.length > 0;
-  const latestWeight = hasWeight ? client.metrics.weight[client.metrics.weight.length - 1] : null;
-  const prevWeight = hasWeight ? (client.metrics.weight[client.metrics.weight.length - 2] ?? latestWeight) : null;
-  const weightChange = latestWeight != null && prevWeight != null ? latestWeight - prevWeight : 0;
+  const latestWeight = weightMetric.latestValue;
+  const weightChange = weightMetric.change;
 
+  const bfMetric = calculateMetricChange(client.metrics.bodyFat);
   const hasBF = client.metrics.bodyFat.length > 0;
-  const latestBF = hasBF ? client.metrics.bodyFat[client.metrics.bodyFat.length - 1] : null;
-  const prevBF = hasBF ? (client.metrics.bodyFat[client.metrics.bodyFat.length - 2] ?? latestBF) : null;
-  const bfChange = latestBF != null && prevBF != null ? latestBF - prevBF : 0;
+  const latestBF = bfMetric.latestValue;
+  const bfChange = bfMetric.change;
 
   // Deterministic radar values derived from client data
-  const enduranceScore = Math.min(100, 60 + (client.progress * 0.3) + (client.streak * 0.5));
-  const nutritionScore = Math.min(100, 45 + (client.progress * 0.4) + (client.streak * 0.3));
-  const recoveryScore = Math.min(100, 55 + (client.streak * 1.2) + (client.progress * 0.15));
-
-  const radarData = [
-    { metric: t.clientDetail.radarStrength, value: Math.min(100, (client.metrics.benchPress[client.metrics.benchPress.length - 1] / 120) * 100) },
-    { metric: t.clientDetail.radarEndurance, value: enduranceScore },
-    { metric: t.clientDetail.radarConsistency, value: Math.min(100, client.streak * 3.5) },
-    { metric: t.clientDetail.radarNutrition, value: nutritionScore },
-    { metric: t.clientDetail.radarRecovery, value: recoveryScore },
-    { metric: t.clientDetail.radarProgress, value: client.progress },
-  ];
+  const radarData = buildClientRadarData(client, {
+    strength: t.clientDetail.radarStrength,
+    endurance: t.clientDetail.radarEndurance,
+    consistency: t.clientDetail.radarConsistency,
+    nutrition: t.clientDetail.radarNutrition,
+    recovery: t.clientDetail.radarRecovery,
+    progress: t.clientDetail.radarProgress,
+  });
 
   const planColors: Record<string, { color: string; bg: string }> = {
     Elite: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },

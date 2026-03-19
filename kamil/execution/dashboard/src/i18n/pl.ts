@@ -781,4 +781,19 @@ export const pl: Translations = {
     elite: 'Elite',
     min: 'min',
   },
+
+  commandPalette: {
+    placeholder: 'Szukaj klientów, stron, akcji...',
+    clients: 'Klienci',
+    pages: 'Strony',
+    actions: 'Akcje',
+    noResults: 'Brak wyników',
+    navigate: 'nawiguj',
+    select: 'wybierz',
+    close: 'zamknij',
+    inviteClient: 'Zaproś klienta',
+    createProgram: 'Utwórz program',
+    aiProgram: 'AI Program Builder',
+    importProgram: 'Importuj z Excela',
+  },
 };
