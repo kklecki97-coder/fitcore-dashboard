@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Mail, Calendar, Flame, Target,
@@ -17,6 +17,7 @@ import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { supabase } from '../lib/supabase';
 import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn, CoachingPlan } from '../types';
 
 interface ClientDetailPageProps {
@@ -73,6 +74,23 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     squat: '',
     deadlift: '',
   });
+
+  // Load client's weekly schedule for calendar
+  const [clientSchedule, setClientSchedule] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!clientId) return;
+    (async () => {
+      // Get the most recent weekly schedule for this client
+      const { data } = await supabase
+        .from('weekly_schedule')
+        .select('day_assignments')
+        .eq('client_id', clientId)
+        .order('week_start', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data?.day_assignments) setClientSchedule(data.day_assignments);
+    })();
+  }, [clientId]);
 
   if (!client) return null;
 
@@ -702,6 +720,10 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                   const entries = logsByDate[dateKey];
                   const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
                   const isFuture = new Date(calYear, calMonth, day) > today;
+                  // Check if this day has a planned workout from the client's schedule
+                  const cellDate = new Date(calYear, calMonth, day);
+                  const dow = (cellDate.getDay() + 6) % 7; // Mon=0, Sun=6
+                  const isPlanned = !!clientSchedule[String(dow)];
 
                   const allCompleted = entries?.every(e => e.completed);
                   const hasMissed = entries && !allCompleted;
@@ -726,6 +748,12 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                         } : entries && !isFuture && hasMissed ? {
                           background: '#e8637a0D',
                           border: '1px solid #e8637a1A',
+                        } : isPlanned && !isFuture && !entries ? {
+                          background: 'rgba(239,68,68,0.06)',
+                          border: '1px solid rgba(239,68,68,0.15)',
+                        } : isPlanned && isFuture ? {
+                          background: 'rgba(0,229,200,0.04)',
+                          border: '1px solid rgba(0,229,200,0.1)',
                         } : isFuture ? {
                           background: 'transparent',
                           border: '1px solid rgba(255,255,255,0.02)',
@@ -741,7 +769,9 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                         ...styles.calStatusBar,
                         background: entries && !isFuture && allCompleted ? '#20dba4'
                           : entries && !isFuture && hasMissed ? '#e8637a'
+                          : isPlanned && !isFuture && !entries ? '#e8637a'
                           : isToday ? 'var(--accent-primary)'
+                          : isPlanned && isFuture ? 'rgba(0,229,200,0.4)'
                           : 'transparent',
                       }} />
                       <span style={{
