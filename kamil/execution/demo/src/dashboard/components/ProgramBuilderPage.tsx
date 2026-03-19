@@ -174,8 +174,8 @@ export default function ProgramBuilderPage({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [renamingDay, setRenamingDay] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify(program || ''));
-  const [showSavedIndicator, setShowSavedIndicator] = useState(false);
+  const [savedSnapshot] = useState(() => JSON.stringify(program || ''));
+  const [showSavedIndicator] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 

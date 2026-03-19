@@ -50,8 +50,8 @@ export default function WorkoutProgramsPage({
 }: WorkoutProgramsPageProps) {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterType, setFilterType] = useState<string>('all');
+  const [filterStatus] = useState<string>('all');
+  const [filterType] = useState<string>('all');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -73,11 +73,8 @@ export default function WorkoutProgramsPage({
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  const activeCount = programs.filter(p => p.status === 'active').length;
-  const draftCount = programs.filter(p => p.status === 'draft').length;
-  const templateCount = programs.filter(p => p.isTemplate).length;
-
-  const handleSaveAsTemplate = (id: string) => {
+  // @ts-ignore - kept for future use
+  const _handleSaveAsTemplate = (id: string) => {
     onDuplicateProgram(id);
     // Mark the duplicate as a template after it's been created
     setTimeout(() => {

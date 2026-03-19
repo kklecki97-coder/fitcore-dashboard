@@ -34,9 +34,9 @@ export default function ClientApp() {
   const [messages, setMessages] = useState<Message[]>(mockMessages);
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(mockWeeklySchedule);
   const [invoices] = useState([
-    { id: 'inv-1', clientId: mockClient.id, amount: 122, status: 'paid' as const, dueDate: '2026-02-01', paidDate: '2026-02-01', period: 'Feb 2026', plan: 'Gold Plan', paymentUrl: null },
-    { id: 'inv-2', clientId: mockClient.id, amount: 122, status: 'paid' as const, dueDate: '2026-03-01', paidDate: '2026-03-02', period: 'Mar 2026', plan: 'Gold Plan', paymentUrl: null },
-    { id: 'inv-3', clientId: mockClient.id, amount: 122, status: 'pending' as const, dueDate: '2026-04-01', paidDate: null, period: 'Apr 2026', plan: 'Gold Plan', paymentUrl: null },
+    { id: 'inv-1', clientId: mockClient.id, amount: 122, status: 'paid' as const, dueDate: '2026-02-01', paidDate: '2026-02-01', period: 'Feb 2026', plan: 'Premium' as const, paymentUrl: null },
+    { id: 'inv-2', clientId: mockClient.id, amount: 122, status: 'paid' as const, dueDate: '2026-03-01', paidDate: '2026-03-02', period: 'Mar 2026', plan: 'Premium' as const, paymentUrl: null },
+    { id: 'inv-3', clientId: mockClient.id, amount: 122, status: 'pending' as const, dueDate: '2026-04-01', paidDate: null, period: 'Apr 2026', plan: 'Premium' as const, paymentUrl: null },
   ]);
 
   useEffect(() => {

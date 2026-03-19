@@ -5,7 +5,6 @@ import {
   Dumbbell,
   MessageSquare,
   BarChart3,
-  CalendarDays,
   Settings,
   LogOut,
   CreditCard,
@@ -30,7 +29,7 @@ const navItems: { icon: typeof LayoutDashboard; label: string; page: Page }[] = 
   { icon: BarChart3, label: 'Analytics', page: 'analytics' },
 ];
 
-export default function Sidebar({ currentPage, onNavigate, profileName = 'Coach Kamil', onLogout }: SidebarProps) {
+export default function Sidebar({ currentPage, onNavigate, onLogout }: SidebarProps) {
   return (
     <aside style={styles.sidebar}>
       {/* Logo */}
