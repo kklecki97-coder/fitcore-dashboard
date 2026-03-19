@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Target, Scale, Droplets, Camera, X, Upload } from 'lucide-react';
+import { TrendingUp, Target, Scale, Droplets, Camera, X } from 'lucide-react';
 import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
@@ -408,75 +408,75 @@ export default function ProgressPage({ client, workoutLogs: _workoutLogs, checkI
             {photoError}
           </div>
         )}
-        <div style={styles.photoCompare}>
-          {/* Week 1 / Starting photo */}
-          <div style={styles.photoSide}>
-            <div style={styles.photoDateLabel}>{t.progress.week1}</div>
-            {(() => {
-              const userSrc = getPhotoForPose(firstPhotos, photoPose);
-              const ciDate = firstPhotos?.date ? new Date(firstPhotos.date) : null;
-              const ciWeight = firstPhotos?.weight ?? null;
-              if (userSrc) {
-                return (
-                  <>
-                    <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
-                      <img src={userSrc} alt={`${t.progress.week1} ${photoPose}`} style={styles.photoImg} />
-                    </div>
-                    <div style={styles.photoMeta}>
-                      {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
-                    </div>
-                  </>
-                );
-              }
-              return (
-                <>
-                  <div style={styles.photoFrame} onClick={() => handlePhotoUpload('week1')}>
-                    <div style={styles.photoPlaceholder}>
-                      <Upload size={20} color="var(--accent-primary)" style={{ opacity: 0.6 }} />
-                      <span style={styles.photoUploadText}>{uploading ? t.progress.uploading : t.progress.uploadPhoto}</span>
-                    </div>
-                  </div>
-                  <div style={styles.photoMeta}>
-                    {startWeight ? `${monthNames[startMonth]} · ${startWeight}kg` : ''}
-                  </div>
-                </>
-              );
-            })()}
-          </div>
 
-          {/* Latest / Current photo */}
-          <div style={styles.photoSide}>
-            <div style={styles.photoDateLabel}>{t.progress.latest}</div>
-            {(() => {
-              const userSrc = getPhotoForPose(latestPhotos ?? undefined, photoPose);
-              const ciDate = latestPhotos?.date ? new Date(latestPhotos.date) : null;
-              const ciWeight = latestPhotos?.weight ?? null;
-              if (userSrc) {
-                return (
-                  <>
-                    <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
-                      <img src={userSrc} alt={`${t.progress.latest} ${photoPose}`} style={styles.photoImg} />
-                    </div>
-                    <div style={styles.photoMeta}>
-                      {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
-                    </div>
-                  </>
-                );
-              }
-              return (
-                <>
-                  <div style={styles.photoFrame} onClick={() => handlePhotoUpload('latest')}>
-                    <div style={styles.photoPlaceholder}>
-                      <Upload size={20} color="var(--accent-primary)" style={{ opacity: 0.6 }} />
-                      <span style={styles.photoUploadText}>{uploading ? t.progress.uploading : t.progress.uploadPhoto}</span>
-                    </div>
-                  </div>
-                  <div style={styles.photoMeta} />
-                </>
-              );
-            })()}
+        {/* Show photos if any exist */}
+        {(firstPhotos || latestPhotos) ? (
+          <div style={styles.photoCompare}>
+            {/* Week 1 / Starting photo */}
+            <div style={styles.photoSide}>
+              <div style={styles.photoDateLabel}>{t.progress.week1}</div>
+              {(() => {
+                const userSrc = getPhotoForPose(firstPhotos, photoPose);
+                const ciDate = firstPhotos?.date ? new Date(firstPhotos.date) : null;
+                const ciWeight = firstPhotos?.weight ?? null;
+                if (userSrc) {
+                  return (
+                    <>
+                      <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
+                        <img src={userSrc} alt={`${t.progress.week1} ${photoPose}`} style={styles.photoImg} />
+                      </div>
+                      <div style={styles.photoMeta}>
+                        {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
+                      </div>
+                    </>
+                  );
+                }
+                return null;
+              })()}
+            </div>
+
+            {/* Latest / Current photo */}
+            {latestPhotos && (
+              <div style={styles.photoSide}>
+                <div style={styles.photoDateLabel}>{t.progress.latest}</div>
+                {(() => {
+                  const userSrc = getPhotoForPose(latestPhotos, photoPose);
+                  const ciDate = latestPhotos?.date ? new Date(latestPhotos.date) : null;
+                  const ciWeight = latestPhotos?.weight ?? null;
+                  if (userSrc) {
+                    return (
+                      <>
+                        <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
+                          <img src={userSrc} alt={`${t.progress.latest} ${photoPose}`} style={styles.photoImg} />
+                        </div>
+                        <div style={styles.photoMeta}>
+                          {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
+                        </div>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
           </div>
-        </div>
+        ) : null}
+
+        {/* Add photo button */}
+        <button
+          onClick={() => handlePhotoUpload(firstPhotos ? 'latest' : 'week1')}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            width: '100%', padding: '14px', borderRadius: '10px',
+            border: '1.5px dashed rgba(0,229,200,0.3)', background: 'rgba(0,229,200,0.04)',
+            color: 'var(--accent-primary)', fontSize: '14px', fontWeight: 600,
+            fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
+            marginTop: (firstPhotos || latestPhotos) ? '8px' : '0',
+          }}
+        >
+          <Camera size={16} />
+          {uploading ? t.progress.uploading : `+ ${t.progress.uploadPhoto}`}
+        </button>
       </GlassCard>
 
       {/* ── LIGHTBOX ── */}
@@ -767,7 +767,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   photoFrame: {
     width: '100%',
-    aspectRatio: '3 / 4',
+    aspectRatio: '1 / 1',
     borderRadius: '10px',
     overflow: 'hidden',
     background: 'rgba(255,255,255,0.03)',
