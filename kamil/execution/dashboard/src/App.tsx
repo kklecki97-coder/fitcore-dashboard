@@ -457,6 +457,76 @@ function App() {
     return () => { supabase.removeChannel(channel); };
   }, [isLoggedIn]);
 
+  // ── Realtime check-ins — subscribe to INSERT/UPDATE on check_ins table ──
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const channel = supabase
+      .channel('coach-checkins')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'check_ins' },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
+          const ci: CheckIn = {
+            id: r.id as string,
+            clientId: r.client_id as string,
+            clientName: nameMap.get(r.client_id as string) ?? '',
+            date: r.date as string,
+            status: r.status as CheckIn['status'],
+            weight: r.weight as number | null,
+            bodyFat: r.body_fat as number | null,
+            mood: r.mood as CheckIn['mood'],
+            energy: r.energy as number | null,
+            stress: r.stress as number | null,
+            sleepHours: r.sleep_hours as number | null,
+            steps: r.steps as number | null,
+            nutritionScore: r.nutrition_score as number | null,
+            notes: (r.notes as string) ?? '',
+            wins: (r.wins as string) ?? '',
+            challenges: (r.challenges as string) ?? '',
+            coachFeedback: (r.coach_feedback as string) ?? '',
+            reviewStatus: r.review_status as CheckIn['reviewStatus'],
+            flagReason: (r.flag_reason as string) ?? '',
+            photos: [],
+            followUpNotes: [],
+          };
+          setAllCheckIns(prev => prev.some(c => c.id === ci.id) ? prev : [ci, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'check_ins' },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          setAllCheckIns(prev => prev.map(ci =>
+            ci.id === r.id
+              ? {
+                  ...ci,
+                  status: r.status as CheckIn['status'],
+                  weight: r.weight as number | null,
+                  bodyFat: r.body_fat as number | null,
+                  mood: r.mood as CheckIn['mood'],
+                  energy: r.energy as number | null,
+                  stress: r.stress as number | null,
+                  sleepHours: r.sleep_hours as number | null,
+                  steps: r.steps as number | null,
+                  nutritionScore: r.nutrition_score as number | null,
+                  notes: (r.notes as string) ?? '',
+                  wins: (r.wins as string) ?? '',
+                  challenges: (r.challenges as string) ?? '',
+                  reviewStatus: r.review_status as CheckIn['reviewStatus'],
+                }
+              : ci
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn]);
+
   // Settings state - loaded from Supabase auth user
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
