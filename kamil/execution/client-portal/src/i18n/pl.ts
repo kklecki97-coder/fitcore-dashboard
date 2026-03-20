@@ -160,6 +160,15 @@ export const pl: Translations = {
     setsRemaining: (sets: number) => `Pozostało ${sets} serii - kontynuuj!`,
     noProgram: 'Brak przypisanego programu',
     noProgramSub: 'Twój trener nie przypisał jeszcze programu treningowego. Sprawdź ponownie wkrótce!',
+    setDone: 'Seria Gotowa',
+    markAsDone: 'Oznacz jako Ukończone',
+    resting: 'Odpoczynek...',
+    weeks: 'tygodni',
+  },
+
+  calendar: {
+    edit: 'Edytuj',
+    restDay: 'Dzień Odpoczynku',
   },
 
   checkIn: {
@@ -239,6 +248,7 @@ export const pl: Translations = {
     min: 'min',
     strength: 'Siła',
     bodyFat: 'Tkanka Tłuszczowa',
+    height: 'Wzrost',
     progressPhotos: 'Zdjęcia Postępów',
     week1: 'Tydzień 1',
     latest: 'Najnowsze',

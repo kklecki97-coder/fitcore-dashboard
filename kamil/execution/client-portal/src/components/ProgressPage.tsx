@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2 } from 'lucide-react';
 import ShareProgressCard from './ShareProgressCard';
-import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
+// Charts will be re-enabled once clients have enough data points
+// import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
 import GlassCard from './GlassCard';
 import AnimatedNumber from './AnimatedNumber';
 import useIsMobile from '../hooks/useIsMobile';
@@ -10,10 +11,6 @@ import { supabase } from '../lib/supabase';
 import { matchMainLift, MAIN_LIFT_PATTERNS, parseTarget } from '../utils/lift-matching';
 import type { Client, WorkoutLog, CheckIn, WorkoutSetLog } from '../types';
 
-type TimePeriod = '1m' | '3m' | '6m' | 'all';
-
-/** Delay before rendering charts to allow container to settle */
-const CHART_RENDER_DELAY = 300;
 
 interface ProgressPageProps {
   client: Client;
@@ -26,45 +23,23 @@ interface ProgressPageProps {
 export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, coachName }: ProgressPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
-  const [chartsReady, setChartsReady] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
   const [localCheckIns, setLocalCheckIns] = useState(checkIns);
   useEffect(() => { setLocalCheckIns(checkIns); }, [checkIns]);
-  const [bodyTab, setBodyTab] = useState<'weight' | 'bodyFat'>('weight');
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
   const [photoPose, setPhotoPose] = useState<'front' | 'side' | 'back'>('front');
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [uploadTarget, setUploadTarget] = useState<'week1' | 'latest'>('week1');
 
-  useEffect(() => {
-    const timer = setTimeout(() => setChartsReady(true), CHART_RENDER_DELAY);
-    return () => clearTimeout(timer);
-  }, []);
 
   const { metrics } = client;
   const weights = metrics.weight;
   const startWeight = weights.length > 0 ? weights[0] : null;
   const currentWeight = weights.length > 0 ? weights[weights.length - 1] : null;
 
-
   const monthNames = lang === 'pl'
     ? ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru']
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const startMonth = new Date(client.startDate).getMonth();
-  const months = weights.map((_, i) => monthNames[(startMonth + i) % 12]);
-  const allWeightData = weights.map((w, i) => ({ month: months[i] || `M${i}`, value: w }));
-  const allBodyFatData = metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
-
-  // Filter data by time period
-  const sliceByPeriod = <T,>(data: T[]): T[] => {
-    if (timePeriod === 'all') return data;
-    const count = timePeriod === '1m' ? 1 : timePeriod === '3m' ? 3 : 6;
-    return data.slice(-count);
-  };
-
-  const weightData = sliceByPeriod(allWeightData);
-  const bodyFatData = sliceByPeriod(allBodyFatData);
 
   // Progress photos - check-in photos from DB
   const checkInPhotos = localCheckIns
@@ -300,86 +275,53 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
         </div>
       </div>
 
-      {/* ── 2. BODY COMPOSITION ── */}
-      <GlassCard delay={0.2}>
-        <div style={styles.bodyHeader}>
-          <div style={styles.bodyTabs}>
-            <button
-              onClick={() => setBodyTab('weight')}
-              style={{
-                ...styles.bodyTab,
-                ...(bodyTab === 'weight' ? styles.bodyTabActive : {}),
-              }}
-            >
-              <Scale size={13} />
-              {t.progress.weight}
-            </button>
-            <button
-              onClick={() => setBodyTab('bodyFat')}
-              style={{
-                ...styles.bodyTab,
-                ...(bodyTab === 'bodyFat' ? styles.bodyTabActive : {}),
-              }}
-            >
-              <Droplets size={13} />
-              {t.progress.bodyFat}
-            </button>
+      {/* ── 2. BODY COMPOSITION — simple stat cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: client.height ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '10px' }}>
+        {/* Weight */}
+        <GlassCard delay={0.2} style={{ padding: '20px 16px', textAlign: 'center' as const }}>
+          <Scale size={20} color="var(--accent-primary)" style={{ marginBottom: 8 }} />
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 4 }}>
+            {t.progress.weight}
           </div>
-          <button
-            onClick={() => setTimePeriod(p => p === '1m' ? '3m' : p === '3m' ? '6m' : p === '6m' ? 'all' : '1m')}
-            style={styles.timeCycleBtn}
-          >
-            {timePeriod === '1m' ? '1M' : timePeriod === '3m' ? '3M' : timePeriod === '6m' ? '6M' : 'All'}
-          </button>
-        </div>
-
-        {/* Chart */}
-        <div style={styles.chartWrap}>
-          {!chartsReady ? (
-            <div style={styles.skeleton} />
-          ) : bodyTab === 'weight' && weightData.length >= 1 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={weightData} margin={{ top: 8, right: 8, bottom: 0, left: -10 }}>
-                <defs>
-                  <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[(min: number) => Math.floor(min - 1), (max: number) => Math.ceil(max + 1)]} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontSize: '12px', color: 'var(--text-primary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-                  formatter={(val) => [`${val} kg`, t.progress.weight]}
-                />
-                <Area type="monotone" dataKey="value" stroke="var(--accent-primary)" strokeWidth={2.5} fill="url(#weightGrad)" dot={{ fill: 'var(--accent-primary)', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: 'var(--accent-primary)', stroke: 'var(--bg-card)', strokeWidth: 2 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : bodyTab === 'bodyFat' && bodyFatData.length >= 1 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={bodyFatData} margin={{ top: 8, right: 8, bottom: 0, left: -10 }}>
-                <defs>
-                  <linearGradient id="bfGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--accent-secondary)" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="var(--accent-secondary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
-                <Tooltip
-                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', borderRadius: '10px', fontSize: '12px', color: 'var(--text-primary)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-                  formatter={(val) => [`${val}%`, t.progress.bodyFat]}
-                />
-                <Area type="monotone" dataKey="value" stroke="var(--accent-secondary)" strokeWidth={2.5} fill="url(#bfGrad)" dot={{ fill: 'var(--accent-secondary)', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: 'var(--accent-secondary)', stroke: 'var(--bg-card)', strokeWidth: 2 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={styles.emptyChart}>
-              <span style={styles.emptyText}>{t.progress.notEnoughData}</span>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {currentWeight !== null ? <><AnimatedNumber value={currentWeight} duration={1200} /><span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>kg</span></> : '—'}
+          </div>
+          {startWeight !== null && currentWeight !== null && weights.length > 1 && (
+            <div style={{ fontSize: '12px', color: currentWeight <= startWeight ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: 4 }}>
+              {currentWeight <= startWeight ? '' : '+'}{(currentWeight - startWeight).toFixed(1)} kg
             </div>
           )}
-        </div>
-      </GlassCard>
+        </GlassCard>
+
+        {/* Body Fat */}
+        <GlassCard delay={0.25} style={{ padding: '20px 16px', textAlign: 'center' as const }}>
+          <Droplets size={20} color="var(--accent-secondary)" style={{ marginBottom: 8 }} />
+          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 4 }}>
+            {t.progress.bodyFat}
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {metrics.bodyFat.length > 0 ? <><AnimatedNumber value={metrics.bodyFat[metrics.bodyFat.length - 1]} duration={1200} /><span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>%</span></> : '—'}
+          </div>
+          {metrics.bodyFat.length > 1 && (
+            <div style={{ fontSize: '12px', color: metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: 4 }}>
+              {metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? '' : '+'}{(metrics.bodyFat[metrics.bodyFat.length - 1] - metrics.bodyFat[0]).toFixed(1)}%
+            </div>
+          )}
+        </GlassCard>
+
+        {/* Height */}
+        {client.height && (
+          <GlassCard delay={0.3} style={{ padding: '20px 16px', textAlign: 'center' as const }}>
+            <TrendingUp size={20} color="var(--accent-warm)" style={{ marginBottom: 8 }} />
+            <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 4 }}>
+              {t.progress.height || 'Height'}
+            </div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+              {client.height}<span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>cm</span>
+            </div>
+          </GlassCard>
+        )}
+      </div>
 
       {/* ── 3. GOALS ── */}
       {goalProgress.length > 0 && (

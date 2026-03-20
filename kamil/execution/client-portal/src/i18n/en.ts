@@ -158,6 +158,15 @@ export const en = {
     setsRemaining: (sets: number) => `${sets} sets remaining - keep going!`,
     noProgram: 'No program assigned',
     noProgramSub: "Your coach hasn't assigned a workout program yet. Check back soon!",
+    setDone: 'Set Done',
+    markAsDone: 'Mark as Done',
+    resting: 'Resting...',
+    weeks: 'weeks',
+  },
+
+  calendar: {
+    edit: 'Edit',
+    restDay: 'Rest Day',
   },
 
   checkIn: {
@@ -237,6 +246,7 @@ export const en = {
     min: 'min',
     strength: 'Strength',
     bodyFat: 'Body Fat',
+    height: 'Height',
     progressPhotos: 'Progress Photos',
     week1: 'Week 1',
     latest: 'Latest',
