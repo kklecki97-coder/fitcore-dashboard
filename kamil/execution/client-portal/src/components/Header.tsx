@@ -9,7 +9,11 @@ interface HeaderProps {
 }
 
 export default function Header({ clientName, isMobile, onNavigate }: HeaderProps) {
-  const { t } = useLang();
+  const { t, lang, switchLang } = useLang();
+
+  const handleLangToggle = () => {
+    switchLang(lang === 'en' ? 'pl' : 'en');
+  };
 
   return (
     <div style={styles.header}>
@@ -21,15 +25,25 @@ export default function Header({ clientName, isMobile, onNavigate }: HeaderProps
         </div>
       </div>
 
-      {isMobile && onNavigate && (
+      <div style={styles.right}>
         <button
-          onClick={() => onNavigate('settings')}
-          style={styles.settingsBtn}
-          aria-label="Settings"
+          onClick={handleLangToggle}
+          style={styles.langBtn}
+          aria-label="Toggle language"
         >
-          <Settings size={20} />
+          {lang === 'en' ? 'PL' : 'EN'}
         </button>
-      )}
+
+        {isMobile && onNavigate && (
+          <button
+            onClick={() => onNavigate('settings')}
+            style={styles.settingsBtn}
+            aria-label="Settings"
+          >
+            <Settings size={20} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -62,6 +76,28 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     color: 'var(--text-secondary)',
     fontWeight: 500,
+  },
+  right: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  langBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--accent-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    fontSize: '12px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-mono)',
+    letterSpacing: '0.5px',
   },
   settingsBtn: {
     width: '36px',
