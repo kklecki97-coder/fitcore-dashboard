@@ -256,7 +256,7 @@ export const en = {
     programTitle: 'Your Workout Program',
     programDesc: 'Your training program lives here. Track sets, log weight, and mark workouts as done.',
     calendarTitle: 'Training Calendar',
-    calendarDesc: 'See your weekly schedule, completed workouts, and upcoming sessions at a glance.',
+    calendarDesc: 'See your weekly schedule and upcoming sessions. Set your training days here!',
     progressTitle: 'Track Your Progress',
     progressDesc: 'Monitor your strength PRs, weight changes, body composition, and progress photos.',
     messagesTitle: 'Chat With Your Coach',

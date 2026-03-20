@@ -1213,7 +1213,7 @@ function App() {
       )}
 
       <div style={styles.main}>
-        <Header clientName={clientUser?.name ?? ''} />
+        <Header clientName={clientUser?.name ?? ''} isMobile={isMobile} onNavigate={setCurrentPage} />
 
         <AnimatePresence mode="wait">
           <motion.div

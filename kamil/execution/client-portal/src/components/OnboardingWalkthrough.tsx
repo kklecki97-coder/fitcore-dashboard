@@ -66,16 +66,8 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Props) {
     }
 
     if (isMobile) {
-      // Mobile: card centered horizontally, positioned above the bottom nav
-      return {
-        ...cardBase,
-        position: 'fixed',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        bottom: (window.innerHeight - targetRect.top) + 16,
-        zIndex: 10002,
-        maxHeight: '70vh',
-      };
+      // Mobile: card always centered on screen — spotlight highlights the nav item
+      return { ...cardBase, position: 'relative', zIndex: 10002 };
     }
 
     // Desktop: card to the right of sidebar item

@@ -258,7 +258,7 @@ export const pl: Translations = {
     programTitle: 'Twój Program Treningowy',
     programDesc: 'Tutaj znajdziesz swój plan treningowy. Śledź serie, zapisuj ciężary i oznaczaj treningi jako ukończone.',
     calendarTitle: 'Kalendarz Treningów',
-    calendarDesc: 'Zobacz swój tygodniowy plan, ukończone treningi i nadchodzące sesje.',
+    calendarDesc: 'Zobacz swój tygodniowy plan i nadchodzące sesje. Ustaw swoje dni treningowe, żeby trener mógł dostosować plan!',
     progressTitle: 'Śledź Swoje Postępy',
     progressDesc: 'Monitoruj rekordy siłowe, zmiany wagi, skład ciała i zdjęcia postępów.',
     messagesTitle: 'Czat z Trenerem',

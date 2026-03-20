@@ -1,10 +1,14 @@
+import { Settings } from 'lucide-react';
 import { useLang } from '../i18n';
+import type { ClientPage } from '../types';
 
 interface HeaderProps {
   clientName: string;
+  isMobile?: boolean;
+  onNavigate?: (page: ClientPage) => void;
 }
 
-export default function Header({ clientName }: HeaderProps) {
+export default function Header({ clientName, isMobile, onNavigate }: HeaderProps) {
   const { t } = useLang();
 
   return (
@@ -16,6 +20,16 @@ export default function Header({ clientName }: HeaderProps) {
           <div style={styles.subtitle}>{clientName}</div>
         </div>
       </div>
+
+      {isMobile && onNavigate && (
+        <button
+          onClick={() => onNavigate('settings')}
+          style={styles.settingsBtn}
+          aria-label="Settings"
+        >
+          <Settings size={20} />
+        </button>
+      )}
     </div>
   );
 }
@@ -48,5 +62,18 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '13px',
     color: 'var(--text-secondary)',
     fontWeight: 500,
+  },
+  settingsBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.03)',
+    color: 'var(--text-secondary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
   },
 };
