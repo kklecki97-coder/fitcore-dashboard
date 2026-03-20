@@ -431,9 +431,9 @@ export const pl: Translations = {
     from: 'z',
     chooseDifferent: 'Wybierz inny plik',
     noExercises: 'Brak ćwiczeń',
-    confirmNote: 'Program wygląda dobrze? Zaimportuj go i dopracuj w edytorze.',
+    confirmNote: 'Program wygląda dobrze? Otwórz w edytorze, przejrzyj i zapisz.',
     cancel: 'Anuluj',
-    importBtn: 'Importuj i edytuj',
+    importBtn: 'Edytuj Program',
   },
   programBuilder: {
     backToPrograms: 'Powrót do Programów',
@@ -691,6 +691,9 @@ export const pl: Translations = {
     weekly: 'Tygodniowy',
     oneTime: 'Jednorazowy',
     planDescription: 'Opis (opcjonalnie)',
+    planNamePlaceholder: 'np. Plan Gold',
+    planPricePlaceholder: 'np. 149',
+    planDescPlaceholder: 'np. Pełny coaching + plany żywieniowe',
     noPlansYet: 'Brak planów. Utwórz swój pierwszy plan coachingowy.',
     deletePlanConfirm: 'Usunąć ten plan?',
     // Client Invites

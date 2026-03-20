@@ -429,9 +429,9 @@ export const en = {
     from: 'from',
     chooseDifferent: 'Choose different file',
     noExercises: 'No exercises',
-    confirmNote: 'Program looks good? Import it and fine-tune in the editor.',
+    confirmNote: 'Program looks good? Open in editor to review and save.',
     cancel: 'Cancel',
-    importBtn: 'Import & Edit',
+    importBtn: 'Edit Program',
   },
   programBuilder: {
     backToPrograms: 'Back to Programs',
@@ -689,6 +689,9 @@ export const en = {
     weekly: 'Weekly',
     oneTime: 'One-time',
     planDescription: 'Description (optional)',
+    planNamePlaceholder: 'e.g. Gold Plan',
+    planPricePlaceholder: 'e.g. 149',
+    planDescPlaceholder: 'e.g. Full coaching + meal plans',
     noPlansYet: 'No plans yet. Create your first coaching plan.',
     deletePlanConfirm: 'Delete this plan?',
     // Client Invites
