@@ -102,20 +102,20 @@ export default function WeeklyReport({ open, onClose, data, onViewClient }: Week
   return (
     <AnimatePresence>
       {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={s.backdrop}
-            onClick={onClose}
-          />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={s.overlay}
+          onClick={onClose}
+        >
           <motion.div
             initial={{ opacity: 0, y: 40, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.97 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
             style={s.modal}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Toolbar */}
             <div style={s.toolbar}>
@@ -317,22 +317,22 @@ export default function WeeklyReport({ open, onClose, data, onViewClient }: Week
               </div>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
-  backdrop: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 999,
+  overlay: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+    zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
   },
   modal: {
-    position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)',
-    width: '700px', maxWidth: 'calc(100vw - 24px)', maxHeight: 'calc(100vh - 48px)',
+    width: '700px', maxWidth: '100%', maxHeight: 'calc(100vh - 48px)',
     background: 'var(--bg-primary)', border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)', boxShadow: '0 32px 100px rgba(0,0,0,0.6)',
-    zIndex: 1000, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
   },
   toolbar: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
