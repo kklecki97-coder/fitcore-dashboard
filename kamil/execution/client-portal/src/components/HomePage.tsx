@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingDown, Dumbbell, Send, ClipboardCheck, ArrowRight, Check, X, MessageSquare, ChevronDown, Zap } from 'lucide-react';
+import { Dumbbell, Send, ClipboardCheck, ArrowRight, Check, X, MessageSquare, ChevronDown, Zap } from 'lucide-react';
 import GlassCard from './GlassCard';
 import AnimatedNumber from './AnimatedNumber';
 import StreakFlame from './StreakFlame';
@@ -66,7 +66,6 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
 
   // ── Weight trend ──
   const weights = client.metrics.weight;
-  const currentWeight = weights[weights.length - 1];
   const weightChange = weights.length >= 2 ? weights[weights.length - 1] - weights[weights.length - 2] : 0;
 
   // ── Quick action badges ──
