@@ -303,8 +303,8 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                   <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-              <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e' }} />
+              <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
               <Tooltip contentStyle={tooltipStyle} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
               <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
             </AreaChart>
@@ -320,8 +320,8 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
           <div style={{ height: 220, marginTop: '16px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={planRevenue} layout="vertical">
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
-                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={100} />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
+                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8b92a5' }} width={100} />
                 <Tooltip contentStyle={tooltipStyle} cursor={false} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
                 <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
                   {planRevenue.map((_, i) => (
@@ -345,8 +345,8 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                     <stop offset="100%" stopColor="#00e5c8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis domain={[(min: number) => Math.floor(min - 5), (max: number) => Math.ceil(max + 5)]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e' }} />
+                <YAxis domain={[(min: number) => Math.floor(min - 5), (max: number) => Math.ceil(max + 5)]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`${value}%`, 'Retention']} />
                 <Area type="monotone" dataKey="rate" stroke="#00e5c8" strokeWidth={2} fill="url(#retentionGrad)" dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} />
               </AreaChart>
@@ -481,17 +481,17 @@ const styles: Record<string, React.CSSProperties> = {
   statsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '16px',
+    gap: '12px',
   },
   statTop: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '16px',
+    marginBottom: '12px',
   },
   statIcon: {
-    width: '40px',
-    height: '40px',
+    width: '36px',
+    height: '36px',
     borderRadius: 'var(--radius-md)',
     display: 'flex',
     alignItems: 'center',
@@ -501,19 +501,19 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '3px',
-    fontSize: '17px',
+    fontSize: '12px',
     fontWeight: 600,
     padding: '3px 8px',
     borderRadius: '20px',
   },
   statValue: {
-    fontSize: '39px',
+    fontSize: '28px',
     fontWeight: 700,
-    letterSpacing: '-1px',
+    letterSpacing: '-0.5px',
     lineHeight: 1.1,
   },
   statLabel: {
-    fontSize: '18px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
     marginTop: '4px',
   },
@@ -531,13 +531,13 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
   },
   engagementValue: {
-    fontSize: '32px',
+    fontSize: '26px',
     fontWeight: 700,
     letterSpacing: '-0.5px',
     lineHeight: 1.1,
   },
   engagementLabel: {
-    fontSize: '16px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
     marginTop: '2px',
   },
@@ -545,7 +545,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '2px',
-    fontSize: '14px',
+    fontSize: '12px',
     fontWeight: 500,
   },
   chartRow: {
@@ -553,7 +553,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
   },
   chartTitle: {
-    fontSize: '21px',
+    fontSize: '16px',
     fontWeight: 600,
   },
   bottomRow: {
