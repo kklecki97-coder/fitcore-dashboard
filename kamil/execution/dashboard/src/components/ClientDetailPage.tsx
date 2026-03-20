@@ -15,11 +15,13 @@ import {
 import jsPDF from 'jspdf';
 import GlassCard from './GlassCard';
 import ClientInsights from './ClientInsights';
+import EngagementPanel from './EngagementPanel';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 import { calculateMetricChange, buildClientRadarData } from '../utils/client-metrics';
+import { calculateEngagement, generateEngagementInsight, getSuggestedAction } from '../utils/engagement';
 import { getLocale } from '../lib/locale';
 import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
 
@@ -31,6 +33,7 @@ interface ClientDetailPageProps {
   workoutLogs: WorkoutLog[];
   setLogs: WorkoutSetLog[];
   checkIns: CheckIn[];
+  messages: Message[];
   onBack: () => void;
   backLabel?: string;
   onUpdateClient: (id: string, updates: Partial<Client>) => void;
@@ -40,7 +43,7 @@ interface ClientDetailPageProps {
   onAddCheckIn: (checkIn: CheckIn) => void;
 }
 
-export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, messages, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
   const client = clients.find(c => c.id === clientId);
@@ -411,6 +414,11 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     return date.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
   };
 
+  // ── Engagement Score ──
+  const engagementScore = calculateEngagement(client, workoutLogs, checkIns, messages);
+  const engagementInsight = generateEngagementInsight(client, engagementScore, lang as 'en' | 'pl');
+  const engagementAction = getSuggestedAction(engagementScore, lang as 'en' | 'pl');
+
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Back Button + Client Header */}
@@ -572,6 +580,29 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           showMore: t.clientDetail.showMore,
           showLess: t.clientDetail.showLess,
           noInsights: t.clientDetail.noInsights,
+        }}
+      />
+
+      {/* Engagement Score Panel */}
+      <EngagementPanel
+        score={engagementScore}
+        insight={engagementInsight}
+        suggestedAction={engagementAction}
+        onAction={(type) => {
+          if (type === 'motivation' || type === 'call') setActiveModal('message');
+        }}
+        t={{
+          title: t.engagement.title,
+          subtitle: t.engagement.subtitle,
+          workoutCompletion: t.engagement.workoutCompletion,
+          checkInRate: t.engagement.checkInRate,
+          messageResponsiveness: t.engagement.messageResponsiveness,
+          streakLength: t.engagement.streakLength,
+          goalProgress: t.engagement.goalProgress,
+          trend8Weeks: t.engagement.trend8Weeks,
+          aiInsight: t.engagement.aiInsight,
+          suggestedAction: t.engagement.suggestedAction,
+          last14Days: t.engagement.last14Days,
         }}
       />
 
