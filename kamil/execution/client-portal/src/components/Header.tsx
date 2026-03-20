@@ -50,11 +50,11 @@ export default function Header({ clientName, isMobile, onNavigate }: HeaderProps
 
 const styles: Record<string, React.CSSProperties> = {
   header: {
-    height: 'var(--header-height)',
+    minHeight: 'var(--header-height)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '0 20px',
+    padding: 'env(safe-area-inset-top, 0px) 20px 0 20px',
     borderBottom: '1px solid var(--glass-border)',
     background: 'var(--bg-secondary)',
     position: 'relative',
