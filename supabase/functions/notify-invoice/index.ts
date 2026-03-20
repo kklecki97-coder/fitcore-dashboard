@@ -1,14 +1,33 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = [
+  "https://app.fitcore.tech",
+  "https://client.fitcore.tech",
+  "https://fitcore.tech",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -17,7 +36,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Missing authorization" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -36,7 +55,7 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -44,7 +63,7 @@ Deno.serve(async (req) => {
     if (!invoiceId) {
       return new Response(JSON.stringify({ error: "Missing invoiceId" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -62,7 +81,7 @@ Deno.serve(async (req) => {
     if (!invoice) {
       return new Response(JSON.stringify({ error: "Invoice not found" }), {
         status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -76,7 +95,7 @@ Deno.serve(async (req) => {
     if (!client?.email) {
       return new Response(JSON.stringify({ error: "Client email not found" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -95,7 +114,7 @@ Deno.serve(async (req) => {
     if (!resendKey) {
       return new Response(JSON.stringify({ error: "Email service not configured" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
@@ -108,7 +127,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: "FitCore <noreply@mail.fitcore.tech>",
         to: [client.email],
-        subject: `New Invoice from ${coachName} - $${invoice.amount}`,
+        subject: `New Invoice from ${escapeHtml(coachName)} - $${invoice.amount}`,
         html: `
           <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #e0e0e0; background: #07090e;">
             <div style="text-align: center; margin-bottom: 32px;">
@@ -119,20 +138,20 @@ Deno.serve(async (req) => {
 
             <div style="background: rgba(14, 18, 27, 0.85); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 28px 24px; margin-bottom: 24px;">
               <p style="font-size: 16px; color: #ffffff; margin: 0 0 16px;">
-                Hi ${clientName},
+                Hi ${escapeHtml(clientName)},
               </p>
               <p style="font-size: 14px; line-height: 1.6; color: #a0a0a0; margin: 0 0 20px;">
-                ${coachName} has sent you a new invoice. Here are the details:
+                ${escapeHtml(coachName)} has sent you a new invoice. Here are the details:
               </p>
 
               <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                   <span style="font-size: 13px; color: #a0a0a0;">Plan</span>
-                  <span style="font-size: 13px; color: #ffffff; font-weight: 600;">${invoice.plan || "Coaching"}</span>
+                  <span style="font-size: 13px; color: #ffffff; font-weight: 600;">${escapeHtml(invoice.plan || "Coaching")}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                   <span style="font-size: 13px; color: #a0a0a0;">Period</span>
-                  <span style="font-size: 13px; color: #ffffff; font-weight: 600;">${invoice.period || "—"}</span>
+                  <span style="font-size: 13px; color: #ffffff; font-weight: 600;">${escapeHtml(invoice.period || "—")}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="font-size: 13px; color: #a0a0a0;">Amount</span>
@@ -159,20 +178,20 @@ Deno.serve(async (req) => {
       console.error("Resend error:", errBody);
       return new Response(JSON.stringify({ error: "Failed to send email" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ sent: true }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     console.error("notify-invoice error:", message);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 });

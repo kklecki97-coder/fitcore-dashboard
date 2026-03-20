@@ -117,7 +117,7 @@ serve(async (req) => {
       }
 
       invoicesCreated++;
-      console.log(`Auto-invoice created for ${client.name} (${client.plan}): $${planInfo.price}`);
+      console.log(`Auto-invoice created for client ${client.id}`);
     }
 
     return new Response(JSON.stringify({

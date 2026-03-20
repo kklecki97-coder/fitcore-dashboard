@@ -1,22 +1,40 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = [
+  "https://app.fitcore.tech",
+  "https://client.fitcore.tech",
+  "https://fitcore.tech",
+];
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   }
 
@@ -28,7 +46,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Missing authorization header" }),
         {
           status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -52,7 +70,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Invalid or expired token" }),
         {
           status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -65,7 +83,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "code and clientEmail are required" }),
         {
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -82,7 +100,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Invite code not found" }),
         {
           status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -92,7 +110,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "You don't own this invite code" }),
         {
           status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -102,7 +120,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Invite code already used" }),
         {
           status: 409,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -115,7 +133,7 @@ Deno.serve(async (req) => {
         }),
         {
           status: 503,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -148,7 +166,7 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Failed to send email", detail: errBody }),
         {
           status: 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
         }
       );
     }
@@ -156,7 +174,7 @@ Deno.serve(async (req) => {
     // 5. Success
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
     });
   } catch (err) {
     return new Response(
@@ -165,7 +183,7 @@ Deno.serve(async (req) => {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       }
     );
   }
@@ -197,9 +215,9 @@ function buildEmailHtml({
     <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px 24px;text-align:center;">
       <h2 style="color:#ffffff;font-size:20px;font-weight:600;margin:0 0 8px;">You're invited!</h2>
       <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 24px;">
-        <strong style="color:#ffffff;">${coachName || "Your coach"}</strong> has invited
-        ${clientName ? ` you, <strong style="color:#ffffff;">${clientName}</strong>,` : " you"}
-        to join their <strong style="color:#00e5c8;">${plan || "Basic"}</strong> coaching program on FitCore.
+        <strong style="color:#ffffff;">${escapeHtml(coachName || "Your coach")}</strong> has invited
+        ${clientName ? ` you, <strong style="color:#ffffff;">${escapeHtml(clientName)}</strong>,` : " you"}
+        to join their <strong style="color:#00e5c8;">${escapeHtml(plan || "Basic")}</strong> coaching program on FitCore.
       </p>
       <a href="${inviteLink}"
          style="display:inline-block;padding:14px 32px;background:#00e5c8;color:#07090e;font-size:16px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:-0.3px;">
