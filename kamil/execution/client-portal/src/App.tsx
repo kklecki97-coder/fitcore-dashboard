@@ -635,6 +635,56 @@ function App() {
     return () => { supabase.removeChannel(channel); };
   }, [isLoggedIn, clientUser]);
 
+  // ── Realtime program assignment — coach assigns program, client sees it instantly ──
+  useEffect(() => {
+    if (!isLoggedIn || !clientUser?.id) return;
+
+    const channel = supabase
+      .channel('client-program')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'program_clients', filter: `client_id=eq.${clientUser.id}` },
+        async (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          const programId = r.program_id as string;
+          // Load full program with days and exercises
+          const { data: prog } = await supabase
+            .from('workout_programs')
+            .select('*, workout_days(*, exercises(*))')
+            .eq('id', programId)
+            .single();
+          if (prog) {
+            setMyProgram({
+              id: prog.id,
+              name: prog.name,
+              status: prog.status,
+              durationWeeks: prog.duration_weeks,
+              clientIds: [clientUser.id],
+              isTemplate: prog.is_template,
+              createdAt: prog.created_at?.split('T')[0] ?? '',
+              updatedAt: prog.updated_at?.split('T')[0] ?? '',
+              days: (prog.workout_days ?? [])
+                .sort((a: { day_order: number }, b: { day_order: number }) => a.day_order - b.day_order)
+                .map((d: { id: string; name: string; exercises: { id: string; name: string; sets: number; reps: string; weight: string; rpe: number | null; tempo: string; rest_seconds: number | null; notes: string; exercise_order: number }[] }) => ({
+                  id: d.id,
+                  name: d.name,
+                  exercises: (d.exercises ?? [])
+                    .sort((a, b) => a.exercise_order - b.exercise_order)
+                    .map(e => ({
+                      id: e.id, name: e.name, sets: e.sets, reps: e.reps,
+                      weight: e.weight, rpe: e.rpe, tempo: e.tempo,
+                      restSeconds: e.rest_seconds, notes: e.notes,
+                    })),
+                })),
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn, clientUser]);
+
   // ── Coach typing indicator via Supabase Realtime broadcast ──
   const [coachTyping, setCoachTyping] = useState(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);

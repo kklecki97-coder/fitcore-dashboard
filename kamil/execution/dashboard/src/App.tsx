@@ -527,6 +527,35 @@ function App() {
     return () => { supabase.removeChannel(channel); };
   }, [isLoggedIn]);
 
+  // ── Realtime workout logs — client logs workout, coach sees it instantly ──
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const channel = supabase
+      .channel('coach-workout-logs')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'workout_logs' },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
+          const log: WorkoutLog = {
+            id: r.id as string,
+            clientId: r.client_id as string,
+            clientName: nameMap.get(r.client_id as string) ?? '',
+            type: r.type as string,
+            duration: (r.duration as number) ?? 0,
+            date: r.date as string,
+            completed: (r.completed as boolean) ?? false,
+          };
+          setAllWorkoutLogs(prev => prev.some(l => l.id === log.id) ? prev : [log, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn]);
+
   // Settings state - loaded from Supabase auth user
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
