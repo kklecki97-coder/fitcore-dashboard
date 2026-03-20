@@ -569,8 +569,9 @@ function wrapTextCenter(ctx, text, cx, y, maxW, lineH) {
 //  PHONE MOCKUP
 // ══════════════════════════════════════════════
 
-function drawPhoneMockup(ctx, img, phoneX, phoneY, phoneW, phoneH) {
+function drawPhoneMockup(ctx, img, phoneX, phoneY, phoneW, phoneH, scrollOffset) {
   const r = 40;
+  const offset = scrollOffset || 0; // 0-100 percentage
 
   // Phone outer shell
   fillRR(ctx, phoneX - 8, phoneY - 8, phoneW + 16, phoneH + 16, r + 6, 'rgba(255,255,255,0.04)');
@@ -585,18 +586,25 @@ function drawPhoneMockup(ctx, img, phoneX, phoneY, phoneW, phoneH) {
   ctx.clip();
 
   if (img) {
-    // Cover-fit the image
-    const imgRatio = img.width / img.height;
-    const slotRatio = (phoneW - 8) / (phoneH - 8);
-    let sx = 0, sy = 0, sw = img.width, sh = img.height;
-    if (imgRatio > slotRatio) {
-      sw = img.height * slotRatio;
-      sx = (img.width - sw) / 2;
+    // Fit width, allow vertical scrolling via offset
+    const screenW = phoneW - 8;
+    const screenH = phoneH - 8;
+    const scale = screenW / img.width;
+    const scaledH = img.height * scale;
+
+    if (scaledH <= screenH) {
+      // Image fits entirely — just draw it centered vertically
+      const dy = phoneY + 4 + (screenH - scaledH) / 2;
+      ctx.drawImage(img, 0, 0, img.width, img.height, phoneX + 4, dy, screenW, scaledH);
     } else {
-      sh = img.width / slotRatio;
-      sy = (img.height - sh) / 2;
+      // Image is taller than screen — use offset to scroll
+      const maxScroll = scaledH - screenH;
+      const scrollY = (offset / 100) * maxScroll;
+      // Source coordinates
+      const sy = scrollY / scale;
+      const sh = screenH / scale;
+      ctx.drawImage(img, 0, sy, img.width, sh, phoneX + 4, phoneY + 4, screenW, screenH);
     }
-    ctx.drawImage(img, sx, sy, sw, sh, phoneX + 4, phoneY + 4, phoneW - 8, phoneH - 8);
   } else {
     // Placeholder
     ctx.fillStyle = '#0e121b';
@@ -699,7 +707,7 @@ function drawHeroStory(ctx, story) {
   ctx.fillText('fitcore.tech', W / 2, H - 100);
 }
 
-function drawScreenshotStory(ctx, story, img) {
+function drawScreenshotStory(ctx, story, img, scrollOffset) {
   drawBG(ctx);
 
   // Top section — tag + headline
@@ -732,7 +740,7 @@ function drawScreenshotStory(ctx, story, img) {
   const phoneX = (W - phoneW) / 2;
   const phoneY = 410;
 
-  drawPhoneMockup(ctx, img, phoneX, phoneY, phoneW, phoneH);
+  drawPhoneMockup(ctx, img, phoneX, phoneY, phoneW, phoneH, scrollOffset);
 
   // Phone label badge at bottom of phone
   if (story.phoneLabel) {
@@ -861,6 +869,7 @@ function getFeaturesByCategory(tag) {
 // ══════════════════════════════════════════════
 
 const screenshotImages = {}; // storyId -> Image
+const screenshotOffsets = {}; // storyId -> Y offset (0 to 100, percentage of overflow)
 
 function drawStory(storyId) {
   const canvas = document.getElementById('canvas-' + storyId);
@@ -879,7 +888,7 @@ function drawStory(storyId) {
   } else if (storyDef.style === 'cta') {
     drawCTAStory(ctx, storyDef);
   } else if (storyDef.needsScreenshot) {
-    drawScreenshotStory(ctx, storyDef, screenshotImages[storyId] || null);
+    drawScreenshotStory(ctx, storyDef, screenshotImages[storyId] || null, screenshotOffsets[storyId] || 0);
   } else {
     drawHeroStory(ctx, storyDef);
   }
@@ -961,6 +970,18 @@ function buildUI() {
         };
 
         card.appendChild(uploadZone);
+
+        // Scroll offset slider
+        const sliderWrap = document.createElement('div');
+        sliderWrap.style.cssText = 'width:100%; display:flex; align-items:center; gap:8px;';
+        sliderWrap.innerHTML = `
+          <span style="font-size:11px; color:#525a6e; white-space:nowrap;">↕ Pozycja</span>
+          <input type="range" min="0" max="100" value="0" id="slider-${s.id}"
+            style="flex:1; accent-color:#00e5c8; cursor:pointer;"
+            oninput="handleSlider('${s.id}', this.value)">
+          <span style="font-size:11px; color:#525a6e; min-width:28px; text-align:right;" id="slider-val-${s.id}">0%</span>
+        `;
+        card.appendChild(sliderWrap);
       }
 
       // Actions
@@ -1011,6 +1032,13 @@ function handleFileUpload(storyId, file) {
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function handleSlider(storyId, value) {
+  screenshotOffsets[storyId] = parseInt(value);
+  const valEl = document.getElementById('slider-val-' + storyId);
+  if (valEl) valEl.textContent = value + '%';
+  drawStory(storyId);
 }
 
 function clearScreenshot(storyId) {
