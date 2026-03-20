@@ -147,16 +147,14 @@ export default function CommandPalette({ open, onClose, onNavigate, onViewClient
   return (
     <AnimatePresence>
       {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            style={s.backdrop}
-            onClick={onClose}
-          />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          style={s.overlay}
+          onClick={onClose}
+        >
           {/* Palette */}
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
@@ -164,6 +162,7 @@ export default function CommandPalette({ open, onClose, onNavigate, onViewClient
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             style={s.palette}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Search input */}
             <div style={s.inputWrap}>
@@ -262,33 +261,32 @@ export default function CommandPalette({ open, onClose, onNavigate, onViewClient
               </span>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
-  backdrop: {
+  overlay: {
     position: 'fixed',
     inset: 0,
     background: 'rgba(0,0,0,0.6)',
     backdropFilter: 'blur(4px)',
     zIndex: 999,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
   },
   palette: {
-    position: 'fixed',
-    top: '20%',
-    left: '50%',
-    transform: 'translateX(-50%)',
     width: '560px',
-    maxWidth: 'calc(100vw - 32px)',
+    maxWidth: '100%',
     maxHeight: '480px',
     background: 'var(--bg-secondary)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
-    zIndex: 1000,
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
