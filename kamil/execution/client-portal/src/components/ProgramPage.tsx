@@ -886,7 +886,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
       {isTodaysWorkout && !allDone && (
         <button style={styles.actionBtn} onClick={startWorkout}>
           <Play size={20} fill="#07090e" color="#07090e" />
-          <span>{completedSets > 0 ? 'Continue Workout' : 'Start Workout'}</span>
+          <span>{completedSets > 0 ? (lang === 'pl' ? 'Kontynuuj Trening' : 'Continue Workout') : (lang === 'pl' ? 'Rozpocznij Trening' : 'Start Workout')}</span>
           {completedSets > 0 && (
             <span style={styles.actionBtnBadge}>{completedSets}/{totalSets}</span>
           )}
