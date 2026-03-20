@@ -94,7 +94,14 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
     const cells = row.map(c => String(c ?? '').trim());
     const joined = cells.join(' ').toLowerCase();
 
-    if (!joined) continue;
+    if (!joined) {
+      // Empty row after exercises → close current day
+      // Anything after this that isn't a new day header goes to program notes
+      if (currentDay && currentDay.exercises.length > 0) {
+        currentDay = null;
+      }
+      continue;
+    }
 
     // Instruction/note rows → short ones go to last exercise, long ones go to program notes
     if (isSkippableRow(joined)) {
@@ -125,7 +132,12 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
 
     if (isColumnHeader(firstCell, cells[1] || '')) continue;
 
-    if (!currentDay) continue;
+    // No current day → this is a stray row (instructions after the last day)
+    if (!currentDay) {
+      const noteText = cells.filter(c => c).join(' ').trim();
+      if (noteText) programNotes.push(noteText);
+      continue;
+    }
 
     const exercise = parseExerciseRow(cells);
     if (exercise) {
