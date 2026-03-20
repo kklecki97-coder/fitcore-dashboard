@@ -128,7 +128,14 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
     if (!currentDay) continue;
 
     const exercise = parseExerciseRow(cells);
-    if (exercise) currentDay.exercises.push(exercise);
+    if (exercise) {
+      // If "name" is very long, it's likely an instruction, not an exercise
+      if (exercise.name.length > 60) {
+        programNotes.push(exercise.name);
+      } else {
+        currentDay.exercises.push(exercise);
+      }
+    }
   }
 
   const programName = sheetName && sheetName.length > 3
