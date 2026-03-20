@@ -199,41 +199,34 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
             })}
           </div>
         ))}
-        {/* Typing indicator */}
-        {coachTyping && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '4px' }}
-          >
-            <div style={{
-              ...styles.msgBubble,
-              background: 'var(--bg-elevated)',
-              borderColor: 'var(--glass-border)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 16px',
-            }}>
-              <div style={styles.typingDots}>
-                {[0, 1, 2].map(i => (
-                  <motion.div
-                    key={i}
-                    animate={{ y: [0, -4, 0] }}
-                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
-                    style={styles.typingDot}
-                  />
-                ))}
-              </div>
-              <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                {t.messages.coachTyping}
-              </span>
-            </div>
-          </motion.div>
-        )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Typing indicator — pinned above input */}
+      {coachTyping && (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 4 }}
+          style={styles.typingBar}
+        >
+          <div style={styles.typingBubble}>
+            <div style={styles.typingDots}>
+              {[0, 1, 2].map(i => (
+                <motion.div
+                  key={i}
+                  animate={{ y: [0, -4, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                  style={styles.typingDot}
+                />
+              ))}
+            </div>
+            <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+              {t.messages.coachTyping}
+            </span>
+          </div>
+        </motion.div>
+      )}
 
       {/* Input */}
       <div style={styles.inputWrap}>
@@ -352,6 +345,19 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '11px',
     color: 'var(--text-tertiary)',
   },
+  typingBar: {
+    padding: '4px 20px',
+    borderTop: '1px solid var(--glass-border)',
+  },
+  typingBubble: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 14px',
+    borderRadius: '12px',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--glass-border)',
+  },
   typingDots: {
     display: 'flex',
     alignItems: 'center',
@@ -363,7 +369,6 @@ const styles: Record<string, React.CSSProperties> = {
     height: '6px',
     borderRadius: '50%',
     background: 'var(--text-tertiary)',
-    animation: 'typingBounce 0.6s ease-in-out infinite alternate',
   },
   inputWrap: {
     display: 'flex',
