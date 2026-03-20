@@ -492,6 +492,11 @@ export default function ProgramBuilderPage({
                           {ex.restSeconds && <span style={styles.detailText}>{t.programBuilder.restSeconds}: {ex.restSeconds}s</span>}
                         </div>
                       )}
+                      {ex.notes && (
+                        <div style={styles.detailRow}>
+                          <span style={{ ...styles.detailText, fontStyle: 'italic', opacity: 0.7 }}>📝 {ex.notes}</span>
+                        </div>
+                      )}
                     </div>
                     <div style={styles.exerciseActions}>
                       <button
@@ -760,6 +765,18 @@ export default function ProgramBuilderPage({
                     value={exerciseForm.tempo}
                     onChange={(e) => setExerciseForm(prev => ({ ...prev, tempo: e.target.value }))}
                     placeholder='e.g. 3-1-2-0'
+                    style={styles.input}
+                  />
+                </div>
+
+                {/* Notes */}
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>{t.programBuilder.exerciseNotes || 'Notes'}</label>
+                  <input
+                    type="text"
+                    value={exerciseForm.notes}
+                    onChange={(e) => setExerciseForm(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder={t.programBuilder.exerciseNotesPlaceholder || 'e.g. progression, cues, variations...'}
                     style={styles.input}
                   />
                 </div>
