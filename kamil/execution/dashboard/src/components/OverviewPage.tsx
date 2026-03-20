@@ -13,6 +13,7 @@ import {
   Loader2,
   RefreshCw,
   ChevronDown,
+  FileBarChart,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -27,6 +28,8 @@ import { formatCurrency } from '../lib/locale';
 import { computeRevenueChartData, calculateRevenueChange } from '../utils/analytics';
 import { filterAtRiskClients } from '../utils/client-analysis';
 import { getDailyQuote } from '../utils/formatting';
+import { computeWeeklyReport } from '../utils/weekly-report';
+import WeeklyReport from './WeeklyReport';
 import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, CheckIn } from '../types';
 
 const QUOTE_AUTHORS = [
@@ -68,6 +71,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const { briefing, loading: briefingLoading, refresh: refreshBriefing } = useAIBriefing(clients, invoices, workoutLogs, checkIns, messages, programs, lang);
   const [ready, setReady] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const reportData = useMemo(() => computeWeeklyReport(clients, messages, invoices, workoutLogs, checkIns), [clients, messages, invoices, workoutLogs, checkIns]);
 
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 500);
@@ -277,18 +282,44 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      {/* Personalized Greeting */}
-      {greeting && (
-        <motion.div
-          style={styles.greetingSection}
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        >
-          <h1 style={{ ...styles.greetingText, fontSize: isMobile ? '22px' : '28px' }}>{greeting}</h1>
-          <p style={styles.greetingDate}>{todayFormatted}</p>
-        </motion.div>
-      )}
+      {/* Personalized Greeting + Weekly Report Button */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        {greeting && (
+          <motion.div
+            style={styles.greetingSection}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <h1 style={{ ...styles.greetingText, fontSize: isMobile ? '22px' : '28px' }}>{greeting}</h1>
+            <p style={styles.greetingDate}>{todayFormatted}</p>
+          </motion.div>
+        )}
+        {clients.length > 0 && (
+          <motion.button
+            onClick={() => setReportOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: isMobile ? '8px 12px' : '10px 16px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--bg-elevated)',
+              color: 'var(--text-secondary)',
+              fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-display)',
+              cursor: 'pointer', flexShrink: 0, marginTop: '4px',
+              transition: 'border-color 0.15s, color 0.15s',
+            }}
+            whileHover={{ borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <FileBarChart size={15} />
+            {!isMobile && t.weeklyReport.button}
+          </motion.button>
+        )}
+      </div>
 
       {/* Daily Motivation */}
       <motion.div
@@ -618,6 +649,14 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
           </div>
         </GlassCard>
       </div>
+
+      {/* Weekly Report Modal */}
+      <WeeklyReport
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        data={reportData}
+        onViewClient={onViewClient}
+      />
     </div>
   );
 }
