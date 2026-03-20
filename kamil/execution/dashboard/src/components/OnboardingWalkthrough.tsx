@@ -36,14 +36,14 @@ export default function OnboardingWalkthrough({ onComplete, onSkip, isMobile, on
   const isLastStep = step === STEPS.length - 1;
   const isFirstStep = step === 0;
 
-  // On mobile: open/close sidebar based on whether the step needs it
+  // On mobile: open sidebar in background when step targets a sidebar item
   useEffect(() => {
     if (isMobile) {
       onSetSidebarOpen(currentStep.needsSidebar);
     }
   }, [isMobile, currentStep.needsSidebar, onSetSidebarOpen]);
 
-  // Find and measure target element — with small delay on mobile to let sidebar animate in
+  // Find and measure target element — with delay on mobile to let sidebar animate in
   const updateTargetRect = useCallback(() => {
     if (!currentStep.target) {
       setTargetRect(null);
@@ -57,9 +57,8 @@ export default function OnboardingWalkthrough({ onComplete, onSkip, isMobile, on
         setTargetRect(null);
       }
     };
-    // On mobile, sidebar slides in — wait for animation
     if (isMobile && currentStep.needsSidebar) {
-      setTimeout(findEl, 300);
+      setTimeout(findEl, 350);
     } else {
       findEl();
     }
@@ -84,22 +83,14 @@ export default function OnboardingWalkthrough({ onComplete, onSkip, isMobile, on
 
   // Card positioning
   const getCardStyle = (): React.CSSProperties => {
-    // Center steps — always centered
-    if (!targetRect || !currentStep.target) {
+    // Mobile: always centered, no fixed positioning — clean and readable
+    if (isMobile) {
       return { ...cardBase, position: 'relative', zIndex: 10002 };
     }
 
-    if (isMobile) {
-      // Mobile with sidebar open: card to the right of sidebar item, compact
-      return {
-        ...cardBase,
-        position: 'fixed',
-        left: targetRect.right + 12,
-        top: Math.max(16, targetRect.top - 20),
-        zIndex: 10002,
-        maxWidth: 'calc(100vw - ' + (targetRect.right + 24) + 'px)',
-        width: '280px',
-      };
+    // Desktop center steps
+    if (!targetRect || !currentStep.target) {
+      return { ...cardBase, position: 'relative', zIndex: 10002 };
     }
 
     // Desktop: card to the right of sidebar item
@@ -144,9 +135,9 @@ export default function OnboardingWalkthrough({ onComplete, onSkip, isMobile, on
         {/* Tooltip card */}
         <motion.div
           key={step}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, y: isMobile ? 30 : 0, scale: isMobile ? 1 : 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: isMobile ? 30 : 0, scale: isMobile ? 1 : 0.95 }}
           transition={{ duration: 0.3 }}
           style={getCardStyle()}
         >

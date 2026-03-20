@@ -1191,6 +1191,7 @@ function App() {
             setShowOnboarding(false);
             setSidebarOpen(false);
             localStorage.setItem('fitcore-onboarding-done', 'true');
+            triggerConfetti();
           }}
           onSkip={() => {
             setShowOnboarding(false);
