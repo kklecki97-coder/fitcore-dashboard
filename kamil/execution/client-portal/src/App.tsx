@@ -1155,7 +1155,7 @@ function App() {
   // Fix #21: Show retry button when data load fails
   if (authLoading) {
     return (
-      <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+      <div style={{ width: '100vw', height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
         <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '18px' }}>Loading...</div>
       </div>
     );
@@ -1163,7 +1163,7 @@ function App() {
 
   if (loadError && !clientUser) {
     return (
-      <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', background: 'var(--bg-primary)' }}>
+      <div style={{ width: '100vw', height: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', background: 'var(--bg-primary)' }}>
         <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: '16px' }}>Failed to load data</div>
         <button
           onClick={handleRetry}
@@ -1316,7 +1316,7 @@ function App() {
             transition={{ duration: 0.15 }}
             style={{
               ...styles.content,
-              paddingBottom: isMobile ? 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))' : '0px',
+              paddingBottom: isMobile ? 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px)' : '0px',
             }}
           >
             {renderPage()}
@@ -1353,7 +1353,7 @@ function App() {
 const styles: Record<string, React.CSSProperties> = {
   app: {
     display: 'flex',
-    height: '100vh',
+    height: '100dvh',
     width: '100vw',
     overflow: 'hidden',
     position: 'relative',

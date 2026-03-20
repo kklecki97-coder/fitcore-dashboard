@@ -269,7 +269,7 @@ export default function RegisterPage() {
 
 const styles: Record<string, React.CSSProperties> = {
   wrap: {
-    height: '100vh',
+    height: '100dvh',
     width: '100vw',
     display: 'flex',
     alignItems: 'center',

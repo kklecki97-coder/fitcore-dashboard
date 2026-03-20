@@ -469,7 +469,7 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
-    padding: '28px 24px',
+    padding: '28px 24px 40px',
     maxWidth: '1100px',
   },
   pageTitle: {
