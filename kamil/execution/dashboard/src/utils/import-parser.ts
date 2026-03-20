@@ -94,7 +94,16 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
     const joined = cells.join('').toLowerCase();
 
     if (!joined) continue;
-    if (isSkippableRow(joined)) continue;
+
+    // Instruction/note rows → attach as note to the last exercise in current day
+    if (isSkippableRow(joined)) {
+      if (currentDay && currentDay.exercises.length > 0) {
+        const lastEx = currentDay.exercises[currentDay.exercises.length - 1];
+        const noteText = cells.filter(c => c).join(' ').trim();
+        lastEx.notes = lastEx.notes ? `${lastEx.notes}; ${noteText}` : noteText;
+      }
+      continue;
+    }
 
     const firstCell = cells[0];
 

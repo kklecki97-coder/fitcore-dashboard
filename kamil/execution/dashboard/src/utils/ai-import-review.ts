@@ -31,8 +31,11 @@ Rules:
 - If the name is unusually long (more than ~50 characters) and reads like a sentence/instruction rather than an exercise name, it is likely a "note"
 - When in doubt, keep it as an exercise
 
+Also suggest a clean, professional program name based on the workout structure (e.g. "Upper/Lower 4-Day Split", "Push Pull Legs", "Full Body 3x/Week", "Góra/Dół 4-Dniowy Split"). Use the same language as the day names. Keep it short and descriptive.
+
 Return JSON in this exact format:
 {
+  "programName": "Clean Program Name Here",
   "days": [
     {
       "dayName": "...",
@@ -46,7 +49,7 @@ Return JSON in this exact format:
 
 For notes, "attachTo" should be "previous" (attach to exercise above) or "next" (attach to exercise below). If it's a general day-level note with no clear exercise to attach to, use "previous" (it will go to the last exercise, or be dropped if there's no exercise yet).`;
 
-  const userMessage = JSON.stringify(daysData, null, 2);
+  const userMessage = JSON.stringify({ currentName: program.name, days: daysData }, null, 2);
 
   try {
     const { data, error } = await supabase.functions.invoke('anthropic-proxy', {
@@ -69,6 +72,11 @@ For notes, "attachTo" should be "previous" (attach to exercise above) or "next" 
 
     // Apply AI classifications
     const reviewedProgram = { ...program, days: [...program.days] };
+
+    // Apply suggested program name if provided
+    if (result.programName && typeof result.programName === 'string') {
+      reviewedProgram.name = result.programName;
+    }
 
     for (const aiDay of result.days) {
       const dayIndex = reviewedProgram.days.findIndex(d => d.name === aiDay.dayName);
