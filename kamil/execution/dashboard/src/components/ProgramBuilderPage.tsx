@@ -771,12 +771,12 @@ export default function ProgramBuilderPage({
 
                 {/* Notes */}
                 <div style={styles.fieldGroup}>
-                  <label style={styles.label}>{t.programBuilder.exerciseNotes || 'Notes'}</label>
+                  <label style={styles.label}>{t.programBuilder.exerciseNotes}</label>
                   <input
                     type="text"
                     value={exerciseForm.notes}
                     onChange={(e) => setExerciseForm(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder={t.programBuilder.exerciseNotesPlaceholder || 'e.g. progression, cues, variations...'}
+                    placeholder={t.programBuilder.exerciseNotesPlaceholder}
                     style={styles.input}
                   />
                 </div>

@@ -471,6 +471,8 @@ export const en = {
     quickAddHint: 'Quick add — type name, sets × reps, press Enter. Click pencil icon on any exercise to edit full details.',
     showExercises: 'Show exercises',
     noExercises: 'No exercises',
+    exerciseNotes: 'Notes',
+    exerciseNotesPlaceholder: 'e.g. progression, cues, variations...',
   },
 
   onboarding: {

@@ -473,6 +473,8 @@ export const pl: Translations = {
     quickAddHint: 'Szybkie dodawanie — wpisz nazwę, serie × powtórzenia, naciśnij Enter. Kliknij ikonę ołówka żeby edytować szczegóły.',
     showExercises: 'Pokaż ćwiczenia',
     noExercises: 'Brak ćwiczeń',
+    exerciseNotes: 'Notatki',
+    exerciseNotesPlaceholder: 'np. progresja, wskazówki, warianty...',
   },
 
   onboarding: {
