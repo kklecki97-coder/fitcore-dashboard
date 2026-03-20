@@ -1,35 +1,50 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Plus, Filter, ArrowUpDown,
   Flame, Pause, Sparkles, MoreHorizontal,
   User, MessageSquare, Edit3, Play, Trash2, X, Save, Dumbbell, Star,
-  Mail, Copy, Check, Link, Loader2, CheckCircle, UserPlus,
+  Mail, Copy, Check, Link, Loader2, CheckCircle, UserPlus, ShieldAlert,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
+import ScoreRing from './ScoreRing';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import type { Client, WorkoutProgram, CoachingPlan } from '../types';
+import { calculateEngagementScore, getScoreColor } from '../utils/engagement-score';
+import type { Client, WorkoutProgram, CoachingPlan, WorkoutLog, CheckIn, Message } from '../types';
 
 interface ClientsPageProps {
   clients: Client[];
   programs: WorkoutProgram[];
   plans: CoachingPlan[];
+  workoutLogs: WorkoutLog[];
+  checkIns: CheckIn[];
+  messages: Message[];
   onViewClient: (id: string) => void;
   onNavigate?: (page: 'messages') => void;
   onUpdateClient: (id: string, updates: Partial<Client>) => void;
   onDeleteClient: (id: string) => void;
 }
 
-export default function ClientsPage({ clients: allClients, programs, plans, onViewClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
+export default function ClientsPage({ clients: allClients, programs, plans, workoutLogs, checkIns, messages, onViewClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'status' | 'name' | 'newest' | 'plan'>('status');
+  const [filterEngagement, setFilterEngagement] = useState<'all' | 'at-risk'>('all');
+  const [sortBy, setSortBy] = useState<'status' | 'name' | 'newest' | 'plan' | 'engagement'>('status');
+
+  // Pre-compute engagement scores for all clients
+  const engagementMap = useMemo(() => {
+    const map: Record<string, ReturnType<typeof calculateEngagementScore>> = {};
+    for (const c of allClients) {
+      map[c.id] = calculateEngagementScore(c, workoutLogs, checkIns, messages);
+    }
+    return map;
+  }, [allClients, workoutLogs, checkIns, messages]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Edit Plan modal state
@@ -148,7 +163,8 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
                           c.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPlan = filterPlan === 'all' || c.plan === filterPlan;
     const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
-    return matchesSearch && matchesPlan && matchesStatus;
+    const matchesEngagement = filterEngagement === 'all' || (engagementMap[c.id]?.total ?? 0) < 50;
+    return matchesSearch && matchesPlan && matchesStatus && matchesEngagement;
   });
 
   const statusOrder: Record<string, number> = { active: 0, paused: 1, pending: 2 };
@@ -167,6 +183,11 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
       case 'plan': {
         const p = planOrder[a.plan] - planOrder[b.plan];
         return p !== 0 ? p : a.name.localeCompare(b.name);
+      }
+      case 'engagement': {
+        const eA = engagementMap[a.id]?.total ?? 0;
+        const eB = engagementMap[b.id]?.total ?? 0;
+        return eA - eB; // lowest first (needs attention first)
       }
       default:
         return 0;
@@ -283,8 +304,23 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
               <option value="name">{t.clients.sortName}</option>
               <option value="newest">{t.clients.sortNewest}</option>
               <option value="plan">{t.clients.sortPlan}</option>
+              <option value="engagement">{t.engagement.sortEngagement}</option>
             </select>
           </div>
+          <button
+            onClick={() => setFilterEngagement(filterEngagement === 'all' ? 'at-risk' : 'all')}
+            style={{
+              ...styles.atRiskBtn,
+              ...(filterEngagement === 'at-risk' ? {
+                background: 'rgba(239, 68, 68, 0.12)',
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                color: '#ef4444',
+              } : {}),
+            }}
+          >
+            <ShieldAlert size={14} />
+            {filterEngagement === 'at-risk' ? t.engagement.showAtRiskOnly : t.engagement.allClients}
+          </button>
         </div>
 
         <button onClick={() => setShowInviteModal(true)} style={{ ...styles.addBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
@@ -445,19 +481,48 @@ export default function ClientsPage({ clients: allClients, programs, plans, onVi
                 ))}
               </div>
 
-              <div style={styles.cardStats}>
-                <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>{t.clients.progress}</div>
-                  <div style={styles.cardStatValue}>{client.progress}%</div>
+              <div style={styles.engagementRow}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                  <ScoreRing
+                    score={engagementMap[client.id]?.total ?? 0}
+                    trend={engagementMap[client.id]?.trend}
+                    size={44}
+                    strokeWidth={3.5}
+                    showTrend={false}
+                  />
+                  <span style={{
+                    fontSize: '9px',
+                    fontWeight: 600,
+                    color: getScoreColor(engagementMap[client.id]?.total ?? 0),
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.3px',
+                  }}>
+                    {(() => {
+                      const lbl = engagementMap[client.id]?.label ?? 'good';
+                      const labels: Record<string, string> = {
+                        excellent: t.engagement.excellent,
+                        good: t.engagement.good,
+                        needsAttention: t.engagement.atRisk,
+                        atRisk: t.engagement.critical,
+                      };
+                      return labels[lbl] || lbl;
+                    })()}
+                  </span>
                 </div>
-                <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>{t.clients.rate}</div>
-                  <div style={styles.cardStatValue}>${client.monthlyRate}</div>
-                </div>
-                <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>{t.clients.streak}</div>
-                  <div style={styles.cardStatValue}>
-                    {client.streak > 0 ? `${client.streak}d` : '\u2014'}
+                <div style={styles.cardStats}>
+                  <div style={styles.cardStatItem}>
+                    <div style={styles.cardStatLabel}>{t.clients.progress}</div>
+                    <div style={styles.cardStatValue}>{client.progress}%</div>
+                  </div>
+                  <div style={styles.cardStatItem}>
+                    <div style={styles.cardStatLabel}>{t.clients.rate}</div>
+                    <div style={styles.cardStatValue}>${client.monthlyRate}</div>
+                  </div>
+                  <div style={styles.cardStatItem}>
+                    <div style={styles.cardStatLabel}>{t.clients.streak}</div>
+                    <div style={styles.cardStatValue}>
+                      {client.streak > 0 ? `${client.streak}d` : '\u2014'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1327,5 +1392,27 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     marginTop: '16px',
     boxShadow: '0 0 16px var(--accent-primary-dim)',
+  },
+  engagementRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    padding: '8px 0',
+  },
+  atRiskBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '7px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '12px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    whiteSpace: 'nowrap' as const,
   },
 };

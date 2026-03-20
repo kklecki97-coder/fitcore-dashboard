@@ -913,6 +913,9 @@ function App() {
               clients={allClients}
               programs={allPrograms}
               plans={allPlans}
+              workoutLogs={allWorkoutLogs}
+              checkIns={allCheckIns}
+              messages={allMessages}
               onViewClient={handleViewClient}
               onNavigate={handleNavigate}
               onUpdateClient={handleUpdateClient}
@@ -931,6 +934,7 @@ function App() {
               workoutLogs={allWorkoutLogs}
               setLogs={allSetLogs}
               checkIns={allCheckIns}
+              messages={allMessages}
               onBack={handleBackFromClient}
               backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
               onUpdateClient={handleUpdateClient}
