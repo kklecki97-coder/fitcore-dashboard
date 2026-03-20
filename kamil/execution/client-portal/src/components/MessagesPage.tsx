@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, CheckCheck, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
+import { supabase } from '../lib/supabase';
 import type { Message } from '../types';
 
 interface MessagesPageProps {
@@ -38,6 +39,7 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
     };
     onSendMessage(msg);
     setNewMessage('');
+    lastBroadcastRef.current = 0; // allow immediate typing broadcast on next input
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -46,6 +48,21 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
       handleSend();
     }
   };
+
+  // ── Broadcast client typing to coach ──
+  const lastBroadcastRef = useRef(0);
+
+  const broadcastClientTyping = useCallback(() => {
+    if (!clientId) return;
+    const now = Date.now();
+    if (now - lastBroadcastRef.current < 2000) return; // debounce 2s
+    lastBroadcastRef.current = now;
+    supabase.channel(`typing-${clientId}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { isCoach: false },
+    });
+  }, [clientId]);
 
   // Group by date
   const grouped: { date: string; msgs: Message[] }[] = [];
@@ -223,7 +240,7 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
         <input
           style={styles.input}
           value={newMessage}
-          onChange={e => setNewMessage(e.target.value)}
+          onChange={e => { setNewMessage(e.target.value); broadcastClientTyping(); }}
           onKeyDown={handleKeyDown}
           placeholder={t.messages.placeholder}
         />

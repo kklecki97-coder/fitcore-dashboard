@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, Fragment } from 'react';
+import { useState, useRef, useEffect, useCallback, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Send, ArrowLeft, X, MessageSquare, Check } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import { useLang } from '../i18n';
 import { getLocale } from '../lib/locale';
+import { supabase } from '../lib/supabase';
 import type { Client, Message } from '../types';
 
 // ── Delivery status checkmarks ──
@@ -141,17 +142,53 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     scrollToBottom();
   }, [selectedClient, messages]);
 
-  // Mock typing indicator - show briefly when switching to conversations with unread
+  // ── Real-time typing indicator: listen for client typing broadcasts ──
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     setIsClientTyping(false);
-    const clientMsgs = messages.filter(m => m.clientId === selectedClient);
-    const hasUnread = clientMsgs.some(m => !m.isRead && !m.isFromCoach);
-    if (hasUnread) {
-      const timer = setTimeout(() => setIsClientTyping(true), 500);
-      const hideTimer = setTimeout(() => setIsClientTyping(false), 3500);
-      return () => { clearTimeout(timer); clearTimeout(hideTimer); };
+    if (!selectedClient) return;
+
+    const channel = supabase
+      .channel(`typing-${selectedClient}`)
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        if (!payload.payload?.isCoach) {
+          setIsClientTyping(true);
+          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = setTimeout(() => setIsClientTyping(false), 3000);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [selectedClient]);
+
+  // Clear typing indicator when a new message arrives from the client
+  useEffect(() => {
+    const lastMsg = activeConversation[activeConversation.length - 1];
+    if (lastMsg && !lastMsg.isFromCoach) {
+      setIsClientTyping(false);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     }
-  }, [selectedClient, messages]);
+  }, [activeConversation.length]);
+
+  // ── Broadcast coach typing to client ──
+  const lastBroadcastRef = useRef(0);
+
+  const broadcastCoachTyping = useCallback(() => {
+    if (!selectedClient) return;
+    const now = Date.now();
+    if (now - lastBroadcastRef.current < 2000) return; // debounce 2s
+    lastBroadcastRef.current = now;
+    supabase.channel(`typing-${selectedClient}`).send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { isCoach: true },
+    });
+  }, [selectedClient]);
 
   // Group messages by client, sorted by most recent
   const clientIds = [...new Set(messages.map(m => m.clientId))];
@@ -181,6 +218,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
     };
     onSendMessage(msg);
     setNewMessage('');
+    lastBroadcastRef.current = 0; // allow immediate typing broadcast on next input
   };
 
   const handleSelectConversation = (id: string) => {
@@ -385,7 +423,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
                   </Fragment>
                 );
               })}
-              {isClientTyping && <TypingIndicator label={t.messages.typing} />}
+              {isClientTyping && activeClient && <TypingIndicator label={`${activeClient.name} ${t.messages.typing}`} />}
             </>
           )}
           <div ref={messagesEndRef} />
@@ -447,7 +485,7 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
               type="text"
               placeholder={t.messages.typeMessage}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) => { setNewMessage(e.target.value); broadcastCoachTyping(); }}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               style={styles.messageInput}
             />
