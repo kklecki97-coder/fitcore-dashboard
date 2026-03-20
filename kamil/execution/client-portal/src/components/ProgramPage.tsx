@@ -417,7 +417,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
     return (
       <div style={styles.countdownOverlay}>
         <div style={styles.countdownContent}>
-          <span style={styles.countdownLabel}>{isGo ? '' : 'Get Ready'}</span>
+          <span style={styles.countdownLabel}>{isGo ? '' : lang === 'pl' ? 'Przygotuj się' : 'Get Ready'}</span>
           <div style={styles.countdownCircle}>
             <svg width="180" height="180" viewBox="0 0 180 180">
               <circle cx="90" cy="90" r="82" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
@@ -434,10 +434,10 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
             <span style={{
               ...styles.countdownNumber,
               ...(isGo ? { fontSize: '48px', color: 'var(--accent-success, #22c55e)' } : {}),
-            }} key={countdown}>{isGo ? 'GO!' : countdown}</span>
+            }} key={countdown}>{isGo ? (lang === 'pl' ? 'START!' : 'GO!') : countdown}</span>
           </div>
           <span style={styles.countdownExercise}>{day.name}</span>
-          <span style={styles.countdownMeta}>{day.exercises.length} exercises</span>
+          <span style={styles.countdownMeta}>{day.exercises.length} {lang === 'pl' ? 'ćwiczeń' : 'exercises'}</span>
         </div>
       </div>
     );
@@ -461,35 +461,35 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
             <div style={styles.summaryIcon}>
               <Trophy size={48} color="var(--accent-primary)" />
             </div>
-            <h2 style={styles.summaryTitle}>Workout Complete</h2>
+            <h2 style={styles.summaryTitle}>{lang === 'pl' ? 'Trening Ukończony' : 'Workout Complete'}</h2>
             <p style={styles.summarySubtitle}>{day.name}</p>
 
             <div style={styles.summaryStats}>
               <div style={styles.summaryStat}>
                 <span style={styles.summaryStatValue}>{formatTime(workoutElapsed)}</span>
-                <span style={styles.summaryStatLabel}>Duration</span>
+                <span style={styles.summaryStatLabel}>{lang === 'pl' ? 'Czas' : 'Duration'}</span>
               </div>
               <div style={styles.summaryDivider} />
               <div style={styles.summaryStat}>
                 <span style={styles.summaryStatValue}>{completedSets}/{totalSets}</span>
-                <span style={styles.summaryStatLabel}>Sets</span>
+                <span style={styles.summaryStatLabel}>{lang === 'pl' ? 'Serie' : 'Sets'}</span>
               </div>
               <div style={styles.summaryDivider} />
               <div style={styles.summaryStat}>
                 <span style={styles.summaryStatValue}>{completedExCount}/{day.exercises.length}</span>
-                <span style={styles.summaryStatLabel}>Exercises</span>
+                <span style={styles.summaryStatLabel}>{lang === 'pl' ? 'Ćwiczenia' : 'Exercises'}</span>
               </div>
             </div>
 
             {getTotalVolume() > 0 && (
               <div style={styles.summaryVolume}>
-                <span style={styles.summaryVolumeLabel}>Total Volume</span>
+                <span style={styles.summaryVolumeLabel}>{lang === 'pl' ? 'Objętość Łączna' : 'Total Volume'}</span>
                 <span style={styles.summaryVolumeValue}>{getTotalVolume().toLocaleString()} kg</span>
               </div>
             )}
 
             <button style={styles.summaryCloseBtn} onClick={closeWorkout}>
-              Done
+              {lang === 'pl' ? 'Gotowe' : 'Done'}
             </button>
           </div>
         </div>
@@ -551,7 +551,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
             <div style={styles.drawerBackdrop} onClick={() => setDrawerOpen(false)} />
             <div style={styles.drawer}>
               <div style={styles.drawerHeader}>
-                <span style={styles.drawerTitle}>Exercises</span>
+                <span style={styles.drawerTitle}>{lang === 'pl' ? 'Ćwiczenia' : 'Exercises'}</span>
                 <button style={styles.drawerClose} onClick={() => setDrawerOpen(false)}>
                   <X size={18} />
                 </button>
@@ -592,7 +592,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                         }}>{ex.name}</span>
                         <span style={styles.drawerItemMeta}>
                           {ex.sets} × {ex.reps} · {ex.weight}
-                          {exSetsCompleted > 0 && !exDone ? ` · ${exSetsCompleted}/${ex.sets} done` : ''}
+                          {exSetsCompleted > 0 && !exDone ? ` · ${exSetsCompleted}/${ex.sets}` : ''}
                         </span>
                       </div>
                     </button>
@@ -670,8 +670,8 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                 </svg>
                 <span style={styles.restCenterValue}>{restTimer!.seconds}s</span>
               </div>
-              <span style={styles.restCenterLabel}>Rest</span>
-              <button style={styles.restSkipBtn} onClick={clearTimer}>Skip</button>
+              <span style={styles.restCenterLabel}>{lang === 'pl' ? 'Przerwa' : 'Rest'}</span>
+              <button style={styles.restSkipBtn} onClick={clearTimer}>{lang === 'pl' ? 'Pomiń' : 'Skip'}</button>
             </div>
           ) : exAllDone ? (
             /* All sets done for this exercise */
@@ -725,7 +725,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
         <div style={styles.workoutFooter}>
           {exAllDone ? (
             <button style={styles.workoutNextBtn} onClick={goNextExercise}>
-              <span>{workoutExerciseIdx === day.exercises.length - 1 ? 'Finish Workout' : 'Next Exercise'}</span>
+              <span>{workoutExerciseIdx === day.exercises.length - 1 ? (lang === 'pl' ? 'Zakończ Trening' : 'Finish Workout') : (lang === 'pl' ? 'Następne Ćwiczenie' : 'Next Exercise')}</span>
               <ChevronRight size={18} />
             </button>
           ) : isResting ? (
@@ -755,7 +755,9 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
 
   if (!hasTodayWorkout) {
     // Find next training day
-    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayNames = lang === 'pl'
+      ? ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+      : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const dow = new Date().getDay();
     const mondayBased = dow === 0 ? 6 : dow - 1;
     let nextDayLabel = '';
@@ -775,11 +777,11 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
       <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px', alignItems: 'center', justifyContent: 'center' }}>
         <div style={styles.restDayCard}>
           <div style={styles.restDayEmoji}>&#128564;</div>
-          <h2 style={styles.restDayTitle}>Rest Day</h2>
-          <p style={styles.restDaySub}>No workout scheduled for today. Recover and come back stronger.</p>
+          <h2 style={styles.restDayTitle}>{lang === 'pl' ? 'Dzień Odpoczynku' : 'Rest Day'}</h2>
+          <p style={styles.restDaySub}>{lang === 'pl' ? 'Dziś brak treningu. Odpoczywaj i wracaj silniejszy.' : 'No workout scheduled for today. Recover and come back stronger.'}</p>
           {nextDayLabel && nextWorkout && (
             <div style={styles.nextWorkout}>
-              <span style={styles.nextWorkoutLabel}>Next up</span>
+              <span style={styles.nextWorkoutLabel}>{lang === 'pl' ? 'Następny' : 'Next up'}</span>
               <span style={styles.nextWorkoutValue}>{nextDayLabel} - {nextWorkout}</span>
             </div>
           )}
@@ -798,9 +800,9 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
     return (
       <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
         <div style={styles.header}>
-          <p style={styles.todayLabel}>Today's Workout</p>
+          <p style={styles.todayLabel}>{lang === 'pl' ? 'Dzisiejszy Trening' : "Today's Workout"}</p>
           <h2 style={styles.title}>{day.name}</h2>
-          <p style={styles.subtitle}>Session workout</p>
+          <p style={styles.subtitle}>{lang === 'pl' ? 'Trening sesyjny' : 'Session workout'}</p>
         </div>
 
         <div style={{
@@ -812,8 +814,8 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
             <>
               <CheckCircle2 size={48} color="var(--accent-success)" />
               <div>
-                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>Session Complete</div>
-                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>Great work today!</div>
+                <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>{lang === 'pl' ? 'Sesja Ukończona' : 'Session Complete'}</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>{lang === 'pl' ? 'Świetna robota!' : 'Great work today!'}</div>
               </div>
               <button
                 onClick={() => onRemoveWorkout(day.name, todayStr)}
@@ -824,7 +826,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                   cursor: 'pointer', marginTop: '4px',
                 }}
               >
-                Undo
+                {lang === 'pl' ? 'Cofnij' : 'Undo'}
               </button>
             </>
           ) : (
@@ -832,7 +834,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
               <div style={{ fontSize: '48px', lineHeight: 1 }}>&#129354;</div>
               <div>
                 <div style={{ fontSize: '16px', color: 'var(--text-secondary)', maxWidth: '280px' }}>
-                  Tap below when you've finished your session
+                  {lang === 'pl' ? 'Kliknij poniżej gdy skończysz sesję' : "Tap below when you've finished your session"}
                 </div>
               </div>
               <button
