@@ -405,6 +405,9 @@ function App() {
         // Show onboarding for first-time coaches (no clients, not seen before)
         if (clientsList.length === 0 && !localStorage.getItem('fitcore-onboarding-done')) {
           setShowOnboarding(true);
+        } else if (clientsList.length > 0) {
+          // Coach has clients — mark onboarding as done so it never shows again
+          localStorage.setItem('fitcore-onboarding-done', 'true');
         }
       });
     });

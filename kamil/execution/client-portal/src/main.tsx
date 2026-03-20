@@ -6,6 +6,7 @@ import { ToastProvider } from './components/Toast'
 import './index.css'
 import App from './App.tsx'
 import RegisterPage from './components/RegisterPage.tsx'
+import UpdateBanner from './components/UpdateBanner.tsx'
 
 function LangUrlSync() {
   const { pathname } = useLocation();
@@ -63,6 +64,7 @@ createRoot(document.getElementById('root')!).render(
         <BrowserRouter>
           <AppRoutes />
         </BrowserRouter>
+        <UpdateBanner />
       </ToastProvider>
     </I18nProvider>
   </StrictMode>,

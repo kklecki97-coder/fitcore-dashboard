@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, Circle, Dumbbell, Timer, Minus, Plus, Play, X, ChevronLeft, ChevronRight, Trophy, Menu } from 'lucide-react';
 import GlassCard from './GlassCard';
+import { useToast } from './Toast';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { WorkoutProgram, WorkoutSetLog, WorkoutLog, WeeklySchedule } from '../types';
@@ -15,11 +16,13 @@ interface ProgramPageProps {
   onUpdateLog: (exerciseId: string, setNumber: number, date: string, updates: Partial<WorkoutSetLog>) => void;
   workoutLogs: WorkoutLog[];
   weeklySchedule: WeeklySchedule | null;
+  onExerciseComplete?: () => void;
 }
 
-export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, onRemoveWorkout, onRemoveLog, onUpdateLog, workoutLogs, weeklySchedule }: ProgramPageProps) {
+export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, onRemoveWorkout, onRemoveLog, onUpdateLog, workoutLogs, weeklySchedule, onExerciseComplete }: ProgramPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
+  const { showToast } = useToast();
 
   // ── Compute today's workout day index (schedule-aware) ──
   const dayAssignments = weeklySchedule?.dayAssignments ?? {};
@@ -532,6 +535,20 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
         completed: true,
         rpe: null,
       });
+      // Show tiny confirmation toast
+      if (currentSetNum === currentExercise.sets) {
+        // Last set of exercise — show celebration!
+        const doneMsg = lang === 'pl'
+          ? `${currentExercise.name} — ukończone! 🔥`
+          : `${currentExercise.name} — complete! 🔥`;
+        showToast(doneMsg, 'success', 2500);
+        onExerciseComplete?.();
+      } else {
+        const setMsg = lang === 'pl'
+          ? `Seria ${currentSetNum}/${currentExercise.sets} ✓`
+          : `Set ${currentSetNum}/${currentExercise.sets} ✓`;
+        showToast(setMsg, 'success', 1500);
+      }
       // Start rest timer if not the last set
       if (currentExercise.restSeconds && currentSetNum < currentExercise.sets) {
         setRestTimer({

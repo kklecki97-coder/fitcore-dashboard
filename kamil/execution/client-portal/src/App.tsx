@@ -1078,6 +1078,10 @@ function App() {
               onUpdateLog={handleUpdateLog}
               workoutLogs={workoutLogs}
               weeklySchedule={weeklySchedule}
+              onExerciseComplete={() => {
+                setShowConfetti(true);
+                setTimeout(() => setShowConfetti(false), 100);
+              }}
             />
           </ErrorBoundary>
         );
@@ -1204,7 +1208,8 @@ function App() {
         coachName={coachName}
         onComplete={(updates) => {
           setClientUser(prev => prev ? { ...prev, ...updates } : null);
-          // Show walkthrough after onboarding completes
+          localStorage.setItem('fitcore-client-onboarding-done', 'true');
+          // Show walkthrough after onboarding completes (only this one time)
           if (!localStorage.getItem('fitcore-client-walkthrough-done')) {
             setTimeout(() => setShowWalkthrough(true), 500);
           }
@@ -1213,9 +1218,10 @@ function App() {
     );
   }
 
-  // Also show walkthrough on first login if onboarding was already done but walkthrough wasn't shown
+  // Show walkthrough ONLY once — after first onboarding completion
+  // Never show again if localStorage flag is set
   if (clientUser && clientUser.onboarded && !showWalkthrough && !localStorage.getItem('fitcore-client-walkthrough-done')) {
-    if (!sessionStorage.getItem('fitcore-walkthrough-checked')) {
+    if (!sessionStorage.getItem('fitcore-walkthrough-checked') && !localStorage.getItem('fitcore-client-onboarding-done')) {
       sessionStorage.setItem('fitcore-walkthrough-checked', 'true');
       setTimeout(() => setShowWalkthrough(true), 1000);
     }

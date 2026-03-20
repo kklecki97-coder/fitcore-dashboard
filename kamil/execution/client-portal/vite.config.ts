@@ -8,14 +8,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       workbox: {
-        // Cache all JS, CSS, HTML, fonts, images
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Skip waiting — new SW takes over immediately
-        skipWaiting: true,
-        clientsClaim: true,
-        // Don't cache API calls (Supabase) — only static assets
         navigateFallback: '/index.html',
         runtimeCaching: [
           {

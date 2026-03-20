@@ -65,9 +65,9 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 80, scale: 0.95 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 80, scale: 0.95 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.95 }}
       transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
       style={{
         ...styles.toast,
@@ -86,14 +86,15 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'fixed',
-    top: '16px',
-    right: '16px',
+    bottom: 'calc(140px + env(safe-area-inset-bottom, 0px))',
+    left: '50%',
+    transform: 'translateX(-50%)',
     zIndex: 20000,
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
-    maxWidth: '380px',
-    width: '100%',
+    maxWidth: '320px',
+    width: 'auto',
     pointerEvents: 'none',
   },
   toast: {
