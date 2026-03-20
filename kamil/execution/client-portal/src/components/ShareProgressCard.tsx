@@ -86,6 +86,10 @@ export default function ShareProgressCard({
     download: lang === 'pl' ? 'Pobierz' : 'Download',
     share: lang === 'pl' ? 'Udostępnij' : 'Share',
     coach: lang === 'pl' ? 'Trener' : 'Coach',
+    bench: lang === 'pl' ? 'Wyciskanie' : 'Bench',
+    squat: lang === 'pl' ? 'Przysiad' : 'Squat',
+    deadlift: lang === 'pl' ? 'Martwy ciąg' : 'Deadlift',
+    prs: lang === 'pl' ? 'Rekordy' : 'PRs',
   };
 
   const hasWeightData = weightChange !== null && weightChange !== 0;
@@ -177,24 +181,24 @@ export default function ShareProgressCard({
               <div style={styles.liftsSection}>
                 <div style={styles.liftsTitle}>
                   <TrendingUp size={14} color="#00e5c8" />
-                  <span>PRs</span>
+                  <span>{t.prs}</span>
                 </div>
                 <div style={styles.liftsRow}>
                   {benchPR && (
                     <div style={styles.liftChip}>
-                      <span style={styles.liftName}>Bench</span>
+                      <span style={styles.liftName}>{t.bench}</span>
                       <span style={styles.liftValue}>{benchPR}kg</span>
                     </div>
                   )}
                   {squatPR && (
                     <div style={styles.liftChip}>
-                      <span style={styles.liftName}>Squat</span>
+                      <span style={styles.liftName}>{t.squat}</span>
                       <span style={styles.liftValue}>{squatPR}kg</span>
                     </div>
                   )}
                   {deadliftPR && (
                     <div style={styles.liftChip}>
-                      <span style={styles.liftName}>Deadlift</span>
+                      <span style={styles.liftName}>{t.deadlift}</span>
                       <span style={styles.liftValue}>{deadliftPR}kg</span>
                     </div>
                   )}

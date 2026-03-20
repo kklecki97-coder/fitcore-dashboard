@@ -120,7 +120,7 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
                         <div style={workoutNotifStyles.iconWrap}>
                           <Trophy size={22} color="#07090e" />
                         </div>
-                        <div style={workoutNotifStyles.title}>Workout Complete</div>
+                        <div style={workoutNotifStyles.title}>{t.program.workoutComplete}</div>
                         <div style={workoutNotifStyles.dayName}>{s.dayName}</div>
                       </div>
 
@@ -128,20 +128,20 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
                       <div style={workoutNotifStyles.statsGrid}>
                         <div style={workoutNotifStyles.statCell}>
                           <span style={workoutNotifStyles.statValue}>{s.duration}</span>
-                          <span style={workoutNotifStyles.statLabel}>Duration</span>
+                          <span style={workoutNotifStyles.statLabel}>{t.program.duration}</span>
                         </div>
                         <div style={workoutNotifStyles.statCell}>
                           <span style={workoutNotifStyles.statValue}>{s.exercises}</span>
-                          <span style={workoutNotifStyles.statLabel}>Exercises</span>
+                          <span style={workoutNotifStyles.statLabel}>{t.program.exercises}</span>
                         </div>
                         <div style={workoutNotifStyles.statCell}>
                           <span style={workoutNotifStyles.statValue}>{s.sets}</span>
-                          <span style={workoutNotifStyles.statLabel}>Sets</span>
+                          <span style={workoutNotifStyles.statLabel}>{t.program.sets}</span>
                         </div>
                         {s.volume && (
                           <div style={workoutNotifStyles.statCell}>
                             <span style={{ ...workoutNotifStyles.statValue, color: 'var(--accent-primary)' }}>{s.volume} kg</span>
-                            <span style={workoutNotifStyles.statLabel}>Volume</span>
+                            <span style={workoutNotifStyles.statLabel}>{t.program.volume}</span>
                           </div>
                         )}
                       </div>

@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore — Instagram Story Highlights Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07090e; color: #f0f2f5; font-family: 'Outfit', sans-serif;
+      padding: 40px 24px; min-height: 100vh;
+    }
+
+    .header { text-align: center; margin-bottom: 48px; }
+    .header h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
+    .header h1 span { color: #00e5c8; }
+    .header .subtitle { color: #8b92a5; font-size: 15px; margin-top: 8px; line-height: 1.6; }
+
+    /* Highlight category tabs */
+    .tabs {
+      display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .tab {
+      padding: 10px 20px; border-radius: 12px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(14,18,27,0.85); color: #8b92a5;
+    }
+    .tab:hover { border-color: rgba(0,229,200,0.3); color: #f0f2f5; }
+    .tab.active {
+      background: rgba(0,229,200,0.1); border-color: rgba(0,229,200,0.4);
+      color: #00e5c8;
+    }
+    .tab .count {
+      background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 8px;
+      font-size: 11px; margin-left: 6px;
+    }
+    .tab.active .count { background: rgba(0,229,200,0.15); }
+
+    /* Category section */
+    .category { display: none; }
+    .category.active { display: block; }
+    .category-header {
+      text-align: center; margin-bottom: 32px;
+    }
+    .category-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .category-header p { color: #8b92a5; font-size: 13px; }
+
+    /* Stories grid */
+    .stories-grid {
+      display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;
+      max-width: 1400px; margin: 0 auto;
+    }
+    .story-card {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      background: rgba(14,18,27,0.5); border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 16px; padding: 20px; width: 320px;
+    }
+    .story-label { font-size: 12px; color: #525a6e; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .story-sublabel { font-size: 11px; color: #8b92a5; margin-top: -8px; text-align: center; }
+
+    /* Canvas preview */
+    .story-frame {
+      width: 270px; height: 480px; border-radius: 16px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .story-frame canvas { width: 270px; height: 480px; display: block; }
+
+    /* Upload zone */
+    .upload-zone {
+      width: 100%; padding: 16px; border: 2px dashed rgba(255,255,255,0.08);
+      border-radius: 12px; text-align: center; cursor: pointer;
+      transition: all 0.3s; background: rgba(14,18,27,0.5);
+    }
+    .upload-zone:hover { border-color: rgba(0,229,200,0.3); background: rgba(0,229,200,0.03); }
+    .upload-zone.has-image { border-color: rgba(0,229,200,0.2); border-style: solid; }
+    .upload-zone .upload-icon { font-size: 24px; margin-bottom: 4px; }
+    .upload-zone .upload-text { font-size: 11px; color: #525a6e; }
+    .upload-zone .upload-text.loaded { color: #00e5c8; }
+    .upload-zone input { display: none; }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 24px; border-radius: 10px; font-family: 'Outfit', sans-serif;
+      font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s;
+      border: none; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary {
+      background: linear-gradient(135deg, #00e5c8, #00c4aa);
+      color: #07090e;
+    }
+    .btn-secondary {
+      background: rgba(14,18,27,0.85); color: #f0f2f5;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-download-all {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      color: #fff; padding: 14px 36px; font-size: 15px; border-radius: 12px;
+    }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .global-actions { display: flex; gap: 16px; justify-content: center; margin-top: 40px; margin-bottom: 20px; }
+
+    /* Tips */
+    .tips {
+      max-width: 700px; margin: 40px auto 0; padding: 24px;
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+    }
+    .tips h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #00e5c8; }
+    .tips ul { list-style: none; padding: 0; }
+    .tips li { padding: 6px 0; font-size: 13px; color: #8b92a5; line-height: 1.5; }
+    .tips li::before { content: '→ '; color: #00e5c8; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Fit<span>Core</span> — Story Highlights</h1>
+  <p class="subtitle">
+    Generator branded Instagram Stories do Highlighted sekcji.<br>
+    Wrzuć mobile screeny → pobierz gotowe stories z overlayem.
+  </p>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div id="categories"></div>
+
+<div class="global-actions">
+  <button class="btn btn-download-all" onclick="downloadAllCategory()">Pobierz wszystkie z aktywnej kategorii</button>
+  <button class="btn btn-download-all" style="background: linear-gradient(135deg, #f59e0b, #f97316);" onclick="downloadEverything()">Pobierz WSZYSTKO (wszystkie kategorie)</button>
+</div>
+
+<div class="tips">
+  <h3>Jak używać</h3>
+  <ul>
+    <li>Kliknij kategorię (tab) na górze</li>
+    <li>Każda kategoria = 1 Highlight na Instagramie</li>
+    <li>Kliknij "Wrzuć screenshot" i wybierz mobile screenshot z telefonu</li>
+    <li>Screenshot automatycznie zostanie wstawiony w mockup telefonu</li>
+    <li>Pobierz jako PNG (1080×1920 — gotowy do wrzucenia jako Story)</li>
+    <li>Screeny najlepiej z telefonu — ciemny theme wygląda premium</li>
+    <li>Każde story ma swój tekst — ale możesz go też zmienić w kodzie</li>
+  </ul>
+</div>
+
+<script>
+const W = 1080;
+const H = 1920;
+const ACCENT = '#00e5c8';
+const ACCENT2 = '#6366f1';
+const BG = '#07090e';
+const BG2 = '#0c1017';
+const TEXT = '#f0f2f5';
+const TEXT2 = '#8b92a5';
+const TEXT3 = '#525a6e';
+
+// ══════════════════════════════════════════════
+//  HIGHLIGHT CATEGORIES & STORIES DEFINITIONS
+// ══════════════════════════════════════════════
+
+const highlights = [
+  {
+    id: 'panel',
+    name: 'Panel Trenera',
+    icon: '🖥️',
+    stories: [
+      {
+        id: 'panel-intro',
+        label: 'Intro — Co to jest?',
+        sublabel: 'Bez screena — czysta grafika',
+        needsScreenshot: false,
+        topTag: 'PANEL TRENERA',
+        topTagColor: ACCENT,
+        headline: 'Twój biznes.\nJedna platforma.',
+        subtext: 'Klienci, programy, czat, płatności\ni analityka — wszystko w jednym panelu.',
+        bottomText: 'Przesuń dalej →',
+        style: 'hero'
+      },
+      {
+        id: 'panel-overview',
+        label: 'Overview / Dashboard',
+        sublabel: 'Wrzuć screena strony głównej panelu',
+        needsScreenshot: true,
+        topTag: 'PANEL TRENERA',
+        topTagColor: ACCENT,
+        headline: 'Wszystko na wyciągnięcie ręki',
+        subtext: 'Statystyki, aktywność klientów, szybkie akcje',
+        phoneLabel: 'Dashboard Overview'
+      },
+      {
+        id: 'panel-clients',
+        label: 'Lista klientów',
+        sublabel: 'Wrzuć screena listy klientów',
+        needsScreenshot: true,
+        topTag: 'PANEL TRENERA',
+        topTagColor: ACCENT,
+        headline: 'Każdy klient pod kontrolą',
+        subtext: 'Profil, postępy, status — jedno kliknięcie',
+        phoneLabel: 'Client Management'
+      },
+      {
+        id: 'panel-analytics',
+        label: 'Analityka',
+        sublabel: 'Wrzuć screena strony Analytics',
+        needsScreenshot: true,
+        topTag: 'PANEL TRENERA',
+        topTagColor: ACCENT,
+        headline: 'Dane, które napędzają wzrost',
+        subtext: 'Przychody, retencja, zaangażowanie klientów',
+        phoneLabel: 'Analytics'
+      }
+    ]
+  },
+  {
+    id: 'programy',
+    name: 'Programy',
+    icon: '💪',
+    stories: [
+      {
+        id: 'prog-intro',
+        label: 'Intro — Programy',
+        sublabel: 'Bez screena — czysta grafika',
+        needsScreenshot: false,
+        topTag: 'PROGRAMY TRENINGOWE',
+        topTagColor: ACCENT2,
+        headline: 'Twórz programy\nw minuty, nie godziny.',
+        subtext: 'Ręczny builder, AI generator,\nimport z Excela — co wolisz.',
+        bottomText: 'Przesuń dalej →',
+        style: 'hero'
+      },
+      {
+        id: 'prog-builder',
+        label: 'Program Builder',
+        sublabel: 'Wrzuć screena buildera programu',
+        needsScreenshot: true,
+        topTag: 'PROGRAMY TRENINGOWE',
+        topTagColor: ACCENT2,
+        headline: 'Buduj programy od zera',
+        subtext: 'Serie, powtórzenia, RPE, tempo, przerwy',
+        phoneLabel: 'Program Builder'
+      },
+      {
+        id: 'prog-exercises',
+        label: 'Lista ćwiczeń',
+        sublabel: 'Wrzuć screena szczegółów programu',
+        needsScreenshot: true,
+        topTag: 'PROGRAMY TRENINGOWE',
+        topTagColor: ACCENT2,
+        headline: 'Szczegóły każdego ćwiczenia',
+        subtext: 'Notatki trenera, progresja, modyfikacje',
+        phoneLabel: 'Exercise Details'
+      },
+      {
+        id: 'prog-ai',
+        label: 'AI Generator',
+        sublabel: 'Wrzuć screena AI program creatora',
+        needsScreenshot: true,
+        topTag: 'PROGRAMY TRENINGOWE',
+        topTagColor: ACCENT2,
+        headline: 'AI tworzy program za Ciebie',
+        subtext: 'Podaj cel klienta → gotowy plan w sekundy',
+        phoneLabel: 'AI Program Creator'
+      }
+    ]
+  },
+  {
+    id: 'apka',
+    name: 'Apka Klienta',
+    icon: '📱',
+    stories: [
+      {
+        id: 'app-intro',
+        label: 'Intro — Apka klienta',
+        sublabel: 'Bez screena — czysta grafika',
+        needsScreenshot: false,
+        topTag: 'APLIKACJA KLIENTA',
+        topTagColor: '#f59e0b',
+        headline: 'Twój klient dostaje\nwłasną aplikację.',
+        subtext: 'Treningi, postępy, check-iny\ni czat z trenerem — w jednym miejscu.',
+        bottomText: 'Przesuń dalej →',
+        style: 'hero'
+      },
+      {
+        id: 'app-home',
+        label: 'Home klienta',
+        sublabel: 'Wrzuć screena Home klienta',
+        needsScreenshot: true,
+        topTag: 'APLIKACJA KLIENTA',
+        topTagColor: '#f59e0b',
+        headline: 'Ekran główny klienta',
+        subtext: 'Powitanie, statystyki, nadchodzące treningi',
+        phoneLabel: 'Client Home'
+      },
+      {
+        id: 'app-workout',
+        label: 'Logowanie treningu',
+        sublabel: 'Wrzuć screena logowania treningu',
+        needsScreenshot: true,
+        topTag: 'APLIKACJA KLIENTA',
+        topTagColor: '#f59e0b',
+        headline: 'Logowanie serii w czasie rzeczywistym',
+        subtext: 'Klient zaznacza serie — Ty widzisz postęp na żywo',
+        phoneLabel: 'Workout Logger'
+      },
+      {
+        id: 'app-progress',
+        label: 'Postępy klienta',
+        sublabel: 'Wrzuć screena strony Progress',
+        needsScreenshot: true,
+        topTag: 'APLIKACJA KLIENTA',
+        topTagColor: '#f59e0b',
+        headline: 'Wykresy i rekordy',
+        subtext: 'Waga, siła, body fat — pełna historia postępów',
+        phoneLabel: 'Progress Tracking'
+      }
+    ]
+  },
+  {
+    id: 'checkin',
+    name: 'Check-iny',
+    icon: '📸',
+    stories: [
+      {
+        id: 'ci-intro',
+        label: 'Intro — Check-iny',
+        sublabel: 'Bez screena — czysta grafika',
+        needsScreenshot: false,
+        topTag: 'CHECK-INY',
+        topTagColor: '#22c55e',
+        headline: 'Śledź postępy\njak nigdy wcześniej.',
+        subtext: 'Zdjęcia, waga, nastrój, energia, sen\n— pełen obraz co tydzień.',
+        bottomText: 'Przesuń dalej →',
+        style: 'hero'
+      },
+      {
+        id: 'ci-form',
+        label: 'Formularz check-inu',
+        sublabel: 'Wrzuć screena formularza check-in klienta',
+        needsScreenshot: true,
+        topTag: 'CHECK-INY',
+        topTagColor: '#22c55e',
+        headline: 'Klient wysyła check-in',
+        subtext: 'Waga, zdjęcia, nastrój, energia, notatki',
+        phoneLabel: 'Check-in Form'
+      },
+      {
+        id: 'ci-coach',
+        label: 'Coach review',
+        sublabel: 'Wrzuć screena check-inów po stronie trenera',
+        needsScreenshot: true,
+        topTag: 'CHECK-INY',
+        topTagColor: '#22c55e',
+        headline: 'Przeglądaj i dawaj feedback',
+        subtext: 'Zdjęcia, metryki, porównania — w jednym widoku',
+        phoneLabel: 'Coach Review'
+      },
+      {
+        id: 'ci-history',
+        label: 'Historia check-inów',
+        sublabel: 'Wrzuć screena historii check-inów',
+        needsScreenshot: true,
+        topTag: 'CHECK-INY',
+        topTagColor: '#22c55e',
+        headline: 'Pełna historia postępów',
+        subtext: 'Porównuj zdjęcia i metryki tydzień po tygodniu',
+        phoneLabel: 'Check-in History'
+      }
+    ]
+  },
+  {
+    id: 'czat',
+    name: 'Czat',
+    icon: '💬',
+    stories: [
+      {
+        id: 'chat-intro',
+        label: 'Intro — Czat',
+        sublabel: 'Bez screena — czysta grafika',
+        needsScreenshot: false,
+        topTag: 'WIADOMOŚCI',
+        topTagColor: '#29ABE2',
+        headline: 'Komunikacja\nbez chaosu.',
+        subtext: 'Koniec z WhatsAppem i Messengerem.\nWszystko w jednym miejscu.',
+        bottomText: 'Przesuń dalej →',
+        style: 'hero'
+      },
+      {
+        id: 'chat-coach',
+        label: 'Inbox trenera',
+        sublabel: 'Wrzuć screena wiadomości po stronie trenera',
+        needsScreenshot: true,
+        topTag: 'WIADOMOŚCI',
+        topTagColor: '#29ABE2',
+        headline: 'Jeden inbox, wszyscy klienci',
+        subtext: 'Status przeczytania, powiadomienia, szybkie odpowiedzi',
+        phoneLabel: 'Coach Inbox'
+      },
+      {
+        id: 'chat-client',
+        label: 'Czat klienta',
+        sublabel: 'Wrzuć screena czatu po stronie klienta',
+        needsScreenshot: true,
+        topTag: 'WIADOMOŚCI',
+        topTagColor: '#29ABE2',
+        headline: 'Klient pisze bezpośrednio do Ciebie',
+        subtext: 'Real-time czat, typing indicator, historia',
+        phoneLabel: 'Client Chat'
+      }
+    ]
+  },
+  {
+    id: 'platnosci',
+    name: 'Płatności',
+    icon: '💰',
+    stories: [
+      {
+        id: 'pay-intro',
+        label: 'Intro — Płatności',
+        sublabel: 'Bez screena — czysta grafika',
+        needsScreenshot: false,
+        topTag: 'PŁATNOŚCI',
+        topTagColor: '#f59e0b',
+        headline: 'Koniec z ręcznym\nśledzeniem płatności.',
+        subtext: 'Faktury, statusy, przypomnienia\n— automatycznie.',
+        bottomText: 'Przesuń dalej →',
+        style: 'hero'
+      },
+      {
+        id: 'pay-invoices',
+        label: 'Faktury trenera',
+        sublabel: 'Wrzuć screena strony Payments',
+        needsScreenshot: true,
+        topTag: 'PŁATNOŚCI',
+        topTagColor: '#f59e0b',
+        headline: 'Twórz i wysyłaj faktury',
+        subtext: 'Status płatności na żywo, historia, plany',
+        phoneLabel: 'Invoices'
+      },
+      {
+        id: 'pay-client',
+        label: 'Faktury klienta',
+        sublabel: 'Wrzuć screena faktur po stronie klienta',
+        needsScreenshot: true,
+        topTag: 'PŁATNOŚCI',
+        topTagColor: '#f59e0b',
+        headline: 'Klient widzi swoje faktury',
+        subtext: 'Przejrzyste rozliczenia, bez nieporozumień',
+        phoneLabel: 'Client Invoices'
+      },
+      {
+        id: 'pay-cta',
+        label: 'CTA — Zacznij teraz',
+        sublabel: 'Bez screena — grafika z CTA',
+        needsScreenshot: false,
+        topTag: 'FITCORE',
+        topTagColor: ACCENT,
+        headline: 'Gotowy żeby\nzacząć?',
+        subtext: 'Darmowe demo na fitcore.tech\nlub napisz do nas na DM.',
+        bottomText: 'fitcore.tech →',
+        style: 'cta'
+      }
+    ]
+  }
+];
+
+// ══════════════════════════════════════════════
+//  DRAWING HELPERS
+// ══════════════════════════════════════════════
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function fillRR(ctx, x, y, w, h, r, color) {
+  roundRect(ctx, x, y, w, h, r); ctx.fillStyle = color; ctx.fill();
+}
+
+function strokeRR(ctx, x, y, w, h, r, color, lw) {
+  roundRect(ctx, x, y, w, h, r); ctx.strokeStyle = color; ctx.lineWidth = lw || 1; ctx.stroke();
+}
+
+function drawBG(ctx) {
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // Cyan glow top-right
+  const g1 = ctx.createRadialGradient(W * 0.85, H * 0.08, 0, W * 0.85, H * 0.08, W * 0.6);
+  g1.addColorStop(0, 'rgba(0, 229, 200, 0.07)');
+  g1.addColorStop(1, 'transparent');
+  ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
+
+  // Purple glow bottom-left
+  const g2 = ctx.createRadialGradient(W * 0.1, H * 0.85, 0, W * 0.1, H * 0.85, W * 0.5);
+  g2.addColorStop(0, 'rgba(99, 102, 241, 0.05)');
+  g2.addColorStop(1, 'transparent');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+}
+
+function drawLogo(ctx, x, y, size) {
+  const half = size / 2;
+  const cx = x + half, cy = y + half;
+  ctx.beginPath(); ctx.arc(cx, cy, half, 0, Math.PI * 2);
+  const bg = ctx.createLinearGradient(x, y, x + size, y + size);
+  bg.addColorStop(0, '#0c1017'); bg.addColorStop(1, BG);
+  ctx.fillStyle = bg; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx, cy, half - 1, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(0,229,200,0.2)'; ctx.lineWidth = 2; ctx.stroke();
+
+  const fs = size * 0.39;
+  ctx.font = `800 ${fs}px 'Outfit', sans-serif`;
+  ctx.textBaseline = 'middle';
+  const fW = ctx.measureText('F').width;
+  const cW = ctx.measureText('C').width;
+  ctx.textAlign = 'left';
+  const sx = cx - (fW + cW) / 2;
+  ctx.fillStyle = '#FFFFFF'; ctx.fillText('F', sx, cy + fs * 0.04);
+  const tg = ctx.createLinearGradient(cx - size * 0.2, 0, cx + size * 0.2, y + size);
+  tg.addColorStop(0, '#00e5c8'); tg.addColorStop(1, '#00c4aa');
+  ctx.fillStyle = tg; ctx.fillText('C', sx + fW, cy + fs * 0.04);
+}
+
+function drawBrandName(ctx, x, y, fontSize) {
+  ctx.font = `700 ${fontSize}px 'Outfit', sans-serif`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = TEXT;
+  const fitW = ctx.measureText('Fit').width;
+  ctx.fillText('Fit', x, y);
+  ctx.fillStyle = ACCENT;
+  ctx.fillText('Core', x + fitW, y);
+}
+
+function wrapTextCenter(ctx, text, cx, y, maxW, lineH) {
+  const lines = text.split('\n');
+  let ty = y;
+  lines.forEach(line => {
+    const words = line.split(' ');
+    let current = '';
+    words.forEach((word, i) => {
+      const test = current + word + ' ';
+      if (ctx.measureText(test).width > maxW && i > 0) {
+        ctx.fillText(current.trim(), cx, ty);
+        current = word + ' ';
+        ty += lineH;
+      } else {
+        current = test;
+      }
+    });
+    ctx.fillText(current.trim(), cx, ty);
+    ty += lineH;
+  });
+  return ty;
+}
+
+// ══════════════════════════════════════════════
+//  PHONE MOCKUP
+// ══════════════════════════════════════════════
+
+function drawPhoneMockup(ctx, img, phoneX, phoneY, phoneW, phoneH) {
+  const r = 40;
+
+  // Phone outer shell
+  fillRR(ctx, phoneX - 8, phoneY - 8, phoneW + 16, phoneH + 16, r + 6, 'rgba(255,255,255,0.04)');
+  strokeRR(ctx, phoneX - 8, phoneY - 8, phoneW + 16, phoneH + 16, r + 6, 'rgba(255,255,255,0.1)', 2);
+
+  // Phone screen area
+  fillRR(ctx, phoneX, phoneY, phoneW, phoneH, r, '#000');
+
+  // Clip and draw screenshot
+  ctx.save();
+  roundRect(ctx, phoneX + 4, phoneY + 4, phoneW - 8, phoneH - 8, r - 4);
+  ctx.clip();
+
+  if (img) {
+    // Cover-fit the image
+    const imgRatio = img.width / img.height;
+    const slotRatio = (phoneW - 8) / (phoneH - 8);
+    let sx = 0, sy = 0, sw = img.width, sh = img.height;
+    if (imgRatio > slotRatio) {
+      sw = img.height * slotRatio;
+      sx = (img.width - sw) / 2;
+    } else {
+      sh = img.width / slotRatio;
+      sy = (img.height - sh) / 2;
+    }
+    ctx.drawImage(img, sx, sy, sw, sh, phoneX + 4, phoneY + 4, phoneW - 8, phoneH - 8);
+  } else {
+    // Placeholder
+    ctx.fillStyle = '#0e121b';
+    ctx.fillRect(phoneX + 4, phoneY + 4, phoneW - 8, phoneH - 8);
+    ctx.fillStyle = TEXT3;
+    ctx.font = '500 28px "Outfit", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('📱', phoneX + phoneW / 2, phoneY + phoneH / 2 - 20);
+    ctx.font = '400 20px "Outfit", sans-serif';
+    ctx.fillText('Wrzuć screenshot', phoneX + phoneW / 2, phoneY + phoneH / 2 + 20);
+  }
+  ctx.restore();
+
+  // Notch
+  fillRR(ctx, phoneX + phoneW / 2 - 60, phoneY, 120, 28, 14, '#000');
+
+  // Home indicator
+  fillRR(ctx, phoneX + phoneW / 2 - 50, phoneY + phoneH - 18, 100, 5, 3, 'rgba(255,255,255,0.15)');
+}
+
+// ══════════════════════════════════════════════
+//  DRAW STORY FUNCTIONS
+// ══════════════════════════════════════════════
+
+function drawHeroStory(ctx, story) {
+  drawBG(ctx);
+
+  // Logo + brand top
+  drawLogo(ctx, W / 2 - 44, 120, 88);
+  drawBrandName(ctx, W / 2 - 82, 250, 36);
+
+  // Tag pill
+  ctx.textAlign = 'center';
+  const tagW = ctx.measureText(story.topTag).width + 48;
+  fillRR(ctx, W / 2 - tagW / 2, 340, tagW, 44, 22, story.topTagColor + '18');
+  strokeRR(ctx, W / 2 - tagW / 2, 340, tagW, 44, 22, story.topTagColor + '40', 1.5);
+  ctx.font = '700 16px "Outfit", sans-serif';
+  ctx.fillStyle = story.topTagColor;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(story.topTag, W / 2, 362);
+
+  // Big headline
+  ctx.font = '900 72px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const headY = 460;
+  const headLines = story.headline.split('\n');
+  headLines.forEach((line, i) => {
+    ctx.fillText(line, W / 2, headY + i * 88);
+  });
+
+  // Subtext
+  ctx.font = '400 32px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT2;
+  const subY = headY + headLines.length * 88 + 50;
+  const subLines = story.subtext.split('\n');
+  subLines.forEach((line, i) => {
+    ctx.fillText(line, W / 2, subY + i * 46);
+  });
+
+  // Decorative line
+  const lineY = subY + subLines.length * 46 + 60;
+  const grad = ctx.createLinearGradient(W / 2 - 150, 0, W / 2 + 150, 0);
+  grad.addColorStop(0, 'transparent');
+  grad.addColorStop(0.5, story.topTagColor);
+  grad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = grad; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 150, lineY); ctx.lineTo(W / 2 + 150, lineY); ctx.stroke();
+
+  // Feature dots
+  if (story.style === 'hero') {
+    const features = getFeaturesByCategory(story.topTag);
+    const dotY = lineY + 60;
+    features.forEach((f, i) => {
+      ctx.beginPath();
+      ctx.arc(W / 2 - 220, dotY + i * 56, 8, 0, Math.PI * 2);
+      ctx.fillStyle = story.topTagColor;
+      ctx.fill();
+      ctx.font = '500 28px "Outfit", sans-serif';
+      ctx.fillStyle = TEXT;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(f, W / 2 - 196, dotY + i * 56);
+    });
+  }
+
+  // Bottom CTA
+  if (story.bottomText) {
+    fillRR(ctx, W / 2 - 180, H - 220, 360, 70, 35, story.topTagColor + '18');
+    strokeRR(ctx, W / 2 - 180, H - 220, 360, 70, 35, story.topTagColor + '40', 1.5);
+    ctx.font = '700 28px "Outfit", sans-serif';
+    ctx.fillStyle = story.topTagColor;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(story.bottomText, W / 2, H - 185);
+  }
+
+  // Bottom bar
+  ctx.fillStyle = TEXT3;
+  ctx.font = '400 22px "Outfit", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('fitcore.tech', W / 2, H - 100);
+}
+
+function drawScreenshotStory(ctx, story, img) {
+  drawBG(ctx);
+
+  // Top section — tag + headline
+  // Tag pill
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '700 15px "Outfit", sans-serif';
+  const tagW = ctx.measureText(story.topTag).width + 40;
+  fillRR(ctx, W / 2 - tagW / 2, 70, tagW, 38, 19, story.topTagColor + '18');
+  strokeRR(ctx, W / 2 - tagW / 2, 70, tagW, 38, 19, story.topTagColor + '40', 1.5);
+  ctx.fillStyle = story.topTagColor;
+  ctx.fillText(story.topTag, W / 2, 89);
+
+  // Headline
+  ctx.font = '800 52px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  wrapTextCenter(ctx, story.headline, W / 2, 145, W - 140, 64);
+
+  // Subtext
+  ctx.font = '400 28px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT2;
+  const subLines = story.subtext.split('\n');
+  subLines.forEach((line, i) => {
+    ctx.fillText(line, W / 2, 290 + i * 40);
+  });
+
+  // Phone mockup — centered
+  const phoneW = 580;
+  const phoneH = 1060;
+  const phoneX = (W - phoneW) / 2;
+  const phoneY = 410;
+
+  drawPhoneMockup(ctx, img, phoneX, phoneY, phoneW, phoneH);
+
+  // Phone label badge at bottom of phone
+  if (story.phoneLabel) {
+    const lblW = ctx.measureText(story.phoneLabel).width + 60;
+    fillRR(ctx, W / 2 - lblW / 2, phoneY + phoneH + 20, lblW, 42, 21, 'rgba(14,18,27,0.9)');
+    strokeRR(ctx, W / 2 - lblW / 2, phoneY + phoneH + 20, lblW, 42, 21, 'rgba(255,255,255,0.08)', 1);
+    ctx.font = '600 20px "Outfit", sans-serif';
+    ctx.fillStyle = TEXT2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(story.phoneLabel, W / 2, phoneY + phoneH + 41);
+  }
+
+  // Bottom branding
+  drawLogo(ctx, W / 2 - 20, H - 90, 40);
+  ctx.font = '500 18px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT3;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('fitcore.tech', W / 2, H - 36);
+}
+
+function drawCTAStory(ctx, story) {
+  drawBG(ctx);
+
+  // Extra glow for CTA
+  const g = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.7);
+  g.addColorStop(0, 'rgba(0, 229, 200, 0.08)');
+  g.addColorStop(1, 'transparent');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // Big logo
+  drawLogo(ctx, W / 2 - 60, 280, 120);
+
+  // Brand name
+  ctx.textAlign = 'center';
+  ctx.font = '800 56px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT;
+  const fitW = ctx.measureText('Fit').width;
+  const coreW = ctx.measureText('Core').width;
+  const nameX = W / 2 - (fitW + coreW) / 2;
+  ctx.textAlign = 'left';
+  ctx.fillText('Fit', nameX, 470);
+  ctx.fillStyle = ACCENT;
+  ctx.fillText('Core', nameX + fitW, 470);
+
+  // Headline
+  ctx.font = '900 78px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const headLines = story.headline.split('\n');
+  headLines.forEach((line, i) => {
+    ctx.fillText(line, W / 2, 560 + i * 96);
+  });
+
+  // Subtext
+  ctx.font = '400 32px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT2;
+  const subY = 560 + headLines.length * 96 + 60;
+  const subLines = story.subtext.split('\n');
+  subLines.forEach((line, i) => {
+    ctx.fillText(line, W / 2, subY + i * 46);
+  });
+
+  // Big CTA button
+  const btnY = subY + subLines.length * 46 + 80;
+  const btnW = 520, btnH = 88, btnR = 44;
+  const btnX = W / 2 - btnW / 2;
+
+  // Button gradient
+  const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY + btnH);
+  btnGrad.addColorStop(0, '#00e5c8');
+  btnGrad.addColorStop(1, '#00c4aa');
+  fillRR(ctx, btnX, btnY, btnW, btnH, btnR, btnGrad);
+
+  ctx.font = '800 30px "Outfit", sans-serif';
+  ctx.fillStyle = BG;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('DARMOWE DEMO →', W / 2, btnY + btnH / 2);
+
+  // Contact info
+  ctx.font = '400 26px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT2;
+  ctx.fillText('fitcore.tech', W / 2, btnY + btnH + 60);
+  ctx.fillText('Fitcorehq@gmail.com', W / 2, btnY + btnH + 100);
+  ctx.font = '400 24px "Outfit", sans-serif';
+  ctx.fillStyle = TEXT3;
+  ctx.fillText('DM na Instagramie', W / 2, btnY + btnH + 140);
+
+  // Bottom feature pills
+  const pills = ['Klienci', 'Programy', 'Czat', 'Check-iny', 'Płatności', 'Analityka'];
+  const pillY = H - 160;
+  ctx.font = '500 20px "Outfit", sans-serif';
+  let totalPillW = 0;
+  const pillPads = [];
+  pills.forEach(p => {
+    const pw = ctx.measureText(p).width + 36;
+    pillPads.push(pw);
+    totalPillW += pw + 10;
+  });
+  totalPillW -= 10;
+  let px = W / 2 - totalPillW / 2;
+  pills.forEach((p, i) => {
+    fillRR(ctx, px, pillY, pillPads[i], 40, 20, 'rgba(0,229,200,0.1)');
+    strokeRR(ctx, px, pillY, pillPads[i], 40, 20, 'rgba(0,229,200,0.2)', 1);
+    ctx.fillStyle = ACCENT;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(p, px + pillPads[i] / 2, pillY + 20);
+    px += pillPads[i] + 10;
+  });
+}
+
+function getFeaturesByCategory(tag) {
+  const map = {
+    'PANEL TRENERA': ['Przegląd statystyk', 'Lista klientów', 'Analityka biznesu', 'Powiadomienia real-time'],
+    'PROGRAMY TRENINGOWE': ['Ręczny builder', 'AI generator programów', 'Import z Excela', '70+ ćwiczeń w bibliotece'],
+    'APLIKACJA KLIENTA': ['Własna aplikacja klienta', 'Logowanie treningów', 'Postępy i wykresy', 'Kalendarz tygodniowy'],
+    'CHECK-INY': ['Zdjęcia postępów', 'Waga, body fat, pomiary', 'Nastrój, energia, sen', 'Feedback od trenera'],
+    'WIADOMOŚCI': ['Real-time czat', 'Status przeczytania', 'Powiadomienia push', 'Historia konwersacji'],
+    'PŁATNOŚCI': ['Faktury i statusy', 'Plany coachingowe', 'Automatyczne przypomnienia', 'Historia płatności'],
+    'FITCORE': ['Klienci', 'Programy', 'Czat', 'Płatności']
+  };
+  return map[tag] || ['Premium dashboard', 'Dla trenerów', 'Dark luxe theme', 'Mobile-first'];
+}
+
+// ══════════════════════════════════════════════
+//  MAIN DRAW DISPATCH
+// ══════════════════════════════════════════════
+
+const screenshotImages = {}; // storyId -> Image
+
+function drawStory(storyId) {
+  const canvas = document.getElementById('canvas-' + storyId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Find story definition
+  let storyDef = null;
+  highlights.forEach(h => {
+    h.stories.forEach(s => { if (s.id === storyId) storyDef = s; });
+  });
+  if (!storyDef) return;
+
+  if (storyDef.style === 'hero') {
+    drawHeroStory(ctx, storyDef);
+  } else if (storyDef.style === 'cta') {
+    drawCTAStory(ctx, storyDef);
+  } else if (storyDef.needsScreenshot) {
+    drawScreenshotStory(ctx, storyDef, screenshotImages[storyId] || null);
+  } else {
+    drawHeroStory(ctx, storyDef);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  UI BUILDING
+// ══════════════════════════════════════════════
+
+let activeCategory = 'panel';
+
+function buildUI() {
+  const tabsEl = document.getElementById('tabs');
+  const catsEl = document.getElementById('categories');
+
+  highlights.forEach(h => {
+    // Tab
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (h.id === activeCategory ? ' active' : '');
+    tab.innerHTML = `${h.icon} ${h.name} <span class="count">${h.stories.length}</span>`;
+    tab.onclick = () => switchCategory(h.id);
+    tab.id = 'tab-' + h.id;
+    tabsEl.appendChild(tab);
+
+    // Category container
+    const cat = document.createElement('div');
+    cat.className = 'category' + (h.id === activeCategory ? ' active' : '');
+    cat.id = 'cat-' + h.id;
+
+    const header = document.createElement('div');
+    header.className = 'category-header';
+    header.innerHTML = `<h2>${h.icon} ${h.name}</h2><p>Highlight: "${h.name}" — ${h.stories.length} stories</p>`;
+    cat.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'stories-grid';
+
+    h.stories.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'story-card';
+
+      // Label
+      card.innerHTML = `<div class="story-label">${s.label}</div>`;
+      if (s.sublabel) card.innerHTML += `<div class="story-sublabel">${s.sublabel}</div>`;
+
+      // Canvas frame
+      const frame = document.createElement('div');
+      frame.className = 'story-frame';
+      const canvas = document.createElement('canvas');
+      canvas.id = 'canvas-' + s.id;
+      canvas.width = W;
+      canvas.height = H;
+      frame.appendChild(canvas);
+      card.appendChild(frame);
+
+      // Upload zone (if needs screenshot)
+      if (s.needsScreenshot) {
+        const uploadZone = document.createElement('div');
+        uploadZone.className = 'upload-zone';
+        uploadZone.id = 'upload-' + s.id;
+        uploadZone.innerHTML = `
+          <div class="upload-icon">📱</div>
+          <div class="upload-text" id="upload-text-${s.id}">Kliknij lub przeciągnij screenshot</div>
+          <input type="file" accept="image/*" id="file-${s.id}" onchange="handleUpload('${s.id}', this)">
+        `;
+        uploadZone.onclick = (e) => {
+          if (e.target.tagName !== 'INPUT') document.getElementById('file-' + s.id).click();
+        };
+
+        // Drag & drop
+        uploadZone.ondragover = (e) => { e.preventDefault(); uploadZone.style.borderColor = 'rgba(0,229,200,0.5)'; };
+        uploadZone.ondragleave = () => { uploadZone.style.borderColor = ''; };
+        uploadZone.ondrop = (e) => {
+          e.preventDefault();
+          uploadZone.style.borderColor = '';
+          if (e.dataTransfer.files.length) {
+            handleFileUpload(s.id, e.dataTransfer.files[0]);
+          }
+        };
+
+        card.appendChild(uploadZone);
+      }
+
+      // Actions
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.innerHTML = `<button class="btn btn-primary" onclick="downloadStory('${s.id}')">Pobierz PNG</button>`;
+      if (s.needsScreenshot) {
+        actions.innerHTML += `<button class="btn btn-secondary" onclick="clearScreenshot('${s.id}')">Wyczyść</button>`;
+      }
+      card.appendChild(actions);
+
+      grid.appendChild(card);
+    });
+
+    cat.appendChild(grid);
+    catsEl.appendChild(cat);
+  });
+}
+
+function switchCategory(catId) {
+  activeCategory = catId;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + catId).classList.add('active');
+  document.getElementById('cat-' + catId).classList.add('active');
+}
+
+function handleUpload(storyId, input) {
+  if (input.files && input.files[0]) {
+    handleFileUpload(storyId, input.files[0]);
+  }
+}
+
+function handleFileUpload(storyId, file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      screenshotImages[storyId] = img;
+      drawStory(storyId);
+
+      // Update upload zone
+      const zone = document.getElementById('upload-' + storyId);
+      if (zone) zone.classList.add('has-image');
+      const text = document.getElementById('upload-text-' + storyId);
+      if (text) { text.textContent = '✓ Screenshot załadowany — kliknij by zmienić'; text.classList.add('loaded'); }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearScreenshot(storyId) {
+  delete screenshotImages[storyId];
+  drawStory(storyId);
+  const zone = document.getElementById('upload-' + storyId);
+  if (zone) zone.classList.remove('has-image');
+  const text = document.getElementById('upload-text-' + storyId);
+  if (text) { text.textContent = 'Kliknij lub przeciągnij screenshot'; text.classList.remove('loaded'); }
+  const input = document.getElementById('file-' + storyId);
+  if (input) input.value = '';
+}
+
+function downloadStory(storyId) {
+  const canvas = document.getElementById('canvas-' + storyId);
+  if (!canvas) return;
+  const link = document.createElement('a');
+  link.download = `fitcore-story-${storyId}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function downloadAllCategory() {
+  const cat = highlights.find(h => h.id === activeCategory);
+  if (!cat) return;
+  cat.stories.forEach((s, i) => {
+    setTimeout(() => downloadStory(s.id), i * 300);
+  });
+}
+
+function downloadEverything() {
+  let delay = 0;
+  highlights.forEach(h => {
+    h.stories.forEach(s => {
+      setTimeout(() => downloadStory(s.id), delay);
+      delay += 300;
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+
+document.fonts.ready.then(() => {
+  buildUI();
+  // Draw all stories
+  highlights.forEach(h => {
+    h.stories.forEach(s => drawStory(s.id));
+  });
+});
+</script>
+
+</body>
+</html>

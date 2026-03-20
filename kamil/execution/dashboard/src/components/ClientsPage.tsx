@@ -1014,18 +1014,24 @@ const styles: Record<string, React.CSSProperties> = {
   cardStats: {
     display: 'flex',
     justifyContent: 'space-between',
+    gap: '12px',
     marginBottom: '12px',
+    flex: 1,
+    minWidth: 0,
   },
   cardStatItem: {
-    textAlign: 'center',
+    textAlign: 'center' as const,
+    flex: 1,
+    minWidth: 0,
   },
   cardStatLabel: {
-    fontSize: '15px',
+    fontSize: '12px',
     color: 'var(--text-tertiary)',
     marginBottom: '2px',
+    whiteSpace: 'nowrap' as const,
   },
   cardStatValue: {
-    fontSize: '22px',
+    fontSize: '18px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
   },
@@ -1396,8 +1402,9 @@ const styles: Record<string, React.CSSProperties> = {
   engagementRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '14px',
+    gap: '16px',
     padding: '8px 0',
+    width: '100%',
   },
   atRiskBtn: {
     display: 'flex',

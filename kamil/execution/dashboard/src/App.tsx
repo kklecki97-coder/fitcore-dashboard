@@ -136,7 +136,7 @@ function App() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
         setProfileEmail(user.email ?? '');
-        setProfileName(user.user_metadata?.name ?? user.email?.split('@')[0] ?? '');
+        setProfileName(user.user_metadata?.name || 'Trenerze');
         // Load avatar from coaches table
         const { data: coach } = await supabase.from('coaches').select('avatar_url').eq('id', user.id).maybeSingle();
         if (coach?.avatar_url) setProfilePhoto(coach.avatar_url);

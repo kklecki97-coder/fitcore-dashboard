@@ -324,7 +324,7 @@ export const en = {
     loginButton: 'Sign In',
     signingIn: 'Signing in...',
     forgotPassword: 'Forgot password?',
-    forgotPasswordNote: 'Forgot your password? Contact support at Fitcorehq@gmail.com.',
+    forgotPasswordNote: 'Forgot your password? Contact support at contact@fitcore.tech.',
     noAccount: "Don't have an account?",
     signUpLink: 'Start your free trial',
     hasAccount: 'Already have an account?',
