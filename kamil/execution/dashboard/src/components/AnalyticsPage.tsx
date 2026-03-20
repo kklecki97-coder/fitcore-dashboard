@@ -35,8 +35,8 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   prevDate.setMonth(prevDate.getMonth() - 1);
   const previousPeriod = prevDate.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 
-  const thisMonthInvoices = invoices.filter(inv => inv.period === currentPeriod);
-  const lastMonthInvoices = invoices.filter(inv => inv.period === previousPeriod);
+  const thisMonthInvoices = invoices.filter(inv => inv.period.toLowerCase() === currentPeriod.toLowerCase());
+  const lastMonthInvoices = invoices.filter(inv => inv.period.toLowerCase() === previousPeriod.toLowerCase());
   const thisMonthRevenue = thisMonthInvoices.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
   const lastMonthRevenue = lastMonthInvoices.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
   const totalCollected = paidInvoices.reduce((s, inv) => s + inv.amount, 0);
@@ -261,10 +261,10 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
             </div>
             <div style={styles.engagementMeta}>
               <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>
-                {completedCheckIns.length} completed
+                {completedCheckIns.length} {lang === 'pl' ? 'ukończonych' : 'completed'}
               </span>
               <span style={{ color: 'var(--accent-danger)' }}>
-                {checkIns.filter(ci => ci.status === 'missed').length} missed
+                {checkIns.filter(ci => ci.status === 'missed').length} {lang === 'pl' ? 'pominiętych' : 'missed'}
               </span>
             </div>
           </div>
@@ -284,7 +284,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                 {t.payments.invoicesPaid(paidInvoices.length)}
               </span>
               <span style={{ color: 'var(--accent-warm)' }}>
-                {invoices.filter(inv => inv.status === 'overdue').length} overdue
+                {invoices.filter(inv => inv.status === 'overdue').length} {lang === 'pl' ? 'zaległych' : 'overdue'}
               </span>
             </div>
           </div>
@@ -449,7 +449,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                 </span>
                 {client.checkInsMissed > 0 && (
                   <span style={{ color: 'var(--accent-danger)', fontSize: '14px', marginLeft: '4px' }}>
-                    ({client.checkInsMissed} missed)
+                    ({client.checkInsMissed} {lang === 'pl' ? 'pom.' : 'missed'})
                   </span>
                 )}
               </span>
