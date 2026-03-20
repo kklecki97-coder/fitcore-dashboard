@@ -2,22 +2,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, X, Sparkles, CreditCard, Users, Dumbbell, MessageSquare, CheckCircle } from 'lucide-react';
 import { useLang } from '../i18n';
+import useIsMobile from '../hooks/useIsMobile';
 
 interface WalkthroughStep {
   target: string | null; // data-tour attribute selector, null = center overlay
   icon: React.ElementType;
   titleKey: string;
   descKey: string;
-  position: 'center' | 'right';
 }
 
 const STEPS: WalkthroughStep[] = [
-  { target: null, icon: Sparkles, titleKey: 'welcomeTitle', descKey: 'welcomeDesc', position: 'center' },
-  { target: '[data-tour="nav-settings"]', icon: CreditCard, titleKey: 'plansTitle', descKey: 'plansDesc', position: 'right' },
-  { target: '[data-tour="nav-clients"]', icon: Users, titleKey: 'clientsTitle', descKey: 'clientsDesc', position: 'right' },
-  { target: '[data-tour="nav-programs"]', icon: Dumbbell, titleKey: 'programsTitle', descKey: 'programsDesc', position: 'right' },
-  { target: '[data-tour="nav-messages"]', icon: MessageSquare, titleKey: 'messagesTitle', descKey: 'messagesDesc', position: 'right' },
-  { target: null, icon: CheckCircle, titleKey: 'doneTitle', descKey: 'doneDesc', position: 'center' },
+  { target: null, icon: Sparkles, titleKey: 'welcomeTitle', descKey: 'welcomeDesc' },
+  { target: '[data-tour="nav-settings"]', icon: CreditCard, titleKey: 'plansTitle', descKey: 'plansDesc' },
+  { target: '[data-tour="nav-clients"]', icon: Users, titleKey: 'clientsTitle', descKey: 'clientsDesc' },
+  { target: '[data-tour="nav-programs"]', icon: Dumbbell, titleKey: 'programsTitle', descKey: 'programsDesc' },
+  { target: '[data-tour="nav-messages"]', icon: MessageSquare, titleKey: 'messagesTitle', descKey: 'messagesDesc' },
+  { target: null, icon: CheckCircle, titleKey: 'doneTitle', descKey: 'doneDesc' },
 ];
 
 interface OnboardingWalkthroughProps {
@@ -27,6 +27,7 @@ interface OnboardingWalkthroughProps {
 
 export default function OnboardingWalkthrough({ onComplete, onSkip }: OnboardingWalkthroughProps) {
   const { t } = useLang();
+  const isMobile = useIsMobile();
   const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
@@ -40,11 +41,18 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
       setTargetRect(null);
       return;
     }
+    // On mobile, sidebar is hidden so we can't spotlight nav items
+    if (isMobile) {
+      setTargetRect(null);
+      return;
+    }
     const el = document.querySelector(currentStep.target);
     if (el) {
       setTargetRect(el.getBoundingClientRect());
+    } else {
+      setTargetRect(null);
     }
-  }, [currentStep.target]);
+  }, [currentStep.target, isMobile]);
 
   useEffect(() => {
     updateTargetRect();
@@ -63,6 +71,26 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
   const texts = t.onboarding;
   const Icon = currentStep.icon;
 
+  // Card positioning logic
+  const getCardStyle = (): React.CSSProperties => {
+    // Center steps or mobile (no sidebar visible) — always centered
+    if (!targetRect || !currentStep.target || isMobile) {
+      return { ...cardBase, position: 'relative', zIndex: 10002 };
+    }
+
+    // Desktop: to the right of the sidebar item
+    return {
+      ...cardBase,
+      position: 'fixed',
+      left: targetRect.right + 20,
+      ...(targetRect.top > window.innerHeight / 2
+        ? { bottom: window.innerHeight - targetRect.top - targetRect.height / 2 }
+        : { top: targetRect.top }),
+      zIndex: 10002,
+      maxHeight: '90vh',
+    };
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -72,7 +100,7 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
         style={styles.overlay}
         onClick={(e) => { if (e.target === e.currentTarget) onSkip(); }}
       >
-        {/* Spotlight cutout for targeted elements */}
+        {/* Spotlight cutout for targeted elements (desktop only) */}
         {targetRect && (
           <div style={{
             position: 'fixed',
@@ -92,24 +120,11 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
         {/* Tooltip card */}
         <motion.div
           key={step}
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.3 }}
-          style={{
-            ...styles.card,
-            ...(currentStep.position === 'center' ? styles.cardCenter : {}),
-            ...(currentStep.position === 'right' && targetRect ? {
-              position: 'fixed',
-              left: targetRect.right + 20,
-              // If target is in bottom half of screen, show tooltip above it
-              ...(targetRect.top > window.innerHeight / 2
-                ? { bottom: window.innerHeight - targetRect.top - targetRect.height / 2 }
-                : { top: targetRect.top }),
-              zIndex: 10002,
-              maxHeight: '90vh',
-            } : {}),
-          }}
+          style={getCardStyle()}
         >
           {/* Step indicator */}
           <div style={styles.stepIndicator}>
@@ -156,6 +171,21 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
   );
 }
 
+const cardBase: React.CSSProperties = {
+  background: '#0c1017',
+  border: '1px solid rgba(0,229,200,0.2)',
+  borderRadius: '16px',
+  padding: '28px 24px',
+  maxWidth: '380px',
+  width: '90vw',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  textAlign: 'center',
+  gap: '12px',
+  boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 24px rgba(0,229,200,0.08)',
+};
+
 const styles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed',
@@ -165,25 +195,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  card: {
-    position: 'relative',
-    background: '#0c1017',
-    border: '1px solid rgba(0,229,200,0.2)',
-    borderRadius: '16px',
-    padding: '28px 24px',
-    maxWidth: '380px',
-    width: '90vw',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    gap: '12px',
-    boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 24px rgba(0,229,200,0.08)',
-  },
-  cardCenter: {
-    position: 'relative',
-    zIndex: 10002,
   },
   stepIndicator: {
     display: 'flex',

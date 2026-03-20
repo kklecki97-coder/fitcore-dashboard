@@ -2,23 +2,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, X, Sparkles, Zap, CalendarDays, TrendingUp, MessageSquare, DollarSign, CheckCircle } from 'lucide-react';
 import { useLang } from '../i18n';
+import useIsMobile from '../hooks/useIsMobile';
 
 interface WalkthroughStep {
   target: string | null;
   icon: React.ElementType;
   titleKey: string;
   descKey: string;
-  position: 'center' | 'right';
 }
 
 const STEPS: WalkthroughStep[] = [
-  { target: null, icon: Sparkles, titleKey: 'welcomeTitle', descKey: 'welcomeDesc', position: 'center' },
-  { target: '[data-tour="nav-program"]', icon: Zap, titleKey: 'programTitle', descKey: 'programDesc', position: 'right' },
-  { target: '[data-tour="nav-calendar"]', icon: CalendarDays, titleKey: 'calendarTitle', descKey: 'calendarDesc', position: 'right' },
-  { target: '[data-tour="nav-progress"]', icon: TrendingUp, titleKey: 'progressTitle', descKey: 'progressDesc', position: 'right' },
-  { target: '[data-tour="nav-messages"]', icon: MessageSquare, titleKey: 'messagesTitle', descKey: 'messagesDesc', position: 'right' },
-  { target: '[data-tour="nav-invoices"]', icon: DollarSign, titleKey: 'invoicesTitle', descKey: 'invoicesDesc', position: 'right' },
-  { target: null, icon: CheckCircle, titleKey: 'doneTitle', descKey: 'doneDesc', position: 'center' },
+  { target: null, icon: Sparkles, titleKey: 'welcomeTitle', descKey: 'welcomeDesc' },
+  { target: '[data-tour="nav-program"]', icon: Zap, titleKey: 'programTitle', descKey: 'programDesc' },
+  { target: '[data-tour="nav-calendar"]', icon: CalendarDays, titleKey: 'calendarTitle', descKey: 'calendarDesc' },
+  { target: '[data-tour="nav-progress"]', icon: TrendingUp, titleKey: 'progressTitle', descKey: 'progressDesc' },
+  { target: '[data-tour="nav-messages"]', icon: MessageSquare, titleKey: 'messagesTitle', descKey: 'messagesDesc' },
+  { target: '[data-tour="nav-invoices"]', icon: DollarSign, titleKey: 'invoicesTitle', descKey: 'invoicesDesc' },
+  { target: null, icon: CheckCircle, titleKey: 'doneTitle', descKey: 'doneDesc' },
 ];
 
 interface Props {
@@ -28,6 +28,7 @@ interface Props {
 
 export default function OnboardingWalkthrough({ onComplete, onSkip }: Props) {
   const { t } = useLang();
+  const isMobile = useIsMobile();
   const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
@@ -39,6 +40,7 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Props) {
     if (!currentStep.target) { setTargetRect(null); return; }
     const el = document.querySelector(currentStep.target);
     if (el) setTargetRect(el.getBoundingClientRect());
+    else setTargetRect(null);
   }, [currentStep.target]);
 
   useEffect(() => {
@@ -54,6 +56,40 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Props) {
 
   const texts = t.walkthrough;
   const Icon = currentStep.icon;
+
+  // On mobile with bottom nav target: position card above the target
+  // On desktop with sidebar target: position card to the right of the target
+  // Center steps: always centered
+  const getCardStyle = (): React.CSSProperties => {
+    if (!targetRect || !currentStep.target) {
+      return { ...cardBase, position: 'relative', zIndex: 10002 };
+    }
+
+    if (isMobile) {
+      // Mobile: card centered horizontally, positioned above the bottom nav
+      return {
+        ...cardBase,
+        position: 'fixed',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        bottom: (window.innerHeight - targetRect.top) + 16,
+        zIndex: 10002,
+        maxHeight: '70vh',
+      };
+    }
+
+    // Desktop: card to the right of sidebar item
+    return {
+      ...cardBase,
+      position: 'fixed',
+      left: targetRect.right + 20,
+      ...(targetRect.top > window.innerHeight / 2
+        ? { bottom: window.innerHeight - targetRect.top - targetRect.height / 2 }
+        : { top: targetRect.top }),
+      zIndex: 10002,
+      maxHeight: '90vh',
+    };
+  };
 
   return (
     <AnimatePresence>
@@ -79,22 +115,11 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Props) {
 
         <motion.div
           key={step}
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -20, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.3 }}
-          style={{
-            ...styles.card,
-            ...(currentStep.position === 'center' ? styles.cardCenter : {}),
-            ...(currentStep.position === 'right' && targetRect ? {
-              position: 'fixed',
-              left: targetRect.right + 20,
-              ...(targetRect.top > window.innerHeight / 2
-                ? { bottom: window.innerHeight - targetRect.top - targetRect.height / 2 }
-                : { top: targetRect.top }),
-              zIndex: 10002, maxHeight: '90vh',
-            } : {}),
-          }}
+          style={getCardStyle()}
         >
           <div style={styles.stepIndicator}>
             {STEPS.map((_, i) => (
@@ -127,15 +152,23 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Props) {
   );
 }
 
+const cardBase: React.CSSProperties = {
+  background: '#0c1017',
+  border: '1px solid rgba(0,229,200,0.2)',
+  borderRadius: '16px',
+  padding: '28px 24px',
+  maxWidth: '380px',
+  width: '90vw',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  textAlign: 'center',
+  gap: '12px',
+  boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 24px rgba(0,229,200,0.08)',
+};
+
 const styles: Record<string, React.CSSProperties> = {
   overlay: { position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  card: {
-    position: 'relative', background: '#0c1017', border: '1px solid rgba(0,229,200,0.2)',
-    borderRadius: '16px', padding: '28px 24px', maxWidth: '380px', width: '90vw',
-    display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '12px',
-    boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 24px rgba(0,229,200,0.08)',
-  },
-  cardCenter: { position: 'relative', zIndex: 10002 },
   stepIndicator: { display: 'flex', gap: '4px', alignItems: 'center', marginBottom: '4px' },
   iconWrap: {
     width: '56px', height: '56px', borderRadius: '16px',

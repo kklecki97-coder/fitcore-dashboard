@@ -50,6 +50,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
             return (
               <button
                 key={page}
+                data-tour={`nav-${page}`}
                 onClick={() => onNavigate(page)}
                 style={styles.centerBtn}
               >
@@ -61,6 +62,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
           return (
             <button
               key={page}
+              data-tour={`nav-${page}`}
               onClick={() => onNavigate(page)}
               style={{
                 ...styles.bottomItem,
