@@ -88,6 +88,7 @@ export function parseExerciseRow(cells: string[]): Exercise | null {
 export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutProgram {
   const days: WorkoutDay[] = [];
   let currentDay: WorkoutDay | null = null;
+  const programNotes: string[] = [];
 
   for (const row of rows) {
     const cells = row.map(c => String(c ?? '').trim());
@@ -95,12 +96,16 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
 
     if (!joined) continue;
 
-    // Instruction/note rows → attach as note to the last exercise in current day
+    // Instruction/note rows → short ones go to last exercise, long ones go to program notes
     if (isSkippableRow(joined)) {
-      if (currentDay && currentDay.exercises.length > 0) {
+      const noteText = cells.filter(c => c).join(' ').trim();
+      if (noteText.length <= 80 && currentDay && currentDay.exercises.length > 0) {
+        // Short note (e.g. "na stronę") → attach to last exercise
         const lastEx = currentDay.exercises[currentDay.exercises.length - 1];
-        const noteText = cells.filter(c => c).join(' ').trim();
         lastEx.notes = lastEx.notes ? `${lastEx.notes}; ${noteText}` : noteText;
+      } else if (noteText) {
+        // Long instruction → program-level notes
+        programNotes.push(noteText);
       }
       continue;
     }
@@ -140,6 +145,7 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
     clientIds: [],
     days,
     isTemplate: false,
+    notes: programNotes.join('\n'),
     createdAt: new Date().toISOString().split('T')[0],
     updatedAt: new Date().toISOString().split('T')[0],
   };
