@@ -212,9 +212,9 @@ export const en = {
     badge: 'FAQ',
     heading: 'Frequently Asked Questions',
     items: [
-      { q: 'How does pricing work?', a: 'FitCore charges a simple 5% platform fee on each client payment processed through the system. After your 14-day free trial, it\'s $49/month + a one-time $100 setup fee.' },
+      // { q: 'How does pricing work?', a: 'FitCore charges a simple 5% platform fee on each client payment processed through the system. After your 14-day free trial, it\'s $49/month + a one-time $100 setup fee.' },  // temporarily hidden
       { q: 'Is there a free trial?', a: 'Yes! You get a full 14-day free trial with access to all features. No credit card required to start.' },
-      { q: 'How do payments work?', a: 'You connect your own Stripe account through our dashboard. When you invoice a client, they receive a secure payment link. They pay directly \u2014 the money goes to your Stripe account minus the 5% platform fee.' },
+      // { q: 'How do payments work?', a: 'You connect your own Stripe account through our dashboard. When you invoice a client, they receive a secure payment link. They pay directly \u2014 the money goes to your Stripe account minus the 5% platform fee.' },  // temporarily hidden
       { q: 'Is my data secure?', a: 'Absolutely. All data is encrypted in transit (TLS/SSL) and at rest. Payments are processed through Stripe (PCI-DSS Level 1 compliant). We never store credit card information.' },
       { q: 'Can I create custom plans and pricing?', a: 'Yes. You define your own coaching plans with custom names, prices, and billing cycles (monthly, weekly, or one-time). Your pricing, your rules.' },
       { q: 'What features are included?', a: 'Everything: client management, messaging, workout program builder, invoicing with Stripe payments, analytics dashboard, check-ins, and more. All features are included in every plan.' },

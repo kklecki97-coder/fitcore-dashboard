@@ -214,9 +214,9 @@ export const pl: Translations = {
     badge: 'FAQ',
     heading: 'Najczęściej zadawane pytania',
     items: [
-      { q: 'Jak działa cennik?', a: 'FitCore pobiera prostą prowizję 5% od każdej płatności klienta. Po 14-dniowym okresie próbnym to 170 zł/miesiąc + jednorazowa opłata 360 zł za konfigurację.' },
+      // { q: 'Jak działa cennik?', a: 'FitCore pobiera prostą prowizję 5% od każdej płatności klienta. Po 14-dniowym okresie próbnym to 170 zł/miesiąc + jednorazowa opłata 360 zł za konfigurację.' },  // temporarily hidden
       { q: 'Czy jest darmowy okres próbny?', a: 'Tak! Otrzymujesz 14-dniowy darmowy okres próbny z dostępem do wszystkich funkcji. Karta kredytowa nie jest wymagana.' },
-      { q: 'Jak działają płatności?', a: 'Podłączasz swoje konto Stripe przez panel. Gdy wystawiasz fakturę klientowi, otrzymuje bezpieczny link do płatności. Pieniądze trafiają na Twoje konto Stripe minus 5% prowizji.' },
+      // { q: 'Jak działają płatności?', a: 'Podłączasz swoje konto Stripe przez panel. Gdy wystawiasz fakturę klientowi, otrzymuje bezpieczny link do płatności. Pieniądze trafiają na Twoje konto Stripe minus 5% prowizji.' },  // temporarily hidden
       { q: 'Czy moje dane są bezpieczne?', a: 'Absolutnie. Wszystkie dane są szyfrowane w trakcie przesyłu (TLS/SSL) i przechowywania. Płatności przez Stripe (PCI-DSS Level 1). Nigdy nie przechowujemy danych kart.' },
       { q: 'Czy mogę tworzyć własne plany i ceny?', a: 'Tak. Definiujesz własne plany coachingowe z własnymi nazwami, cenami i cyklami rozliczeniowymi (miesięcznie, tygodniowo lub jednorazowo).' },
       { q: 'Jakie funkcje są dostępne?', a: 'Wszystko: zarządzanie klientami, wiadomości, kreator programów treningowych, fakturowanie ze Stripe, panel analityczny, raporty klientów i więcej.' },

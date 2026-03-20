@@ -257,7 +257,7 @@ export default function App() {
   const navLinks = [
     { label: t.nav.features, href: '#features' },
     { label: t.nav.howItWorks, href: '#how-it-works-steps' },
-    { label: t.nav.pricing, href: '#pricing' },
+    // { label: t.nav.pricing, href: '#pricing' },  // temporarily hidden
     { label: 'FAQ', href: '#faq' },
   ];
 
@@ -498,7 +498,7 @@ export default function App() {
             className="hero-cta-buttons"
             style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}
           >
-            <a href="#pricing" style={{
+            <a href="#contact" style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '16px 36px', borderRadius: 'var(--radius-md)',
@@ -789,7 +789,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.clients.body}
             </p>
-            <a href="#pricing" style={{
+            <a href="#contact" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -835,7 +835,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.inbox.body}
             </p>
-            <a href="#pricing" style={{
+            <a href="#contact" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: '#29ABE2',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -867,7 +867,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.workouts.body}
             </p>
-            <a href="#pricing" style={{
+            <a href="#contact" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-secondary)',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -913,7 +913,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.analytics.body}
             </p>
-            <a href="#pricing" style={{
+            <a href="#contact" style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-warm)',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -1005,9 +1005,9 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          PRICING
+          PRICING — temporarily hidden, will re-enable later
          ════════════════════════════════════════════════════════ */}
-      <Section id="pricing">
+      {false && <Section id="pricing">
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 100px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
@@ -1179,7 +1179,7 @@ export default function App() {
           </GlassCard>
 
         </div>
-      </Section>
+      </Section>}
 
       {/* ── Responsive: fork grid + objections grid + pricing ── */}
       <style>{`
@@ -1462,7 +1462,7 @@ export default function App() {
                 {[
                   { label: t.nav.features, href: '#features' },
                   { label: t.nav.howItWorks, href: '#how-it-works-steps' },
-                  { label: t.nav.pricing, href: '#pricing' },
+                  // { label: t.nav.pricing, href: '#pricing' },  // temporarily hidden
                   { label: t.footer?.security || 'Security', href: '#security' },
                   { label: 'FAQ', href: '#faq' },
                 ].map(link => (
