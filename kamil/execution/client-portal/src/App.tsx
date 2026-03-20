@@ -1109,6 +1109,7 @@ function App() {
     return (
       <OnboardingPage
         client={clientUser}
+        coachName={coachName}
         onComplete={(updates) => {
           setClientUser(prev => prev ? { ...prev, ...updates } : null);
           // Show walkthrough after onboarding completes
