@@ -358,19 +358,6 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
           })}
         </div>
 
-        {/* ── Weight inline footer ── */}
-        <div style={styles.weightFooter}>
-          <TrendingDown size={14} color="var(--accent-success)" />
-          <span style={styles.weightValue}><AnimatedNumber value={currentWeight ?? 0} duration={1200} format={(n) => n.toFixed(1)} /></span>
-          <span style={styles.weightUnit}>kg</span>
-          <span style={{
-            ...styles.weightTrend,
-            color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
-          }}>
-            {weightChange <= 0 ? '↓' : '↑'}{Math.abs(weightChange).toFixed(1)}
-          </span>
-        </div>
-
       </GlassCard>
 
 
