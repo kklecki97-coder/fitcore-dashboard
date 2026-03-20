@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, Dumbbell, Timer, Minus, Plus, Play, X, ChevronRight, Trophy, Menu } from 'lucide-react';
+import { CheckCircle2, Circle, Dumbbell, Timer, Minus, Plus, Play, X, ChevronLeft, ChevronRight, Trophy, Menu } from 'lucide-react';
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
@@ -218,7 +218,6 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
     }
   };
 
-  // @ts-ignore - scaffolded for workout mode navigation
   const goPrevExercise = () => {
     if (workoutExerciseIdx > 0) {
       setWorkoutExerciseIdx(prev => prev - 1);
@@ -543,6 +542,29 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
       }
     };
 
+    // Find the last completed set number for current exercise
+    const lastCompletedSetNum = (() => {
+      for (let i = currentExercise.sets; i >= 1; i--) {
+        if (getSetCompleted(currentExercise.id, i)) return i;
+      }
+      return 0;
+    })();
+
+    const canUndoSet = lastCompletedSetNum > 0;
+    const canGoPrev = workoutExerciseIdx > 0;
+    const showBackBtn = canUndoSet || canGoPrev;
+
+    const handleBack = () => {
+      setRestTimer(null);
+      if (canUndoSet) {
+        // Undo the last completed set of this exercise
+        onRemoveLog(currentExercise.id, lastCompletedSetNum, todayStr);
+      } else if (canGoPrev) {
+        // Go to previous exercise
+        goPrevExercise();
+      }
+    };
+
     return (
       <div style={styles.workoutOverlay}>
         {/* Exercise drawer overlay */}
@@ -723,21 +745,31 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
 
         {/* Bottom action */}
         <div style={styles.workoutFooter}>
-          {exAllDone ? (
-            <button style={styles.workoutNextBtn} onClick={goNextExercise}>
-              <span>{workoutExerciseIdx === day.exercises.length - 1 ? (lang === 'pl' ? 'Zakończ Trening' : 'Finish Workout') : (lang === 'pl' ? 'Następne Ćwiczenie' : 'Next Exercise')}</span>
-              <ChevronRight size={18} />
-            </button>
-          ) : isResting ? (
-            <button style={{ ...styles.workoutNextBtn, opacity: 0.3 }} disabled>
-              <span>{t.program.resting}</span>
-            </button>
-          ) : (
-            <button style={styles.workoutDoneBtn} onClick={completeCurrentSet}>
-              <CheckCircle2 size={22} />
-              <span>{t.program.setDone}</span>
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {showBackBtn && (
+              <button style={styles.workoutPrevBtn} onClick={handleBack}>
+                <ChevronLeft size={18} />
+                <span>{canUndoSet ? t.program.undoSet : t.program.prevExercise}</span>
+              </button>
+            )}
+            <div style={{ flex: 1 }}>
+              {exAllDone ? (
+                <button style={styles.workoutNextBtn} onClick={goNextExercise}>
+                  <span>{workoutExerciseIdx === day.exercises.length - 1 ? t.program.finishWorkout : t.program.nextExercise}</span>
+                  <ChevronRight size={18} />
+                </button>
+              ) : isResting ? (
+                <button style={{ ...styles.workoutNextBtn, opacity: 0.3 }} disabled>
+                  <span>{t.program.resting}</span>
+                </button>
+              ) : (
+                <button style={styles.workoutDoneBtn} onClick={completeCurrentSet}>
+                  <CheckCircle2 size={22} />
+                  <span>{t.program.setDone}</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1364,6 +1396,22 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     gap: '10px',
     boxShadow: '0 4px 20px rgba(0,229,200,0.3)',
+  },
+  workoutPrevBtn: {
+    padding: '16px 14px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-card)',
+    color: 'var(--text-secondary)',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    whiteSpace: 'nowrap' as const,
+    flexShrink: 0,
   },
 
   // ── Summary Screen ──

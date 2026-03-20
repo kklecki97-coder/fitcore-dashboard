@@ -161,6 +161,10 @@ export const en = {
     setDone: 'Set Done',
     markAsDone: 'Mark as Done',
     resting: 'Resting...',
+    nextExercise: 'Next Exercise',
+    finishWorkout: 'Finish Workout',
+    prevExercise: 'Previous',
+    undoSet: 'Undo Set',
     weeks: 'weeks',
   },
 

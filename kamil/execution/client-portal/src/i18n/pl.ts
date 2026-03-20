@@ -163,6 +163,10 @@ export const pl: Translations = {
     setDone: 'Seria Gotowa',
     markAsDone: 'Oznacz jako Ukończone',
     resting: 'Odpoczynek...',
+    nextExercise: 'Następne Ćwiczenie',
+    finishWorkout: 'Zakończ Trening',
+    prevExercise: 'Poprzednie',
+    undoSet: 'Cofnij Serię',
     weeks: 'tygodni',
   },
 
