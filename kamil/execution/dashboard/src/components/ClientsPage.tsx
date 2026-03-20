@@ -12,6 +12,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
+import { formatCurrency } from '../lib/locale';
 import { calculateEngagementScore, getScoreColor } from '../utils/engagement-score';
 import type { Client, WorkoutProgram, CoachingPlan, WorkoutLog, CheckIn, Message } from '../types';
 
@@ -516,7 +517,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                   </div>
                   <div style={styles.cardStatItem}>
                     <div style={styles.cardStatLabel}>{t.clients.rate}</div>
-                    <div style={styles.cardStatValue}>${client.monthlyRate}</div>
+                    <div style={styles.cardStatValue}>{formatCurrency(client.monthlyRate, lang)}</div>
                   </div>
                   <div style={styles.cardStatItem}>
                     <div style={styles.cardStatLabel}>{t.clients.streak}</div>
@@ -542,7 +543,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               </div>
 
               <div style={styles.cardFooter}>
-                <span style={styles.footerText}>Next check-in: {client.nextCheckIn}</span>
+                <span style={styles.footerText}>{lang === 'pl' ? 'Następny raport' : 'Next check-in'}: {client.nextCheckIn}</span>
                 <span style={styles.footerText}>{client.lastActive}</span>
               </div>
             </GlassCard>
@@ -594,7 +595,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                               }}
                             >
                               <div style={{ fontWeight: 600, fontSize: '16px' }}>{p.name}</div>
-                              <div style={{ fontSize: '14px', opacity: 0.7 }}>${p.price}{cycleSuffix}</div>
+                              <div style={{ fontSize: '14px', opacity: 0.7 }}>{formatCurrency(p.price, lang)}{cycleSuffix}</div>
                             </button>
                           );
                         })

@@ -22,7 +22,7 @@ import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 import { calculateMetricChange, buildClientRadarData } from '../utils/client-metrics';
 import { calculateEngagement, generateEngagementInsight, getSuggestedAction } from '../utils/engagement';
-import { getLocale } from '../lib/locale';
+import { getLocale, formatCurrency } from '../lib/locale';
 import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
 
 interface ClientDetailPageProps {
@@ -292,7 +292,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       `${t.clientDetail.benchPress}: ${latBench ?? '-'} kg`,
       `${t.clientDetail.squat}: ${latSquat ?? '-'} kg`,
       `${t.clientDetail.deadlift}: ${latDeadlift ?? '-'} kg`,
-      `${t.clientDetail.monthlyRate}: $${client.monthlyRate}`,
+      `${t.clientDetail.monthlyRate}: ${formatCurrency(client.monthlyRate, lang)}`,
       `${lang === 'pl' ? 'Postęp' : 'Progress'}: ${client.progress}%`,
       `${lang === 'pl' ? 'Passa' : 'Streak'}: ${client.streak} ${lang === 'pl' ? 'dni' : 'days'}`,
     ];
@@ -1244,7 +1244,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                                 }}
                               >
                                 <div style={{ fontWeight: 600, fontSize: '16px' }}>{p.name}</div>
-                                <div style={{ fontSize: '14px', opacity: 0.7 }}>${p.price}{cycleSuffix}</div>
+                                <div style={{ fontSize: '14px', opacity: 0.7 }}>{formatCurrency(p.price, lang)}{cycleSuffix}</div>
                               </button>
                             );
                           })
