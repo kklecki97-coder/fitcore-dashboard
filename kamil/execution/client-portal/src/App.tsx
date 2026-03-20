@@ -593,6 +593,48 @@ function App() {
     return () => { supabase.removeChannel(channel); };
   }, [isLoggedIn, clientUser]);
 
+  // ── Realtime invoices — coach creates invoice, client sees it instantly ──
+  useEffect(() => {
+    if (!isLoggedIn || !clientUser?.id) return;
+
+    const channel = supabase
+      .channel('client-invoices')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'invoices', filter: `client_id=eq.${clientUser.id}` },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          const inv: Invoice = {
+            id: r.id as string,
+            clientId: r.client_id as string,
+            amount: r.amount as number,
+            status: r.status as Invoice['status'],
+            dueDate: (r.due_date as string) ?? '',
+            paidDate: (r.paid_date as string) ?? null,
+            period: (r.period as string) ?? '',
+            plan: r.plan as Invoice['plan'],
+            paymentUrl: (r.payment_url as string) ?? null,
+          };
+          setInvoices(prev => prev.some(i => i.id === inv.id) ? prev : [inv, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'invoices', filter: `client_id=eq.${clientUser.id}` },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          setInvoices(prev => prev.map(inv =>
+            inv.id === r.id
+              ? { ...inv, status: r.status as Invoice['status'], paidDate: (r.paid_date as string) ?? null }
+              : inv
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn, clientUser]);
+
   // ── Coach typing indicator via Supabase Realtime broadcast ──
   const [coachTyping, setCoachTyping] = useState(false);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
