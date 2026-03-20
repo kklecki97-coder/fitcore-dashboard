@@ -77,8 +77,11 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
   }
 
   // Build the 3 main lifts array — show all 3 even if no data yet
+  const liftLabels: Record<string, string> = lang === 'pl'
+    ? { bench: 'Wyciskanie', squat: 'Przysiad', deadlift: 'Martwy Ciąg' }
+    : { bench: 'Bench Press', squat: 'Squat', deadlift: 'Deadlift' };
   const allLifts = MAIN_LIFT_PATTERNS.map(lift => ({
-    name: lift.label,
+    name: liftLabels[lift.key] || lift.label,
     values: liftMap.get(lift.key) ?? metrics[lift.key === 'bench' ? 'benchPress' : lift.key === 'squat' ? 'squat' : 'deadlift'] ?? [],
     unit: 'kg',
   }));
@@ -339,7 +342,13 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
               return (
                 <div key={i} style={styles.goalItem}>
                   <div style={styles.goalTop}>
-                    <div style={styles.goalName}>{g.goal}</div>
+                    <div style={styles.goalName}>{(() => {
+                      const goalNames: Record<string, Record<string, string>> = {
+                        pl: { goalLoseWeight: 'Schudnąć', goalBuildMuscle: 'Budowa Mięśni', goalHealth: 'Zdrowie', goalStrength: 'Siła', goalEndurance: 'Wytrzymałość' },
+                        en: { goalLoseWeight: 'Lose Weight', goalBuildMuscle: 'Build Muscle', goalHealth: 'Health', goalStrength: 'Strength', goalEndurance: 'Endurance' },
+                      };
+                      return goalNames[lang]?.[g.goal] || g.goal;
+                    })()}</div>
                     <div style={{ ...styles.goalPct, color }}>{g.progress}%</div>
                   </div>
                   <div style={styles.goalBarBg}>
