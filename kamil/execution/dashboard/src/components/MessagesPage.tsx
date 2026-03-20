@@ -428,15 +428,15 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Typing indicator — pinned above input */}
-        {isClientTyping && activeClient && (
-          <div style={styles.typingBar}>
-            <TypingIndicator label={`${activeClient.name} ${t.messages.typing}`} />
-          </div>
-        )}
-
         {/* Input Area */}
         <div style={styles.inputArea}>
+          {/* Typing indicator — pinned at top of input area */}
+          {isClientTyping && activeClient && (
+            <div style={styles.typingBar}>
+              <TypingIndicator label={`${activeClient.name} ${t.messages.typing}`} />
+            </div>
+          )}
+
           {/* Suggested template */}
           {suggestedTemplate && (
             <motion.div
@@ -801,8 +801,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   // ── Typing Indicator ──
   typingBar: {
-    padding: '4px 24px',
-    borderTop: '1px solid var(--glass-border)',
+    padding: '0 0 6px',
   },
   typingBubble: {
     display: 'inline-flex',
