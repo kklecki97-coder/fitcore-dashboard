@@ -328,7 +328,7 @@ const s: Record<string, React.CSSProperties> = {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 999,
   },
   modal: {
-    position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+    position: 'fixed', top: '24px', left: '50%', transform: 'translateX(-50%)',
     width: '700px', maxWidth: 'calc(100vw - 24px)', maxHeight: 'calc(100vh - 48px)',
     background: 'var(--bg-primary)', border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)', boxShadow: '0 32px 100px rgba(0,0,0,0.6)',
