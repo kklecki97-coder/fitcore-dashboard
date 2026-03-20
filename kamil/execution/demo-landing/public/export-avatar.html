@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore Avatar Export</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@800&display=swap" rel="stylesheet">
+  <style>
+    body { background: #07090e; color: #f0f2f5; font-family: 'Outfit', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 48px 24px; gap: 32px; }
+    h1 { font-size: 24px; font-weight: 700; }
+    .preview { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
+    .size-block { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .size-block span { font-size: 13px; color: #8b92a5; }
+    canvas { border-radius: 50%; }
+    .buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    button {
+      background: linear-gradient(135deg, #00e5c8, #00c4aa);
+      color: #07090e; border: none; padding: 12px 28px; border-radius: 10px;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px;
+      cursor: pointer; transition: transform 0.2s;
+    }
+    button:hover { transform: translateY(-2px); }
+    .note { font-size: 13px; color: #525a6e; max-width: 500px; text-align: center; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <h1>FitCore Avatar Export</h1>
+  <p class="note">Previews below. Click a button to download that size as PNG. Use the 512px version for both Gmail and Instagram.</p>
+
+  <div class="preview">
+    <div class="size-block">
+      <canvas id="c512" width="512" height="512"></canvas>
+      <span>512 x 512</span>
+    </div>
+    <div class="size-block">
+      <canvas id="c256" width="256" height="256"></canvas>
+      <span>256 x 256</span>
+    </div>
+    <div class="size-block">
+      <canvas id="c128" width="128" height="128"></canvas>
+      <span>128 x 128</span>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button onclick="download(512)">Download 512px (Gmail & Instagram)</button>
+    <button onclick="download(256)">Download 256px</button>
+    <button onclick="download(128)">Download 128px</button>
+  </div>
+
+  <script>
+    function drawAvatar(ctx, size) {
+      const s = size;
+      const half = s / 2;
+
+      // Dark background circle
+      const bgGrad = ctx.createLinearGradient(0, 0, s, s);
+      bgGrad.addColorStop(0, '#0c1017');
+      bgGrad.addColorStop(1, '#07090e');
+
+      ctx.beginPath();
+      ctx.arc(half, half, half, 0, Math.PI * 2);
+      ctx.fillStyle = bgGrad;
+      ctx.fill();
+
+      // Subtle border ring
+      ctx.beginPath();
+      ctx.arc(half, half, half - s * 0.012, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 229, 200, 0.2)';
+      ctx.lineWidth = s * 0.005;
+      ctx.stroke();
+
+      // Inner subtle ring
+      ctx.beginPath();
+      ctx.arc(half, half, half * 0.88, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = s * 0.002;
+      ctx.stroke();
+
+      // FC text — F in white, C in cyan accent
+      const fontSize = s * 0.39;
+      ctx.font = `800 ${fontSize}px 'Outfit', sans-serif`;
+      ctx.textBaseline = 'middle';
+      ctx.letterSpacing = `${-s * 0.016}px`;
+
+      // Measure each letter so we can position them correctly
+      const fWidth = ctx.measureText('F').width;
+      const cWidth = ctx.measureText('C').width;
+      const totalWidth = fWidth + cWidth;
+      const startX = half - totalWidth / 2;
+      const textY = half + fontSize * 0.04;
+
+      // Draw F in white
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText('F', startX, textY);
+
+      // Draw C in cyan gradient
+      const textGrad = ctx.createLinearGradient(half - s * 0.2, 0, half + s * 0.2, s);
+      textGrad.addColorStop(0, '#00e5c8');
+      textGrad.addColorStop(1, '#00c4aa');
+      ctx.fillStyle = textGrad;
+      ctx.fillText('C', startX + fWidth, textY);
+    }
+
+    // Wait for font to load
+    document.fonts.ready.then(() => {
+      [512, 256, 128].forEach(size => {
+        const canvas = document.getElementById('c' + size);
+        const ctx = canvas.getContext('2d');
+        drawAvatar(ctx, size);
+      });
+    });
+
+    function download(size) {
+      const canvas = document.getElementById('c' + size);
+      const link = document.createElement('a');
+      link.download = `fitcore-avatar-${size}px.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>

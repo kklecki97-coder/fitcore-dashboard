@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCore — Instrukcja Obsługi</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #07090e;
+    --bg-card: #0d1117;
+    --bg-card-alt: #111820;
+    --accent: #00e5c8;
+    --accent-dim: rgba(0, 229, 200, 0.15);
+    --text: #e8eaf0;
+    --text-muted: #8b95a5;
+    --border: rgba(255,255,255,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* PDF print settings */
+  @media print {
+    body { background: var(--bg) !important; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none !important; }
+    section { page-break-inside: avoid; }
+    .screenshot { page-break-inside: avoid; }
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 32px;
+  }
+
+  /* COVER PAGE */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 32px;
+  }
+
+  .cover-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00e5c8, #00c4aa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--bg);
+    margin-bottom: 24px;
+    letter-spacing: -1px;
+  }
+
+  .cover h1 {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: -1px;
+  }
+
+  .cover h1 span { color: var(--accent); }
+
+  .cover .subtitle {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-bottom: 32px;
+  }
+
+  .cover .desc {
+    font-size: 16px;
+    color: var(--text-muted);
+    max-width: 500px;
+    margin-bottom: 48px;
+  }
+
+  .cover .version {
+    font-size: 13px;
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
+  /* TABLE OF CONTENTS */
+  .toc {
+    padding: 48px 0;
+  }
+
+  .toc h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 32px;
+    color: var(--accent);
+  }
+
+  .toc-list {
+    list-style: none;
+    counter-reset: toc;
+  }
+
+  .toc-list li {
+    counter-increment: toc;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  .toc-list li::before {
+    content: "0" counter(toc);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 28px;
+  }
+
+  .toc-list li:nth-child(n+10)::before {
+    content: counter(toc);
+  }
+
+  /* SECTION STYLES */
+  section {
+    padding: 48px 0 32px;
+  }
+
+  .section-number {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  section h2 {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+
+  section h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 28px;
+    margin-bottom: 12px;
+  }
+
+  .section-intro {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    border-left: 3px solid var(--accent);
+    padding-left: 16px;
+  }
+
+  p {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .screenshot {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin: 20px 0 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .screenshot-mobile {
+    width: 260px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    margin: 20px auto 28px;
+    display: block;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .mobile-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0 28px;
+  }
+
+  .mobile-row img {
+    width: 220px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  /* Feature cards */
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .feature-card .icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  .feature-card h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .feature-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* Steps */
+  .steps {
+    list-style: none;
+    counter-reset: steps;
+    margin: 16px 0;
+  }
+
+  .steps li {
+    counter-increment: steps;
+    padding: 16px 20px 16px 56px;
+    position: relative;
+    margin-bottom: 8px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 15px;
+  }
+
+  .steps li::before {
+    content: counter(steps);
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .steps li strong { color: var(--accent); }
+
+  /* Key highlight */
+  .key {
+    display: inline-block;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* Info box */
+  .info-box {
+    background: var(--bg-card-alt);
+    border: 1px solid var(--accent);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+
+  .info-box strong { color: var(--accent); }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .footer .logo-small {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  /* Bullet list */
+  ul.bullet {
+    list-style: none;
+    margin: 12px 0;
+    padding: 0;
+  }
+
+  ul.bullet li {
+    padding: 6px 0 6px 24px;
+    position: relative;
+    font-size: 15px;
+  }
+
+  ul.bullet li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 14px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.7;
+  }
+
+  /* Print button */
+  .print-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 229, 200, 0.3);
+    z-index: 100;
+    transition: transform 0.2s;
+  }
+
+  .print-btn:hover { transform: scale(1.05); }
+
+  @page {
+    size: A4;
+    margin: 20mm 15mm;
+  }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">📄 Zapisz jako PDF</button>
+
+<!-- ==================== COVER ==================== -->
+<div class="cover">
+  <div class="cover-logo">FC</div>
+  <h1>Fit<span>Core</span></h1>
+  <div class="subtitle">Instrukcja Obsługi</div>
+  <p class="desc">
+    Kompletny przewodnik po panelu trenerskim FitCore.<br>
+    Wszystko, co musisz wiedzieć, żeby zarządzać klientami, programami i biznesem z jednego miejsca.
+  </p>
+  <p class="version">Wersja 1.0 — Marzec 2026</p>
+</div>
+
+<div class="container">
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<div class="page-break"></div>
+<div class="toc">
+  <h2>Spis Treści</h2>
+  <ol class="toc-list">
+    <li>Logowanie do panelu</li>
+    <li>Przegląd (Overview) — Twój ekran startowy</li>
+    <li>Klienci — zarządzanie bazą klientów</li>
+    <li>Programy treningowe — tworzenie i przypisywanie</li>
+    <li>Wiadomości — komunikacja z klientami</li>
+    <li>Analityki — przychody i statystyki</li>
+    <li>Aplikacja klienta — co widzi Twój podopieczny</li>
+    <li>Korzystanie na telefonie — jak dodać ikonę na ekran</li>
+    <li>Kontakt i pomoc</li>
+  </ol>
+</div>
+
+<!-- ==================== 1. LOGOWANIE ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 01</div>
+  <h2>Logowanie do Panelu</h2>
+  <p class="section-intro">
+    Dostęp do panelu trenerskiego FitCore masz przez przeglądarkę — wystarczy wejść na adres, który otrzymasz od nas.
+  </p>
+
+  <img src="../story-screenshots/prog-builder-detail.png" alt="Ekran logowania FitCore" class="screenshot-mobile">
+
+  <ol class="steps">
+    <li>Otwórz przeglądarkę (Chrome, Safari, Firefox — dowolna) i wejdź na adres panelu: <strong>app.fitcore.tech</strong></li>
+    <li>Wpisz swój <strong>adres e-mail</strong> i <strong>hasło</strong>, które otrzymasz od nas przy konfiguracji konta</li>
+    <li>Opcjonalnie zaznacz <strong>„Zapamiętaj mnie"</strong> — dzięki temu nie musisz logować się za każdym razem</li>
+    <li>Kliknij <strong>„Zaloguj się"</strong> — gotowe, jesteś w panelu!</li>
+  </ol>
+
+  <div class="info-box">
+    <strong>💡 Wskazówka:</strong> Panel działa również na telefonie — wystarczy otworzyć tę samą stronę w przeglądarce mobilnej. Ale na komputerze jest wygodniej.
+  </div>
+</section>
+
+<!-- ==================== 2. OVERVIEW ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 02</div>
+  <h2>Przegląd (Overview)</h2>
+  <p class="section-intro">
+    To Twój ekran startowy — widzisz tu najważniejsze informacje w jednym miejscu. Jak szybki raport o stanie Twojego biznesu.
+  </p>
+
+  <img src="../screenshots/1-overview.png" alt="Ekran Overview" class="screenshot">
+
+  <h3>Co widzisz na tym ekranie?</h3>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon">👥</div>
+      <h4>Aktywni klienci</h4>
+      <p>Ilu klientów jest obecnie aktywnych w Twoim panelu</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">💰</div>
+      <h4>Przychód miesięczny</h4>
+      <p>Ile zarabiasz w tym miesiącu — suma z wszystkich pakietów</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚠️</div>
+      <h4>Klienci wymagający uwagi</h4>
+      <p>Klienci, którzy dawno nie trenowali lub nie zrobili check-inu</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📋</div>
+      <h4>Oczekujące check-iny</h4>
+      <p>Check-iny klientów czekające na Twoje sprawdzenie</p>
+    </div>
+  </div>
+
+  <h3>Podsumowanie dashboardu</h3>
+  <p>Pod kafelkami znajdziesz <strong>Dashboard Summary</strong> — krótkie podsumowanie tego, co się dzieje:</p>
+  <ul class="bullet">
+    <li>Ilu klientów było aktywnych w tym tygodniu</li>
+    <li>Kto ma najlepszy streak treningowy</li>
+    <li>Ile nieprzeczytanych wiadomości czeka</li>
+    <li>Ile programów treningowych jest aktualnie aktywnych</li>
+    <li>Kto ma zaległy check-in</li>
+  </ul>
+
+  <h3>Wykres przychodów</h3>
+  <p>Na dole ekranu widzisz wykres <strong>Revenue Overview</strong> — pokazuje jak Twoje przychody zmieniały się w czasie. Dzięki temu od razu widzisz, czy biznes rośnie.</p>
+</section>
+
+<!-- ==================== 3. KLIENCI ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 03</div>
+  <h2>Klienci</h2>
+  <p class="section-intro">
+    Tutaj zarządzasz całą bazą swoich klientów. Każdy klient ma swoją kartę z postępami, pakietem i statusem.
+  </p>
+
+  <img src="../screenshots/2-clients.png" alt="Lista klientów" class="screenshot">
+
+  <h3>Widok listy klientów</h3>
+  <p>Każda karta klienta pokazuje od razu najważniejsze informacje:</p>
+  <ul class="bullet">
+    <li><strong>Status</strong> — Active (aktywny), Paused (wstrzymany) lub Pending (oczekujący)</li>
+    <li><strong>Pakiet</strong> — jaki plan ma wykupiony (Basic, Premium, Elite)</li>
+    <li><strong>Adherence %</strong> — jak regularnie realizuje treningi (np. 82%)</li>
+    <li><strong>Kwota miesięczna</strong> — ile płaci za pakiet</li>
+    <li><strong>Streak</strong> — ile dni z rzędu trenuje (np. 14d)</li>
+    <li><strong>Przypisany program</strong> — jaki program treningowy aktualnie realizuje</li>
+  </ul>
+
+  <h3>Jak dodać nowego klienta?</h3>
+  <ol class="steps">
+    <li>Kliknij zielony przycisk <strong>„+ Add Client"</strong> w prawym górnym rogu</li>
+    <li>Wypełnij dane klienta: imię, e-mail, wybrany pakiet</li>
+    <li>Klient dostanie zaproszenie na e-mail z dostępem do swojego portalu</li>
+  </ol>
+
+  <h3>Wyszukiwanie i filtry</h3>
+  <p>Na górze strony masz <strong>wyszukiwarkę</strong> — wpisz imię lub e-mail klienta. Możesz też filtrować po:</p>
+  <ul class="bullet">
+    <li><strong>Planie</strong> — All Plans, Basic, Premium, Elite</li>
+    <li><strong>Statusie</strong> — Active, Paused, Pending</li>
+  </ul>
+
+  <div class="info-box">
+    <strong>💡 Wskazówka:</strong> Kolorowe obramowania kart odpowiadają pakietom — dzięki temu od razu widzisz, kto ma jaki plan, nawet bez czytania szczegółów.
+  </div>
+</section>
+
+<!-- ==================== 4. PROGRAMY ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 04</div>
+  <h2>Programy Treningowe</h2>
+  <p class="section-intro">
+    Twórz programy treningowe, zapisuj je jako szablony i przypisuj klientom jednym kliknięciem.
+  </p>
+
+  <img src="../screenshots/3-programs.png" alt="Programy treningowe" class="screenshot">
+
+  <h3>Lista programów</h3>
+  <p>Na ekranie programów widzisz wszystkie swoje programy. Każdy program ma:</p>
+  <ul class="bullet">
+    <li><strong>Nazwę</strong> — np. „Hypertrophy Block A", „Powerlifting Peak"</li>
+    <li><strong>Status</strong> — Active (aktywny), Draft (szkic) lub Template (szablon)</li>
+    <li><strong>Typ</strong> — Gym, Bodyweight, Cardio itp.</li>
+    <li><strong>Przypisanego klienta</strong> — do kogo jest przypisany</li>
+    <li><strong>Liczbę dni i ćwiczeń</strong> — np. „3 days, 8 exercises"</li>
+  </ul>
+
+  <h3>Jak stworzyć nowy program?</h3>
+  <ol class="steps">
+    <li>Kliknij <strong>„+ New Program"</strong> w prawym górnym rogu</li>
+    <li>Nadaj nazwę programu i wybierz typ</li>
+    <li>Dodaj dni treningowe i ćwiczenia z biblioteki (50+ ćwiczeń)</li>
+    <li>Ustaw serie, powtórzenia, RPE, tempo i czas odpoczynku dla każdego ćwiczenia</li>
+    <li>Zapisz jako <strong>aktywny program</strong> lub jako <strong>szablon</strong> do późniejszego użycia</li>
+  </ol>
+
+  <h3>Szablony</h3>
+  <p>Programy oznaczone jako <span class="key">Template</span> to szablony wielokrotnego użytku. Stwórz raz, przypisuj wielokrotnie — np. „Beginner Full Body" możesz przypisać każdemu nowemu klientowi.</p>
+
+  <div class="info-box">
+    <strong>💡 Wskazówka:</strong> Możesz duplikować istniejący program i dostosować go do nowego klienta — nie musisz tworzyć wszystkiego od zera.
+  </div>
+</section>
+
+<!-- ==================== 5. WIADOMOŚCI ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 05</div>
+  <h2>Wiadomości</h2>
+  <p class="section-intro">
+    Wbudowany czat — pisz z klientami bezpośrednio w FitCore. Wszystkie rozmowy w jednym miejscu, bez przeskakiwania między aplikacjami.
+  </p>
+
+  <img src="../screenshots/4-messages.png" alt="Wiadomości" class="screenshot">
+
+  <h3>Jak to działa?</h3>
+  <ul class="bullet">
+    <li><strong>Lista rozmów</strong> (lewa strona) — widzisz wszystkich klientów z podglądem ostatniej wiadomości</li>
+    <li><strong>Okno czatu</strong> (prawa strona) — pełna historia konwersacji z wybranym klientem</li>
+    <li><strong>Statusy</strong> — przy każdym kliencie widzisz, przez jaki kanał pisze (Telegram, WhatsApp, Instagram, Email)</li>
+  </ul>
+
+  <h3>Szablony szybkich odpowiedzi</h3>
+  <p>Na dole okna czatu znajdziesz <strong>gotowe szablony wiadomości</strong> — jednym kliknięciem wyślesz najczęściej używane odpowiedzi:</p>
+  <ul class="bullet">
+    <li>„Great session today!"</li>
+    <li>„How are you feeling?"</li>
+    <li>„Don't forget to log your meals"</li>
+    <li>„Rest day reminder"</li>
+  </ul>
+
+  <div class="info-box">
+    <strong>💡 Wskazówka:</strong> Klienci mogą pisać do Ciebie ze swojej aplikacji FitCore — wiadomość pojawi się od razu w Twoim panelu. Nie muszą mieć Twojego prywatnego numeru.
+  </div>
+</section>
+
+<!-- ==================== 6. ANALITYKI ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 06</div>
+  <h2>Analityki</h2>
+  <p class="section-intro">
+    Twarde dane o Twoim biznesie — przychody, retencja, wartość klientów. Nie musisz liczyć ręcznie w Excelu.
+  </p>
+
+  <img src="../screenshots/5-analytics.png" alt="Analityki" class="screenshot">
+
+  <h3>Kafelki na górze</h3>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon">💰</div>
+      <h4>Monthly Revenue</h4>
+      <p>Twój przychód w tym miesiącu ze wszystkich pakietów</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📈</div>
+      <h4>Projected Annual</h4>
+      <p>Prognoza roczna — ile zarobisz jeśli utrzymasz obecny poziom</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">👤</div>
+      <h4>Avg. Client Value</h4>
+      <p>Średnia wartość klienta — ile zarabiasz na jednym kliencie miesięcznie</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔄</div>
+      <h4>Retention Rate</h4>
+      <p>Procent klientów, którzy zostają z Tobą z miesiąca na miesiąc</p>
+    </div>
+  </div>
+
+  <h3>Wykresy</h3>
+  <ul class="bullet">
+    <li><strong>Revenue Over Time</strong> — jak zmieniał się Twój przychód w ostatnich miesiącach</li>
+    <li><strong>Client Distribution</strong> — rozkład klientów wg pakietów (Basic, Premium, Elite)</li>
+    <li><strong>Revenue by Plan</strong> — ile zarabiasz z każdego typu pakietu</li>
+    <li><strong>Client Retention</strong> — trend retencji w czasie</li>
+    <li><strong>Client Progress</strong> — porównanie postępów klientów</li>
+  </ul>
+
+  <div class="info-box">
+    <strong>💡 Wskazówka:</strong> Analizuj retencję regularnie — jeśli spada, to sygnał, że warto sprawdzić co się dzieje z klientami oznaczonymi jako „At-Risk" w zakładce Klienci.
+  </div>
+</section>
+
+<!-- ==================== 7. APLIKACJA KLIENTA ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 07</div>
+  <h2>Aplikacja Klienta</h2>
+  <p class="section-intro">
+    Twoi klienci mają swój własny panel — widzą treningi, mogą pisać do Ciebie, śledzić postępy. Wygląda profesjonalnie i działa na telefonie.
+  </p>
+
+  <div class="mobile-row">
+    <img src="../story-screenshots/app-home.png" alt="Ekran główny klienta">
+    <img src="../story-screenshots/app-workout.png" alt="Trening klienta">
+  </div>
+
+  <h3>Co widzi klient?</h3>
+  <ul class="bullet">
+    <li><strong>Ekran główny</strong> — powitanie, dzisiejszy trening, szybkie akcje (check-in, wiadomość)</li>
+    <li><strong>Plan treningowy</strong> — lista ćwiczeń na dziś z seriami i powtórzeniami</li>
+    <li><strong>Kalendarz</strong> — widok tygodnia z zaplanowanymi treningami</li>
+    <li><strong>Wiadomości</strong> — bezpośredni czat z trenerem (Tobą)</li>
+    <li><strong>Postępy</strong> — waga, pomiary, wykresy zmian w czasie</li>
+  </ul>
+
+  <h3>Jak klient się loguje?</h3>
+  <ol class="steps">
+    <li>Klient dostaje od Ciebie link + dane logowania (e-mail i hasło)</li>
+    <li>Otwiera link w przeglądarce na telefonie lub komputerze</li>
+    <li>Loguje się i od razu widzi swój plan treningowy</li>
+  </ol>
+
+  <div class="info-box">
+    <strong>💡 Wskazówka:</strong> Klient może dodać stronę do ekranu głównego telefonu (opcja „Dodaj do ekranu głównego" w przeglądarce) — wtedy działa jak normalna aplikacja, bez konieczności instalacji ze sklepu.
+  </div>
+</section>
+
+<!-- ==================== 8. TELEFON ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 08</div>
+  <h2>Korzystanie na Telefonie</h2>
+  <p class="section-intro">
+    FitCore działa w przeglądarce — nie trzeba niczego instalować ze sklepu. Ale możesz dodać ikonę na ekran główny, żeby korzystać z panelu jak z normalnej aplikacji.
+  </p>
+
+  <h3>iPhone (Safari)</h3>
+  <ol class="steps">
+    <li>Otwórz <strong>Safari</strong> i wejdź na adres panelu (app.fitcore.tech)</li>
+    <li>Kliknij ikonę <strong>udostępniania</strong> (kwadrat ze strzałką w górę, na dole ekranu)</li>
+    <li>Przewiń w dół i wybierz <strong>„Dodaj do ekranu początkowego"</strong></li>
+    <li>Nadaj nazwę (np. „FitCore") i kliknij <strong>„Dodaj"</strong></li>
+  </ol>
+
+  <h3>Android (Chrome)</h3>
+  <ol class="steps">
+    <li>Otwórz <strong>Chrome</strong> i wejdź na adres panelu (app.fitcore.tech)</li>
+    <li>Kliknij <strong>trzy kropki</strong> (menu) w prawym górnym rogu</li>
+    <li>Wybierz <strong>„Dodaj do ekranu głównego"</strong> lub <strong>„Zainstaluj aplikację"</strong></li>
+    <li>Potwierdź — ikona FitCore pojawi się na ekranie głównym</li>
+  </ol>
+
+  <div class="info-box">
+    <strong>💡 Wskazówka:</strong> Po dodaniu ikony panel otwiera się na pełnym ekranie — bez paska adresu przeglądarki. Wygląda i działa dokładnie jak natywna aplikacja. Tę samą instrukcję możesz przekazać swoim klientom dla ich portalu.
+  </div>
+</section>
+
+<!-- ==================== 9. KONTAKT ==================== -->
+<div class="page-break"></div>
+<section>
+  <div class="section-number">Rozdział 09</div>
+  <h2>Kontakt i Pomoc</h2>
+  <p class="section-intro">
+    Masz pytanie? Coś nie działa? Odezwij się do nas — pomagamy szybko.
+  </p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon">📧</div>
+      <h4>E-mail</h4>
+      <p>Fitcorehq@gmail.com</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📱</div>
+      <h4>Instagram</h4>
+      <p>@fitcorehq</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🌐</div>
+      <h4>Strona</h4>
+      <p>fitcore.tech</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚡</div>
+      <h4>Czas odpowiedzi</h4>
+      <p>Zazwyczaj do 24h</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p style="text-align: center; color: var(--text-muted); font-size: 14px;">
+    Regularnie dodajemy nowe funkcje i ulepszenia. Jeśli masz pomysł na coś, co pomogłoby Ci w pracy — daj znać, chętnie posłuchamy.
+  </p>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<div class="divider"></div>
+<div class="footer">
+  <div class="logo-small">FitCore</div>
+  <p>© 2026 FitCore. Wszystkie prawa zastrzeżone.</p>
+  <p style="margin-top: 4px; opacity: 0.5;">fitcore.tech | Fitcorehq@gmail.com</p>
+</div>
+
+</div><!-- /container -->
+
+</body>
+</html>

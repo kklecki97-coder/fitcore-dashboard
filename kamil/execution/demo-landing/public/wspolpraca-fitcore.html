@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCore — Współpraca</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #07090e;
+    --bg-card: #0d1117;
+    --accent: #00e5c8;
+    --accent-dim: rgba(0, 229, 200, 0.12);
+    --text: #e8eaf0;
+    --text-muted: #8b95a5;
+    --border: rgba(255,255,255,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @media print {
+    body { background: var(--bg) !important; }
+    .no-print { display: none !important; }
+  }
+
+  @page {
+    size: A4;
+    margin: 12mm 16mm;
+  }
+
+  .page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px 24px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00e5c8, #00c4aa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  .header-text h1 span { color: var(--accent); }
+
+  .header-text p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  /* Greeting */
+  .greeting {
+    margin-bottom: 16px;
+  }
+
+  .greeting h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .greeting p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  .greeting p strong { color: var(--text); }
+
+  /* Sections */
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    margin-top: 16px;
+  }
+
+  .points {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .points li {
+    padding: 8px 12px 8px 36px;
+    position: relative;
+    font-size: 12.5px;
+    line-height: 1.45;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 4px;
+  }
+
+  .points li::before {
+    content: attr(data-icon);
+    position: absolute;
+    left: 10px;
+    top: 8px;
+    font-size: 14px;
+  }
+
+  .points li strong { color: var(--accent); }
+
+  /* CTA box */
+  .cta-box {
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-top: 16px;
+    text-align: center;
+  }
+
+  .cta-box p {
+    font-size: 12.5px;
+    color: var(--text);
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .cta-box strong { color: var(--accent); }
+
+  /* Footer */
+  .footer {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .footer span { color: var(--accent); font-weight: 600; }
+
+  /* Print button */
+  .print-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 229, 200, 0.3);
+    z-index: 100;
+  }
+
+  .print-btn:hover { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">📄 Zapisz jako PDF</button>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">FC</div>
+    <div class="header-text">
+      <h1>Fit<span>Core</span></h1>
+      <p>Panel trenerski</p>
+    </div>
+  </div>
+
+  <!-- Greeting -->
+  <div class="greeting">
+    <h2>Cześć! 👋</h2>
+    <p>
+      Bardzo się cieszymy, że chcesz przetestować <strong>FitCore</strong>. To naprawdę dużo dla nas znaczy — jesteśmy na wczesnym etapie i każda osoba, która poświęci chwilę na przetestowanie panelu, pomaga nam tworzyć coś, co realnie ułatwi pracę trenerom. Dzięki za zaufanie!
+    </p>
+  </div>
+
+  <!-- Na czym polega współpraca -->
+  <div class="section-title">Na czym to polega?</div>
+  <ul class="points">
+    <li data-icon="🔑"><strong>Dostajesz pełny dostęp</strong> do panelu trenerskiego FitCore — za darmo, bez zobowiązań</li>
+    <li data-icon="🧪"><strong>Testujesz w swoim tempie</strong> — dodaj klientów, stwórz programy, sprawdź czat i analityki</li>
+    <li data-icon="💬"><strong>Dzielisz się opinią</strong> — co działa, co nie, czego brakuje. Każda uwaga jest na wagę złota</li>
+  </ul>
+
+  <!-- Czego oczekujemy -->
+  <div class="section-title">O co prosimy?</div>
+  <ul class="points">
+    <li data-icon="✅">Przetestuj główne funkcje: klienci, programy, wiadomości, analityki</li>
+    <li data-icon="🎯">Daj nam <strong>szczery feedback</strong> — bez lukrowania. Krytyka pomaga nam bardziej niż pochwały</li>
+    <li data-icon="💡">Jeśli czegoś brakuje albo coś byś zmienił/a — podziel się pomysłem, chętnie posłuchamy</li>
+  </ul>
+
+  <!-- Co dalej -->
+  <div class="section-title">Co dalej?</div>
+  <ul class="points">
+    <li data-icon="📋">Po testach pogadamy — chcemy usłyszeć Twoje wrażenia i pomysły</li>
+    <li data-icon="🔧">Na podstawie feedbacku dopasujemy panel do Twoich potrzeb</li>
+    <li data-icon="🤝">Zależy nam na <strong>długofalowej współpracy</strong> — nie na jednorazowej sprzedaży</li>
+  </ul>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <p>Masz pytanie? Coś nie działa? <strong>Pisz śmiało</strong> — odpowiadamy szybko.<br>Twoja opinia dosłownie kształtuje ten produkt. 🚀</p>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div><span>📧</span> Fitcorehq@gmail.com</div>
+    <div><span>📱</span> @fitcorehq</div>
+    <div><span>🌐</span> fitcore.tech</div>
+  </div>
+
+</div>
+
+</body>
+</html>
