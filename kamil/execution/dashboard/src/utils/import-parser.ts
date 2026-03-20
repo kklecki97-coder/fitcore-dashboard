@@ -22,6 +22,11 @@ export function isSkippableRow(joinedLower: string): boolean {
     'z tygodnia na', 'ilość powtórzeń',
     'następnie dodajesz', 'jeżeli dojdziesz',
     'zwiększać od',
+    // Progression instructions (e.g. "Tydzień I wykonujesz 3x6x100, tydzień II...")
+    'tydzień i wykonujesz', 'tydzień ii', 'tydzień iii', 'tydzień iv',
+    'dokładasz', 'w tygodniu iv', 'w tygodniu iii',
+    'co tydzień', 'co drugi tydzień', 'powtórzenia w każdym',
+    'dodajesz obciążenie', 'zwiększ obciążenie', 'zwiększ wagę',
   ];
   return skipPatterns.some(p => joinedLower.includes(p)) || joinedLower.startsWith('instrukcja') || joinedLower.startsWith('progresja');
 }

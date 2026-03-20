@@ -25,8 +25,10 @@ Your job: For each item, classify it as either "exercise" or "note".
 
 Rules:
 - Real exercises have recognizable exercise names (e.g. "Bench Press", "Squat", "Wyciskanie", "Przysiady", "Lat Pulldown", "Cable Fly", etc.)
-- Notes/instructions are things like: progression rules, tempo instructions, general coaching advice, warmup instructions, rest day notes, superset labels, circuit descriptions, etc.
+- Notes/instructions are things like: progression rules ("Tydzień I wykonujesz 3x6x100, tydzień II 3x7x100..."), tempo instructions, general coaching advice, warmup instructions, rest day notes, superset labels, circuit descriptions, etc.
 - If something looks like a section header or grouping label (e.g. "Superset A", "Circuit 1"), classify as "note"
+- If the name contains week-by-week progression instructions (mentions "tydzień", "week", load changes, rep schemes across weeks), it is ALWAYS a "note", never an exercise
+- If the name is unusually long (more than ~50 characters) and reads like a sentence/instruction rather than an exercise name, it is likely a "note"
 - When in doubt, keep it as an exercise
 
 Return JSON in this exact format:
