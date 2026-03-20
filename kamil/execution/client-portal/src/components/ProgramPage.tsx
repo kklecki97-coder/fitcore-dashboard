@@ -298,6 +298,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
           ) : (
             <input
               type="text"
+              inputMode="decimal"
               placeholder="kg"
               value={editVals.weight}
               onChange={(e) => updateEditValue(exercise.id, setNum, 'weight', e.target.value)}
@@ -691,6 +692,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                 <div style={styles.focusTargetBlock}>
                   <input
                     type="text"
+                    inputMode="decimal"
                     placeholder="kg"
                     value={getEditValues(currentExercise.id, currentSetNum, currentExercise).weight}
                     onChange={(e) => updateEditValue(currentExercise.id, currentSetNum, 'weight', e.target.value)}
@@ -728,12 +730,12 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
             </button>
           ) : isResting ? (
             <button style={{ ...styles.workoutNextBtn, opacity: 0.3 }} disabled>
-              <span>Resting...</span>
+              <span>{t.program.resting}</span>
             </button>
           ) : (
             <button style={styles.workoutDoneBtn} onClick={completeCurrentSet}>
               <CheckCircle2 size={22} />
-              <span>Set Done</span>
+              <span>{t.program.setDone}</span>
             </button>
           )}
         </div>
@@ -841,7 +843,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                 }}
               >
                 <CheckCircle2 size={20} color="#07090e" />
-                <span>Mark as Done</span>
+                <span>{t.program.markAsDone}</span>
               </button>
             </>
           )}

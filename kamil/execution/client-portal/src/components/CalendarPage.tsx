@@ -5,6 +5,7 @@ import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import type { WorkoutProgram, WorkoutLog, WeeklySchedule } from '../types';
 import { extractLabel } from '../utils/workout-labels';
+import { useLang } from '../i18n';
 
 interface CalendarPageProps {
   program: WorkoutProgram | null;
@@ -29,6 +30,7 @@ const WORKOUT_COLORS = [
 import { localDateStr } from '../utils/date-helpers';
 
 export default function CalendarPage({ program, workoutLogs, weeklySchedule, onUpdateSchedule }: CalendarPageProps) {
+  const { t } = useLang();
   const isMobile = useIsMobile();
   const currentWeekRef = useRef<HTMLDivElement>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -142,12 +144,12 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule, onU
               whileTap={{ scale: 0.97 }}
             >
               <CalendarCog size={15} />
-              <span>Edit</span>
+              <span>{t.calendar.edit}</span>
             </motion.button>
           )}
         </div>
         <div style={styles.headerRow}>
-          <span style={styles.subtitle}>{programWeeks} weeks</span>
+          <span style={styles.subtitle}>{programWeeks} {t.program.weeks}</span>
           <div style={styles.legend}>
             {(() => {
               const seen = new Set<string>();
@@ -328,7 +330,7 @@ export default function CalendarPage({ program, workoutLogs, weeklySchedule, onU
                           color: assignedDay ? 'var(--text-primary)' : 'var(--text-tertiary)',
                         }}
                       >
-                        <option value="">Rest Day</option>
+                        <option value="">{t.calendar.restDay}</option>
                         {program.days.map(d => (
                           <option key={d.id} value={d.id}>{d.name}</option>
                         ))}

@@ -45,6 +45,7 @@ function NumberStepper({ value, onChange, min, max, step = 1, placeholder }: {
       <input
         style={stepperStyles.input}
         type="number"
+        inputMode="decimal"
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
@@ -146,6 +147,12 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   const handlePhotoUpload = (_key: string, label: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    if (!allowedTypes.includes(file.type)) {
+      alert(t.checkIn.photoInvalidType);
+      e.target.value = '';
+      return;
+    }
     if (file.size > MAX_PHOTO_SIZE) {
       alert(t.checkIn.photoTooLarge);
       e.target.value = '';

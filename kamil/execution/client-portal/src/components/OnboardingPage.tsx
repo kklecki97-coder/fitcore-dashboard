@@ -186,7 +186,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
                 <div style={styles.field}>
                   <label style={styles.label}>{ob.heightCm}</label>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     value={height}
                     onChange={e => setHeight(e.target.value)}
                     placeholder="175"
@@ -198,7 +198,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
                 <div style={styles.field}>
                   <label style={styles.label}>{ob.weightKg}</label>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     value={weight}
                     onChange={e => setWeight(e.target.value)}
                     placeholder="75"
@@ -213,7 +213,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
               <div style={{ width: '100%' }}>
                 <label style={styles.label}>{ob.bodyFatPercent}</label>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   value={bodyFat}
                   onChange={e => setBodyFat(e.target.value)}
                   placeholder={ob.bodyFatPlaceholder}
@@ -255,7 +255,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
                   <label style={styles.prLabel}>{ob.benchPress}</label>
                   <div style={styles.prInputWrap}>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       value={benchPR}
                       onChange={e => setBenchPR(e.target.value)}
                       placeholder="—"
@@ -272,7 +272,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
                   <label style={styles.prLabel}>{ob.squat}</label>
                   <div style={styles.prInputWrap}>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       value={squatPR}
                       onChange={e => setSquatPR(e.target.value)}
                       placeholder="—"
@@ -289,7 +289,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
                   <label style={styles.prLabel}>{ob.deadlift}</label>
                   <div style={styles.prInputWrap}>
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       value={deadliftPR}
                       onChange={e => setDeadliftPR(e.target.value)}
                       placeholder="—"
