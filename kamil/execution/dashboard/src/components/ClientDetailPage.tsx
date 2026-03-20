@@ -9,7 +9,7 @@ import {
   Moon, Download, Clock, Star,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  ResponsiveContainer,
   RadarChart, PolarGrid, PolarAngleAxis, Radar,
 } from 'recharts';
 import jsPDF from 'jspdf';
@@ -100,9 +100,6 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   if (!client) return null;
 
   const dateLocale = getLocale(lang);
-
-  const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
-  const bfData = client.metrics.bodyFat.map((bf, i) => ({ month: months[i] || `M${i}`, value: bf }));
 
   const weightMetric = calculateMetricChange(client.metrics.weight);
   const hasWeight = client.metrics.weight.length > 0;
@@ -1083,7 +1080,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       )}
 
       {/* Bottom Row */}
-      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
+      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
         {/* Performance Radar */}
         <GlassCard delay={0.3}>
           <h3 style={styles.chartTitle}>{t.clientDetail.progressTracker}</h3>
@@ -1104,7 +1101,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           </div>
         </GlassCard>
 
-        {/* Goals */}
+        {/* Goals + Coach Notes */}
         <GlassCard delay={0.35}>
           <h3 style={styles.chartTitle}>Goals</h3>
           <div style={styles.goalsList}>
@@ -1126,26 +1123,6 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
           <h3 style={{ ...styles.chartTitle, marginTop: '16px' }}>Coach Notes</h3>
           <p style={styles.notes}>{client.notes}</p>
-        </GlassCard>
-
-        {/* Body Fat Chart */}
-        <GlassCard delay={0.4}>
-          <h3 style={styles.chartTitle}>{t.clientDetail.bodyFat} Trend</h3>
-          <div style={{ height: 200, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={bfData}>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]} />
-                <Tooltip
-                  contentStyle={{
-                    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
-                    borderRadius: '10px', fontSize: '18px',
-                  }}
-                />
-                <Line type="monotone" dataKey="value" stroke="#ec4899" strokeWidth={2.5} dot={{ r: 4, fill: '#ec4899', strokeWidth: 0 }} name={`${t.clientDetail.bodyFat} %`} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
         </GlassCard>
       </div>
 
