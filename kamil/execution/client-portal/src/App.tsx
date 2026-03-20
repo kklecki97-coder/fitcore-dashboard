@@ -36,6 +36,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [confettiTrigger, setConfettiTrigger] = useState(0);
 
   // ── Password recovery state ──
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -1079,8 +1080,7 @@ function App() {
               workoutLogs={workoutLogs}
               weeklySchedule={weeklySchedule}
               onExerciseComplete={() => {
-                setShowConfetti(true);
-                setTimeout(() => setShowConfetti(false), 100);
+                setConfettiTrigger(prev => prev + 1);
               }}
             />
           </ErrorBoundary>
@@ -1337,7 +1337,7 @@ function App() {
     </div>
 
     {/* Confetti celebration for workout completion */}
-    <Confetti active={showConfetti} />
+    <Confetti active={showConfetti} trigger={confettiTrigger} />
 
     {/* Client onboarding walkthrough */}
     {showWalkthrough && (

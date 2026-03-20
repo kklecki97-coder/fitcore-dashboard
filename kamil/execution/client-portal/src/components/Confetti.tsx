@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface ConfettiProps {
   active: boolean;
+  trigger?: number;
   duration?: number;
 }
 
@@ -39,18 +40,18 @@ function generateParticles(count: number): Particle[] {
   }));
 }
 
-export default function Confetti({ active, duration = 2500 }: ConfettiProps) {
+export default function Confetti({ active, trigger = 0, duration = 2500 }: ConfettiProps) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (active) {
+    if (active || trigger > 0) {
       setParticles(generateParticles(120));
       setShow(true);
       const timer = setTimeout(() => setShow(false), duration);
       return () => clearTimeout(timer);
     }
-  }, [active, duration]);
+  }, [active, trigger, duration]);
 
   return (
     <AnimatePresence>
