@@ -92,6 +92,7 @@ function App() {
   };
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
+  const [pendingProgram, setPendingProgram] = useState<WorkoutProgram | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('clients');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -899,6 +900,7 @@ function App() {
   const handleBackFromProgram = () => {
     setCurrentPage(previousPage);
     setSelectedProgramId('');
+    setPendingProgram(null);
   };
 
   const renderPage = () => {
@@ -980,8 +982,8 @@ function App() {
               clients={allClients}
               onGenerated={(program: WorkoutProgram) => {
                 // AI generated a program - open it in the builder so coach can review & edit
-                handleAddProgram(program);
-                setSelectedProgramId(program.id);
+                setPendingProgram(program);
+                setSelectedProgramId('');
                 setCurrentPage('program-builder');
               }}
               onBack={() => setCurrentPage('program-create-chooser')}
@@ -993,8 +995,8 @@ function App() {
           <ErrorBoundary>
             <ProgramImporter
               onImported={(program: WorkoutProgram) => {
-                handleAddProgram(program);
-                setSelectedProgramId(program.id);
+                setPendingProgram(program);
+                setSelectedProgramId('');
                 setCurrentPage('program-builder');
               }}
               onBack={() => setCurrentPage('program-create-chooser')}
@@ -1005,7 +1007,7 @@ function App() {
         return (
           <ErrorBoundary>
             <ProgramBuilderPage
-              program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : null}
+              program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : pendingProgram}
               exerciseLibrary={exerciseLibrary}
               onSave={(program: WorkoutProgram) => {
                 if (allPrograms.find(p => p.id === program.id)) {
@@ -1013,6 +1015,7 @@ function App() {
                 } else {
                   handleAddProgram(program);
                 }
+                setPendingProgram(null);
                 setCurrentPage('programs');
               }}
               onBack={handleBackFromProgram}
