@@ -290,6 +290,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
 
       case 'payments':
         return (
+          <>
           <GlassCard delay={0.05}>
             <div style={styles.sectionHeader}>
               <div style={{ ...styles.sectionIcon, background: 'rgba(99, 91, 255, 0.08)' }}>
@@ -371,8 +372,10 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               )}
             </div>
 
-            {/* Plans & Pricing */}
-            <div style={{ ...styles.divider, margin: '24px 0' }} />
+          </GlassCard>
+
+          {/* Plans & Pricing — separate card */}
+          <GlassCard delay={0.1}>
             <div style={styles.sectionHeader}>
               <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
                 <Package size={18} color="var(--accent-primary)" />
@@ -459,6 +462,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               {t.settings.addPlan || 'Add Plan'}
             </button>
           </GlassCard>
+          </>
         );
 
       case 'notifications':
@@ -779,7 +783,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                   type="text"
                   value={planForm.name}
                   onChange={(e) => setPlanForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g. Gold Plan"
+                  placeholder={t.settings.planNamePlaceholder || 'e.g. Gold Plan'}
                   style={{ ...styles.fieldInput, marginBottom: '12px' }}
                 />
 
@@ -788,7 +792,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                   type="number"
                   value={planForm.price}
                   onChange={(e) => setPlanForm(prev => ({ ...prev, price: e.target.value }))}
-                  placeholder="e.g. 149"
+                  placeholder={t.settings.planPricePlaceholder || 'e.g. 149'}
                   style={{ ...styles.fieldInput, marginBottom: '12px' }}
                   min="0"
                   step="1"
@@ -810,12 +814,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                   type="text"
                   value={planForm.description}
                   onChange={(e) => setPlanForm(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="e.g. Full coaching + meal plans"
+                  placeholder={t.settings.planDescPlaceholder || 'e.g. Full coaching + meal plans'}
                   style={{ ...styles.fieldInput, marginBottom: '16px' }}
                 />
               </div>
               <div style={styles.modalActions}>
-                <button style={styles.cancelBtn} onClick={() => setPlanModal(false)}>Cancel</button>
+                <button style={styles.cancelBtn} onClick={() => setPlanModal(false)}>{t.settings.cancel || 'Cancel'}</button>
                 <button
                   style={{ ...styles.saveBtn, opacity: (!planForm.name || !planForm.price) ? 0.5 : 1 }}
                   disabled={!planForm.name || !planForm.price}
