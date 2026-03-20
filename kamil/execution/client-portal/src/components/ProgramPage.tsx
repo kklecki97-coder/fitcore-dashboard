@@ -19,7 +19,7 @@ interface ProgramPageProps {
 
 export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, onRemoveWorkout, onRemoveLog, onUpdateLog, workoutLogs, weeklySchedule }: ProgramPageProps) {
   const isMobile = useIsMobile();
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   // ── Compute today's workout day index (schedule-aware) ──
   const dayAssignments = weeklySchedule?.dayAssignments ?? {};
@@ -677,16 +677,16 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
             /* All sets done for this exercise */
             <div style={styles.exDoneCenter}>
               <CheckCircle2 size={56} color="var(--accent-success)" />
-              <span style={styles.exDoneText}>All {currentExercise.sets} sets done</span>
+              <span style={styles.exDoneText}>{lang === 'pl' ? `Wszystkie ${currentExercise.sets} serie ukończone` : `All ${currentExercise.sets} sets done`}</span>
             </div>
           ) : (
             /* Current set - the one thing to focus on */
             <div style={styles.focusCenter}>
-              <span style={styles.focusSetLabel}>Set {currentSetNum} of {currentExercise.sets}</span>
+              <span style={styles.focusSetLabel}>{lang === 'pl' ? `Seria ${currentSetNum} z ${currentExercise.sets}` : `Set ${currentSetNum} of ${currentExercise.sets}`}</span>
               <div style={styles.focusTarget}>
                 <div style={styles.focusTargetBlock}>
                   <span style={styles.focusTargetValue}>{currentExercise.reps}</span>
-                  <span style={styles.focusTargetLabel}>reps</span>
+                  <span style={styles.focusTargetLabel}>{lang === 'pl' ? 'powt.' : 'reps'}</span>
                 </div>
                 <span style={styles.focusTargetSep}>×</span>
                 <div style={styles.focusTargetBlock}>
@@ -708,14 +708,14 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                       fontFamily: 'var(--font-mono)',
                     }}
                   />
-                  <span style={styles.focusTargetLabel}>weight (kg)</span>
+                  <span style={styles.focusTargetLabel}>{lang === 'pl' ? 'waga (kg)' : 'weight (kg)'}</span>
                 </div>
               </div>
               {currentExercise.rpe && (
-                <span style={styles.focusRpe}>Target RPE {currentExercise.rpe}</span>
+                <span style={styles.focusRpe}>{lang === 'pl' ? 'Cel RPE' : 'Target RPE'} {currentExercise.rpe}</span>
               )}
               {lastSession && (
-                <span style={styles.focusLast}>Last: {lastSession.weight} × {lastSession.reps}{lastSession.rpe ? ` @ RPE ${lastSession.rpe}` : ''}</span>
+                <span style={styles.focusLast}>{lang === 'pl' ? 'Poprzednio' : 'Last'}: {lastSession.weight} × {lastSession.reps}{lastSession.rpe ? ` @ RPE ${lastSession.rpe}` : ''}</span>
               )}
             </div>
           )}
