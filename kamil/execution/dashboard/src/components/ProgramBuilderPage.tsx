@@ -134,6 +134,7 @@ export default function ProgramBuilderPage({
 
   const [activeDayIndex, setActiveDayIndex] = useState(0);
   const [exerciseModal, setExerciseModal] = useState<{ editing: boolean; index: number } | null>(null);
+  const [notesExpanded, setNotesExpanded] = useState(false);
   const [exerciseForm, setExerciseForm] = useState<Exercise>(emptyExercise());
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -621,18 +622,37 @@ export default function ProgramBuilderPage({
         </GlassCard>
       )}
 
-      {/* Program Notes */}
+      {/* Program Notes — expandable */}
       <GlassCard delay={0.2}>
-        <div style={{ padding: '16px 20px' }}>
-          <label style={{ ...styles.label, marginBottom: '6px', display: 'block' }}>{t.programBuilder.programNotes || 'Program Notes'}</label>
-          <textarea
-            value={draft.notes || ''}
-            onChange={(e) => setDraft(prev => ({ ...prev, notes: e.target.value }))}
-            placeholder={t.programBuilder.programNotesPlaceholder || 'General notes, instructions, progression rules...'}
-            rows={3}
-            style={styles.textarea}
-          />
-        </div>
+        <button
+          onClick={() => setNotesExpanded(prev => !prev)}
+          style={{
+            width: '100%', padding: '14px 20px', background: 'none', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', fontFamily: 'var(--font-display)',
+          }}
+        >
+          <span style={{ ...styles.label, margin: 0 }}>
+            {t.programBuilder.programNotes}
+            {draft.notes ? ` (${draft.notes.split('\n').filter(l => l.trim()).length})` : ''}
+          </span>
+          <ChevronDown size={16} style={{
+            color: 'var(--text-tertiary)',
+            transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0)',
+            transition: 'transform 0.2s',
+          }} />
+        </button>
+        {notesExpanded && (
+          <div style={{ padding: '0 20px 16px' }}>
+            <textarea
+              value={draft.notes || ''}
+              onChange={(e) => setDraft(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder={t.programBuilder.programNotesPlaceholder}
+              rows={Math.max(3, (draft.notes || '').split('\n').length + 1)}
+              style={styles.textarea}
+            />
+          </div>
+        )}
       </GlassCard>
 
       {/* Bottom Summary Bar */}

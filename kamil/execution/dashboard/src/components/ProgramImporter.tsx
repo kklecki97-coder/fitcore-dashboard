@@ -241,6 +241,20 @@ export default function ProgramImporter({ onImported, onBack }: ProgramImporterP
             </GlassCard>
           ))}
 
+          {/* Program notes preview */}
+          {preview.notes && (
+            <GlassCard delay={0.15}>
+              <div style={{ padding: '14px 20px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                  {t.programBuilder.programNotes} ({preview.notes.split('\n').filter((l: string) => l.trim()).length})
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, maxHeight: '80px', overflow: 'hidden', whiteSpace: 'pre-wrap' }}>
+                  {preview.notes.slice(0, 200)}{preview.notes.length > 200 ? '...' : ''}
+                </div>
+              </div>
+            </GlassCard>
+          )}
+
           <GlassCard delay={0.2}>
             <div style={s.actions}>
               <p style={s.actionNote}>

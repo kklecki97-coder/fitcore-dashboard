@@ -61,20 +61,14 @@ For notes, "attachTo" should be "previous" (attach to exercise above) or "next" 
       },
     });
 
-    console.log('[AI Review] response:', { error, data: typeof data === 'string' ? data.slice(0, 200) : data });
-
     if (error || data?.error) {
-      console.error('[AI Review] failed:', error || data?.error);
+      console.error('AI review failed:', error || data?.error);
       return program;
     }
 
     const text = (data?.content?.[0]?.text || '').trim();
-    if (!text) {
-      console.error('[AI Review] empty response text, data:', data);
-      return program;
-    }
+    if (!text) return program;
 
-    console.log('[AI Review] AI text:', text.slice(0, 300));
     const jsonStr = text.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
     const result = JSON.parse(jsonStr);
 

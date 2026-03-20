@@ -95,13 +95,9 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
     const cells = row.map(c => String(c ?? '').trim());
     const joined = cells.join(' ').toLowerCase();
 
-    console.log(`[Parser] Row ${ri}: empty=${!joined.trim()} currentDay=${currentDay?.name ?? 'null'} joined="${joined.slice(0, 80)}"`);
-
     if (!joined.trim()) {
       // Empty row after exercises → close current day
-      // Anything after this that isn't a new day header goes to program notes
       if (currentDay && currentDay.exercises.length > 0) {
-        console.log(`[Parser] Row ${ri}: closing currentDay "${currentDay.name}"`);
         currentDay = null;
       }
       continue;
@@ -110,7 +106,6 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
     // Instruction/note rows → short ones go to last exercise, long ones go to program notes
     if (isSkippableRow(joined)) {
       const noteText = cells.filter(c => c).join(' ').trim();
-      console.log(`[Parser] Row ${ri}: SKIPPABLE (len=${noteText.length}) currentDay=${currentDay?.name ?? 'null'} text="${noteText.slice(0, 60)}"`);
       if (noteText.length <= 80 && currentDay && currentDay.exercises.length > 0) {
         // Short note (e.g. "na stronę") → attach to last exercise
         const lastEx = currentDay.exercises[currentDay.exercises.length - 1];
@@ -140,7 +135,6 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
     // No current day → this is a stray row (instructions after the last day)
     if (!currentDay) {
       const noteText = cells.filter(c => c).join(' ').trim();
-      console.log(`[Parser] Row ${ri}: STRAY (no currentDay) → programNotes text="${noteText.slice(0, 60)}"`);
       if (noteText) programNotes.push(noteText);
       continue;
     }
@@ -155,9 +149,6 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
       }
     }
   }
-
-  console.log(`[Parser] DONE. Days: ${days.length}, programNotes: ${programNotes.length} entries`);
-  if (programNotes.length > 0) console.log('[Parser] programNotes:', programNotes.map(n => n.slice(0, 60)));
 
   const programName = sheetName && sheetName.length > 3
     ? sheetName.replace(/[_-]/g, ' ')
