@@ -91,7 +91,7 @@ export function parseWorkbookRows(rows: string[][], sheetName: string): WorkoutP
 
   for (const row of rows) {
     const cells = row.map(c => String(c ?? '').trim());
-    const joined = cells.join('').toLowerCase();
+    const joined = cells.join(' ').toLowerCase();
 
     if (!joined) continue;
 
