@@ -1185,12 +1185,16 @@ function App() {
       {/* Onboarding walkthrough for new coaches */}
       {showOnboarding && (
         <OnboardingWalkthrough
+          isMobile={isMobile}
+          onSetSidebarOpen={setSidebarOpen}
           onComplete={() => {
             setShowOnboarding(false);
+            setSidebarOpen(false);
             localStorage.setItem('fitcore-onboarding-done', 'true');
           }}
           onSkip={() => {
             setShowOnboarding(false);
+            setSidebarOpen(false);
             localStorage.setItem('fitcore-onboarding-done', 'true');
           }}
         />

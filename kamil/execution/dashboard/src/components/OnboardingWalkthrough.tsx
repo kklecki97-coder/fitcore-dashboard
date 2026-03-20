@@ -2,32 +2,33 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, X, Sparkles, CreditCard, Users, Dumbbell, MessageSquare, CheckCircle } from 'lucide-react';
 import { useLang } from '../i18n';
-import useIsMobile from '../hooks/useIsMobile';
 
 interface WalkthroughStep {
   target: string | null; // data-tour attribute selector, null = center overlay
   icon: React.ElementType;
   titleKey: string;
   descKey: string;
+  needsSidebar: boolean; // whether this step targets a sidebar item
 }
 
 const STEPS: WalkthroughStep[] = [
-  { target: null, icon: Sparkles, titleKey: 'welcomeTitle', descKey: 'welcomeDesc' },
-  { target: '[data-tour="nav-settings"]', icon: CreditCard, titleKey: 'plansTitle', descKey: 'plansDesc' },
-  { target: '[data-tour="nav-clients"]', icon: Users, titleKey: 'clientsTitle', descKey: 'clientsDesc' },
-  { target: '[data-tour="nav-programs"]', icon: Dumbbell, titleKey: 'programsTitle', descKey: 'programsDesc' },
-  { target: '[data-tour="nav-messages"]', icon: MessageSquare, titleKey: 'messagesTitle', descKey: 'messagesDesc' },
-  { target: null, icon: CheckCircle, titleKey: 'doneTitle', descKey: 'doneDesc' },
+  { target: null, icon: Sparkles, titleKey: 'welcomeTitle', descKey: 'welcomeDesc', needsSidebar: false },
+  { target: '[data-tour="nav-settings"]', icon: CreditCard, titleKey: 'plansTitle', descKey: 'plansDesc', needsSidebar: true },
+  { target: '[data-tour="nav-clients"]', icon: Users, titleKey: 'clientsTitle', descKey: 'clientsDesc', needsSidebar: true },
+  { target: '[data-tour="nav-programs"]', icon: Dumbbell, titleKey: 'programsTitle', descKey: 'programsDesc', needsSidebar: true },
+  { target: '[data-tour="nav-messages"]', icon: MessageSquare, titleKey: 'messagesTitle', descKey: 'messagesDesc', needsSidebar: true },
+  { target: null, icon: CheckCircle, titleKey: 'doneTitle', descKey: 'doneDesc', needsSidebar: false },
 ];
 
 interface OnboardingWalkthroughProps {
   onComplete: () => void;
   onSkip: () => void;
+  isMobile: boolean;
+  onSetSidebarOpen: (open: boolean) => void;
 }
 
-export default function OnboardingWalkthrough({ onComplete, onSkip }: OnboardingWalkthroughProps) {
+export default function OnboardingWalkthrough({ onComplete, onSkip, isMobile, onSetSidebarOpen }: OnboardingWalkthroughProps) {
   const { t } = useLang();
-  const isMobile = useIsMobile();
   const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
@@ -35,24 +36,34 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
   const isLastStep = step === STEPS.length - 1;
   const isFirstStep = step === 0;
 
-  // Find and measure target element
+  // On mobile: open/close sidebar based on whether the step needs it
+  useEffect(() => {
+    if (isMobile) {
+      onSetSidebarOpen(currentStep.needsSidebar);
+    }
+  }, [isMobile, currentStep.needsSidebar, onSetSidebarOpen]);
+
+  // Find and measure target element — with small delay on mobile to let sidebar animate in
   const updateTargetRect = useCallback(() => {
     if (!currentStep.target) {
       setTargetRect(null);
       return;
     }
-    // On mobile, sidebar is hidden so we can't spotlight nav items
-    if (isMobile) {
-      setTargetRect(null);
-      return;
-    }
-    const el = document.querySelector(currentStep.target);
-    if (el) {
-      setTargetRect(el.getBoundingClientRect());
+    const findEl = () => {
+      const el = document.querySelector(currentStep.target!);
+      if (el) {
+        setTargetRect(el.getBoundingClientRect());
+      } else {
+        setTargetRect(null);
+      }
+    };
+    // On mobile, sidebar slides in — wait for animation
+    if (isMobile && currentStep.needsSidebar) {
+      setTimeout(findEl, 300);
     } else {
-      setTargetRect(null);
+      findEl();
     }
-  }, [currentStep.target, isMobile]);
+  }, [currentStep.target, currentStep.needsSidebar, isMobile]);
 
   useEffect(() => {
     updateTargetRect();
@@ -71,14 +82,27 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
   const texts = t.onboarding;
   const Icon = currentStep.icon;
 
-  // Card positioning logic
+  // Card positioning
   const getCardStyle = (): React.CSSProperties => {
-    // Center steps or mobile (no sidebar visible) — always centered
-    if (!targetRect || !currentStep.target || isMobile) {
+    // Center steps — always centered
+    if (!targetRect || !currentStep.target) {
       return { ...cardBase, position: 'relative', zIndex: 10002 };
     }
 
-    // Desktop: to the right of the sidebar item
+    if (isMobile) {
+      // Mobile with sidebar open: card to the right of sidebar item, compact
+      return {
+        ...cardBase,
+        position: 'fixed',
+        left: targetRect.right + 12,
+        top: Math.max(16, targetRect.top - 20),
+        zIndex: 10002,
+        maxWidth: 'calc(100vw - ' + (targetRect.right + 24) + 'px)',
+        width: '280px',
+      };
+    }
+
+    // Desktop: card to the right of sidebar item
     return {
       ...cardBase,
       position: 'fixed',
@@ -100,7 +124,7 @@ export default function OnboardingWalkthrough({ onComplete, onSkip }: Onboarding
         style={styles.overlay}
         onClick={(e) => { if (e.target === e.currentTarget) onSkip(); }}
       >
-        {/* Spotlight cutout for targeted elements (desktop only) */}
+        {/* Spotlight cutout for targeted elements */}
         {targetRect && (
           <div style={{
             position: 'fixed',
