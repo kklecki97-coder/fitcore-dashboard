@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react';
+import { Settings, Heart } from 'lucide-react';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
 
@@ -6,9 +6,10 @@ interface HeaderProps {
   clientName: string;
   isMobile?: boolean;
   onNavigate?: (page: ClientPage) => void;
+  currentPage?: ClientPage;
 }
 
-export default function Header({ clientName, isMobile, onNavigate }: HeaderProps) {
+export default function Header({ clientName, isMobile, onNavigate, currentPage }: HeaderProps) {
   const { t, lang, switchLang } = useLang();
 
   const handleLangToggle = () => {
@@ -34,6 +35,19 @@ export default function Header({ clientName, isMobile, onNavigate }: HeaderProps
           {lang === 'en' ? 'PL' : 'EN'}
         </button>
 
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('habits')}
+            style={{
+              ...styles.settingsBtn,
+              color: currentPage === 'habits' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              borderColor: currentPage === 'habits' ? 'var(--accent-primary)' : 'var(--glass-border)',
+            }}
+            aria-label="Habits"
+          >
+            <Heart size={18} />
+          </button>
+        )}
         {isMobile && onNavigate && (
           <button
             onClick={() => onNavigate('settings')}
@@ -54,7 +68,10 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 'env(safe-area-inset-top, 0px) 20px 0 20px',
+    paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)',
+    paddingBottom: '8px',
+    paddingLeft: '20px',
+    paddingRight: '20px',
     borderBottom: '1px solid var(--glass-border)',
     background: 'var(--bg-secondary)',
     position: 'relative',
