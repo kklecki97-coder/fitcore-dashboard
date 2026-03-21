@@ -214,6 +214,9 @@ select option {
   height: 3px;
 }
 
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+
 /* ── Background grain texture ── */
 body::before {
   content: '';

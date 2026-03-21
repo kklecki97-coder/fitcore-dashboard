@@ -269,8 +269,15 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
           />
         </div>
 
-        <div style={{ ...styles.filters, flex: isMobile ? '1 1 100%' : undefined }}>
-          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
+        <div className={isMobile ? 'hide-scrollbar' : ''} style={{
+          ...styles.filters,
+          ...(isMobile ? {
+            flex: '1 1 100%',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          } : {}),
+        }}>
+          <div style={{ ...styles.filterGroup, flexShrink: 0 }}>
             <Filter size={14} color="var(--text-tertiary)" />
             <select
               value={filterPlan}
@@ -283,7 +290,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               <option value="Basic">{t.clients.basic}</option>
             </select>
           </div>
-          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
+          <div style={{ ...styles.filterGroup, flexShrink: 0 }}>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -294,7 +301,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               <option value="paused">{t.clients.paused}</option>
             </select>
           </div>
-          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
+          <div style={{ ...styles.filterGroup, flexShrink: 0 }}>
             <ArrowUpDown size={14} color="var(--text-tertiary)" />
             <select
               value={sortBy}
@@ -312,6 +319,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
             onClick={() => setFilterEngagement(filterEngagement === 'all' ? 'at-risk' : 'all')}
             style={{
               ...styles.atRiskBtn,
+              flexShrink: 0,
               ...(filterEngagement === 'at-risk' ? {
                 background: 'rgba(239, 68, 68, 0.12)',
                 borderColor: 'rgba(239, 68, 68, 0.4)',
@@ -902,6 +910,7 @@ const styles: Record<string, React.CSSProperties> = {
   filters: {
     display: 'flex',
     gap: '8px',
+    flexWrap: 'nowrap',
   },
   filterGroup: {
     display: 'flex',
