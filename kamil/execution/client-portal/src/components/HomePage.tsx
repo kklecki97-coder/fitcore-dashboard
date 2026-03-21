@@ -5,7 +5,8 @@ import AnimatedNumber from './AnimatedNumber';
 import StreakFlame from './StreakFlame';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
-import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage, WeeklySchedule } from '../types';
+import TodaysHabitsCard from './TodaysHabitsCard';
+import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message, ClientPage, WeeklySchedule, Habit, HabitAssignment, HabitLog } from '../types';
 import { extractLabel } from '../utils/workout-labels';
 
 // Same color palette as CalendarPage
@@ -28,10 +29,14 @@ interface HomePageProps {
   onNavigate: (page: ClientPage) => void;
   weeklySchedule: WeeklySchedule | null;
   onUpdateSchedule: (assignments: Record<string, string>) => void;
+  habits?: Habit[];
+  habitAssignments?: HabitAssignment[];
+  habitLogs?: HabitLog[];
+  onLogHabit?: (log: HabitLog) => void;
 }
 
 // onUpdateSchedule is scaffolded for weekly schedule feature
-export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule: _onUpdateSchedule }: HomePageProps) {
+export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule: _onUpdateSchedule, habits, habitAssignments, habitLogs, onLogHabit }: HomePageProps) {
   void _onUpdateSchedule; // scaffolded for inline schedule editing on home page
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
@@ -270,6 +275,19 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
           <span style={styles.quickLabel}>{t.home.message}</span>
         </button>
       </div>
+
+      {/* ── Today's Habits ── */}
+      {habits && habitAssignments && habitLogs && onLogHabit && (
+        <TodaysHabitsCard
+          habits={habits}
+          habitAssignments={habitAssignments}
+          habitLogs={habitLogs}
+          onLogHabit={onLogHabit}
+          clientId={client.id}
+          delay={0.09}
+          onNavigateToHabits={() => onNavigate('habits')}
+        />
+      )}
 
       {/* ── This Week ── */}
       <GlassCard delay={0.1}>

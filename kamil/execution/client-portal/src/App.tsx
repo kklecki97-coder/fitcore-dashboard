@@ -26,7 +26,9 @@ import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
 import { mockClient, mockCoachName, mockProgram, mockWorkoutLogs, mockCheckIns, mockMessages, mockSetLogs, mockWeeklySchedule } from './mockData';
-import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule, Invoice } from './types';
+import ClientHabitsPage from './components/HabitsPage';
+import { presetHabits, myHabitAssignments, myHabitLogs } from './data';
+import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule, Invoice, HabitAssignment, HabitLog } from './types';
 
 // Toggle this to true to bypass auth and use mock data for UI development
 const USE_MOCK_DATA = false;
@@ -176,6 +178,9 @@ function App() {
   const [setLogs, setSetLogs] = useState<WorkoutSetLog[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<WeeklySchedule | null>(null);
+  const [habitAssignments, setHabitAssignments] = useState<HabitAssignment[]>([]);
+  const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
+  const habitsMapped = useRef(false);
   const { showToast } = useToast();
 
   const showError = (msg: string) => {
@@ -717,7 +722,28 @@ function App() {
     localStorage.setItem('fitcore-client-theme', theme);
   }, [theme]);
 
+  // ── Map mock habit data to real client ID ──
+  useEffect(() => {
+    if (habitsMapped.current || !clientUser) return;
+    habitsMapped.current = true;
+    const realId = clientUser.id;
+    setHabitAssignments(myHabitAssignments.map(a => ({ ...a, clientId: realId })));
+    setHabitLogs(myHabitLogs.map(l => ({ ...l, clientId: realId })));
+  }, [clientUser]);
+
   // ── Handlers ──
+  const handleLogHabit = (log: HabitLog) => {
+    setHabitLogs(prev => {
+      const existing = prev.findIndex(l => l.habitAssignmentId === log.habitAssignmentId && l.logDate === log.logDate);
+      if (existing >= 0) {
+        const updated = [...prev];
+        updated[existing] = log;
+        return updated;
+      }
+      return [log, ...prev];
+    });
+  };
+
   const handleSendMessage = async (msg: Message) => {
     setMessages(prev => [...prev, msg]);
     const { error } = await supabase.from('messages').insert({
@@ -1063,6 +1089,10 @@ function App() {
               onNavigate={setCurrentPage}
               weeklySchedule={weeklySchedule}
               onUpdateSchedule={handleUpdateSchedule}
+              habits={presetHabits}
+              habitAssignments={habitAssignments}
+              habitLogs={habitLogs}
+              onLogHabit={handleLogHabit}
             />
           </ErrorBoundary>
         );
@@ -1129,6 +1159,18 @@ function App() {
               checkIns={checkIns}
               setLogs={setLogs}
               coachName={coachName}
+            />
+          </ErrorBoundary>
+        );
+      case 'habits':
+        return (
+          <ErrorBoundary>
+            <ClientHabitsPage
+              habits={presetHabits}
+              habitAssignments={habitAssignments}
+              habitLogs={habitLogs}
+              onLogHabit={handleLogHabit}
+              clientId={clientUser.id}
             />
           </ErrorBoundary>
         );
@@ -1311,7 +1353,7 @@ function App() {
       )}
 
       <div style={styles.main}>
-        <Header clientName={clientUser?.name ?? ''} isMobile={isMobile} onNavigate={setCurrentPage} />
+        <Header clientName={clientUser?.name ?? ''} isMobile={isMobile} onNavigate={setCurrentPage} currentPage={currentPage} />
 
         <AnimatePresence mode="wait">
           <motion.div

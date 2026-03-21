@@ -16,6 +16,8 @@ import AIProgramCreator from './components/AIProgramCreator';
 import ProgramImporter from './components/ProgramImporter';
 import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
+import HabitsPage from './components/HabitsPage';
+import ExerciseLibraryPage from './components/ExerciseLibraryPage';
 import LoginPage from './components/LoginPage';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import { useToast } from './components/Toast';
@@ -28,9 +30,10 @@ import {
 } from './components/Skeleton';
 import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
-import { exerciseLibrary } from './data';
+import { presetHabits, habitAssignments as mockHabitAssignments, habitLogs as mockHabitLogs } from './data';
 import { supabase } from './lib/supabase';
-import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification, WorkoutLog, WorkoutSetLog, CoachingPlan } from './types';
+import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, AppNotification, WorkoutLog, WorkoutSetLog, CoachingPlan, Habit, HabitAssignment, HabitLog, CatalogExercise } from './types';
+import { exerciseCatalogSeed } from './data/exercise-seed';
 
 function App() {
   const { t } = useLang();
@@ -111,6 +114,13 @@ function App() {
   const [allWorkoutLogs, setAllWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [allSetLogs, setAllSetLogs] = useState<WorkoutSetLog[]>([]);
   const [allPlans, setAllPlans] = useState<CoachingPlan[]>([]);
+  // ── Exercise Catalog (local seed for now — Supabase integration later) ──
+  const [exerciseCatalog, setExerciseCatalog] = useState<CatalogExercise[]>(exerciseCatalogSeed);
+
+  const [allHabits, setAllHabits] = useState<Habit[]>(presetHabits);
+  const [allHabitAssignments, setAllHabitAssignments] = useState<HabitAssignment[]>([]);
+  const [allHabitLogs, setAllHabitLogs] = useState<HabitLog[]>([]);
+  const habitsMapped = useRef(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
   const triggerConfetti = () => setConfettiKey(k => k + 1);
@@ -127,6 +137,27 @@ function App() {
     }
     prevClientCount.current = curr;
   }, [allClients.length]);
+
+  // ── Map mock habit data to real Supabase client IDs ──
+  useEffect(() => {
+    if (habitsMapped.current || allClients.length === 0) return;
+    habitsMapped.current = true;
+    // Map mock IDs (c1, c2, c3) → real client IDs (first 3 active clients)
+    const activeClients = allClients.filter(c => c.status === 'active');
+    const idMap: Record<string, string> = {};
+    if (activeClients[0]) idMap['c1'] = activeClients[0].id;
+    if (activeClients[1]) idMap['c2'] = activeClients[1].id;
+    if (activeClients[2]) idMap['c3'] = activeClients[2].id;
+
+    setAllHabitAssignments(mockHabitAssignments.map(a => ({
+      ...a,
+      clientId: idMap[a.clientId] ?? a.clientId,
+    })));
+    setAllHabitLogs(mockHabitLogs.map(l => ({
+      ...l,
+      clientId: idMap[l.clientId] ?? l.clientId,
+    })));
+  }, [allClients]);
 
   // ── Load data from Supabase on login ──
   useEffect(() => {
@@ -993,6 +1024,59 @@ function App() {
     }
   };
 
+  // ── Habit handlers ──
+  const handleAddHabitAssignment = (assignment: HabitAssignment) => {
+    setAllHabitAssignments(prev => [assignment, ...prev]);
+  };
+  const handleRemoveHabitAssignment = (id: string) => {
+    setAllHabitAssignments(prev => prev.filter(a => a.id !== id));
+    setAllHabitLogs(prev => prev.filter(l => l.habitAssignmentId !== id));
+  };
+  const handleAddHabit = (habit: Habit) => {
+    setAllHabits(prev => [habit, ...prev]);
+  };
+  // @ts-ignore - used by ClientDetailPage habit section (coming next)
+  const handleLogHabit = (log: HabitLog) => {
+    setAllHabitLogs(prev => {
+      const existing = prev.findIndex(l => l.habitAssignmentId === log.habitAssignmentId && l.logDate === log.logDate);
+      if (existing >= 0) {
+        const updated = [...prev];
+        updated[existing] = log;
+        return updated;
+      }
+      return [log, ...prev];
+    });
+  };
+
+  // ── Exercise Catalog handlers ──
+  const handleToggleExerciseFavorite = (exercise: CatalogExercise) => {
+    setExerciseCatalog(prev => prev.map(e =>
+      e.id === exercise.id ? { ...e, isFavorite: !e.isFavorite } : e
+    ));
+  };
+  const handleSaveCustomExercise = (data: Omit<CatalogExercise, 'id' | 'slug' | 'isGlobal'>) => {
+    const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const newExercise: CatalogExercise = {
+      ...data,
+      id: `custom-${Date.now()}`,
+      slug,
+      isGlobal: false,
+      isCoachCustom: true,
+    };
+    setExerciseCatalog(prev => [newExercise, ...prev]);
+    showToast(t.exerciseLibrary.saved, 'success');
+  };
+  const handleUpdateCustomExercise = (id: string, data: Omit<CatalogExercise, 'id' | 'slug' | 'isGlobal'>) => {
+    setExerciseCatalog(prev => prev.map(e =>
+      e.id === id ? { ...e, ...data } : e
+    ));
+    showToast(t.exerciseLibrary.saved, 'success');
+  };
+  const handleDeleteCustomExercise = (id: string) => {
+    setExerciseCatalog(prev => prev.filter(e => e.id !== id));
+    showToast(t.exerciseLibrary.deleted, 'success');
+  };
+
   const handleViewProgram = (id: string) => {
     setPreviousPage(currentPage);
     setSelectedProgramId(id);
@@ -1009,7 +1093,7 @@ function App() {
     // Each page wrapped in ErrorBoundary so one page crash doesn't kill the whole app
     switch (currentPage) {
       case 'overview':
-        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} habitAssignments={allHabitAssignments} habitLogs={allHabitLogs} /></ErrorBoundary>;
       case 'clients':
         return (
           <ErrorBoundary>
@@ -1046,6 +1130,9 @@ function App() {
               onUpdateProgram={handleUpdateProgram}
               onUpdateCheckIn={handleUpdateCheckIn}
               onAddCheckIn={handleAddCheckIn}
+              habits={allHabits}
+              habitAssignments={allHabitAssignments}
+              habitLogs={allHabitLogs}
             />
           </ErrorBoundary>
         );
@@ -1110,7 +1197,7 @@ function App() {
           <ErrorBoundary>
             <ProgramBuilderPage
               program={selectedProgramId ? allPrograms.find(p => p.id === selectedProgramId) || null : pendingProgram}
-              exerciseLibrary={exerciseLibrary}
+              exerciseCatalog={exerciseCatalog}
               onSave={(program: WorkoutProgram) => {
                 if (allPrograms.find(p => p.id === program.id)) {
                   handleUpdateProgram(program.id, program);
@@ -1150,6 +1237,34 @@ function App() {
               onSendMessage={handleSendMessage}
               onNavigate={handleNavigate}
               onConfetti={() => showToast(t.notifications.checkInReviewed, 'success')}
+            />
+          </ErrorBoundary>
+        );
+      case 'habits':
+        return (
+          <ErrorBoundary>
+            <HabitsPage
+              clients={allClients}
+              habits={allHabits}
+              habitAssignments={allHabitAssignments}
+              habitLogs={allHabitLogs}
+              onAddHabitAssignment={handleAddHabitAssignment}
+              onRemoveHabitAssignment={handleRemoveHabitAssignment}
+              onAddHabit={handleAddHabit}
+              onViewClient={handleViewClient}
+            />
+          </ErrorBoundary>
+        );
+      case 'exercise-library':
+        return (
+          <ErrorBoundary>
+            <ExerciseLibraryPage
+              exercises={exerciseCatalog}
+              onToggleFavorite={handleToggleExerciseFavorite}
+              onSaveCustom={handleSaveCustomExercise}
+              onDeleteCustom={handleDeleteCustomExercise}
+              onUpdateCustom={handleUpdateCustomExercise}
+              isMobile={isMobile}
             />
           </ErrorBoundary>
         );
@@ -1193,7 +1308,7 @@ function App() {
           </ErrorBoundary>
         );
       default:
-        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} habitAssignments={allHabitAssignments} habitLogs={allHabitLogs} /></ErrorBoundary>;
     }
   };
 

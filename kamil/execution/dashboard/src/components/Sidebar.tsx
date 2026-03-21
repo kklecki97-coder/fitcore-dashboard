@@ -9,6 +9,8 @@ import {
   LogOut,
   CreditCard,
   ClipboardCheck,
+  Heart,
+  BookOpen,
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLang } from '../i18n';
@@ -24,18 +26,22 @@ const navPages: { icon: typeof LayoutDashboard; page: Page }[] = [
   { icon: LayoutDashboard, page: 'overview' },
   { icon: Users, page: 'clients' },
   { icon: Dumbbell, page: 'programs' },
+  { icon: BookOpen, page: 'exercise-library' },
   { icon: MessageSquare, page: 'messages' },
   { icon: ClipboardCheck, page: 'check-ins' },
+  { icon: Heart, page: 'habits' },
   { icon: CreditCard, page: 'payments' },
   { icon: BarChart3, page: 'analytics' },
 ];
 
-const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'messages' | 'checkIns' | 'payments' | 'analytics'> = {
+const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'exerciseLibrary' | 'messages' | 'checkIns' | 'habits' | 'payments' | 'analytics'> = {
   'overview': 'overview',
   'clients': 'clients',
   'programs': 'programs',
+  'exercise-library': 'exerciseLibrary',
   'messages': 'messages',
   'check-ins': 'checkIns',
+  'habits': 'habits',
   'payments': 'payments',
   'analytics': 'analytics',
 };
