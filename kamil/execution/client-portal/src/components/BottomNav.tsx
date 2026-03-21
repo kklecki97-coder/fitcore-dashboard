@@ -1,4 +1,4 @@
-import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut } from 'lucide-react';
+import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
@@ -18,6 +18,7 @@ const navIcons: Record<string, typeof Home> = {
   'check-in': ClipboardCheck,
   progress: TrendingUp,
   messages: MessageSquare,
+  habits: Heart,
   invoices: DollarSign,
   settings: Settings,
 };
@@ -34,6 +35,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
     'check-in': t.nav.checkIn,
     progress: t.nav.progress,
     messages: t.nav.messages,
+    habits: t.nav.habits,
     invoices: t.nav.invoices || 'Invoices',
     settings: t.nav.settings,
   };
@@ -109,7 +111,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
 
       {/* Nav items */}
       <div style={styles.sideNavItems}>
-        {navPages.map((page) => {
+        {[...navPages, 'habits' as ClientPage].map((page) => {
           const active = currentPage === page;
           const Icon = navIcons[page];
           return (
@@ -231,23 +233,26 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     height: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-around',
     background: 'var(--bg-secondary)',
     borderTop: '1px solid var(--glass-border)',
     backdropFilter: 'blur(20px)',
     zIndex: 50,
-    padding: '0 8px env(safe-area-inset-bottom, 0px)',
+    paddingTop: '10px',
+    paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+    paddingLeft: '8px',
+    paddingRight: '8px',
   },
   bottomItem: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '2px',
+    gap: '4px',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    padding: '10px 12px',
+    padding: '6px 12px',
     minHeight: '44px',
     fontFamily: 'var(--font-display)',
     transition: 'color 0.15s',
