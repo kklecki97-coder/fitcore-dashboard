@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, MessageSquare, ClipboardCheck, DollarSign, Dumbbell, UserPlus, CheckCircle } from 'lucide-react';
+import { Menu, Bell, MessageSquare, ClipboardCheck, DollarSign, Dumbbell, UserPlus, CheckCircle, Globe } from 'lucide-react';
 import { useLang } from '../i18n';
 import { getLocale } from '../lib/locale';
 import type { Page, AppNotification, NotificationType } from '../types';
@@ -24,7 +24,7 @@ const NOTIF_ICON_CONFIG: Record<NotificationType, { icon: typeof MessageSquare; 
 };
 
 export default function Header({ currentPage, isMobile, onMenuToggle, notifications = [], onMarkRead: _onMarkRead, onMarkAllRead, onNotificationClick }: HeaderProps) {
-  const { lang, t } = useLang();
+  const { lang, t, switchLang } = useLang();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +88,27 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
       </div>
 
       <div style={styles.right}>
+        {/* Language Toggle */}
+        <button
+          onClick={() => switchLang(lang === 'en' ? 'pl' : 'en')}
+          style={{
+            ...styles.bellBtn,
+            borderColor: 'var(--glass-border)',
+            background: 'var(--bg-elevated)',
+            gap: '4px',
+            width: 'auto',
+            padding: '0 10px',
+            fontSize: '13px',
+            fontWeight: 700,
+            fontFamily: 'var(--font-display)',
+            color: 'var(--accent-primary)',
+            letterSpacing: '0.5px',
+          }}
+        >
+          <Globe size={14} color="var(--accent-primary)" />
+          {lang === 'en' ? 'PL' : 'EN'}
+        </button>
+
         {/* Notification Bell */}
         <div ref={dropdownRef} style={{ position: 'relative' }}>
           <button
