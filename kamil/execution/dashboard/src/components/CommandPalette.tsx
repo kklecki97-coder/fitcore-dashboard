@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, LayoutDashboard, Users, Dumbbell, MessageSquare,
   BarChart3, Settings, CreditCard, ClipboardCheck, ArrowRight,
-  UserPlus, PlusCircle, Sparkles, FileSpreadsheet,
+  UserPlus, PlusCircle, Sparkles, FileSpreadsheet, BookOpen,
 } from 'lucide-react';
 import { useLang } from '../i18n';
 import { getInitials, getAvatarColor } from '../data';
@@ -48,6 +48,7 @@ export default function CommandPalette({ open, onClose, onNavigate, onViewClient
     { id: 'p-overview', type: 'page', label: t.nav.overview, icon: LayoutDashboard, action: () => { onNavigate('overview'); onClose(); } },
     { id: 'p-clients', type: 'page', label: t.nav.clients, icon: Users, action: () => { onNavigate('clients'); onClose(); } },
     { id: 'p-programs', type: 'page', label: t.nav.programs, icon: Dumbbell, action: () => { onNavigate('programs'); onClose(); } },
+    { id: 'p-exercises', type: 'page', label: t.nav.exerciseLibrary, icon: BookOpen, action: () => { onNavigate('exercise-library'); onClose(); } },
     { id: 'p-messages', type: 'page', label: t.nav.messages, icon: MessageSquare, action: () => { onNavigate('messages'); onClose(); } },
     { id: 'p-checkins', type: 'page', label: t.nav.checkIns, icon: ClipboardCheck, action: () => { onNavigate('check-ins'); onClose(); } },
     { id: 'p-payments', type: 'page', label: t.nav.payments, icon: CreditCard, action: () => { onNavigate('payments'); onClose(); } },
