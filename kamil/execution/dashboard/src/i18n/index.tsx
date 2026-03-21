@@ -15,7 +15,7 @@ function detectInitialLang(): Lang {
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/pl')) return 'pl';
   const browserLang = navigator.language?.toLowerCase() ?? '';
   if (browserLang.startsWith('pl')) return 'pl';
-  return 'en';
+  return 'pl';
 }
 
 interface I18nContextValue {

@@ -22,7 +22,7 @@ function detectInitialLang(): Lang {
   if (browserLang.startsWith('pl')) return 'pl';
 
   // Priority 4: default
-  return 'en';
+  return 'pl';
 }
 
 interface I18nContextValue {
