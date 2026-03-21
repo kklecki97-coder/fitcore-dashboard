@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, Dumbbell, Timer, Minus, Plus, Play, X, ChevronLeft, ChevronRight, Trophy, Menu } from 'lucide-react';
+import { CheckCircle2, Circle, Dumbbell, Timer, Minus, Plus, Play, X, ChevronLeft, ChevronRight, Trophy, Menu, Info, Zap } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { useToast } from './Toast';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { WorkoutProgram, WorkoutSetLog, WorkoutLog, WeeklySchedule } from '../types';
+import { getExerciseInfo } from '../data/exercise-info';
 
 interface ProgramPageProps {
   program: WorkoutProgram | null;
@@ -41,6 +42,9 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
   const selectedDay = todayDayIndex;
   // @ts-ignore - scaffolded for exercise expand/collapse UI
   const [expandedExercise, setExpandedExercise] = useState<string | null>(null);
+  const [expandedInfo, setExpandedInfo] = useState<string | null>(null);
+  // Exercise info shown in workout mode
+  const [showWorkoutInfo, setShowWorkoutInfo] = useState(false);
 
   // ── Workout Mode state ──
   const [workoutActive, setWorkoutActive] = useState(false);
@@ -216,6 +220,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
     if (workoutExerciseIdx < day.exercises.length - 1) {
       setWorkoutExerciseIdx(prev => prev + 1);
       setRestTimer(null);
+      setShowWorkoutInfo(false);
     } else {
       endWorkout();
     }
@@ -225,6 +230,7 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
     if (workoutExerciseIdx > 0) {
       setWorkoutExerciseIdx(prev => prev - 1);
       setRestTimer(null);
+      setShowWorkoutInfo(false);
     }
   };
 
@@ -677,7 +683,54 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
 
         {/* Single-focus content */}
         <div style={styles.workoutContent}>
-          <div style={styles.workoutExName}>{currentExercise.name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <div style={styles.workoutExName}>{currentExercise.name}</div>
+            {getExerciseInfo(currentExercise.name, lang) && (
+              <button
+                onClick={() => setShowWorkoutInfo(!showWorkoutInfo)}
+                style={{
+                  background: showWorkoutInfo ? 'rgba(0,229,200,0.15)' : 'rgba(255,255,255,0.06)',
+                  border: '1px solid ' + (showWorkoutInfo ? 'rgba(0,229,200,0.3)' : 'rgba(255,255,255,0.1)'),
+                  borderRadius: '8px', padding: '5px', cursor: 'pointer', display: 'flex',
+                  color: showWorkoutInfo ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                  transition: 'all 0.15s', flexShrink: 0,
+                }}
+              >
+                <Info size={16} />
+              </button>
+            )}
+          </div>
+
+          {/* Exercise info panel in workout mode */}
+          {showWorkoutInfo && (() => {
+            const wInfo = getExerciseInfo(currentExercise.name, lang);
+            if (!wInfo) return null;
+            return (
+              <div style={{
+                margin: '8px 0 4px', padding: '14px 16px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '12px', textAlign: 'left',
+                maxHeight: '200px', overflowY: 'auto',
+              }}>
+                <p style={{ fontSize: 12, lineHeight: 1.5, color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+                  {wInfo.description}
+                </p>
+                <ol style={{ margin: 0, paddingLeft: 16, fontSize: 12, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+                  {wInfo.instructions.map((step, j) => <li key={j}>{step}</li>)}
+                </ol>
+                {wInfo.tips.length > 0 && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--accent-primary)' }}>
+                    {wInfo.tips.map((tip, j) => (
+                      <div key={j} style={{ display: 'flex', gap: 4, alignItems: 'flex-start', marginBottom: 2 }}>
+                        <Zap size={10} style={{ marginTop: 3, flexShrink: 0 }} /> {tip}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Set dots - small indicators for which set you're on */}
           <div style={styles.setDots}>
@@ -914,21 +967,89 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
 
       {/* Exercise list - the main content */}
       <div style={styles.exerciseListCard}>
-        {day.exercises.map((exercise, i) => (
-          <div key={exercise.id} style={{
-            ...styles.exerciseRow,
-            borderBottom: i < day.exercises.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-          }}>
-            <span style={styles.exerciseNum}>{i + 1}</span>
-            <div style={styles.exerciseInfo}>
-              <span style={styles.exerciseNameText}>{exercise.name}</span>
-              <span style={styles.exerciseDetail}>
-                {exercise.sets} × {exercise.reps}
-                {exercise.weight ? ` · ${exercise.weight}` : ''}
-              </span>
+        {day.exercises.map((exercise, i) => {
+          const info = getExerciseInfo(exercise.name, lang);
+          const isInfoOpen = expandedInfo === exercise.id;
+          return (
+            <div key={exercise.id} style={{
+              borderBottom: i < day.exercises.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+            }}>
+              <div style={styles.exerciseRow}>
+                <span style={styles.exerciseNum}>{i + 1}</span>
+                <div style={{ ...styles.exerciseInfo, flex: 1 }}>
+                  <span style={styles.exerciseNameText}>{exercise.name}</span>
+                  <span style={styles.exerciseDetail}>
+                    {exercise.sets} × {exercise.reps}
+                    {exercise.weight ? ` · ${exercise.weight}` : ''}
+                  </span>
+                </div>
+                {info && (
+                  <button
+                    onClick={() => setExpandedInfo(isInfoOpen ? null : exercise.id)}
+                    style={{
+                      background: isInfoOpen ? 'rgba(0,229,200,0.1)' : 'transparent',
+                      border: '1px solid ' + (isInfoOpen ? 'rgba(0,229,200,0.3)' : 'rgba(255,255,255,0.08)'),
+                      borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex',
+                      color: isInfoOpen ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                      transition: 'all 0.15s', flexShrink: 0,
+                    }}
+                  >
+                    <Info size={16} />
+                  </button>
+                )}
+              </div>
+              {/* "How to do this" expandable */}
+              {isInfoOpen && info && (
+                <div style={{
+                  padding: '0 16px 16px 58px',
+                  animation: 'fadeIn 0.2s ease',
+                }}>
+                  {/* Description */}
+                  <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+                    {info.description}
+                  </p>
+
+                  {/* Instructions */}
+                  {info.instructions.length > 0 && (
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+                        {t.program.instructions}
+                      </div>
+                      <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                        {info.instructions.map((step, j) => <li key={j}>{step}</li>)}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Muscles */}
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+                      {t.program.musclesWorked}
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                      <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{info.primaryMuscle}</span>
+                      {info.secondaryMuscles.length > 0 && (
+                        <span style={{ color: 'var(--text-tertiary)' }}> · {info.secondaryMuscles.join(', ')}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tips */}
+                  {info.tips.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Zap size={11} color="var(--accent-primary)" /> {t.program.tips}
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                        {info.tips.map((tip, j) => <li key={j}>{tip}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Start / Resume Workout - clean action button */}
