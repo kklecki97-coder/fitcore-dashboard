@@ -8,11 +8,11 @@ import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { useToast } from './Toast';
-import type { WorkoutProgram, WorkoutDay, Exercise, CatalogExercise } from '../types';
+import type { WorkoutProgram, WorkoutDay, Exercise } from '../types';
 
 interface ProgramBuilderPageProps {
   program: WorkoutProgram | null;
-  exerciseCatalog: CatalogExercise[];
+  exerciseLibrary: string[];
   onSave: (program: WorkoutProgram) => void;
   onBack: () => void;
   backLabel?: string;
@@ -111,7 +111,7 @@ const emptyExercise = (): Exercise => ({
 });
 
 export default function ProgramBuilderPage({
-  program, exerciseCatalog, onSave, onBack, backLabel,
+  program, exerciseLibrary, onSave, onBack, backLabel,
 }: ProgramBuilderPageProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
@@ -180,23 +180,22 @@ export default function ProgramBuilderPage({
   }, [showSuggestions, quickShowSuggestions, closeSuggestions]);
 
   // Quick-add filtered suggestions
-  const quickFilteredSuggestions = quickName.trim() && exerciseCatalog
-    ? exerciseCatalog.filter(ex => ex.name.toLowerCase().includes(quickName.toLowerCase()) || (ex.namePl && ex.namePl.toLowerCase().includes(quickName.toLowerCase()))).slice(0, 6)
+  const quickFilteredSuggestions = quickName.trim() && exerciseLibrary
+    ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(quickName.toLowerCase())).slice(0, 6)
     : [];
 
   // Quick-add submit
   const submitQuickAdd = () => {
     if (!quickName.trim()) return;
-    const catalogMatch = exerciseCatalog.find(c => c.name.toLowerCase() === quickName.trim().toLowerCase());
     const ex: Exercise = {
       id: crypto.randomUUID(),
       name: quickName.trim(),
-      sets: parseInt(quickSets) || catalogMatch?.defaultSets || 3,
-      reps: quickReps !== '10' ? quickReps : (catalogMatch?.defaultReps || '10'),
+      sets: parseInt(quickSets) || 3,
+      reps: quickReps || '10',
       weight: '',
       rpe: null,
       tempo: '',
-      restSeconds: catalogMatch?.defaultRestSeconds ?? null,
+      restSeconds: null,
       notes: '',
     };
     setDraft(prev => {
@@ -328,8 +327,8 @@ export default function ProgramBuilderPage({
   };
 
   // ── Filtered suggestions ──
-  const filteredSuggestions = exerciseSearch.trim() && exerciseCatalog
-    ? exerciseCatalog.filter(ex => ex.name.toLowerCase().includes(exerciseSearch.toLowerCase()) || (ex.namePl && ex.namePl.toLowerCase().includes(exerciseSearch.toLowerCase()))).slice(0, 8)
+  const filteredSuggestions = exerciseSearch.trim() && exerciseLibrary
+    ? exerciseLibrary.filter(ex => ex.toLowerCase().includes(exerciseSearch.toLowerCase())).slice(0, 8)
     : [];
 
   return (
@@ -581,21 +580,16 @@ export default function ProgramBuilderPage({
                 />
                 {quickShowSuggestions && quickFilteredSuggestions.length > 0 && (
                   <div ref={quickSuggestionsRef} style={{ ...styles.suggestions, bottom: '100%', top: 'auto', marginBottom: '4px' }}>
-                    {quickFilteredSuggestions.map(ex => (
+                    {quickFilteredSuggestions.map(name => (
                       <button
-                        key={ex.id}
+                        key={name}
                         onClick={() => {
-                          setQuickName(ex.name);
-                          setQuickSets(String(ex.defaultSets));
-                          setQuickReps(ex.defaultReps);
+                          setQuickName(name);
                           setQuickShowSuggestions(false);
                         }}
                         style={styles.suggestionItem}
                       >
-                        <Dumbbell size={13} color="var(--text-tertiary)" />
-                        <span style={{ flex: 1 }}>{ex.name}</span>
-                        <span style={{ fontSize: 10, color: 'var(--accent-primary)', fontWeight: 600, textTransform: 'uppercase', opacity: 0.7 }}>{ex.muscleGroup}</span>
-                        <span style={{ fontSize: 10, color: '#6366f1', fontWeight: 600, textTransform: 'uppercase', opacity: 0.7 }}>{ex.equipment}</span>
+                        <Dumbbell size={13} color="var(--text-tertiary)" /> {name}
                       </button>
                     ))}
                   </div>
@@ -749,26 +743,17 @@ export default function ProgramBuilderPage({
                     />
                     {showSuggestions && filteredSuggestions.length > 0 && (
                       <div ref={suggestionsRef} style={styles.suggestions}>
-                        {filteredSuggestions.map(ex => (
+                        {filteredSuggestions.map(name => (
                           <button
-                            key={ex.id}
+                            key={name}
                             onClick={() => {
-                              setExerciseSearch(ex.name);
-                              setExerciseForm(prev => ({
-                                ...prev,
-                                name: ex.name,
-                                sets: ex.defaultSets,
-                                reps: ex.defaultReps,
-                                restSeconds: ex.defaultRestSeconds,
-                              }));
+                              setExerciseSearch(name);
+                              setExerciseForm(prev => ({ ...prev, name }));
                               setShowSuggestions(false);
                             }}
                             style={styles.suggestionItem}
                           >
-                            <Dumbbell size={13} color="var(--text-tertiary)" />
-                            <span style={{ flex: 1 }}>{ex.name}</span>
-                            <span style={{ fontSize: 10, color: 'var(--accent-primary)', fontWeight: 600, textTransform: 'uppercase', opacity: 0.7 }}>{ex.muscleGroup}</span>
-                            <span style={{ fontSize: 10, color: '#6366f1', fontWeight: 600, textTransform: 'uppercase', opacity: 0.7 }}>{ex.equipment}</span>
+                            <Dumbbell size={13} color="var(--text-tertiary)" /> {name}
                           </button>
                         ))}
                       </div>
