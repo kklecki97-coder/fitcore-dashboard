@@ -333,11 +333,11 @@ export default function ProgramBuilderPage({
     : [];
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '12px' : '16px' }}>
       {/* Back Bar */}
       <div style={styles.topBar}>
-        <motion.button onClick={onBack} style={styles.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-          <ArrowLeft size={16} /> {backLabel ?? t.programBuilder.backToPrograms}
+        <motion.button onClick={onBack} style={{ ...styles.backBtn, ...(isMobile ? { fontSize: '13px', padding: '6px 10px' } : {}) }} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
+          <ArrowLeft size={isMobile ? 14 : 16} /> {backLabel ?? t.programBuilder.backToPrograms}
         </motion.button>
       </div>
 
@@ -363,39 +363,62 @@ export default function ProgramBuilderPage({
       </AnimatePresence>
 
       {/* Program Metadata */}
-      <GlassCard delay={0.05}>
-        <div style={{ ...styles.metaCard, flexDirection: isMobile ? 'column' : 'row' }}>
-          <div style={{ ...styles.fieldGroup, flex: 1 }}>
-            <label style={styles.label}>{t.programBuilder.programName}</label>
-            <input
-              type="text"
-              value={draft.name}
-              onChange={(e) => setDraft(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g. Hypertrophy Block A"
-              style={styles.input}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+      <GlassCard delay={0.05} style={isMobile ? { padding: '14px 16px' } : undefined}>
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>{t.programBuilder.durationWeeks}</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <label style={{ ...styles.label, fontSize: '12px' }}>{t.programBuilder.programName}</label>
+              <input
+                type="text"
+                value={draft.name}
+                onChange={(e) => setDraft(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g. Hypertrophy Block A"
+                style={{ ...styles.input, fontSize: '14px', padding: '7px 10px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+              <div style={{ ...styles.fieldGroup, flex: 1 }}>
+                <label style={{ ...styles.label, fontSize: '12px' }}>{t.programBuilder.durationWeeks}</label>
                 <NumberStepper
                   value={draft.durationWeeks}
                   onChange={(v) => setDraft(prev => ({ ...prev, durationWeeks: parseInt(v) || 1 }))}
                   min={1} max={52} placeholder="8"
-                  style={{ width: '130px' }}
                 />
-                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}></span>
               </div>
             </div>
           </div>
-        </div>
-
+        ) : (
+          <div style={{ ...styles.metaCard, flexDirection: 'row', padding: '20px', gap: '16px' }}>
+            <div style={{ ...styles.fieldGroup, flex: 1 }}>
+              <label style={styles.label}>{t.programBuilder.programName}</label>
+              <input
+                type="text"
+                value={draft.name}
+                onChange={(e) => setDraft(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g. Hypertrophy Block A"
+                style={styles.input}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>{t.programBuilder.durationWeeks}</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <NumberStepper
+                    value={draft.durationWeeks}
+                    onChange={(v) => setDraft(prev => ({ ...prev, durationWeeks: parseInt(v) || 1 }))}
+                    min={1} max={52} placeholder="8"
+                    style={{ width: '130px' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </GlassCard>
 
       {/* Day Tabs */}
-      <GlassCard delay={0.1}>
-        <div style={styles.dayTabsWrap}>
+      <GlassCard delay={0.1} style={isMobile ? { padding: '12px 14px' } : undefined}>
+        <div style={{ ...styles.dayTabsWrap, padding: isMobile ? '0' : '12px 16px' }}>
           <div style={styles.dayTabs}>
             {draft.days.map((day, i) => (
               <div key={day.id} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -415,6 +438,7 @@ export default function ProgramBuilderPage({
                     onClick={() => setActiveDayIndex(i)}
                     style={{
                       ...styles.dayTab,
+                      ...(isMobile ? { fontSize: '13px', padding: '6px 12px' } : {}),
                       background: activeDayIndex === i ? 'var(--accent-primary-dim)' : 'transparent',
                       color: activeDayIndex === i ? 'var(--accent-primary)' : 'var(--text-secondary)',
                       borderColor: activeDayIndex === i ? 'rgba(0, 229, 200, 0.15)' : 'transparent',
@@ -440,8 +464,8 @@ export default function ProgramBuilderPage({
                 )}
               </div>
             ))}
-            <button onClick={addDay} style={styles.addDayBtn}>
-              <Plus size={14} /> {t.programBuilder.addDay}
+            <button onClick={addDay} style={{ ...styles.addDayBtn, ...(isMobile ? { fontSize: '13px', padding: '6px 10px' } : {}) }}>
+              <Plus size={isMobile ? 12 : 14} /> {t.programBuilder.addDay}
             </button>
           </div>
         </div>
@@ -449,39 +473,40 @@ export default function ProgramBuilderPage({
 
       {/* Exercise List */}
       {activeDay ? (
-        <GlassCard delay={0.15}>
-          <div style={styles.exerciseHeader}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Dumbbell size={16} color="var(--accent-primary)" />
-              <h3 style={styles.dayTitle}>{activeDay.name}</h3>
-              <span style={styles.exerciseCount}>{activeDay.exercises.length}</span>
+        <GlassCard delay={0.15} style={isMobile ? { padding: '14px 16px' } : undefined}>
+          <div style={{ ...styles.exerciseHeader, padding: isMobile ? '0 0 10px' : '16px 20px 12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '8px' }}>
+              <Dumbbell size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+              <h3 style={{ ...styles.dayTitle, fontSize: isMobile ? '15px' : '21px' }}>{activeDay.name}</h3>
+              <span style={{ ...styles.exerciseCount, fontSize: isMobile ? '12px' : '15px' }}>{activeDay.exercises.length}</span>
             </div>
-            <motion.button onClick={openAddExercise} style={styles.addExerciseBtn} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Plus size={14} /> {t.programBuilder.addExercise}
+            <motion.button onClick={openAddExercise} style={{ ...styles.addExerciseBtn, ...(isMobile ? { fontSize: '12px', padding: '5px 10px', gap: '4px' } : {}) }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Plus size={isMobile ? 12 : 14} /> {t.programBuilder.addExercise}
             </motion.button>
           </div>
 
           {activeDay.exercises.length > 0 ? (
-            <div style={styles.exerciseList}>
+            <div style={{ ...styles.exerciseList, padding: isMobile ? '0' : '0 20px 16px' }}>
               {activeDay.exercises.map((ex, i) => (
                 <motion.div
                   key={ex.id}
-                  style={styles.exerciseRow}
+                  style={{ ...styles.exerciseRow, padding: isMobile ? '10px 0' : '14px 0' }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                 >
-                  <div style={styles.exerciseMain}>
-                    <span style={styles.orderNum}>{i + 1}</span>
+                  <div style={{ ...styles.exerciseMain, gap: isMobile ? '8px' : '12px' }}>
+                    <span style={{ ...styles.orderNum, ...(isMobile ? { width: '22px', height: '22px', fontSize: '12px', borderRadius: '6px' } : {}) }}>{i + 1}</span>
                     <div style={styles.exerciseInfo}>
-                      <span style={styles.exerciseName}>{ex.name}</span>
+                      <span style={{ ...styles.exerciseName, fontSize: isMobile ? '14px' : '20px' }}>{ex.name}</span>
                       <div style={styles.prescriptionRow}>
-                        <span style={styles.prescriptionChip}>
+                        <span style={{ ...styles.prescriptionChip, fontSize: isMobile ? '12px' : '17px' }}>
                           {ex.sets} × {ex.reps}
                         </span>
                         {ex.rpe !== null && (
                           <span style={{
                             ...styles.prescriptionChip,
+                            fontSize: isMobile ? '12px' : '17px',
                             color: ex.rpe >= 8 ? 'var(--accent-warm)' : 'var(--accent-secondary)',
                           }}>
                             RPE {ex.rpe}
@@ -490,38 +515,38 @@ export default function ProgramBuilderPage({
                       </div>
                       {(ex.tempo || ex.restSeconds) && (
                         <div style={styles.detailRow}>
-                          {ex.tempo && <span style={styles.detailText}>{t.programBuilder.tempo}: {ex.tempo}</span>}
-                          {ex.restSeconds && <span style={styles.detailText}>{t.programBuilder.restSeconds}: {ex.restSeconds}s</span>}
+                          {ex.tempo && <span style={{ ...styles.detailText, fontSize: isMobile ? '11px' : '15px' }}>{t.programBuilder.tempo}: {ex.tempo}</span>}
+                          {ex.restSeconds && <span style={{ ...styles.detailText, fontSize: isMobile ? '11px' : '15px' }}>{t.programBuilder.restSeconds}: {ex.restSeconds}s</span>}
                         </div>
                       )}
                       {ex.notes && (
                         <div style={styles.detailRow}>
-                          <span style={{ ...styles.detailText, fontStyle: 'italic', opacity: 0.7 }}>📝 {ex.notes}</span>
+                          <span style={{ ...styles.detailText, fontSize: isMobile ? '11px' : '15px', fontStyle: 'italic', opacity: 0.7 }}>📝 {ex.notes}</span>
                         </div>
                       )}
                     </div>
                     <div style={styles.exerciseActions}>
                       <button
                         onClick={() => moveExercise(i, 'up')}
-                        style={{ ...styles.actionBtn, opacity: i === 0 ? 0.25 : 1 }}
+                        style={{ ...styles.actionBtn, opacity: i === 0 ? 0.25 : 1, ...(isMobile ? { width: '24px', height: '24px' } : {}) }}
                         disabled={i === 0}
                         title={t.programBuilder.moveUp}
                       >
-                        <ChevronUp size={14} />
+                        <ChevronUp size={isMobile ? 12 : 14} />
                       </button>
                       <button
                         onClick={() => moveExercise(i, 'down')}
-                        style={{ ...styles.actionBtn, opacity: i === activeDay.exercises.length - 1 ? 0.25 : 1 }}
+                        style={{ ...styles.actionBtn, opacity: i === activeDay.exercises.length - 1 ? 0.25 : 1, ...(isMobile ? { width: '24px', height: '24px' } : {}) }}
                         disabled={i === activeDay.exercises.length - 1}
                         title={t.programBuilder.moveDown}
                       >
-                        <ChevronDown size={14} />
+                        <ChevronDown size={isMobile ? 12 : 14} />
                       </button>
-                      <button onClick={() => openEditExercise(i)} style={styles.actionBtn} title={t.programBuilder.editExercise}>
-                        <Edit3 size={14} />
+                      <button onClick={() => openEditExercise(i)} style={{ ...styles.actionBtn, ...(isMobile ? { width: '24px', height: '24px' } : {}) }} title={t.programBuilder.editExercise}>
+                        <Edit3 size={isMobile ? 12 : 14} />
                       </button>
-                      <button onClick={() => removeExercise(i)} style={{ ...styles.actionBtn, color: 'var(--accent-danger)' }} title={t.programBuilder.removeExercise}>
-                        <Trash2 size={14} />
+                      <button onClick={() => removeExercise(i)} style={{ ...styles.actionBtn, color: 'var(--accent-danger)', ...(isMobile ? { width: '24px', height: '24px' } : {}) }} title={t.programBuilder.removeExercise}>
+                        <Trash2 size={isMobile ? 12 : 14} />
                       </button>
                     </div>
                   </div>
@@ -633,12 +658,12 @@ export default function ProgramBuilderPage({
         <button
           onClick={() => setNotesExpanded(prev => !prev)}
           style={{
-            width: '100%', padding: '14px 20px', background: 'none', border: 'none',
+            width: '100%', padding: isMobile ? '10px 14px' : '14px 20px', background: 'none', border: 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             cursor: 'pointer', fontFamily: 'var(--font-display)',
           }}
         >
-          <span style={{ ...styles.label, margin: 0 }}>
+          <span style={{ ...styles.label, margin: 0, fontSize: isMobile ? '13px' : '17px' }}>
             {t.programBuilder.programNotes}
             {draft.notes ? ` (${draft.notes.split('\n').filter(l => l.trim()).length})` : ''}
           </span>
@@ -662,20 +687,21 @@ export default function ProgramBuilderPage({
       </GlassCard>
 
       {/* Bottom Summary Bar */}
-      <GlassCard delay={0.25}>
-        <div style={styles.bottomBar}>
-          <div style={styles.summaryChips}>
-            <span style={styles.summaryChip}><Dumbbell size={13} /> {t.programs.days(draft.days.length)}</span>
-            <span style={styles.summaryChip}>{t.programs.exercises(totalExercises)}</span>
-            <span style={styles.summaryChip}><Clock size={13} /> {t.programs.weeks(draft.durationWeeks)}</span>
+      <GlassCard delay={0.25} style={isMobile ? { padding: '12px 14px' } : undefined}>
+        <div style={{ ...styles.bottomBar, padding: isMobile ? '0' : '14px 20px', gap: isMobile ? '8px' : '12px', flexDirection: isMobile ? 'column' : 'row' }}>
+          <div style={{ ...styles.summaryChips, gap: isMobile ? '8px' : '12px' }}>
+            <span style={{ ...styles.summaryChip, fontSize: isMobile ? '12px' : '17px' }}><Dumbbell size={isMobile ? 11 : 13} /> {t.programs.days(draft.days.length)}</span>
+            <span style={{ ...styles.summaryChip, fontSize: isMobile ? '12px' : '17px' }}>{t.programs.exercises(totalExercises)}</span>
+            <span style={{ ...styles.summaryChip, fontSize: isMobile ? '12px' : '17px' }}><Clock size={isMobile ? 11 : 13} /> {t.programs.weeks(draft.durationWeeks)}</span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={onBack} style={styles.cancelBtnBottom}>{t.programBuilder.cancel}</button>
+          <div style={{ display: 'flex', gap: '6px', ...(isMobile ? { justifyContent: 'center' } : {}) }}>
+            <button onClick={onBack} style={{ ...styles.cancelBtnBottom, ...(isMobile ? { fontSize: '13px', padding: '6px 12px' } : {}) }}>{t.programBuilder.cancel}</button>
             <motion.button
               onClick={handleSave}
               disabled={!hasUnsavedChanges}
               style={{
                 ...styles.saveBtnBottom,
+                ...(isMobile ? { fontSize: '13px', padding: '6px 14px', gap: '4px' } : {}),
                 opacity: hasUnsavedChanges ? 1 : 0.35,
                 cursor: hasUnsavedChanges ? 'pointer' : 'default',
               }}

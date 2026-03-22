@@ -6,6 +6,7 @@ import {
   TrendingUp, TrendingDown, Trash2,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
+import MoneyRain from './MoneyRain';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
@@ -39,6 +40,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
   const [reminderSent, setReminderSent] = useState(false);
   const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; clientName: string; period: string; amount: number } | null>(null);
+  const [moneyRain, setMoneyRain] = useState(false);
 
   // ── Status label helper ──
   const statusLabel = (s: string) => {
@@ -50,15 +52,15 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
 
   // ── Summary stats ──
   const activeClients = clients.filter(c => c.status === 'active');
-  // Use locale-aware month formatting for invoice period matching
+  // Use en-US for period matching (invoices stored with en-US format)
   const formatPeriod = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   const currentPeriod = formatPeriod(new Date());
   const prevDate = new Date();
   prevDate.setMonth(prevDate.getMonth() - 1);
   const previousPeriod = formatPeriod(prevDate);
 
-  const thisMonth = invoices.filter(inv => inv.period === currentPeriod);
-  const lastMonth = invoices.filter(inv => inv.period === previousPeriod);
+  const thisMonth = invoices.filter(inv => inv.period.toLowerCase() === currentPeriod.toLowerCase());
+  const lastMonth = invoices.filter(inv => inv.period.toLowerCase() === previousPeriod.toLowerCase());
 
   const totalRevenue = thisMonth.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
   const lastMonthRevenue = lastMonth.filter(inv => inv.status === 'paid').reduce((s, inv) => s + inv.amount, 0);
@@ -116,6 +118,8 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
     onAddInvoice(inv);
     setCreateModal(false);
     setNewInvoice({ clientId: '', planId: '' });
+    setMoneyRain(false);
+    setTimeout(() => setMoneyRain(true), 50);
   };
 
   const statusColors: Record<string, { color: string; bg: string }> = {
@@ -132,78 +136,76 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
   ];
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Summary Cards */}
-      <div style={{ ...styles.summaryGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
-        <GlassCard delay={0}>
-          <div style={styles.summaryIcon}>
-            <DollarSign size={20} color="var(--accent-success)" />
-          </div>
-          <div style={styles.summaryLabel}>{t.payments.revenueThisMonth}</div>
-          <div style={styles.summaryValue}>{formatCurrency(totalRevenue, lang)}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--accent-success)' }}>
-            {t.payments.invoicesPaid(paidCount)} ({paidCount}/{totalCount})
-          </div>
-          {lastMonthRevenue > 0 && (
-            <div style={{ ...styles.trendLine, color: revenueDelta >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-              {revenueDelta >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-              {revenueDelta >= 0 ? '+' : ''}{revenueDelta}% vs last month
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.05}>
-          <div style={{ ...styles.summaryIcon }}>
-            <Clock size={20} color="var(--accent-warm)" />
-          </div>
-          <div style={styles.summaryLabel}>{t.payments.pending}</div>
-          <div style={styles.summaryValue}>{formatCurrency(pendingAmount, lang)}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--accent-warm)' }}>
-            {t.payments.invoiceCount(thisMonth.filter(i => i.status === 'pending').length)}
-          </div>
-          {lastMonthPending > 0 && pendingAmount !== lastMonthPending && (
-            <div style={{ ...styles.trendLine, color: pendingAmount <= lastMonthPending ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-              {pendingAmount <= lastMonthPending ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-              {pendingAmount < lastMonthPending ? t.payments.lessThanLast : t.payments.moreThanLast}
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.1}>
-          <div style={{ ...styles.summaryIcon }}>
-            <AlertTriangle size={20} color="var(--accent-danger)" />
-          </div>
-          <div style={styles.summaryLabel}>{t.payments.overdue}</div>
-          <div style={styles.summaryValue}>{formatCurrency(overdueAmount, lang)}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--accent-danger)' }}>
-            {t.payments.invoiceCount(thisMonth.filter(i => i.status === 'overdue').length)}
-          </div>
-          {lastMonthOverdue > 0 && overdueAmount !== lastMonthOverdue && (
-            <div style={{ ...styles.trendLine, color: overdueAmount <= lastMonthOverdue ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-              {overdueAmount <= lastMonthOverdue ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-              {overdueAmount < lastMonthOverdue ? t.payments.lessThanLast : t.payments.moreThanLast}
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.15}>
-          <div style={{ ...styles.summaryIcon }}>
-            <CheckCircle2 size={20} color="var(--accent-primary)" />
-          </div>
-          <div style={styles.summaryLabel}>{t.payments.allTimeRevenue}</div>
-          <div style={styles.summaryValue}>{formatCurrency(allTimePaid, lang)}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--text-tertiary)' }}>
-            {activeClients.length} {t.payments.activeClients}
-          </div>
-        </GlassCard>
+      <div style={{ ...styles.summaryGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '16px' }}>
+        {[
+          {
+            icon: DollarSign, iconColor: 'var(--accent-success)', dim: 'var(--accent-success-dim)',
+            label: t.payments.revenueThisMonth, value: formatCurrency(totalRevenue, lang),
+            meta: <span style={{ color: 'var(--accent-success)' }}>{t.payments.invoicesPaid(paidCount)} ({paidCount}/{totalCount})</span>,
+            trend: lastMonthRevenue > 0 ? { positive: revenueDelta >= 0, label: `${revenueDelta >= 0 ? '+' : ''}${revenueDelta}% ${t.payments.vsLastMonth}` } : null,
+          },
+          {
+            icon: Clock, iconColor: 'var(--accent-warm)', dim: 'var(--accent-warm-dim)',
+            label: t.payments.pending, value: formatCurrency(pendingAmount, lang),
+            meta: <span style={{ color: 'var(--accent-warm)' }}>{t.payments.invoiceCount(thisMonth.filter(i => i.status === 'pending').length)}</span>,
+            trend: lastMonthPending > 0 && pendingAmount !== lastMonthPending ? { positive: pendingAmount < lastMonthPending, label: pendingAmount < lastMonthPending ? t.payments.lessThanLast : t.payments.moreThanLast } : null,
+          },
+          {
+            icon: AlertTriangle, iconColor: 'var(--accent-danger)', dim: 'rgba(239,68,68,0.1)',
+            label: t.payments.overdue, value: formatCurrency(overdueAmount, lang),
+            meta: <span style={{ color: 'var(--accent-danger)' }}>{t.payments.invoiceCount(thisMonth.filter(i => i.status === 'overdue').length)}</span>,
+            trend: lastMonthOverdue > 0 && overdueAmount !== lastMonthOverdue ? { positive: overdueAmount < lastMonthOverdue, label: overdueAmount < lastMonthOverdue ? t.payments.lessThanLast : t.payments.moreThanLast } : null,
+          },
+          {
+            icon: CheckCircle2, iconColor: 'var(--accent-primary)', dim: 'var(--accent-primary-dim)',
+            label: t.payments.allTimeRevenue, value: formatCurrency(allTimePaid, lang),
+            meta: <span style={{ color: 'var(--text-tertiary)' }}>{activeClients.length} {t.payments.activeClients}</span>,
+            trend: null,
+          },
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <GlassCard key={i} delay={i * 0.05} style={isMobile ? { padding: '14px 16px' } : undefined}>
+              {isMobile ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: card.dim, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={15} color={card.iconColor} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{card.value}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{card.label}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 500, marginTop: '2px' }}>{card.meta}</div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={styles.summaryIcon}>
+                    <Icon size={20} color={card.iconColor} />
+                  </div>
+                  <div style={styles.summaryLabel}>{card.label}</div>
+                  <div style={styles.summaryValue}>{card.value}</div>
+                  <div style={{ ...styles.summaryMeta }}>{card.meta}</div>
+                  {card.trend && (
+                    <div style={{ ...styles.trendLine, color: card.trend.positive ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                      {card.trend.positive ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                      {card.trend.label}
+                    </div>
+                  )}
+                </>
+              )}
+            </GlassCard>
+          );
+        })}
       </div>
 
       {/* Invoice List */}
-      <GlassCard delay={0.2}>
+      <GlassCard delay={0.2} style={isMobile ? { padding: '16px' } : undefined}>
         {/* Toolbar */}
-        <div style={{ ...styles.toolbar, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : '16px' }}>
+        <div style={{ ...styles.toolbar, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '10px' : '16px' }}>
           <div style={styles.toolbarLeft}>
-            <h3 style={styles.sectionTitle}>{t.payments.invoices}</h3>
+            <h3 style={{ ...styles.sectionTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.payments.invoices}</h3>
             <div style={styles.filterTabs}>
               {filterTabs.map(tab => (
                 <button
@@ -211,33 +213,34 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                   onClick={() => setStatusFilter(tab.key)}
                   style={{
                     ...styles.filterTab,
+                    ...(isMobile ? { fontSize: '12px', padding: '4px 8px' } : {}),
                     ...(statusFilter === tab.key ? styles.filterTabActive : {}),
                   }}
                 >
                   {tab.label}
-                  <span style={styles.filterCount}>{tab.count}</span>
+                  <span style={{ ...styles.filterCount, ...(isMobile ? { fontSize: '10px' } : {}) }}>{tab.count}</span>
                 </button>
               ))}
             </div>
           </div>
 
           <div style={styles.toolbarRight}>
-            <div style={styles.searchBox}>
-              <Search size={14} color="var(--text-tertiary)" />
+            <div style={{ ...styles.searchBox, ...(isMobile ? { padding: '4px 8px' } : {}) }}>
+              <Search size={isMobile ? 12 : 14} color="var(--text-tertiary)" />
               <input
                 type="text"
                 placeholder={t.payments.searchClients}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={styles.searchInput}
+                style={{ ...styles.searchInput, fontSize: isMobile ? '13px' : '18px', width: isMobile ? '100px' : '140px' }}
               />
             </div>
-            <div style={styles.sortWrap}>
-              <Filter size={13} color="var(--text-tertiary)" />
+            <div style={{ ...styles.sortWrap, ...(isMobile ? { padding: '4px 24px 4px 8px' } : {}) }}>
+              <Filter size={isMobile ? 11 : 13} color="var(--text-tertiary)" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
-                style={styles.sortSelect}
+                style={{ ...styles.sortSelect, fontSize: isMobile ? '13px' : '18px' }}
               >
                 <option value="date">{t.payments.sortDate}</option>
                 <option value="amount">{t.payments.sortAmount}</option>
@@ -245,10 +248,12 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
               </select>
               <ChevronDown size={12} color="var(--text-tertiary)" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             </div>
-            <button onClick={() => setCreateModal(true)} style={styles.createBtn}>
-              <DollarSign size={14} />
-              {t.payments.newInvoice}
-            </button>
+            {!isMobile && (
+              <button onClick={() => setCreateModal(true)} style={styles.createBtn}>
+                <DollarSign size={14} />
+                {t.payments.newInvoice}
+              </button>
+            )}
           </div>
         </div>
 
@@ -288,19 +293,19 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                 >
                 {isMobile ? (
                   // Mobile card layout
-                  <div style={styles.mobileCard}>
-                    <div style={styles.mobileCardTop}>
-                      <div style={{ ...styles.avatar, background: getAvatarColor(inv.clientId) }}>
+                  <div style={{ ...styles.mobileCard, gap: '8px' }}>
+                    <div style={{ ...styles.mobileCardTop, gap: '8px' }}>
+                      <div style={{ ...styles.avatar, background: getAvatarColor(inv.clientId), width: '28px', height: '28px', fontSize: '11px' }}>
                         {getInitials(inv.clientName)}
                       </div>
                       <div style={styles.mobileCardInfo}>
-                        <div style={styles.clientNameLink} onClick={(e) => { e.stopPropagation(); onViewClient(inv.clientId); }}>{inv.clientName}</div>
-                        <div style={styles.mobileCardMeta}>{inv.period} &middot; {inv.plan}</div>
+                        <div style={{ ...styles.clientNameLink, fontSize: '14px' }} onClick={(e) => { e.stopPropagation(); onViewClient(inv.clientId); }}>{inv.clientName}</div>
+                        <div style={{ ...styles.mobileCardMeta, fontSize: '11px' }}>{inv.period} &middot; {inv.plan}</div>
                       </div>
-                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <div>
-                          <div style={styles.amount}>{formatCurrency(inv.amount, lang)}</div>
-                          <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
+                          <div style={{ ...styles.amount, fontSize: '15px' }}>{formatCurrency(inv.amount, lang)}</div>
+                          <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg, fontSize: '10px', padding: '2px 7px' }}>
                             {statusLabel(inv.status)}
                           </span>
                         </div>
@@ -309,7 +314,7 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
                           style={styles.deleteBtn}
                           title={t.payments.deleteInvoice ?? 'Delete invoice'}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </div>
@@ -615,6 +620,36 @@ export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice
           </motion.div>
         )}
       </AnimatePresence>
+
+      <MoneyRain active={moneyRain} />
+
+      {/* Mobile FAB */}
+      {isMobile && (
+        <motion.button
+          onClick={() => setCreateModal(true)}
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'var(--accent-primary)',
+            border: 'none',
+            color: 'var(--text-on-accent)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,229,200,0.3)',
+            zIndex: 50,
+          }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <DollarSign size={20} />
+        </motion.button>
+      )}
     </div>
   );
 }

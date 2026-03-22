@@ -876,11 +876,11 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
     }
 
     return (
-      <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={styles.restDayCard}>
-          <div style={styles.restDayEmoji}>&#128564;</div>
-          <h2 style={styles.restDayTitle}>{lang === 'pl' ? 'Dzień Odpoczynku' : 'Rest Day'}</h2>
-          <p style={styles.restDaySub}>{lang === 'pl' ? 'Dziś brak treningu. Odpoczywaj i wracaj silniejszy.' : 'No workout scheduled for today. Recover and come back stronger.'}</p>
+      <div style={{ ...styles.page, padding: isMobile ? '16px 14px' : '24px', gap: isMobile ? '14px' : '20px', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ ...styles.restDayCard, ...(isMobile ? { padding: '30px 20px', gap: '10px' } : {}) }}>
+          <div style={{ ...styles.restDayEmoji, ...(isMobile ? { fontSize: '40px' } : {}) }}>&#128564;</div>
+          <h2 style={{ ...styles.restDayTitle, ...(isMobile ? { fontSize: '20px' } : {}) }}>{lang === 'pl' ? 'Dzień Odpoczynku' : 'Rest Day'}</h2>
+          <p style={{ ...styles.restDaySub, ...(isMobile ? { fontSize: '13px' } : {}) }}>{lang === 'pl' ? 'Dziś brak treningu. Odpoczywaj i wracaj silniejszy.' : 'No workout scheduled for today. Recover and come back stronger.'}</p>
           {nextDayLabel && nextWorkout && (
             <div style={styles.nextWorkout}>
               <span style={styles.nextWorkoutLabel}>{lang === 'pl' ? 'Następny' : 'Next up'}</span>
@@ -900,11 +900,11 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
 
   if (isSessionWorkout) {
     return (
-      <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
+      <div style={{ ...styles.page, padding: isMobile ? '16px 14px' : '24px', gap: isMobile ? '14px' : '20px' }}>
         <div style={styles.header}>
-          <p style={styles.todayLabel}>{lang === 'pl' ? 'Dzisiejszy Trening' : "Today's Workout"}</p>
-          <h2 style={styles.title}>{day.name}</h2>
-          <p style={styles.subtitle}>{lang === 'pl' ? 'Trening sesyjny' : 'Session workout'}</p>
+          <p style={{ ...styles.todayLabel, ...(isMobile ? { fontSize: '11px' } : {}) }}>{lang === 'pl' ? 'Dzisiejszy Trening' : "Today's Workout"}</p>
+          <h2 style={{ ...styles.title, ...(isMobile ? { fontSize: '22px' } : {}) }}>{day.name}</h2>
+          <p style={{ ...styles.subtitle, ...(isMobile ? { fontSize: '12px' } : {}) }}>{lang === 'pl' ? 'Trening sesyjny' : 'Session workout'}</p>
         </div>
 
         <div style={{
@@ -957,12 +957,12 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
   }
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px 14px' : '24px', gap: isMobile ? '14px' : '20px' }}>
       {/* Today's Workout Header */}
       <div style={styles.header}>
-        <p style={styles.todayLabel}>Today's Workout</p>
-        <h2 style={styles.title}>{day.name}</h2>
-        <p style={styles.subtitle}>{day.exercises.length} exercises · {totalSets} sets</p>
+        <p style={{ ...styles.todayLabel, ...(isMobile ? { fontSize: '11px' } : {}) }}>Today's Workout</p>
+        <h2 style={{ ...styles.title, ...(isMobile ? { fontSize: '22px' } : {}) }}>{day.name}</h2>
+        <p style={{ ...styles.subtitle, ...(isMobile ? { fontSize: '12px' } : {}) }}>{day.exercises.length} exercises · {totalSets} sets</p>
       </div>
 
       {/* Exercise list - the main content */}
@@ -974,11 +974,11 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
             <div key={exercise.id} style={{
               borderBottom: i < day.exercises.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
             }}>
-              <div style={styles.exerciseRow}>
-                <span style={styles.exerciseNum}>{i + 1}</span>
+              <div style={{ ...styles.exerciseRow, ...(isMobile ? { padding: '12px 14px', gap: '10px' } : {}) }}>
+                <span style={{ ...styles.exerciseNum, ...(isMobile ? { width: '24px', height: '24px', fontSize: '11px' } : {}) }}>{i + 1}</span>
                 <div style={{ ...styles.exerciseInfo, flex: 1 }}>
-                  <span style={styles.exerciseNameText}>{exercise.name}</span>
-                  <span style={styles.exerciseDetail}>
+                  <span style={{ ...styles.exerciseNameText, ...(isMobile ? { fontSize: '14px' } : {}) }}>{exercise.name}</span>
+                  <span style={{ ...styles.exerciseDetail, ...(isMobile ? { fontSize: '12px' } : {}) }}>
                     {exercise.sets} × {exercise.reps}
                     {exercise.weight ? ` · ${exercise.weight}` : ''}
                   </span>
@@ -989,44 +989,44 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                     style={{
                       background: isInfoOpen ? 'rgba(0,229,200,0.1)' : 'transparent',
                       border: '1px solid ' + (isInfoOpen ? 'rgba(0,229,200,0.3)' : 'rgba(255,255,255,0.08)'),
-                      borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex',
+                      borderRadius: '8px', padding: isMobile ? '5px' : '6px', cursor: 'pointer', display: 'flex',
                       color: isInfoOpen ? 'var(--accent-primary)' : 'var(--text-tertiary)',
                       transition: 'all 0.15s', flexShrink: 0,
                     }}
                   >
-                    <Info size={16} />
+                    <Info size={isMobile ? 14 : 16} />
                   </button>
                 )}
               </div>
               {/* "How to do this" expandable */}
               {isInfoOpen && info && (
                 <div style={{
-                  padding: '0 16px 16px 58px',
+                  padding: isMobile ? '0 14px 12px 48px' : '0 16px 16px 58px',
                   animation: 'fadeIn 0.2s ease',
                 }}>
                   {/* Description */}
-                  <p style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+                  <p style={{ fontSize: isMobile ? 12 : 13, lineHeight: 1.5, color: 'var(--text-secondary)', margin: '0 0 10px' }}>
                     {info.description}
                   </p>
 
                   {/* Instructions */}
                   {info.instructions.length > 0 && (
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5 }}>
                         {t.program.instructions}
                       </div>
-                      <ol style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                      <ol style={{ margin: 0, paddingLeft: isMobile ? 14 : 18, fontSize: isMobile ? 12 : 13, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
                         {info.instructions.map((step, j) => <li key={j}>{step}</li>)}
                       </ol>
                     </div>
                   )}
 
                   {/* Muscles */}
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
                       {t.program.musclesWorked}
                     </div>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    <div style={{ fontSize: isMobile ? 12 : 13, color: 'var(--text-secondary)' }}>
                       <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{info.primaryMuscle}</span>
                       {info.secondaryMuscles.length > 0 && (
                         <span style={{ color: 'var(--text-tertiary)' }}> · {info.secondaryMuscles.join(', ')}</span>
@@ -1037,10 +1037,10 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
                   {/* Tips */}
                   {info.tips.length > 0 && (
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Zap size={11} color="var(--accent-primary)" /> {t.program.tips}
+                      <div style={{ fontSize: isMobile ? 10 : 11, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Zap size={isMobile ? 10 : 11} color="var(--accent-primary)" /> {t.program.tips}
                       </div>
-                      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                      <ul style={{ margin: 0, paddingLeft: isMobile ? 14 : 18, fontSize: isMobile ? 12 : 13, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
                         {info.tips.map((tip, j) => <li key={j}>{tip}</li>)}
                       </ul>
                     </div>
@@ -1054,22 +1054,22 @@ export default function ProgramPage({ program, setLogs, onLogSet, onLogWorkout, 
 
       {/* Start / Resume Workout - clean action button */}
       {isTodaysWorkout && !allDone && (
-        <button style={styles.actionBtn} onClick={startWorkout}>
-          <Play size={20} fill="#07090e" color="#07090e" />
+        <button style={{ ...styles.actionBtn, ...(isMobile ? { padding: '14px 20px', fontSize: '15px', borderRadius: '14px', gap: '8px' } : {}) }} onClick={startWorkout}>
+          <Play size={isMobile ? 18 : 20} fill="#07090e" color="#07090e" />
           <span>{completedSets > 0 ? (lang === 'pl' ? 'Kontynuuj Trening' : 'Continue Workout') : (lang === 'pl' ? 'Rozpocznij Trening' : 'Start Workout')}</span>
           {completedSets > 0 && (
-            <span style={styles.actionBtnBadge}>{completedSets}/{totalSets}</span>
+            <span style={{ ...styles.actionBtnBadge, ...(isMobile ? { fontSize: '11px', padding: '2px 6px' } : {}) }}>{completedSets}/{totalSets}</span>
           )}
         </button>
       )}
 
       {/* Completed state */}
       {allDone && (
-        <div style={styles.completedCard}>
-          <CheckCircle2 size={24} color="var(--accent-success)" />
+        <div style={{ ...styles.completedCard, ...(isMobile ? { padding: '12px', gap: '10px' } : {}) }}>
+          <CheckCircle2 size={isMobile ? 20 : 24} color="var(--accent-success)" />
           <div>
-            <div style={styles.completedTitle}>Workout Complete</div>
-            <div style={styles.completedSub}>{completedSets}/{totalSets} sets done</div>
+            <div style={{ ...styles.completedTitle, ...(isMobile ? { fontSize: '14px' } : {}) }}>Workout Complete</div>
+            <div style={{ ...styles.completedSub, ...(isMobile ? { fontSize: '12px' } : {}) }}>{completedSets}/{totalSets} sets done</div>
           </div>
         </div>
       )}

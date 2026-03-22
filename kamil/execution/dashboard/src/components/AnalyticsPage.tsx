@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
 import {
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
-  CreditCard, Target, Award, Dumbbell, ClipboardCheck, Activity, BarChart3,
+  CreditCard, Target, Award, Dumbbell, ClipboardCheck, Activity, BarChart3, UserPlus,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
@@ -48,14 +48,22 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
 
   // Avg client value from actual paid invoices this month
   const activePayingClients = clients.filter(c => c.status !== 'paused');
-  const avgClientValue = activePayingClients.length > 0
-    ? Math.round(thisMonthRevenue / activePayingClients.length)
+  const clientsWhoPaidThisMonth = new Set(thisMonthInvoices.filter(inv => inv.status === 'paid').map(inv => inv.clientId)).size;
+  const avgClientValue = clientsWhoPaidThisMonth > 0
+    ? Math.round(thisMonthRevenue / clientsWhoPaidThisMonth)
     : 0;
 
-  // ── Retention ──
-  const retentionRate = clients.length > 0
-    ? Math.round((clients.filter(c => c.status === 'active').length / clients.length) * 1000) / 10
-    : 0;
+  // ── Retention (real: how many last month's paying clients also paid this month) ──
+  const lastMonthPayingClientIds = new Set(lastMonthInvoices.filter(inv => inv.status === 'paid').map(inv => inv.clientId));
+  const thisMonthPayingClientIds = new Set(thisMonthInvoices.filter(inv => inv.status === 'paid').map(inv => inv.clientId));
+  const retainedClients = [...lastMonthPayingClientIds].filter(id => thisMonthPayingClientIds.has(id)).length;
+  const retentionRate = lastMonthPayingClientIds.size > 0
+    ? Math.round((retainedClients / lastMonthPayingClientIds.size) * 1000) / 10
+    : clients.filter(c => c.status === 'active').length > 0 ? 100 : 0;
+
+  // ── New clients this month ──
+  const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const newClientsThisMonth = clients.filter(c => new Date(c.startDate) >= currentMonthStart);
 
   // ── Engagement metrics ──
   const now = new Date();
@@ -108,12 +116,6 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     revenue: paidInvoices.filter(inv => inv.plan === plan).reduce((s, inv) => s + inv.amount, 0),
   }));
 
-  // ── Retention chart ──
-  const retentionData = revenueChartData.map((rd) => ({
-    month: rd.month,
-    rate: clients.length > 0 ? Math.round((rd.clients / clients.length) * 1000) / 10 : 100,
-  }));
-
   // Currency helper
   const fmtMoney = (v: number) => lang === 'pl' ? `${v.toLocaleString()} zł` : `$${v.toLocaleString()}`;
 
@@ -160,7 +162,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
       label: t.analytics.avgClientValue,
       value: fmtMoney(avgClientValue),
       change: 0,
-      changeLabel: `${activePayingClients.length} ${t.payments.activeClients}`,
+      changeLabel: `${clientsWhoPaidThisMonth} ${t.payments.activeClients}`,
       positive: true,
       icon: CreditCard,
       color: 'var(--accent-secondary)',
@@ -200,101 +202,232 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   }
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Revenue Stats */}
-      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
+      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '12px' }}>
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           const BadgeIcon = stat.positive ? ArrowUpRight : ArrowDownRight;
           return (
-            <GlassCard key={stat.label} delay={i * 0.05} hover>
-              <div style={styles.statTop}>
-                <div style={{ ...styles.statIcon, background: stat.dim }}>
-                  <Icon size={18} color={stat.color} />
+            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
+              {isMobile ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ ...styles.statIcon, width: '34px', height: '34px', borderRadius: '10px', background: stat.dim, flexShrink: 0 }}>
+                    <Icon size={15} color={stat.color} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {stat.value}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px', lineHeight: 1.2 }}>
+                      {stat.label}
+                    </div>
+                    <span style={{
+                      fontSize: '10px', fontWeight: 600, marginTop: '2px',
+                      color: stat.positive ? 'var(--accent-success)' : 'var(--accent-danger)',
+                      display: 'flex', alignItems: 'center', gap: '1px',
+                    }}>
+                      <BadgeIcon size={9} />
+                      {stat.changeLabel}
+                    </span>
+                  </div>
                 </div>
-                <div style={{
-                  ...styles.changeBadge,
-                  color: stat.positive ? 'var(--accent-success)' : 'var(--accent-danger)',
-                  background: stat.positive ? 'var(--accent-success-dim)' : 'rgba(239,68,68,0.1)',
-                }}>
-                  <BadgeIcon size={12} />
-                  {stat.changeLabel}
-                </div>
-              </div>
-              <div style={styles.statValue}>{stat.value}</div>
-              <div style={styles.statLabel}>{stat.label}</div>
+              ) : (
+                <>
+                  <div style={styles.statTop}>
+                    <div style={{ ...styles.statIcon, background: stat.dim }}>
+                      <Icon size={18} color={stat.color} />
+                    </div>
+                    <div style={{
+                      ...styles.changeBadge,
+                      color: stat.positive ? 'var(--accent-success)' : 'var(--accent-danger)',
+                      background: stat.positive ? 'var(--accent-success-dim)' : 'rgba(239,68,68,0.1)',
+                    }}>
+                      <BadgeIcon size={12} />
+                      {stat.changeLabel}
+                    </div>
+                  </div>
+                  <div style={styles.statValue}>{stat.value}</div>
+                  <div style={styles.statLabel}>{stat.label}</div>
+                </>
+              )}
             </GlassCard>
           );
         })}
       </div>
 
       {/* Engagement Stats Row */}
-      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)' }}>
-        <GlassCard delay={0.15} hover>
-          <div style={styles.engagementCard}>
-            <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.1)' }}>
-              <Dumbbell size={18} color="var(--accent-secondary)" />
+      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '12px' }}>
+        <GlassCard delay={0.15} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
+          {isMobile ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.1)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
+                <Dumbbell size={15} color="var(--accent-secondary)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{completedWorkouts.length}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{t.analytics.workouts30d}</div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: '10px', fontWeight: 500 }}>
+                  <span style={{ color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{t.analytics.pctCompleted(workoutCompletionRate)}</span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>{t.analytics.perWeekPerClient(avgWorkoutsPerWeek)}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <div style={styles.engagementValue}>{completedWorkouts.length}</div>
-              <div style={styles.engagementLabel}>{t.analytics.workouts30d}</div>
+          ) : (
+            <div style={styles.engagementCard}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.1)' }}>
+                <Dumbbell size={18} color="var(--accent-secondary)" />
+              </div>
+              <div>
+                <div style={styles.engagementValue}>{completedWorkouts.length}</div>
+                <div style={styles.engagementLabel}>{t.analytics.workouts30d}</div>
+              </div>
+              <div style={styles.engagementMeta}>
+                <span style={{ color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{t.analytics.pctCompleted(workoutCompletionRate)}</span>
+                <span style={{ color: 'var(--text-tertiary)' }}>{t.analytics.perWeekPerClient(avgWorkoutsPerWeek)}</span>
+              </div>
             </div>
-            <div style={styles.engagementMeta}>
-              <span style={{ color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>
-                {t.analytics.pctCompleted(workoutCompletionRate)}
-              </span>
-              <span style={{ color: 'var(--text-tertiary)' }}>
-                {t.analytics.perWeekPerClient(avgWorkoutsPerWeek)}
-              </span>
-            </div>
-          </div>
+          )}
         </GlassCard>
 
-        <GlassCard delay={0.2} hover>
-          <div style={styles.engagementCard}>
-            <div style={{ ...styles.engagementIcon, background: 'rgba(0,229,200,0.1)' }}>
-              <ClipboardCheck size={18} color="var(--accent-primary)" />
+        <GlassCard delay={0.2} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
+          {isMobile ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(0,229,200,0.1)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
+                <ClipboardCheck size={15} color="var(--accent-primary)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{checkInRate}%</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{t.analytics.checkInRate}</div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: '10px', fontWeight: 500 }}>
+                  <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{completedCheckIns.length} {lang === 'pl' ? 'ukończonych' : 'completed'}</span>
+                  <span style={{ color: 'var(--accent-danger)' }}>{checkIns.filter(ci => ci.status === 'missed').length} {lang === 'pl' ? 'pom.' : 'missed'}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <div style={styles.engagementValue}>{checkInRate}%</div>
-              <div style={styles.engagementLabel}>{t.analytics.checkInRate}</div>
+          ) : (
+            <div style={styles.engagementCard}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(0,229,200,0.1)' }}>
+                <ClipboardCheck size={18} color="var(--accent-primary)" />
+              </div>
+              <div>
+                <div style={styles.engagementValue}>{checkInRate}%</div>
+                <div style={styles.engagementLabel}>{t.analytics.checkInRate}</div>
+              </div>
+              <div style={styles.engagementMeta}>
+                <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{completedCheckIns.length} {lang === 'pl' ? 'ukończonych' : 'completed'}</span>
+                <span style={{ color: 'var(--accent-danger)' }}>{checkIns.filter(ci => ci.status === 'missed').length} {lang === 'pl' ? 'pominiętych' : 'missed'}</span>
+              </div>
             </div>
-            <div style={styles.engagementMeta}>
-              <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>
-                {completedCheckIns.length} {lang === 'pl' ? 'ukończonych' : 'completed'}
-              </span>
-              <span style={{ color: 'var(--accent-danger)' }}>
-                {checkIns.filter(ci => ci.status === 'missed').length} {lang === 'pl' ? 'pominiętych' : 'missed'}
-              </span>
-            </div>
-          </div>
+          )}
         </GlassCard>
 
-        <GlassCard delay={0.25} hover>
-          <div style={styles.engagementCard}>
-            <div style={{ ...styles.engagementIcon, background: 'rgba(34,197,94,0.1)' }}>
-              <Activity size={18} color="var(--accent-success)" />
+        <GlassCard delay={0.25} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
+          {isMobile ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(34,197,94,0.1)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
+                <Activity size={15} color="var(--accent-success)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{fmtMoney(totalCollected)}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{t.payments.allTimeRevenue}</div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: '10px', fontWeight: 500 }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t.payments.invoicesPaid(paidInvoices.length)}</span>
+                  <span style={{ color: 'var(--accent-warm)' }}>{invoices.filter(inv => inv.status === 'overdue').length} {lang === 'pl' ? 'zaległych' : 'overdue'}</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <div style={styles.engagementValue}>{fmtMoney(totalCollected)}</div>
-              <div style={styles.engagementLabel}>{t.payments.allTimeRevenue}</div>
+          ) : (
+            <div style={styles.engagementCard}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(34,197,94,0.1)' }}>
+                <Activity size={18} color="var(--accent-success)" />
+              </div>
+              <div>
+                <div style={styles.engagementValue}>{fmtMoney(totalCollected)}</div>
+                <div style={styles.engagementLabel}>{t.payments.allTimeRevenue}</div>
+              </div>
+              <div style={styles.engagementMeta}>
+                <span style={{ color: 'var(--text-secondary)' }}>{t.payments.invoicesPaid(paidInvoices.length)}</span>
+                <span style={{ color: 'var(--accent-warm)' }}>{invoices.filter(inv => inv.status === 'overdue').length} {lang === 'pl' ? 'zaległych' : 'overdue'}</span>
+              </div>
             </div>
-            <div style={styles.engagementMeta}>
-              <span style={{ color: 'var(--text-secondary)' }}>
-                {t.payments.invoicesPaid(paidInvoices.length)}
-              </span>
-              <span style={{ color: 'var(--accent-warm)' }}>
-                {invoices.filter(inv => inv.status === 'overdue').length} {lang === 'pl' ? 'zaległych' : 'overdue'}
-              </span>
+          )}
+        </GlassCard>
+
+        <GlassCard delay={0.3} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
+          {isMobile ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.15)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
+                <UserPlus size={15} color="#6366f1" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{newClientsThisMonth.length}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{lang === 'pl' ? 'Nowi klienci' : 'New Clients'}</div>
+                <span style={{ fontSize: '10px', fontWeight: 500, color: newClientsThisMonth.length > 0 ? 'var(--accent-success)' : 'var(--text-tertiary)', marginTop: '2px' }}>
+                  {lang === 'pl' ? 'w tym miesiącu' : 'this month'}
+                </span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div style={styles.engagementCard}>
+              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.15)' }}>
+                <UserPlus size={18} color="#6366f1" />
+              </div>
+              <div>
+                <div style={styles.engagementValue}>{newClientsThisMonth.length}</div>
+                <div style={styles.engagementLabel}>{lang === 'pl' ? 'Nowi klienci w tym miesiącu' : 'New Clients This Month'}</div>
+              </div>
+              <div style={styles.engagementMeta}>
+                <span style={{ color: newClientsThisMonth.length > 0 ? 'var(--accent-success)' : 'var(--text-tertiary)' }}>
+                  {lang === 'pl' ? 'w tym miesiącu' : 'this month'}
+                </span>
+              </div>
+            </div>
+          )}
         </GlassCard>
       </div>
 
+      {/* Revenue by Plan */}
+      <GlassCard delay={0.3} style={isMobile ? { padding: '16px' } : undefined}>
+        <h3 style={{ ...styles.chartTitle, fontSize: isMobile ? '15px' : '16px' }}>{t.analytics.revenueByPlan}</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: isMobile ? '12px' : '16px' }}>
+          {(() => {
+            const maxRevenue = Math.max(...planRevenue.map(p => p.revenue), 1);
+            const totalPlanRevenue = planRevenue.reduce((s, p) => s + p.revenue, 0);
+            return planRevenue.map((plan, i) => {
+              const pct = totalPlanRevenue > 0 ? Math.round((plan.revenue / totalPlanRevenue) * 100) : 0;
+              const color = planColors[i % planColors.length];
+              return (
+                <div key={plan.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                      <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{plan.name}</span>
+                      <span style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-tertiary)' }}>{pct}%</span>
+                    </div>
+                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                      {fmtMoney(plan.revenue)}
+                    </span>
+                  </div>
+                  <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <motion.div
+                      style={{ height: '100%', borderRadius: '3px', background: color }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(plan.revenue / maxRevenue) * 100}%` }}
+                      transition={{ delay: 0.5 + i * 0.1, duration: 0.6, ease: 'easeOut' }}
+                    />
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
+      </GlassCard>
+
       {/* Revenue Over Time */}
-      <GlassCard delay={0.3}>
-        <h3 style={styles.chartTitle}>{t.analytics.revenueTrend}</h3>
-        <div style={{ height: isMobile ? 220 : 280, marginTop: '16px' }}>
+      <GlassCard delay={0.35} style={isMobile ? { padding: '16px' } : undefined}>
+        <h3 style={{ ...styles.chartTitle, fontSize: isMobile ? '15px' : '16px' }}>{t.analytics.revenueTrend}</h3>
+        <div style={{ height: isMobile ? 180 : 280, marginTop: isMobile ? '12px' : '16px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={revenueChartData}>
               <defs>
@@ -313,51 +446,11 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
       </GlassCard>
 
       {/* Bottom Row */}
-      <div style={{ ...styles.bottomRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
-        {/* Revenue by Plan */}
-        <GlassCard delay={0.4}>
-          <h3 style={styles.chartTitle}>{t.analytics.revenueByPlan}</h3>
-          <div style={{ height: 220, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={planRevenue} layout="vertical">
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
-                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8b92a5' }} width={100} />
-                <Tooltip contentStyle={tooltipStyle} cursor={false} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
-                <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
-                  {planRevenue.map((_, i) => (
-                    <Cell key={i} fill={planColors[i % planColors.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-
-        {/* Retention */}
-        <GlassCard delay={0.45}>
-          <h3 style={styles.chartTitle}>{t.analytics.retentionOverTime}</h3>
-          <div style={{ height: 220, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={retentionData}>
-                <defs>
-                  <linearGradient id="retentionGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00e5c8" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#00e5c8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e' }} />
-                <YAxis domain={[(min: number) => Math.floor(min - 5), (max: number) => Math.ceil(max + 5)]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`${value}%`, 'Retention']} />
-                <Area type="monotone" dataKey="rate" stroke="#00e5c8" strokeWidth={2} fill="url(#retentionGrad)" dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-
+      <div style={{ ...styles.bottomRow, gridTemplateColumns: '1fr', gap: isMobile ? '14px' : '16px' }}>
         {/* Plan Distribution */}
-        <GlassCard delay={0.5}>
-          <h3 style={styles.chartTitle}>{t.analytics.planDistribution}</h3>
-          <div style={{ height: 220, marginTop: '8px' }}>
+        <GlassCard delay={0.5} style={isMobile ? { padding: '16px' } : undefined}>
+          <h3 style={{ ...styles.chartTitle, fontSize: isMobile ? '15px' : '16px' }}>{t.analytics.planDistribution}</h3>
+          <div style={{ height: isMobile ? 220 : 220, marginTop: '8px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -379,7 +472,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                   verticalAlign="bottom"
                   iconType="circle"
                   iconSize={8}
-                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: '15px', fontFamily: 'Outfit' }}>{value}</span>}
+                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: isMobile ? '11px' : '15px', fontFamily: 'Outfit' }}>{value}</span>}
                 />
                 <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [`${value} clients`, name]} />
               </PieChart>
@@ -389,77 +482,77 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
       </div>
 
       {/* Revenue & Engagement Table */}
-      <GlassCard delay={0.55}>
-        <div style={{ ...styles.tableHeader, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : undefined }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Award size={18} color="var(--accent-warm)" />
-            <h3 style={styles.chartTitle}>{t.analytics.clientEngagement}</h3>
+      <GlassCard delay={0.55} style={isMobile ? { padding: '16px' } : undefined}>
+        <div style={{ ...styles.tableHeader, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '6px' : undefined }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '10px' }}>
+            <Award size={isMobile ? 15 : 18} color="var(--accent-warm)" />
+            <h3 style={{ ...styles.chartTitle, fontSize: isMobile ? '15px' : '16px' }}>{t.analytics.clientEngagement}</h3>
           </div>
-          <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>
+          <span style={{ fontSize: isMobile ? '12px' : '18px', color: 'var(--text-secondary)' }}>
             {activePayingClients.length} {t.payments.activeClients}
           </span>
         </div>
         <div style={{ ...styles.table, overflowX: isMobile ? 'auto' : undefined }}>
-          <div style={{ ...styles.tableRow, minWidth: isMobile ? '700px' : undefined }}>
-            <span style={{ ...styles.tableHead, width: '40px' }}>#</span>
-            <span style={{ ...styles.tableHead, flex: 1 }}>{t.analytics.client}</span>
-            <span style={{ ...styles.tableHead, width: '80px' }}>Plan</span>
-            <span style={{ ...styles.tableHead, width: '100px' }}>{t.analytics.revenueLabel}</span>
-            <span style={{ ...styles.tableHead, width: '90px' }}>{t.analytics.workouts}</span>
-            <span style={{ ...styles.tableHead, width: '90px' }}>{t.analytics.checkInsLabel}</span>
-            <span style={{ ...styles.tableHead, width: '80px' }}>Status</span>
+          <div style={{ ...styles.tableRow, minWidth: isMobile ? '580px' : undefined }}>
+            <span style={{ ...styles.tableHead, width: isMobile ? '28px' : '40px', fontSize: isMobile ? '11px' : '15px' }}>#</span>
+            <span style={{ ...styles.tableHead, flex: 1, fontSize: isMobile ? '11px' : '15px' }}>{t.analytics.client}</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '65px' : '80px', fontSize: isMobile ? '11px' : '15px' }}>Plan</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '80px' : '100px', fontSize: isMobile ? '11px' : '15px' }}>{t.analytics.revenueLabel}</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '11px' : '15px' }}>{t.analytics.workouts}</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '11px' : '15px' }}>{t.analytics.checkInsLabel}</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '60px' : '80px', fontSize: isMobile ? '11px' : '15px' }}>Status</span>
           </div>
           {clientEngagement.map((client, i) => (
             <motion.div
               key={client.id}
-              style={{ ...styles.tableRow, minWidth: isMobile ? '700px' : undefined, cursor: 'pointer' }}
+              style={{ ...styles.tableRow, minWidth: isMobile ? '580px' : undefined, cursor: 'pointer', padding: isMobile ? '8px 10px' : '10px 12px', gap: isMobile ? '8px' : '12px' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 + i * 0.03 }}
               onClick={() => onViewClient(client.id)}
             >
-              <span style={{ ...styles.tableCell, width: '40px', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '28px' : '40px', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', fontSize: isMobile ? '13px' : '18px' }}>
                 {i + 1}
               </span>
-              <span style={{ ...styles.tableCell, flex: 1, fontWeight: 500, gap: '8px' }}>
-                <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
+              <span style={{ ...styles.tableCell, flex: 1, fontWeight: 500, gap: isMobile ? '6px' : '8px' }}>
+                <div style={{ ...styles.avatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '24px', height: '24px', fontSize: '10px' } : {}) }}>
                   {getInitials(client.name)}
                 </div>
-                <span style={styles.clientNameLink}>{client.name}</span>
+                <span style={{ ...styles.clientNameLink, fontSize: isMobile ? '13px' : '18px' }}>{client.name}</span>
               </span>
-              <span style={{ ...styles.tableCell, width: '80px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '65px' : '80px' }}>
                 <span style={{
-                  fontSize: '15px', fontWeight: 600, padding: '2px 8px', borderRadius: '12px',
+                  fontSize: isMobile ? '11px' : '15px', fontWeight: 600, padding: isMobile ? '1px 6px' : '2px 8px', borderRadius: '12px',
                   color: planColors[uniquePlans.indexOf(client.plan) % planColors.length] || 'var(--text-secondary)',
                   background: `${planColors[uniquePlans.indexOf(client.plan) % planColors.length] || '#525a6e'}18`,
                 }}>
                   {client.plan}
                 </span>
               </span>
-              <span style={{ ...styles.tableCell, width: '100px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '80px' : '100px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: isMobile ? '13px' : '18px' }}>
                 {fmtMoney(client.totalPaid)}
               </span>
-              <span style={{ ...styles.tableCell, width: '90px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '13px' : '18px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{client.workoutsCompleted}</span>
-                <span style={{ color: 'var(--text-tertiary)', fontSize: '14px', marginLeft: '2px' }}>/{client.workoutsTotal}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: isMobile ? '11px' : '14px', marginLeft: '2px' }}>/{client.workoutsTotal}</span>
               </span>
-              <span style={{ ...styles.tableCell, width: '90px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '13px' : '18px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: client.checkInsMissed > 0 ? 'var(--text-primary)' : 'var(--accent-success)' }}>
                   {client.checkInsCompleted}
                 </span>
                 {client.checkInsMissed > 0 && (
-                  <span style={{ color: 'var(--accent-danger)', fontSize: '14px', marginLeft: '4px' }}>
+                  <span style={{ color: 'var(--accent-danger)', fontSize: isMobile ? '11px' : '14px', marginLeft: '4px' }}>
                     ({client.checkInsMissed} {lang === 'pl' ? 'pom.' : 'missed'})
                   </span>
                 )}
               </span>
-              <span style={{ ...styles.tableCell, width: '80px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '60px' : '80px' }}>
                 <span style={{
-                  width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block',
+                  width: isMobile ? '6px' : '8px', height: isMobile ? '6px' : '8px', borderRadius: '50%', display: 'inline-block',
                   background: client.status === 'active' ? 'var(--accent-success)' : client.status === 'paused' ? 'var(--accent-warm)' : 'var(--accent-secondary)',
-                  marginRight: '6px',
+                  marginRight: isMobile ? '4px' : '6px',
                 }} />
-                <span style={{ textTransform: 'capitalize', fontSize: '18px' }}>{client.status}</span>
+                <span style={{ textTransform: 'capitalize', fontSize: isMobile ? '12px' : '18px' }}>{client.status}</span>
               </span>
             </motion.div>
           ))}

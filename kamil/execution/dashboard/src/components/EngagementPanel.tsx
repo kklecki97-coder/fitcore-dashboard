@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { MessageSquare, Phone, Settings2, Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare, Phone, Settings2, Sparkles, TrendingUp, TrendingDown, Minus, Lock } from 'lucide-react';
 import GlassCard from './GlassCard';
 import EngagementRing from './EngagementRing';
+import useIsMobile from '../hooks/useIsMobile';
 import { getEngagementColor } from '../utils/engagement';
 import type { EngagementScore } from '../utils/engagement';
 
@@ -19,30 +19,26 @@ interface EngagementPanelProps {
     checkInRate: string;
     messageResponsiveness: string;
     streakLength: string;
-    goalProgress: string;
     trend8Weeks: string;
     aiInsight: string;
     suggestedAction: string;
     last14Days: string;
+    actionLocked?: string;
   };
 }
 
 export default function EngagementPanel({ score, insight, suggestedAction, onAction, t }: EngagementPanelProps) {
   const [hoveredBar, setHoveredBar] = useState<string | null>(null);
-  const color = getEngagementColor(score.total);
+  const [showLockedTooltip, setShowLockedTooltip] = useState(false);
+  const isMobile = useIsMobile();
+  const isActionLocked = score.total > 60;
 
   const breakdownItems = [
-    { key: 'workoutCompletion', label: t.workoutCompletion, value: score.breakdown.workoutCompletion, weight: '35%' },
-    { key: 'checkInRate', label: t.checkInRate, value: score.breakdown.checkInRate, weight: '20%' },
-    { key: 'messageResponsiveness', label: t.messageResponsiveness, value: score.breakdown.messageResponsiveness, weight: '15%' },
-    { key: 'streakLength', label: t.streakLength, value: score.breakdown.streakLength, weight: '15%' },
-    { key: 'goalProgress', label: t.goalProgress, value: score.breakdown.goalProgress, weight: '15%' },
+    { key: 'workoutCompletion', label: t.workoutCompletion, value: score.breakdown.workoutCompletion, weight: '45%' },
+    { key: 'checkInRate', label: t.checkInRate, value: score.breakdown.checkInRate, weight: '25%' },
+    { key: 'streakLength', label: t.streakLength, value: score.breakdown.streakLength, weight: '20%' },
+    { key: 'messageResponsiveness', label: t.messageResponsiveness, value: score.breakdown.messageResponsiveness, weight: '10%' },
   ];
-
-  const chartData = score.history.map((val, i) => ({
-    week: `W${i + 1}`,
-    score: val,
-  }));
 
   const trendIcon = score.trend === 'up'
     ? <TrendingUp size={14} color="#22c55e" />
@@ -63,111 +59,96 @@ export default function EngagementPanel({ score, insight, suggestedAction, onAct
           <h3 style={styles.title}>{t.title}</h3>
           <p style={styles.subtitle}>{t.subtitle}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {trendIcon}
-        </div>
+        {trendIcon}
       </div>
 
-      <div style={styles.content}>
-        {/* Left: Big ring + breakdown */}
-        <div style={styles.left}>
-          <EngagementRing score={score.total} trend={score.trend} size={100} strokeWidth={6} delay={0.2} />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isMobile ? '16px' : '20px' }}>
+        {/* Ring */}
+        <EngagementRing score={score.total} trend={score.trend} size={isMobile ? 80 : 100} strokeWidth={isMobile ? 5 : 6} delay={0.2} />
 
-          <div style={styles.breakdownList}>
-            {breakdownItems.map((item) => (
-              <div
-                key={item.key}
-                style={styles.breakdownItem}
-                onMouseEnter={() => setHoveredBar(item.key)}
-                onMouseLeave={() => setHoveredBar(null)}
-              >
-                <div style={styles.breakdownHeader}>
-                  <span style={styles.breakdownLabel}>{item.label}</span>
-                  <span style={{
-                    ...styles.breakdownValue,
-                    color: getEngagementColor(item.value),
-                  }}>
-                    {item.value}
-                    <span style={styles.breakdownWeight}>{item.weight}</span>
-                  </span>
-                </div>
-                <div style={styles.breakdownBar}>
-                  <motion.div
-                    style={{
-                      ...styles.breakdownFill,
-                      background: getEngagementColor(item.value),
-                      opacity: hoveredBar === item.key ? 1 : 0.7,
-                    }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${item.value}%` }}
-                    transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
-                  />
-                </div>
+        {/* Breakdown */}
+        <div style={{ ...styles.breakdownList, maxWidth: '400px' }}>
+          {breakdownItems.map((item) => (
+            <div
+              key={item.key}
+              style={styles.breakdownItem}
+              onMouseEnter={() => setHoveredBar(item.key)}
+              onMouseLeave={() => setHoveredBar(null)}
+            >
+              <div style={styles.breakdownHeader}>
+                <span style={{ ...styles.breakdownLabel, fontSize: isMobile ? '11px' : '12px' }}>{item.label}</span>
+                <span style={{ ...styles.breakdownValue, color: getEngagementColor(item.value), fontSize: isMobile ? '12px' : '13px' }}>
+                  {item.value}
+                  <span style={styles.breakdownWeight}>{item.weight}</span>
+                </span>
               </div>
-            ))}
+              <div style={styles.breakdownBar}>
+                <motion.div
+                  style={{
+                    ...styles.breakdownFill,
+                    background: getEngagementColor(item.value),
+                    opacity: hoveredBar === item.key ? 1 : 0.7,
+                  }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${item.value}%` }}
+                  transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* AI Insight */}
+        <div style={{ ...styles.insightBox, width: '100%', maxWidth: '400px' }}>
+          <Sparkles size={isMobile ? 12 : 14} color="var(--accent-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <div>
+            <div style={styles.insightLabel}>{t.aiInsight}</div>
+            <div style={{ ...styles.insightText, fontSize: isMobile ? '12px' : '13px' }}>{insight}</div>
           </div>
         </div>
 
-        {/* Right: Chart + Insight + Action */}
-        <div style={styles.right}>
-          <div style={styles.chartSection}>
-            <div style={styles.chartLabel}>{t.trend8Weeks}</div>
-            <div style={{ width: '100%', height: 120 }}>
-              <ResponsiveContainer>
-                <LineChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                  <XAxis
-                    dataKey="week"
-                    tick={{ fill: 'var(--text-tertiary)', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tick={{ fill: 'var(--text-tertiary)', fontSize: 10 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      color: 'var(--text-primary)',
-                    }}
-                    formatter={(value) => [`${value}`, 'Score']}
-                  />
-                  <ReferenceLine y={50} stroke="var(--glass-border)" strokeDasharray="3 3" />
-                  <Line
-                    type="monotone"
-                    dataKey="score"
-                    stroke={color}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: color, stroke: color }}
-                    activeDot={{ r: 5, fill: color, stroke: 'var(--bg-card)', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* AI Insight */}
-          <div style={styles.insightBox}>
-            <Sparkles size={14} color="var(--accent-primary)" style={{ flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <div style={styles.insightLabel}>{t.aiInsight}</div>
-              <div style={styles.insightText}>{insight}</div>
-            </div>
-          </div>
-
-          {/* Suggested Action */}
+        {/* Suggested Action — locked above 75 */}
+        <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
           <button
-            style={styles.actionBtn}
-            onClick={() => onAction?.(suggestedAction.type)}
+            style={{
+              ...styles.actionBtn,
+              ...(isActionLocked ? {
+                background: 'var(--bg-subtle-hover)',
+                color: 'var(--text-tertiary)',
+                cursor: 'default',
+              } : {}),
+              fontSize: isMobile ? '12px' : '13px',
+              padding: isMobile ? '8px 14px' : '10px 18px',
+            }}
+            onClick={() => {
+              if (isActionLocked) {
+                setShowLockedTooltip(true);
+                setTimeout(() => setShowLockedTooltip(false), 2500);
+              } else {
+                onAction?.(suggestedAction.type);
+              }
+            }}
           >
-            {actionIcon}
+            {isActionLocked ? <Lock size={isMobile ? 12 : 14} /> : actionIcon}
             {suggestedAction.label}
           </button>
+          <AnimatePresence>
+            {showLockedTooltip && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{
+                  overflow: 'hidden',
+                  fontSize: '11px',
+                  color: 'var(--text-tertiary)',
+                  textAlign: 'center',
+                }}
+              >
+                {t.actionLocked || 'Available when engagement drops below 75%'}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </GlassCard>
@@ -192,26 +173,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     color: 'var(--text-tertiary)',
     margin: '2px 0 0',
-  },
-  content: {
-    display: 'flex',
-    gap: '28px',
-    flexWrap: 'wrap' as const,
-  },
-  left: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    gap: '18px',
-    minWidth: '200px',
-    flex: '0 0 auto',
-  },
-  right: {
-    flex: 1,
-    minWidth: '280px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '16px',
   },
   breakdownList: {
     width: '100%',
@@ -256,21 +217,6 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     borderRadius: '2px',
     transition: 'opacity 0.15s',
-  },
-  chartSection: {
-    padding: '12px',
-    borderRadius: 'var(--radius-md)',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid var(--glass-border)',
-  },
-  chartLabel: {
-    fontSize: '11px',
-    fontWeight: 600,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-    marginBottom: '8px',
-    fontFamily: 'var(--font-display)',
   },
   insightBox: {
     display: 'flex',

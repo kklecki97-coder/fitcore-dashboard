@@ -255,17 +255,17 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
   };
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Top Bar */}
-      <div style={{ ...styles.topBar, flexWrap: isMobile ? 'wrap' : undefined }}>
-        <div style={{ ...styles.searchBox, maxWidth: isMobile ? '100%' : '360px', order: isMobile ? -1 : undefined }}>
-          <Search size={16} color="var(--text-tertiary)" />
+      <div style={{ ...styles.topBar, flexWrap: isMobile ? 'wrap' : undefined, gap: isMobile ? '8px' : '12px' }}>
+        <div style={{ ...styles.searchBox, maxWidth: isMobile ? '100%' : '360px', order: isMobile ? -1 : undefined, ...(isMobile ? { padding: '8px 12px', gap: '8px' } : {}) }}>
+          <Search size={isMobile ? 14 : 16} color="var(--text-tertiary)" />
           <input
             type="text"
             placeholder={t.clients.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={styles.searchInput}
+            style={{ ...styles.searchInput, ...(isMobile ? { fontSize: '13px' } : {}) }}
           />
         </div>
 
@@ -277,12 +277,12 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
             WebkitOverflowScrolling: 'touch',
           } : {}),
         }}>
-          <div style={{ ...styles.filterGroup, flexShrink: 0 }}>
-            <Filter size={14} color="var(--text-tertiary)" />
+          <div style={{ ...styles.filterGroup, flexShrink: 0, ...(isMobile ? { padding: '6px 8px', gap: '4px' } : {}) }}>
+            <Filter size={isMobile ? 12 : 14} color="var(--text-tertiary)" />
             <select
               value={filterPlan}
               onChange={(e) => setFilterPlan(e.target.value)}
-              style={styles.select}
+              style={{ ...styles.select, ...(isMobile ? { fontSize: '12px' } : {}) }}
             >
               <option value="all">{t.clients.allPlans}</option>
               <option value="Elite">{t.clients.elite}</option>
@@ -290,23 +290,23 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               <option value="Basic">{t.clients.basic}</option>
             </select>
           </div>
-          <div style={{ ...styles.filterGroup, flexShrink: 0 }}>
+          <div style={{ ...styles.filterGroup, flexShrink: 0, ...(isMobile ? { padding: '6px 8px', gap: '4px' } : {}) }}>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={styles.select}
+              style={{ ...styles.select, ...(isMobile ? { fontSize: '12px' } : {}) }}
             >
               <option value="all">{t.clients.allStatuses}</option>
               <option value="active">{t.clients.active}</option>
               <option value="paused">{t.clients.paused}</option>
             </select>
           </div>
-          <div style={{ ...styles.filterGroup, flexShrink: 0 }}>
-            <ArrowUpDown size={14} color="var(--text-tertiary)" />
+          <div style={{ ...styles.filterGroup, flexShrink: 0, ...(isMobile ? { padding: '6px 8px', gap: '4px' } : {}) }}>
+            <ArrowUpDown size={isMobile ? 12 : 14} color="var(--text-tertiary)" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              style={styles.select}
+              style={{ ...styles.select, ...(isMobile ? { fontSize: '12px' } : {}) }}
             >
               <option value="status">{t.clients.sortStatus}</option>
               <option value="name">{t.clients.sortName}</option>
@@ -320,6 +320,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
             style={{
               ...styles.atRiskBtn,
               flexShrink: 0,
+              ...(isMobile ? { fontSize: '12px', padding: '6px 8px' } : {}),
               ...(filterEngagement === 'at-risk' ? {
                 background: 'rgba(239, 68, 68, 0.12)',
                 borderColor: 'rgba(239, 68, 68, 0.4)',
@@ -332,25 +333,25 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
           </button>
         </div>
 
-        <button onClick={() => setShowInviteModal(true)} style={{ ...styles.addBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
-          <Plus size={16} />
+        <button onClick={() => setShowInviteModal(true)} style={{ ...styles.addBtn, ...(isMobile ? { flex: 1, justifyContent: 'center', fontSize: '13px', padding: '8px 14px', gap: '4px' } : {}) }}>
+          <Plus size={isMobile ? 14 : 16} />
           {t.clients.addClient}
         </button>
       </div>
 
       {/* Stats */}
-      <div style={{ ...styles.miniStats, gap: isMobile ? '12px' : '24px', flexWrap: isMobile ? 'wrap' : undefined }}>
-        <div style={styles.miniStat}>
+      <div style={{ ...styles.miniStats, gap: isMobile ? '10px' : '24px', flexWrap: isMobile ? 'wrap' : undefined }}>
+        <div style={{ ...styles.miniStat, ...(isMobile ? { fontSize: '12px' } : {}) }}>
           <span style={{ color: 'var(--accent-success)' }}>
             {allClients.filter(c => c.status === 'active').length}
           </span> {t.clients.active}
         </div>
-        <div style={styles.miniStat}>
+        <div style={{ ...styles.miniStat, ...(isMobile ? { fontSize: '12px' } : {}) }}>
           <span style={{ color: 'var(--accent-warm)' }}>
             {allClients.filter(c => c.status === 'paused').length}
           </span> {t.clients.paused}
         </div>
-        <div style={styles.miniStat}>
+        <div style={{ ...styles.miniStat, ...(isMobile ? { fontSize: '12px' } : {}) }}>
           <span style={{ color: 'var(--text-primary)' }}>
             {allClients.length}
           </span> {t.clients.total}
@@ -380,11 +381,12 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               delay={i * 0.04}
               hover
               onClick={() => onViewClient(client.id)}
+              style={isMobile ? { padding: '14px 16px' } : undefined}
             >
-              <div style={styles.cardTop}>
-                <div style={styles.clientInfo}>
+              <div style={{ ...styles.cardTop, ...(isMobile ? { marginBottom: '12px' } : {}) }}>
+                <div style={{ ...styles.clientInfo, ...(isMobile ? { gap: '8px' } : {}) }}>
                   <div className="avatar-tooltip-wrap" style={styles.avatarWrap}>
-                    <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
+                    <div style={{ ...styles.avatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '30px', height: '30px', fontSize: '12px', borderRadius: '8px' } : {}) }}>
                       {getInitials(client.name)}
                     </div>
                     {(() => {
@@ -409,8 +411,8 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                     })()}
                   </div>
                   <div>
-                    <div style={styles.clientName}>{client.name}</div>
-                    <div style={styles.clientEmail}>{client.email}</div>
+                    <div style={{ ...styles.clientName, ...(isMobile ? { fontSize: '14px' } : {}) }}>{client.name}</div>
+                    <div style={{ ...styles.clientEmail, ...(isMobile ? { fontSize: '11px' } : {}) }}>{client.email}</div>
                   </div>
                 </div>
                 <div style={{ position: 'relative' }}>
@@ -421,7 +423,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                     }}
                     style={styles.moreBtn}
                   >
-                    <MoreHorizontal size={16} color="var(--text-tertiary)" />
+                    <MoreHorizontal size={isMobile ? 14 : 16} color="var(--text-tertiary)" />
                   </button>
                   {openMenuId === client.id && (
                       <div className="dropdown-menu" style={styles.dropdownMenu}>
@@ -474,17 +476,17 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                 </div>
               </div>
 
-              <div style={styles.cardMeta}>
-                <span style={{ ...styles.planBadge, color: badge.color, background: badge.bg }}>
+              <div style={{ ...styles.cardMeta, ...(isMobile ? { marginBottom: '10px', gap: '6px' } : {}) }}>
+                <span style={{ ...styles.planBadge, color: badge.color, background: badge.bg, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}) }}>
                   {planLabel(client.plan)}
                 </span>
-                <span style={styles.statusBadge}>
+                <span style={{ ...styles.statusBadge, ...(isMobile ? { fontSize: '11px' } : {}) }}>
                   {statusIcon(client.status)}
                   <span style={{ textTransform: 'capitalize' }}>{statusLabel(client.status)}</span>
                 </span>
                 {programs.filter(p => p.clientIds.includes(client.id)).map(p => (
-                  <span key={p.id} style={styles.programBadge}>
-                    <Dumbbell size={10} />
+                  <span key={p.id} style={{ ...styles.programBadge, ...(isMobile ? { fontSize: '10px' } : {}) }}>
+                    <Dumbbell size={isMobile ? 8 : 10} />
                     {p.name}
                   </span>
                 ))}
@@ -495,12 +497,12 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                   <ScoreRing
                     score={engagementMap[client.id]?.total ?? 0}
                     trend={engagementMap[client.id]?.trend}
-                    size={44}
-                    strokeWidth={3.5}
+                    size={isMobile ? 36 : 44}
+                    strokeWidth={isMobile ? 3 : 3.5}
                     showTrend={false}
                   />
                   <span style={{
-                    fontSize: '9px',
+                    fontSize: isMobile ? '8px' : '9px',
                     fontWeight: 600,
                     color: getScoreColor(engagementMap[client.id]?.total ?? 0),
                     textTransform: 'uppercase',
@@ -520,16 +522,16 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                 </div>
                 <div style={styles.cardStats}>
                   <div style={styles.cardStatItem}>
-                    <div style={styles.cardStatLabel}>{t.clients.progress}</div>
-                    <div style={styles.cardStatValue}>{client.progress}%</div>
+                    <div style={{ ...styles.cardStatLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.clients.progress}</div>
+                    <div style={{ ...styles.cardStatValue, ...(isMobile ? { fontSize: '13px' } : {}) }}>{client.progress}%</div>
                   </div>
                   <div style={styles.cardStatItem}>
-                    <div style={styles.cardStatLabel}>{t.clients.rate}</div>
-                    <div style={styles.cardStatValue}>{formatCurrency(client.monthlyRate, lang)}</div>
+                    <div style={{ ...styles.cardStatLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.clients.rate}</div>
+                    <div style={{ ...styles.cardStatValue, ...(isMobile ? { fontSize: '13px' } : {}) }}>{formatCurrency(client.monthlyRate, lang)}</div>
                   </div>
                   <div style={styles.cardStatItem}>
-                    <div style={styles.cardStatLabel}>{t.clients.streak}</div>
-                    <div style={styles.cardStatValue}>
+                    <div style={{ ...styles.cardStatLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.clients.streak}</div>
+                    <div style={{ ...styles.cardStatValue, ...(isMobile ? { fontSize: '13px' } : {}) }}>
                       {client.streak > 0 ? `${client.streak}d` : '\u2014'}
                     </div>
                   </div>
@@ -551,8 +553,8 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               </div>
 
               <div style={styles.cardFooter}>
-                <span style={styles.footerText}>{lang === 'pl' ? 'Następny raport' : 'Next check-in'}: {client.nextCheckIn}</span>
-                <span style={styles.footerText}>{client.lastActive}</span>
+                <span style={{ ...styles.footerText, ...(isMobile ? { fontSize: '11px' } : {}) }}>{lang === 'pl' ? 'Następny raport' : 'Next check-in'}: {client.nextCheckIn}</span>
+                <span style={{ ...styles.footerText, ...(isMobile ? { fontSize: '11px' } : {}) }}>{client.lastActive}</span>
               </div>
             </GlassCard>
           );

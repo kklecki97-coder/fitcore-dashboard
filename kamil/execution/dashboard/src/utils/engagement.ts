@@ -3,11 +3,11 @@ import type { Client, CheckIn, Message, WorkoutLog } from '../types';
 export interface EngagementScore {
   total: number; // 0-100
   breakdown: {
-    workoutCompletion: number; // 0-100 (weight: 35%)
-    checkInRate: number;       // 0-100 (weight: 20%)
-    messageResponsiveness: number; // 0-100 (weight: 15%)
-    streakLength: number;      // 0-100 (weight: 15%)
-    goalProgress: number;      // 0-100 (weight: 15%)
+    workoutCompletion: number; // 0-100 (weight: 45%)
+    checkInRate: number;       // 0-100 (weight: 25%)
+    streakLength: number;      // 0-100 (weight: 20%)
+    messageResponsiveness: number; // 0-100 (weight: 10%)
+    goalProgress?: number;     // removed — kept optional for backwards compat
   };
   trend: 'up' | 'stable' | 'down';
   history: number[]; // last 8 weeks of scores
@@ -51,41 +51,44 @@ export function calculateEngagement(
   const clientCheckIns = checkIns.filter(ci => ci.clientId === client.id);
   const clientMessages = messages.filter(m => m.clientId === client.id);
 
-  // ── 1. Workout completion rate (last 14 days) ── 35%
+  // ── New client = 100 (no data yet, full trust) ──
+  const hasAnyData = clientLogs.length > 0 || clientCheckIns.length > 0 || clientMessages.length > 0;
+  if (!hasAnyData) {
+    return {
+      total: 100,
+      breakdown: { workoutCompletion: 100, checkInRate: 100, streakLength: 100, messageResponsiveness: 100 },
+      trend: 'stable' as const,
+      history: [100, 100, 100, 100, 100, 100, 100, 100],
+    };
+  }
+
   const now = Date.now();
+
+  // ── 1. Workout completion rate (last 14 days) ── 35%
   const fourteenDaysAgo = now - 14 * 24 * 60 * 60 * 1000;
   const recentLogs = clientLogs.filter(w => new Date(w.date).getTime() >= fourteenDaysAgo);
   const completedLogs = recentLogs.filter(w => w.completed);
-  let workoutCompletion: number;
-  if (recentLogs.length > 0) {
-    workoutCompletion = Math.min(100, Math.round((completedLogs.length / Math.max(recentLogs.length, 1)) * 100));
-  } else {
-    // Derive from client data: streak + progress as proxy
-    workoutCompletion = Math.min(100, Math.round(client.progress * 0.7 + Math.min(client.streak, 14) * 2));
-  }
+  const workoutCompletion = recentLogs.length > 0
+    ? Math.min(100, Math.round((completedLogs.length / recentLogs.length) * 100))
+    : 100; // no scheduled workouts recently = assume OK
 
   // ── 2. Check-in submission rate ── 20%
   const completedCheckIns = clientCheckIns.filter(ci => ci.status === 'completed');
-  const totalScheduled = clientCheckIns.filter(ci => ci.status !== 'missed').length || 1;
-  let checkInRate: number;
-  if (clientCheckIns.length > 0) {
-    checkInRate = Math.min(100, Math.round((completedCheckIns.length / totalScheduled) * 100));
-  } else {
-    // Derive from streak / nextCheckIn
-    const hasUpcoming = client.nextCheckIn !== '-';
-    checkInRate = hasUpcoming ? Math.min(100, 50 + client.streak * 3) : 20;
-  }
+  const missedCheckIns = clientCheckIns.filter(ci => ci.status === 'missed');
+  const totalRelevant = completedCheckIns.length + missedCheckIns.length;
+  const checkInRate = totalRelevant > 0
+    ? Math.min(100, Math.round((completedCheckIns.length / totalRelevant) * 100))
+    : 100; // no check-ins scheduled yet = assume OK
 
   // ── 3. Message responsiveness (replies within 24h) ── 15%
-  let messageResponsiveness: number;
-  if (clientMessages.length >= 2) {
-    // Check for client replies (not from coach) within 24h of coach messages
-    const coachMessages = clientMessages.filter(m => m.isFromCoach).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  let messageResponsiveness = 100;
+  const coachMessages = clientMessages.filter(m => m.isFromCoach).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+  if (coachMessages.length > 0) {
     const clientReplies = clientMessages.filter(m => !m.isFromCoach);
     let responded = 0;
-    let total = 0;
+    let totalAsks = 0;
     for (const cm of coachMessages) {
-      total++;
+      totalAsks++;
       const cmTime = new Date(cm.timestamp).getTime();
       const reply = clientReplies.find(r => {
         const rTime = new Date(r.timestamp).getTime();
@@ -93,35 +96,30 @@ export function calculateEngagement(
       });
       if (reply) responded++;
     }
-    messageResponsiveness = total > 0 ? Math.round((responded / total) * 100) : 70;
-  } else {
-    // Derive from lastActive
-    const lastActiveStr = client.lastActive.toLowerCase();
-    if (lastActiveStr.includes('min') || lastActiveStr.includes('hour')) {
-      messageResponsiveness = 90;
-    } else if (lastActiveStr.includes('1 day') || lastActiveStr.includes('yesterday')) {
-      messageResponsiveness = 70;
-    } else if (lastActiveStr.includes('day')) {
-      messageResponsiveness = 50;
-    } else {
-      messageResponsiveness = 25;
-    }
+    messageResponsiveness = totalAsks > 0 ? Math.round((responded / totalAsks) * 100) : 100;
   }
 
-  // ── 4. Streak length ── 15%
-  // Map streak days to a 0-100 score (21+ days = 100)
-  const streakLength = Math.min(100, Math.round((client.streak / 21) * 100));
+  // ── 4. Streak length (consecutive completed workout days) ── 15%
+  // Count how many of the most recent scheduled workouts were completed in a row
+  // Rest days don't count — only workout days (entries in workoutLogs)
+  let realStreak = 0;
+  const sortedWorkouts = [...clientLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  for (const w of sortedWorkouts) {
+    if (w.completed) {
+      realStreak++;
+    } else {
+      break; // first missed workout breaks the streak
+    }
+  }
+  // Map streak: 21+ consecutive workout days = 100
+  const streakLength = Math.min(100, Math.round((realStreak / 21) * 100));
 
-  // ── 5. Progress toward goals ── 15%
-  const goalProgress = Math.min(100, client.progress);
-
-  // ── Weighted total ──
+  // ── Weighted total (4 metrics) ──
   const total = Math.round(
-    workoutCompletion * 0.35 +
-    checkInRate * 0.20 +
-    messageResponsiveness * 0.15 +
-    streakLength * 0.15 +
-    goalProgress * 0.15
+    workoutCompletion * 0.45 +
+    checkInRate * 0.25 +
+    streakLength * 0.20 +
+    messageResponsiveness * 0.10
   );
 
   // ── Generate 8-week history (deterministic from client data) ──
@@ -140,9 +138,8 @@ export function calculateEngagement(
     breakdown: {
       workoutCompletion,
       checkInRate,
-      messageResponsiveness,
       streakLength,
-      goalProgress,
+      messageResponsiveness,
     },
     trend,
     history,
@@ -201,9 +198,8 @@ function generateInsightEN(
   const areas = [
     { key: 'workouts', score: breakdown.workoutCompletion },
     { key: 'check-ins', score: breakdown.checkInRate },
-    { key: 'messages', score: breakdown.messageResponsiveness },
     { key: 'streak', score: breakdown.streakLength },
-    { key: 'goals', score: breakdown.goalProgress },
+    { key: 'messages', score: breakdown.messageResponsiveness },
   ];
   const weakest = areas.reduce((a, b) => a.score < b.score ? a : b);
   const strongest = areas.reduce((a, b) => a.score > b.score ? a : b);
@@ -256,9 +252,8 @@ function generateInsightPL(
   const areas = [
     { key: 'workouts', score: breakdown.workoutCompletion },
     { key: 'check-ins', score: breakdown.checkInRate },
-    { key: 'messages', score: breakdown.messageResponsiveness },
     { key: 'streak', score: breakdown.streakLength },
-    { key: 'goals', score: breakdown.goalProgress },
+    { key: 'messages', score: breakdown.messageResponsiveness },
   ];
   const weakest = areas.reduce((a, b) => a.score < b.score ? a : b);
   const strongest = areas.reduce((a, b) => a.score > b.score ? a : b);

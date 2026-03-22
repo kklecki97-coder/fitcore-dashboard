@@ -216,16 +216,16 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
   };
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '20px 16px 100px' : '24px 24px 80px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px 14px 100px' : '24px 24px 80px', gap: isMobile ? '14px' : undefined }}>
 
       {/* Share Progress Button */}
       <button
         onClick={() => setShowShareCard(true)}
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          width: '100%', padding: '12px', borderRadius: '10px',
+          width: '100%', padding: isMobile ? '10px' : '12px', borderRadius: '10px',
           background: 'rgba(0,229,200,0.06)', border: '1px solid rgba(0,229,200,0.2)',
-          color: 'var(--accent-primary)', fontSize: '14px', fontWeight: 600,
+          color: 'var(--accent-primary)', fontSize: isMobile ? '13px' : '14px', fontWeight: 600,
           fontFamily: 'var(--font-display)', cursor: 'pointer',
           transition: 'all 0.15s', marginBottom: '4px',
         }}
@@ -253,22 +253,22 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
       )}
 
       {/* ── 1. STRENGTH ── */}
-      <div style={styles.strengthSection}>
-        <div style={styles.strengthLabel}>{t.progress.strength}</div>
-        <div style={{ ...styles.liftRow, gridTemplateColumns: `repeat(${allLifts.length}, 1fr)` }}>
+      <div style={{ ...styles.strengthSection, gap: isMobile ? '8px' : undefined }}>
+        <div style={{ ...styles.strengthLabel, fontSize: isMobile ? '15px' : undefined }}>{t.progress.strength}</div>
+        <div style={{ ...styles.liftRow, gridTemplateColumns: `repeat(${allLifts.length}, 1fr)`, gap: isMobile ? '8px' : undefined }}>
           {allLifts.map((lift, i) => {
             const current = lift.values.length > 0 ? lift.values[lift.values.length - 1] : null;
             const startVal = lift.values.length > 0 ? lift.values[0] : null;
             const totalGain = current !== null && startVal !== null ? current - startVal : 0;
             return (
-              <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={styles.liftCard}>
-                <div style={styles.liftName}>{lift.name}</div>
-                <div style={styles.liftValue}>
-                  {current !== null ? <AnimatedNumber value={current} duration={1200} /> : '-'}<span style={styles.liftUnit}>{lift.unit}</span>
+              <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={{ ...styles.liftCard, padding: isMobile ? '10px 6px' : undefined }}>
+                <div style={{ ...styles.liftName, fontSize: isMobile ? '9px' : undefined, marginBottom: isMobile ? '3px' : undefined }}>{lift.name}</div>
+                <div style={{ ...styles.liftValue, fontSize: isMobile ? '18px' : undefined }}>
+                  {current !== null ? <AnimatedNumber value={current} duration={1200} /> : '-'}<span style={{ ...styles.liftUnit, fontSize: isMobile ? '10px' : undefined }}>{lift.unit}</span>
                 </div>
                 {totalGain > 0 && (
-                  <div style={styles.liftGain}>
-                    <TrendingUp size={11} />
+                  <div style={{ ...styles.liftGain, fontSize: isMobile ? '10px' : undefined, marginTop: isMobile ? '3px' : undefined }}>
+                    <TrendingUp size={isMobile ? 9 : 11} />
                     +{totalGain}{lift.unit}
                   </div>
                 )}
@@ -278,35 +278,35 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
         </div>
       </div>
 
-      {/* ── 2. BODY COMPOSITION — simple stat cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: client.height ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: '10px' }}>
+      {/* ── 2. BODY COMPOSITION — compact horizontal cards on mobile ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: client.height ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: isMobile ? '6px' : '10px' }}>
         {/* Weight */}
-        <GlassCard delay={0.2} style={{ padding: '20px 16px', textAlign: 'center' as const }}>
-          <Scale size={20} color="var(--accent-primary)" style={{ marginBottom: 8 }} />
-          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 4 }}>
+        <GlassCard delay={0.2} style={{ padding: isMobile ? '10px' : '20px 16px', textAlign: 'center' as const }}>
+          <Scale size={isMobile ? 14 : 20} color="var(--accent-primary)" style={{ marginBottom: isMobile ? 3 : 8 }} />
+          <div style={{ fontSize: isMobile ? '9px' : '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.3px', marginBottom: isMobile ? 2 : 4 }}>
             {t.progress.weight}
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {currentWeight !== null ? <><AnimatedNumber value={currentWeight} duration={1200} /><span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>kg</span></> : '—'}
+          <div style={{ fontSize: isMobile ? '18px' : '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {currentWeight !== null ? <><AnimatedNumber value={currentWeight} duration={1200} /><span style={{ fontSize: isMobile ? '10px' : '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>kg</span></> : '—'}
           </div>
           {startWeight !== null && currentWeight !== null && weights.length > 1 && (
-            <div style={{ fontSize: '12px', color: currentWeight <= startWeight ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: 4 }}>
+            <div style={{ fontSize: isMobile ? '10px' : '12px', color: currentWeight <= startWeight ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: isMobile ? 2 : 4 }}>
               {currentWeight <= startWeight ? '' : '+'}{(currentWeight - startWeight).toFixed(1)} kg
             </div>
           )}
         </GlassCard>
 
         {/* Body Fat */}
-        <GlassCard delay={0.25} style={{ padding: '20px 16px', textAlign: 'center' as const }}>
-          <Droplets size={20} color="var(--accent-secondary)" style={{ marginBottom: 8 }} />
-          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 4 }}>
+        <GlassCard delay={0.25} style={{ padding: isMobile ? '10px' : '20px 16px', textAlign: 'center' as const }}>
+          <Droplets size={isMobile ? 14 : 20} color="var(--accent-secondary)" style={{ marginBottom: isMobile ? 3 : 8 }} />
+          <div style={{ fontSize: isMobile ? '9px' : '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.3px', marginBottom: isMobile ? 2 : 4 }}>
             {t.progress.bodyFat}
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {metrics.bodyFat.length > 0 ? <><AnimatedNumber value={metrics.bodyFat[metrics.bodyFat.length - 1]} duration={1200} /><span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>%</span></> : '—'}
+          <div style={{ fontSize: isMobile ? '18px' : '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+            {metrics.bodyFat.length > 0 ? <><AnimatedNumber value={metrics.bodyFat[metrics.bodyFat.length - 1]} duration={1200} /><span style={{ fontSize: isMobile ? '10px' : '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>%</span></> : '—'}
           </div>
           {metrics.bodyFat.length > 1 && (
-            <div style={{ fontSize: '12px', color: metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: 4 }}>
+            <div style={{ fontSize: isMobile ? '10px' : '12px', color: metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: isMobile ? 2 : 4 }}>
               {metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? '' : '+'}{(metrics.bodyFat[metrics.bodyFat.length - 1] - metrics.bodyFat[0]).toFixed(1)}%
             </div>
           )}
@@ -314,13 +314,13 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
 
         {/* Height */}
         {client.height && (
-          <GlassCard delay={0.3} style={{ padding: '20px 16px', textAlign: 'center' as const }}>
-            <TrendingUp size={20} color="var(--accent-warm)" style={{ marginBottom: 8 }} />
-            <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 4 }}>
+          <GlassCard delay={0.3} style={{ padding: isMobile ? '10px' : '20px 16px', textAlign: 'center' as const }}>
+            <TrendingUp size={isMobile ? 14 : 20} color="var(--accent-warm)" style={{ marginBottom: isMobile ? 3 : 8 }} />
+            <div style={{ fontSize: isMobile ? '9px' : '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.3px', marginBottom: isMobile ? 2 : 4 }}>
               {t.progress.height || 'Height'}
             </div>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-              {client.height}<span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>cm</span>
+            <div style={{ fontSize: isMobile ? '18px' : '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+              {client.height}<span style={{ fontSize: isMobile ? '10px' : '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>cm</span>
             </div>
           </GlassCard>
         )}
@@ -328,33 +328,33 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
 
       {/* ── 3. GOALS ── */}
       {goalProgress.length > 0 && (
-        <GlassCard delay={0.3}>
-          <div style={styles.goalsHeader}>
-            <Target size={16} color="var(--accent-primary)" />
-            <span style={styles.goalsTitle}>{t.progress.goals}</span>
-            <span style={styles.goalsCount}>
+        <GlassCard delay={0.3} style={isMobile ? { padding: '14px' } : undefined}>
+          <div style={{ ...styles.goalsHeader, marginBottom: isMobile ? '12px' : undefined }}>
+            <Target size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+            <span style={{ ...styles.goalsTitle, fontSize: isMobile ? '14px' : undefined }}>{t.progress.goals}</span>
+            <span style={{ ...styles.goalsCount, fontSize: isMobile ? '10px' : undefined }}>
               {goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}
             </span>
           </div>
-          <div style={styles.goalsList}>
+          <div style={{ ...styles.goalsList, gap: isMobile ? '12px' : undefined }}>
             {goalProgress.map((g, i) => {
               const color = g.progress >= 100 ? 'var(--accent-success)' : g.progress > 0 ? 'var(--accent-primary)' : 'var(--text-tertiary)';
               return (
-                <div key={i} style={styles.goalItem}>
+                <div key={i} style={{ ...styles.goalItem, gap: isMobile ? '4px' : undefined }}>
                   <div style={styles.goalTop}>
-                    <div style={styles.goalName}>{(() => {
+                    <div style={{ ...styles.goalName, fontSize: isMobile ? '13px' : undefined }}>{(() => {
                       const goalNames: Record<string, Record<string, string>> = {
                         pl: { goalLoseWeight: 'Schudnąć', goalBuildMuscle: 'Budowa Mięśni', goalHealth: 'Zdrowie', goalStrength: 'Siła', goalEndurance: 'Wytrzymałość' },
                         en: { goalLoseWeight: 'Lose Weight', goalBuildMuscle: 'Build Muscle', goalHealth: 'Health', goalStrength: 'Strength', goalEndurance: 'Endurance' },
                       };
                       return goalNames[lang]?.[g.goal] || g.goal;
                     })()}</div>
-                    <div style={{ ...styles.goalPct, color }}>{g.progress}%</div>
+                    <div style={{ ...styles.goalPct, color, fontSize: isMobile ? '13px' : undefined }}>{g.progress}%</div>
                   </div>
-                  <div style={styles.goalBarBg}>
+                  <div style={{ ...styles.goalBarBg, height: isMobile ? '5px' : undefined }}>
                     <div style={{ ...styles.goalBarFill, width: `${Math.max(g.progress, 2)}%`, background: color }} />
                   </div>
-                  <div style={styles.goalLabel}>{g.label}</div>
+                  <div style={{ ...styles.goalLabel, fontSize: isMobile ? '10px' : undefined }}>{g.label}</div>
                 </div>
               );
             })}
@@ -363,10 +363,10 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
       )}
 
       {/* ── 4. PROGRESS PHOTOS - Before / Current ── */}
-      <GlassCard delay={0.35}>
-        <div style={styles.photosHeader}>
-          <Camera size={16} color="var(--accent-primary)" />
-          <span style={styles.photosTitle}>{t.progress.progressPhotos}</span>
+      <GlassCard delay={0.35} style={isMobile ? { padding: '14px' } : undefined}>
+        <div style={{ ...styles.photosHeader, marginBottom: isMobile ? '12px' : undefined }}>
+          <Camera size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+          <span style={{ ...styles.photosTitle, fontSize: isMobile ? '14px' : undefined }}>{t.progress.progressPhotos}</span>
           <div style={styles.poseTabs}>
             {poses.map(p => (
               <button
@@ -375,6 +375,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                 style={{
                   ...styles.poseTab,
                   ...(photoPose === p.key ? styles.poseTabActive : {}),
+                  ...(isMobile ? { padding: '3px 8px', fontSize: '10px' } : {}),
                 }}
               >
                 {p.label}
@@ -447,9 +448,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
           onClick={() => handlePhotoUpload(firstPhotos ? 'latest' : 'week1')}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            width: '100%', padding: '14px', borderRadius: '10px',
+            width: '100%', padding: isMobile ? '11px' : '14px', borderRadius: '10px',
             border: '1.5px dashed rgba(0,229,200,0.3)', background: 'rgba(0,229,200,0.04)',
-            color: 'var(--accent-primary)', fontSize: '14px', fontWeight: 600,
+            color: 'var(--accent-primary)', fontSize: isMobile ? '13px' : '14px', fontWeight: 600,
             fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
             marginTop: (firstPhotos || latestPhotos) ? '8px' : '0',
           }}

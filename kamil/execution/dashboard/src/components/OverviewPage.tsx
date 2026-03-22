@@ -24,7 +24,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useAIBriefing } from '../hooks/useAIBriefing';
 import { useLang } from '../i18n';
-import { formatCurrency } from '../lib/locale';
+import { formatCurrency, getLocale } from '../lib/locale';
 import { computeRevenueChartData, calculateRevenueChange } from '../utils/analytics';
 import { filterAtRiskClients } from '../utils/client-analysis';
 import { getDailyQuote } from '../utils/formatting';
@@ -74,6 +74,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const [ready, setReady] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [messagesExpanded, setMessagesExpanded] = useState(false);
   const reportData = useMemo(() => computeWeeklyReport(clients, messages, invoices, workoutLogs, checkIns), [clients, messages, invoices, workoutLogs, checkIns]);
 
   useEffect(() => {
@@ -93,7 +94,12 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
   const activeClients = clients.filter(c => c.status === 'active').length;
   const pendingClients = clients.filter(c => c.status === 'pending').length;
-  const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
+  // Revenue from actual paid invoices this month (consistent with Analytics page)
+  const locale = getLocale(lang);
+  const currentPeriod = new Date().toLocaleDateString(locale, { month: 'short', year: 'numeric' });
+  const totalRevenue = invoices
+    .filter(inv => inv.status === 'paid' && inv.period.toLowerCase() === currentPeriod.toLowerCase())
+    .reduce((sum, inv) => sum + inv.amount, 0);
   const unreadMessages = messages.filter(m => !m.isRead && !m.isFromCoach);
 
   // Compute revenue chart from real invoices
@@ -122,7 +128,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   // AI briefing fallback stats (when no API key or error)
   const fallbackStats = useMemo(() => [
     `${clients.filter(c => c.status === 'active').length} ${lang === 'pl' ? 'aktywnych klientow' : 'active clients'}, ${clients.filter(c => c.status === 'paused').length} ${lang === 'pl' ? 'wstrzymanych' : 'paused'}`,
-    `${lang === 'pl' ? 'Przychod w tym miesiacu' : 'Revenue this month'}: ${invoices.filter(i => i.status === 'paid' && i.period === new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })).reduce((s, i) => s + i.amount, 0)} ${lang === 'pl' ? 'zl' : '$'}`,
+    `${lang === 'pl' ? 'Przychod w tym miesiacu' : 'Revenue this month'}: ${totalRevenue} ${lang === 'pl' ? 'zl' : '$'}`,
     `${checkIns.filter(ci => ci.reviewStatus === 'pending').length} ${lang === 'pl' ? 'check-inow do przegladniecia' : 'check-ins to review'}`,
     `${messages.filter(m => !m.isFromCoach && !m.isRead).length} ${lang === 'pl' ? 'nieprzeczytanych wiadomosci' : 'unread messages'}`,
   ], [clients, invoices, checkIns, messages, lang]);
@@ -283,7 +289,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   }
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Personalized Greeting + Weekly Report Button */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
         {greeting && (
@@ -325,51 +331,97 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
       {/* Daily Motivation */}
       <motion.div
-        style={styles.quoteBar}
+        style={{ ...styles.quoteBar, ...(isMobile ? { padding: '8px 14px' } : {}) }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: greeting ? 0.15 : 0 }}
       >
-        <span style={styles.quoteText}>"{dailyQuote.text}"</span>
-        <span style={styles.quoteAuthor}> - {dailyQuote.author}</span>
+        <span style={{ ...styles.quoteText, ...(isMobile ? { fontSize: '12px' } : {}) }}>"{dailyQuote.text}"</span>
+        <span style={{ ...styles.quoteAuthor, ...(isMobile ? { fontSize: '11px' } : {}) }}> - {dailyQuote.author}</span>
       </motion.div>
 
       {/* Stat Cards Row */}
-      <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '10px' : '16px' }}>
+      <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '16px' }}>
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <GlassCard key={stat.label} delay={i * 0.05} hover>
-              <div style={styles.statTop}>
-                <div style={{ ...styles.statIcon, background: stat.dimColor }}>
-                  <Icon size={18} color={stat.color} />
-                </div>
-                {stat.trend !== 'neutral' && (
-                  <div style={{
-                    ...styles.changeBadge,
-                    color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
-                    background: stat.trend === 'up' ? 'var(--accent-success-dim)' : 'var(--accent-danger-dim)',
-                  }}>
-                    {stat.trend === 'up' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                    {stat.change}
-                  </div>
+            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '0', ...(isMobile ? {} : { flexDirection: 'column' as const }) }}>
+                {isMobile ? (
+                  <>
+                    {/* Mobile: compact horizontal layout */}
+                    <div style={{
+                      ...styles.statIcon,
+                      background: stat.dimColor,
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      flexShrink: 0,
+                    }}>
+                      <Icon size={16} color={stat.color} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                        <span style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                          <AnimatedNumber value={stat.numericValue} format={stat.format} />
+                        </span>
+                        {stat.trend !== 'neutral' && (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1px',
+                          }}>
+                            {stat.trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                            {stat.change}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.2 }}>
+                        {stat.label}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Desktop: original vertical layout */}
+                    <div style={{ width: '100%' }}>
+                      <div style={styles.statTop}>
+                        <div style={{ ...styles.statIcon, background: stat.dimColor }}>
+                          <Icon size={18} color={stat.color} />
+                        </div>
+                        {stat.trend !== 'neutral' && (
+                          <div style={{
+                            ...styles.changeBadge,
+                            color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                            background: stat.trend === 'up' ? 'var(--accent-success-dim)' : 'var(--accent-danger-dim)',
+                          }}>
+                            {stat.trend === 'up' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                            {stat.change}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ ...styles.statValue, fontSize: '28px' }}>
+                        <AnimatedNumber value={stat.numericValue} format={stat.format} />
+                      </div>
+                      <div style={styles.statLabel}>{stat.label}</div>
+                    </div>
+                  </>
                 )}
               </div>
-              <div style={{ ...styles.statValue, fontSize: isMobile ? '22px' : '28px' }}>
-                <AnimatedNumber value={stat.numericValue} format={stat.format} />
-              </div>
-              <div style={styles.statLabel}>{stat.label}</div>
             </GlassCard>
           );
         })}
       </div>
 
       {/* AI Dashboard Summary */}
-      <GlassCard delay={0.15}>
+      <GlassCard delay={0.15} style={isMobile ? { padding: '16px' } : undefined}>
         <div style={styles.cardHeader}>
           <div style={styles.insightTitleRow}>
-            <Sparkles size={15} color="var(--accent-primary)" />
-            <h3 style={styles.cardTitle}>{t.overview.dashboardSummary}</h3>
+            <Sparkles size={isMobile ? 13 : 15} color="var(--accent-primary)" />
+            <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.dashboardSummary}</h3>
           </div>
           {!briefingLoading && briefing && (
             <button onClick={refreshBriefing} style={styles.viewAllBtn} title={lang === 'pl' ? 'Odswiez' : 'Refresh'}>
@@ -391,7 +443,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
               style={{
-                fontSize: '18px', color: 'var(--text-primary)', lineHeight: 1.7,
+                fontSize: isMobile ? '14px' : '18px', color: 'var(--text-primary)', lineHeight: 1.7,
                 padding: '8px 10px', margin: 0, fontWeight: 400,
                 ...(isMobile && !summaryExpanded ? {
                   maxHeight: '120px',
@@ -439,11 +491,11 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
       </GlassCard>
 
       {/* Revenue Chart */}
-      <GlassCard delay={0.2}>
+      <GlassCard delay={0.2} style={isMobile ? { padding: '16px' } : undefined}>
         <div style={styles.cardHeader}>
           <div>
-            <h3 style={styles.cardTitle}>{t.overview.revenueOverview}</h3>
-            <p style={styles.cardSubtitle}>{t.overview.monthlyRecurring}</p>
+            <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.revenueOverview}</h3>
+            <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.overview.monthlyRecurring}</p>
           </div>
           <div style={styles.legendRow}>
             <span style={getLegendDotStyle('#00e5c8')} />
@@ -463,13 +515,13 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
                 dataKey="month"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'Outfit' }}
+                tick={{ fontSize: isMobile ? 11 : 17, fill: '#525a6e', fontFamily: 'Outfit' }}
               />
               <YAxis
                 domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}
+                tick={{ fontSize: isMobile ? 11 : 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}
                 tickFormatter={(v) => formatCurrency(v, lang)}
               />
               <Tooltip
@@ -501,11 +553,11 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
       {/* Habit Compliance Widget */}
       {habitAssignments && habitLogs && habitAssignments.length > 0 && (
-        <GlassCard delay={0.25}>
+        <GlassCard delay={0.25} style={isMobile ? { padding: '16px' } : undefined}>
           <div style={styles.cardHeader}>
             <div>
-              <h3 style={styles.cardTitle}>{t.habits.habitCompliance}</h3>
-              <p style={styles.cardSubtitle}>{t.habits.clientsTracking(
+              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.habits.habitCompliance}</h3>
+              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.habits.clientsTracking(
                 new Set(habitAssignments.filter(a => a.isActive).map(a => a.clientId)).size
               )}</p>
             </div>
@@ -568,11 +620,11 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
       {/* Bottom Row */}
       <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)' }}>
         {/* At-Risk Clients */}
-        <GlassCard delay={0.3}>
+        <GlassCard delay={0.3} style={isMobile ? { padding: '16px' } : undefined}>
           <div style={styles.cardHeader}>
             <div>
-              <h3 style={styles.cardTitle}>{t.overview.atRiskClientsTitle}</h3>
-              <p style={styles.cardSubtitle}>
+              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.atRiskClientsTitle}</h3>
+              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>
                 {atRiskClients.length > 0
                   ? t.overview.clientsNeedAttention(atRiskClients.length)
                   : t.overview.allOnTrack}
@@ -609,14 +661,14 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
                       {getInitials(client.name)}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '18px', fontWeight: 500 }}>{client.name}</div>
+                      <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 500 }}>{client.name}</div>
                       <div style={styles.riskReasons}>
                         {reasons.map((r, j) => (
                           <span key={j} style={styles.riskTag}>{r}</span>
                         ))}
                       </div>
                     </div>
-                    <div style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>
+                    <div style={{ fontSize: isMobile ? '12px' : '17px', color: 'var(--text-tertiary)' }}>
                       {client.lastActive}
                     </div>
                   </motion.div>
@@ -627,11 +679,11 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         </GlassCard>
 
         {/* Top Performers */}
-        <GlassCard delay={0.35}>
+        <GlassCard delay={0.35} style={isMobile ? { padding: '16px' } : undefined}>
           <div style={styles.cardHeader}>
             <div>
-              <h3 style={styles.cardTitle}>{t.overview.topPerformers}</h3>
-              <p style={styles.cardSubtitle}>{t.overview.highestProgress}</p>
+              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.topPerformers}</h3>
+              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.overview.highestProgress}</p>
             </div>
             <TrendingUp size={16} color="var(--text-tertiary)" />
           </div>
@@ -655,8 +707,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
                     {getInitials(client.name)}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '18px', fontWeight: 500 }}>{client.name}</div>
-                    <div style={{ fontSize: '17px', color: 'var(--text-secondary)' }}>{client.plan}</div>
+                    <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 500 }}>{client.name}</div>
+                    <div style={{ fontSize: isMobile ? '12px' : '17px', color: 'var(--text-secondary)' }}>{client.plan}</div>
                   </div>
                   <div style={styles.progressContainer}>
                     <div style={styles.progressBar}>
@@ -678,43 +730,66 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         </GlassCard>
 
         {/* Recent Messages */}
-        <GlassCard delay={0.4} style={{ gridColumn: '1 / -1' }}>
+        <GlassCard delay={0.4} style={{ gridColumn: '1 / -1', ...(isMobile ? { padding: '16px' } : {}) }}>
           <div style={styles.cardHeader}>
             <div>
-              <h3 style={styles.cardTitle}>{t.overview.recentMessages}</h3>
-              <p style={styles.cardSubtitle}>{t.overview.unread(unreadMessages.length)}</p>
+              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.recentMessages}</h3>
+              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.overview.unread(unreadMessages.length)}</p>
             </div>
             <button onClick={() => onNavigate('messages')} style={styles.viewAllBtn}>
               {t.overview.viewAll}
             </button>
           </div>
-          <div style={styles.messageList}>
-            {messages
-              .filter(m => !m.isFromCoach)
-              .slice(0, 5)
-              .map((msg, i) => (
-                <motion.div
-                  key={msg.id}
-                  style={styles.messageItem}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.45 + i * 0.05 }}
-                  onClick={() => onNavigate('messages')}
-                >
-                  <div style={{ ...styles.avatar, background: getAvatarColor(msg.clientId), flexShrink: 0 }}>
-                    {getInitials(msg.clientName)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={styles.msgHeader}>
-                      <span style={{ fontSize: '18px', fontWeight: 500 }}>{msg.clientName}</span>
-                      {!msg.isRead && <span style={styles.unreadDot} />}
-                    </div>
-                    <div style={styles.msgText}>{msg.text}</div>
-                  </div>
-                  <MessageSquare size={14} color="var(--accent-primary)" style={{ flexShrink: 0, cursor: 'pointer' }} />
-                </motion.div>
-              ))}
-          </div>
+          {(() => {
+            const filteredMessages = messages.filter(m => !m.isFromCoach);
+            const visibleMessages = isMobile && !messagesExpanded ? filteredMessages.slice(0, 2) : filteredMessages.slice(0, 5);
+            const hasMore = isMobile && !messagesExpanded && filteredMessages.length > 2;
+            return (
+              <>
+                <div style={styles.messageList}>
+                  {visibleMessages.map((msg, i) => (
+                    <motion.div
+                      key={msg.id}
+                      style={styles.messageItem}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.45 + i * 0.05 }}
+                      onClick={() => onNavigate('messages')}
+                    >
+                      <div style={{ ...styles.avatar, background: getAvatarColor(msg.clientId), flexShrink: 0 }}>
+                        {getInitials(msg.clientName)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={styles.msgHeader}>
+                          <span style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 500 }}>{msg.clientName}</span>
+                          {!msg.isRead && <span style={styles.unreadDot} />}
+                        </div>
+                        <div style={{ ...styles.msgText, fontSize: isMobile ? '13px' : '17px' }}>{msg.text}</div>
+                      </div>
+                      <MessageSquare size={14} color="var(--accent-primary)" style={{ flexShrink: 0, cursor: 'pointer' }} />
+                    </motion.div>
+                  ))}
+                </div>
+                {isMobile && (hasMore || messagesExpanded) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setMessagesExpanded(prev => !prev); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                      width: '100%', padding: '8px 0', marginTop: '4px',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: 'var(--accent-primary)', fontSize: '13px', fontFamily: 'Outfit',
+                    }}
+                  >
+                    {messagesExpanded ? (lang === 'pl' ? 'Zwiń' : 'Show less') : (lang === 'pl' ? `Pokaż więcej (${filteredMessages.length - 2})` : `Show more (${filteredMessages.length - 2})`)}
+                    <ChevronDown size={14} style={{
+                      transform: messagesExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease',
+                    }} />
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </GlassCard>
       </div>
 

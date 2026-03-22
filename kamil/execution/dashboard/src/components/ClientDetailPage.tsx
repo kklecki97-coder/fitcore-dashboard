@@ -6,12 +6,9 @@ import {
   Edit3, MessageSquare, FileText, X, Send, Save,
   Activity, Dumbbell, Check, ClipboardCheck, Flag,
   Smile, Frown, Meh, SmilePlus, Angry,
-  Moon, Download, Clock, Star,
+  Moon, Download, Clock, Star, ChevronDown, Sparkles,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  RadarChart, PolarGrid, PolarAngleAxis, Radar,
-} from 'recharts';
+// recharts radar removed — no longer used
 import jsPDF from 'jspdf';
 import GlassCard from './GlassCard';
 import ClientInsights from './ClientInsights';
@@ -20,7 +17,7 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
-import { calculateMetricChange, buildClientRadarData } from '../utils/client-metrics';
+import { calculateMetricChange } from '../utils/client-metrics';
 import { calculateEngagement, generateEngagementInsight, getSuggestedAction } from '../utils/engagement';
 import { getLocale, formatCurrency } from '../lib/locale';
 import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan, Habit, HabitAssignment, HabitLog } from '../types';
@@ -61,6 +58,13 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   const [editNotes, setEditNotes] = useState('');
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [saveFlash, setSaveFlash] = useState('');
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    insights: !isMobile,
+    engagement: !isMobile,
+    habits: !isMobile,
+    checkIns: !isMobile,
+  });
+  const toggleSection = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
   // @ts-ignore - scaffolded for upcoming check-in-from-coach modal
   const [checkInForm, setCheckInForm] = useState({
     weight: '',
@@ -118,15 +122,6 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   const bfChange = bfMetric.change;
 
   // Deterministic radar values derived from client data
-  const radarData = buildClientRadarData(client, {
-    strength: t.clientDetail.radarStrength,
-    endurance: t.clientDetail.radarEndurance,
-    consistency: t.clientDetail.radarConsistency,
-    nutrition: t.clientDetail.radarNutrition,
-    recovery: t.clientDetail.radarRecovery,
-    progress: t.clientDetail.radarProgress,
-  });
-
   const planColors: Record<string, { color: string; bg: string }> = {
     Elite: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)' },
     Premium: { color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
@@ -195,7 +190,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     onUpdateClient(client.id, {
       notes: editNotes.trim(),
       notesHistory: newHistory,
-      activityLog: [{ type: 'notes', description: 'Notes updated', date: new Date().toISOString() }, ...(client.activityLog || [])],
+      activityLog: [{ type: 'notes', description: t.clientDetail.notesUpdatedLog, date: new Date().toISOString() }, ...(client.activityLog || [])],
     });
     setEditNotes('');
     setShowNoteInput(false);
@@ -240,7 +235,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     onUpdateClient(client.id, {
       activityLog: [{
         type: 'program',
-        description: isAssigned ? `Program "${program.name}" removed` : `Program "${program.name}" assigned`,
+        description: isAssigned ? t.clientDetail.programRemovedLog(program.name) : t.clientDetail.programAssignedLog(program.name),
         date: new Date().toISOString(),
       }, ...(client.activityLog || [])],
     });
@@ -255,7 +250,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     // Header
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
-    doc.text(lang === 'pl' ? 'FitCore - Raport Klienta' : 'FitCore - Client Report', 14, y);
+    doc.text(t.clientDetail.pdfClientReport, 14, y);
     y += 10;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -280,7 +275,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     y += 8;
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text(lang === 'pl' ? 'Kluczowe Metryki' : 'Key Metrics', 14, y);
+    doc.text(t.clientDetail.pdfKeyMetrics, 14, y);
     y += 8;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -296,8 +291,8 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       `${t.clientDetail.squat}: ${latSquat ?? '-'} kg`,
       `${t.clientDetail.deadlift}: ${latDeadlift ?? '-'} kg`,
       `${t.clientDetail.monthlyRate}: ${formatCurrency(client.monthlyRate, lang)}`,
-      `${lang === 'pl' ? 'Postęp' : 'Progress'}: ${client.progress}%`,
-      `${lang === 'pl' ? 'Passa' : 'Streak'}: ${client.streak} ${lang === 'pl' ? 'dni' : 'days'}`,
+      `${t.clientDetail.pdfProgress}: ${client.progress}%`,
+      `${t.clientDetail.pdfStreak}: ${client.streak} ${t.clientDetail.pdfStreakDays}`,
     ];
     metrics.forEach(m => { doc.text(m, 14, y); y += 6; });
     y += 4;
@@ -308,7 +303,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     y += 8;
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text(lang === 'pl' ? 'Cele' : 'Goals', 14, y);
+    doc.text(t.clientDetail.pdfGoals, 14, y);
     y += 8;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -320,7 +315,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     y += 8;
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('Coach Notes', 14, y);
+    doc.text(t.clientDetail.coachNotes, 14, y);
     y += 8;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -329,7 +324,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       doc.text(noteLines, 14, y);
       y += noteLines.length * 5 + 4;
     } else {
-      doc.text('No notes yet.', 14, y);
+      doc.text(t.clientDetail.pdfNoNotes, 14, y);
       y += 6;
     }
     y += 4;
@@ -341,7 +336,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       y += 8;
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
-      doc.text('Recent Activity', 14, y);
+      doc.text(t.clientDetail.recentActivityPdf, 14, y);
       y += 8;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
@@ -362,7 +357,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       y += 8;
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
-      doc.text('Notes History', 14, y);
+      doc.text(t.clientDetail.notesHistoryPdf, 14, y);
       y += 8;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
@@ -384,12 +379,12 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150);
-      doc.text('FitCore - Confidential', 14, doc.internal.pageSize.getHeight() - 10);
-      doc.text(`Page ${i} of ${pageCount}`, pageWidth - 40, doc.internal.pageSize.getHeight() - 10);
+      doc.text(t.clientDetail.confidential, 14, doc.internal.pageSize.getHeight() - 10);
+      doc.text(t.clientDetail.pageOf(i, pageCount), pageWidth - 40, doc.internal.pageSize.getHeight() - 10);
     }
 
     doc.save(`${client.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`);
-    flashSaved('Report exported');
+    flashSaved(t.clientDetail.reportExported);
   };
 
   // Activity icon helper
@@ -409,11 +404,11 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     const date = new Date(dateStr);
     const diff = now.getTime() - date.getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 60) return t.header.mAgo(mins);
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
+    if (hrs < 24) return t.header.hAgo(hrs);
     const days = Math.floor(hrs / 24);
-    if (days < 7) return `${days}d ago`;
+    if (days < 7) return t.header.dAgo(days);
     return date.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
   };
 
@@ -423,15 +418,15 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   const engagementAction = getSuggestedAction(engagementScore, lang as 'en' | 'pl');
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Back Button + Client Header */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         style={styles.backRow}
       >
-        <button onClick={onBack} style={styles.backBtn}>
-          <ArrowLeft size={18} />
+        <button onClick={onBack} style={{ ...styles.backBtn, ...(isMobile ? { fontSize: '13px', padding: '4px 8px', gap: '5px' } : {}) }}>
+          <ArrowLeft size={isMobile ? 15 : 18} />
           {backLabel}
         </button>
       </motion.div>
@@ -443,7 +438,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            style={styles.saveFlash}
+            style={{ ...styles.saveFlash, ...(isMobile ? { fontSize: '12px', padding: '8px 14px' } : {}) }}
           >
             {saveFlash}
           </motion.div>
@@ -451,38 +446,38 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       </AnimatePresence>
 
       {/* Profile Header */}
-      <GlassCard delay={0.05}>
-        <div style={{ ...styles.profileHeader, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '16px' : undefined }}>
-          <div style={{ ...styles.profileLeft, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '20px' }}>
-            <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '48px', height: '48px', fontSize: '25px' } : {}) }}>
+      <GlassCard delay={0.05} style={isMobile ? { padding: '14px 16px' } : undefined}>
+        <div style={{ ...styles.profileHeader, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : undefined }}>
+          <div style={{ ...styles.profileLeft, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '10px' : '20px' }}>
+            <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '42px', height: '42px', fontSize: '18px', borderRadius: '12px' } : {}) }}>
               {getInitials(client.name)}
             </div>
             <div>
-              <h2 style={{ ...styles.profileName, fontSize: isMobile ? '18px' : '22px' }}>{client.name}</h2>
-              <div style={{ ...styles.profileMeta, flexWrap: 'wrap' }}>
-                <Mail size={13} color="var(--text-tertiary)" />
+              <h2 style={{ ...styles.profileName, ...(isMobile ? { fontSize: '18px', letterSpacing: '-0.3px' } : {}) }}>{client.name}</h2>
+              <div style={{ ...styles.profileMeta, flexWrap: 'wrap', ...(isMobile ? { fontSize: '12px', gap: '4px', marginTop: '2px' } : {}) }}>
+                <Mail size={isMobile ? 11 : 13} color="var(--text-tertiary)" />
                 <span>{client.email}</span>
                 <span style={styles.dot} />
-                <Calendar size={13} color="var(--text-tertiary)" />
+                <Calendar size={isMobile ? 11 : 13} color="var(--text-tertiary)" />
                 <span>{t.clientDetail.since} {client.startDate}</span>
               </div>
-              <div style={{ ...styles.profileTags, flexWrap: 'wrap' }}>
-                <span style={{ ...styles.planTag, color: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).color, background: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).bg }}>
+              <div style={{ ...styles.profileTags, flexWrap: 'wrap', ...(isMobile ? { gap: '5px', marginTop: '6px' } : {}) }}>
+                <span style={{ ...styles.planTag, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}), color: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).color, background: (planColors[client.plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' }).bg }}>
                   {planLabelMap[client.plan] || client.plan}
                 </span>
-                <span style={styles.statusTag}>
-                  {client.status === 'active' && <Flame size={12} color="var(--accent-success)" />}
+                <span style={{ ...styles.statusTag, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}) }}>
+                  {client.status === 'active' && <Flame size={isMobile ? 10 : 12} color="var(--accent-success)" />}
                   <span style={{ textTransform: 'capitalize' }}>{statusLabelMap[client.status]}</span>
                 </span>
                 {client.streak > 0 && (
-                  <span style={styles.streakTag}>
-                    <Flame size={12} color="var(--accent-warm)" />
+                  <span style={{ ...styles.streakTag, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}) }}>
+                    <Flame size={isMobile ? 10 : 12} color="var(--accent-warm)" />
                     {client.streak} {t.clientDetail.dayStreak}
                   </span>
                 )}
                 {assignedPrograms.map(prog => (
-                  <span key={prog.id} style={styles.programTag}>
-                    <Dumbbell size={12} />
+                  <span key={prog.id} style={{ ...styles.programTag, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}) }}>
+                    <Dumbbell size={isMobile ? 10 : 12} />
                     {prog.name}
                   </span>
                 ))}
@@ -490,25 +485,25 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
             </div>
           </div>
 
-          <div style={{ ...styles.profileActions, ...(isMobile ? { width: '100%', flexWrap: 'wrap' } : {}) }}>
-            <button onClick={() => setActiveModal('message')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
-              <MessageSquare size={15} />
+          <div style={{ ...styles.profileActions, ...(isMobile ? { width: '100%', flexWrap: 'wrap', gap: '6px' } : {}) }}>
+            <button onClick={() => setActiveModal('message')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center', fontSize: '12px', padding: '6px 10px', gap: '4px' } : {}) }}>
+              <MessageSquare size={isMobile ? 13 : 15} />
               {t.clientDetail.sendMessage}
             </button>
-            <button onClick={() => setActiveModal('editPlan')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
-              <Edit3 size={15} />
+            <button onClick={() => setActiveModal('editPlan')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center', fontSize: '12px', padding: '6px 10px', gap: '4px' } : {}) }}>
+              <Edit3 size={isMobile ? 13 : 15} />
               {t.clientDetail.editPlanStatus}
             </button>
-            <button onClick={() => { setShowNoteInput(false); setEditNotes(''); setActiveModal('notes'); }} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
-              <FileText size={15} />
+            <button onClick={() => { setShowNoteInput(false); setEditNotes(''); setActiveModal('notes'); }} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center', fontSize: '12px', padding: '6px 10px', gap: '4px' } : {}) }}>
+              <FileText size={isMobile ? 13 : 15} />
               {t.clientDetail.notes}
             </button>
-            <button onClick={() => setActiveModal('assignProgram')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}) }}>
-              <Dumbbell size={15} />
+            <button onClick={() => setActiveModal('assignProgram')} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center', fontSize: '12px', padding: '6px 10px', gap: '4px' } : {}) }}>
+              <Dumbbell size={isMobile ? 13 : 15} />
               {t.clientDetail.assignProgram}
             </button>
-            <button onClick={handleExportReport} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center' } : {}), color: 'var(--accent-primary)' }}>
-              <Download size={15} />
+            <button onClick={handleExportReport} style={{ ...styles.actionBtn, ...(isMobile ? { flex: 1, justifyContent: 'center', fontSize: '12px', padding: '6px 10px', gap: '4px' } : {}), color: 'var(--accent-primary)' }}>
+              <Download size={isMobile ? 13 : 15} />
               {t.clientDetail.export}
             </button>
           </div>
@@ -516,45 +511,45 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       </GlassCard>
 
       {/* Key Metrics */}
-      <div style={{ ...styles.metricsRow, ...(isMobile ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' } : {}) }}>
-        <GlassCard delay={0.1} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>{t.clientDetail.weight}</div>
-          <div style={styles.metricValue}>
-            {latestWeight != null ? latestWeight : '-'} <span style={styles.metricUnit}>kg</span>
+      <div style={{ ...styles.metricsRow, ...(isMobile ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' } : {}) }}>
+        <GlassCard delay={0.1} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
+          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.weight}</div>
+          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>
+            {latestWeight != null ? latestWeight : '-'} <span style={{ ...styles.metricUnit, ...(isMobile ? { fontSize: '13px' } : {}) }}>kg</span>
           </div>
           {hasWeight && (
-          <div style={{ ...styles.metricChange, color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-            {weightChange <= 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
+          <div style={{ ...styles.metricChange, ...(isMobile ? { fontSize: '11px', marginTop: '2px' } : {}), color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+            {weightChange <= 0 ? <TrendingDown size={isMobile ? 11 : 14} /> : <TrendingUp size={isMobile ? 11 : 14} />}
             {Math.abs(weightChange).toFixed(1)} kg
           </div>
           )}
         </GlassCard>
-        <GlassCard delay={0.12} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>{t.clientDetail.bodyFat}</div>
-          <div style={styles.metricValue}>
-            {latestBF != null ? latestBF : '-'} <span style={styles.metricUnit}>%</span>
+        <GlassCard delay={0.12} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
+          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.bodyFat}</div>
+          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>
+            {latestBF != null ? latestBF : '-'} <span style={{ ...styles.metricUnit, ...(isMobile ? { fontSize: '13px' } : {}) }}>%</span>
           </div>
           {hasBF && (
-          <div style={{ ...styles.metricChange, color: bfChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-            {bfChange <= 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
+          <div style={{ ...styles.metricChange, ...(isMobile ? { fontSize: '11px', marginTop: '2px' } : {}), color: bfChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+            {bfChange <= 0 ? <TrendingDown size={isMobile ? 11 : 14} /> : <TrendingUp size={isMobile ? 11 : 14} />}
             {Math.abs(bfChange).toFixed(1)}%
           </div>
           )}
         </GlassCard>
-        <GlassCard delay={0.14} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>{t.clientDetail.monthlyRate}</div>
-          <div style={styles.metricValue}>
-            <DollarSign size={20} style={{ opacity: 0.5 }} />
+        <GlassCard delay={0.14} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
+          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.monthlyRate}</div>
+          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>
+            <DollarSign size={isMobile ? 15 : 20} style={{ opacity: 0.5 }} />
             {client.monthlyRate}
           </div>
-          <div style={{ ...styles.metricChange, color: 'var(--text-tertiary)' }}>
-            <Minus size={14} />
-            per month
+          <div style={{ ...styles.metricChange, ...(isMobile ? { fontSize: '11px', marginTop: '2px' } : {}), color: 'var(--text-tertiary)' }}>
+            <Minus size={isMobile ? 11 : 14} />
+            {t.clientDetail.perMonth}
           </div>
         </GlassCard>
-        <GlassCard delay={0.16} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Overall Progress</div>
-          <div style={styles.metricValue}>{client.progress}%</div>
+        <GlassCard delay={0.16} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
+          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.overallProgress}</div>
+          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>{client.progress}%</div>
           <div style={styles.bigProgressBar}>
             <motion.div
               style={{
@@ -569,144 +564,6 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           </div>
         </GlassCard>
       </div>
-
-      {/* Smart Insights (replaces weight/bf trend + strength profile charts) */}
-      <ClientInsights
-        client={client}
-        workoutLogs={workoutLogs}
-        setLogs={setLogs}
-        checkIns={checkIns}
-        program={assignedPrograms.find(p => p.status === 'active') ?? assignedPrograms[0] ?? null}
-        t={{
-          insightsTitle: t.clientDetail.insightsTitle,
-          insightsSub: t.clientDetail.insightsSub,
-          showMore: t.clientDetail.showMore,
-          showLess: t.clientDetail.showLess,
-          noInsights: t.clientDetail.noInsights,
-        }}
-      />
-
-      {/* Engagement Score Panel */}
-      <EngagementPanel
-        score={engagementScore}
-        insight={engagementInsight}
-        suggestedAction={engagementAction}
-        onAction={(type) => {
-          if (type === 'motivation' || type === 'call') setActiveModal('message');
-        }}
-        t={{
-          title: t.engagement.title,
-          subtitle: t.engagement.subtitle,
-          workoutCompletion: t.engagement.workoutCompletion,
-          checkInRate: t.engagement.checkInRate,
-          messageResponsiveness: t.engagement.messageResponsiveness,
-          streakLength: t.engagement.streakLength,
-          goalProgress: t.engagement.goalProgress,
-          trend8Weeks: t.engagement.trend8Weeks,
-          aiInsight: t.engagement.aiInsight,
-          suggestedAction: t.engagement.suggestedAction,
-          last14Days: t.engagement.last14Days,
-        }}
-      />
-
-      {/* Habit Tracking Section */}
-      {habits && habitAssignments && habitLogs && (() => {
-        const clientAssignments = habitAssignments.filter(a => a.clientId === client.id && a.isActive);
-        if (clientAssignments.length === 0) return null;
-
-        type PK = 'waterIntake' | 'sleep' | 'supplements' | 'steps' | 'meditation' | 'stretching' | 'proteinIntake' | 'creatine' | 'omega3' | 'vitaminD' | 'magnesium' | 'wheyProtein';
-        const presetKeys: Record<string, PK> = {
-          'h-water': 'waterIntake', 'h-sleep': 'sleep', 'h-supplements': 'supplements',
-          'h-steps': 'steps', 'h-meditation': 'meditation', 'h-stretching': 'stretching',
-          'h-protein': 'proteinIntake', 'h-creatine': 'creatine', 'h-omega3': 'omega3',
-          'h-vitamind': 'vitaminD', 'h-magnesium': 'magnesium', 'h-whey': 'wheyProtein',
-        };
-        const habitName = (h: Habit) => { const k = presetKeys[h.id]; return k ? t.habits[k] : h.name; };
-
-        const today = new Date();
-        let total7 = 0;
-        let completed7 = 0;
-        for (let i = 0; i < 7; i++) {
-          const d = new Date(today);
-          d.setDate(d.getDate() - i);
-          const dateStr = d.toISOString().split('T')[0];
-          for (const a of clientAssignments) {
-            total7++;
-            const log = habitLogs.find(l => l.habitAssignmentId === a.id && l.logDate === dateStr);
-            if (log?.completed) completed7++;
-          }
-        }
-        const adherence = total7 > 0 ? Math.round((completed7 / total7) * 100) : 0;
-
-        return (
-          <GlassCard>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Activity size={18} style={{ color: 'var(--accent-primary)' }} />
-                {t.habits.habitCompliance}
-              </h3>
-              <span style={{
-                fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)',
-                color: adherence >= 80 ? 'var(--accent-success)' : adherence >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)',
-              }}>
-                {adherence}%
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {clientAssignments.map(assignment => {
-                const habit = habits.find(h => h.id === assignment.habitId);
-                if (!habit) return null;
-
-                // 7-day dots
-                const dots = Array.from({ length: 7 }, (_, i) => {
-                  const d = new Date(today);
-                  d.setDate(d.getDate() - (6 - i));
-                  const dateStr = d.toISOString().split('T')[0];
-                  const log = habitLogs.find(l => l.habitAssignmentId === assignment.id && l.logDate === dateStr);
-                  return log?.completed ? 'completed' : log ? 'missed' : 'none';
-                });
-
-                // Streak
-                let streak = 0;
-                for (let i = 0; i < 365; i++) {
-                  const d = new Date(today);
-                  d.setDate(d.getDate() - i);
-                  const dateStr = d.toISOString().split('T')[0];
-                  const log = habitLogs.find(l => l.habitAssignmentId === assignment.id && l.logDate === dateStr);
-                  if (log?.completed) streak++;
-                  else break;
-                }
-
-                return (
-                  <div key={assignment.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px',
-                    borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid var(--glass-border)',
-                  }}>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
-                      {habitName(habit)}
-                    </span>
-                    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                      {dots.map((s, di) => (
-                        <div key={di} style={{
-                          width: 7, height: 7, borderRadius: '50%',
-                          background: s === 'completed' ? 'var(--accent-success)' : s === 'missed' ? 'var(--accent-danger)' : 'rgba(255,255,255,0.06)',
-                        }} />
-                      ))}
-                    </div>
-                    {streak > 0 && (
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-warm)', whiteSpace: 'nowrap' }}>
-                        🔥 {streak}d
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </GlassCard>
-        );
-      })()}
 
       {/* Training History */}
       {(() => {
@@ -756,27 +613,27 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
         for (let d = 1; d <= daysInMonth; d++) calendarCells.push(d);
         while (calendarCells.length < 42) calendarCells.push(null);
 
-        const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const dayHeaders = t.clientDetail.calDays;
 
         return (
           <div>
             {/* Month Calendar */}
-            <GlassCard delay={0.28}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <GlassCard delay={0.28} style={isMobile ? { padding: '14px 16px' } : undefined}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMobile ? '10px' : '14px' }}>
                 <div>
-                  <h3 style={styles.chartTitle}>Training Activity</h3>
-                  <p style={styles.trainingSubtitle}>{monthName}</p>
+                  <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}) }}>{t.clientDetail.trainingActivity}</h3>
+                  <p style={{ ...styles.trainingSubtitle, ...(isMobile ? { fontSize: '12px' } : {}) }}>{monthName}</p>
                 </div>
               </div>
 
               {/* Stats row - 3 mini cards */}
-              <div style={styles.calStatsRow}>
-                <div style={styles.calStatCard}>
-                  <Dumbbell size={16} color="var(--accent-primary)" />
-                  <span style={styles.calStatValue}>{completedThisMonth}/{plannedThisMonth}</span>
-                  <span style={styles.calStatLabel}>sessions</span>
+              <div style={{ ...styles.calStatsRow, ...(isMobile ? { gap: '6px', marginBottom: '10px' } : {}) }}>
+                <div style={{ ...styles.calStatCard, ...(isMobile ? { padding: '8px 4px', gap: '3px' } : {}) }}>
+                  <Dumbbell size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+                  <span style={{ ...styles.calStatValue, ...(isMobile ? { fontSize: '16px' } : {}) }}>{completedThisMonth}/{plannedThisMonth}</span>
+                  <span style={{ ...styles.calStatLabel, ...(isMobile ? { fontSize: '9px' } : {}) }}>{t.clientDetail.sessions}</span>
                 </div>
-                <div style={styles.calStatCard}>
+                <div style={{ ...styles.calStatCard, ...(isMobile ? { padding: '8px 4px', gap: '3px' } : {}) }}>
                   <svg width="44" height="44" viewBox="0 0 44 44" style={{ marginTop: '-2px', marginBottom: '-2px' }}>
                     <circle cx="22" cy="22" r={ringR} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
                     <circle
@@ -793,12 +650,12 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       {completionRate}
                     </text>
                   </svg>
-                  <span style={styles.calStatLabel}>completion %</span>
+                  <span style={{ ...styles.calStatLabel, ...(isMobile ? { fontSize: '9px' } : {}) }}>{t.clientDetail.completionPct}</span>
                 </div>
-                <div style={styles.calStatCard}>
-                  <Clock size={16} color="var(--accent-warm)" />
-                  <span style={styles.calStatValue}>{avgDuration}</span>
-                  <span style={styles.calStatLabel}>avg min</span>
+                <div style={{ ...styles.calStatCard, ...(isMobile ? { padding: '8px 4px', gap: '3px' } : {}) }}>
+                  <Clock size={isMobile ? 14 : 16} color="var(--accent-warm)" />
+                  <span style={{ ...styles.calStatValue, ...(isMobile ? { fontSize: '16px' } : {}) }}>{avgDuration}</span>
+                  <span style={{ ...styles.calStatLabel, ...(isMobile ? { fontSize: '9px' } : {}) }}>{t.clientDetail.avgMin}</span>
                 </div>
               </div>
 
@@ -912,22 +769,22 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
               </div>
 
               {/* Legend */}
-              <div style={styles.calLegend}>
+              <div style={{ ...styles.calLegend, ...(isMobile ? { gap: '10px', marginTop: '8px' } : {}) }}>
                 <div style={styles.calLegendItem}>
                   <div style={{ ...styles.calLegendDot, background: '#20dba4' }} />
-                  <span>Completed</span>
+                  <span>{t.clientDetail.completedLegend}</span>
                 </div>
                 <div style={styles.calLegendItem}>
                   <div style={{ ...styles.calLegendDot, background: '#e8637a' }} />
-                  <span>Missed</span>
+                  <span>{t.clientDetail.missedLegend}</span>
                 </div>
                 <div style={styles.calLegendItem}>
                   <div style={{ ...styles.calLegendDot, background: '#3b82f6' }} />
-                  <span>Planned</span>
+                  <span>{t.clientDetail.plannedLegend}</span>
                 </div>
                 <div style={styles.calLegendItem}>
                   <div style={{ ...styles.calLegendDot, background: 'var(--accent-primary)' }} />
-                  <span>Today</span>
+                  <span>{t.clientDetail.todayLegend}</span>
                 </div>
               </div>
 
@@ -1026,7 +883,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       </div>
                     ) : (
                       <div style={{ padding: '20px 16px', fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center' }}>
-                        {dayEntries ? (lang === 'pl' ? 'Brak szczegółów zestawów' : 'No set details logged') : (lang === 'pl' ? 'Zaplanowany trening' : 'Planned workout')}
+                        {dayEntries ? t.clientDetail.noSetDetails : t.clientDetail.plannedWorkout}
                       </div>
                     )}
                   </div>
@@ -1035,6 +892,187 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
             </GlassCard>
 
           </div>
+        );
+      })()}
+
+      {/* Smart Insights */}
+      {isMobile ? (
+        <GlassCard style={{ padding: '0' }}>
+          <button onClick={() => toggleSection('insights')} style={{ width: '100%', padding: '14px 16px', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Sparkles size={14} color="var(--accent-primary)" />
+              {t.clientDetail.insightsTitle}
+            </span>
+            <ChevronDown size={14} color="var(--text-tertiary)" style={{ transform: expandedSections.insights ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+          </button>
+          {expandedSections.insights && (
+            <div style={{ padding: '0 16px 14px' }}>
+              <ClientInsights
+                client={client}
+                workoutLogs={workoutLogs}
+                setLogs={setLogs}
+                checkIns={checkIns}
+                program={assignedPrograms.find(p => p.status === 'active') ?? assignedPrograms[0] ?? null}
+                lang={lang}
+                t={{ insightsTitle: t.clientDetail.insightsTitle, insightsSub: t.clientDetail.insightsSub, showMore: t.clientDetail.showMore, showLess: t.clientDetail.showLess, noInsights: t.clientDetail.noInsights }}
+              />
+            </div>
+          )}
+        </GlassCard>
+      ) : (
+        <ClientInsights
+          client={client}
+          workoutLogs={workoutLogs}
+          setLogs={setLogs}
+          checkIns={checkIns}
+          program={assignedPrograms.find(p => p.status === 'active') ?? assignedPrograms[0] ?? null}
+          lang={lang}
+          t={{ insightsTitle: t.clientDetail.insightsTitle, insightsSub: t.clientDetail.insightsSub, showMore: t.clientDetail.showMore, showLess: t.clientDetail.showLess, noInsights: t.clientDetail.noInsights }}
+        />
+      )}
+
+      {/* Engagement Score Panel */}
+      {isMobile ? (
+        <GlassCard style={{ padding: '0' }}>
+          <button onClick={() => toggleSection('engagement')} style={{ width: '100%', padding: '14px 16px', background: 'none', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'var(--font-display)' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Target size={14} color="var(--accent-primary)" />
+              {t.engagement.title}
+              <span style={{ fontSize: '12px', fontWeight: 700, color: engagementScore.total >= 80 ? 'var(--accent-success)' : engagementScore.total >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)', marginLeft: '4px' }}>{engagementScore.total}%</span>
+            </span>
+            <ChevronDown size={14} color="var(--text-tertiary)" style={{ transform: expandedSections.engagement ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+          </button>
+          {expandedSections.engagement && (
+            <div style={{ padding: '0 16px 14px' }}>
+              <EngagementPanel
+                score={engagementScore}
+                insight={engagementInsight}
+                suggestedAction={engagementAction}
+                onAction={(type) => { if (type === 'motivation' || type === 'call') setActiveModal('message'); }}
+                t={{ title: t.engagement.title, subtitle: t.engagement.subtitle, workoutCompletion: t.engagement.workoutCompletion, checkInRate: t.engagement.checkInRate, messageResponsiveness: t.engagement.messageResponsiveness, streakLength: t.engagement.streakLength, trend8Weeks: t.engagement.trend8Weeks, aiInsight: t.engagement.aiInsight, suggestedAction: t.engagement.suggestedAction, last14Days: t.engagement.last14Days, actionLocked: t.engagement.actionLocked }}
+              />
+            </div>
+          )}
+        </GlassCard>
+      ) : (
+        <EngagementPanel
+          score={engagementScore}
+          insight={engagementInsight}
+          suggestedAction={engagementAction}
+          onAction={(type) => { if (type === 'motivation' || type === 'call') setActiveModal('message'); }}
+          t={{ title: t.engagement.title, subtitle: t.engagement.subtitle, workoutCompletion: t.engagement.workoutCompletion, checkInRate: t.engagement.checkInRate, messageResponsiveness: t.engagement.messageResponsiveness, streakLength: t.engagement.streakLength, trend8Weeks: t.engagement.trend8Weeks, aiInsight: t.engagement.aiInsight, suggestedAction: t.engagement.suggestedAction, last14Days: t.engagement.last14Days, actionLocked: t.engagement.actionLocked }}
+        />
+      )}
+
+      {/* Habit Tracking Section */}
+      {habits && habitAssignments && habitLogs && (() => {
+        const clientAssignments = habitAssignments.filter(a => a.clientId === client.id && a.isActive);
+        if (clientAssignments.length === 0) return null;
+
+        type PK = 'waterIntake' | 'sleep' | 'supplements' | 'steps' | 'meditation' | 'stretching' | 'proteinIntake' | 'creatine' | 'omega3' | 'vitaminD' | 'magnesium' | 'wheyProtein';
+        const presetKeys: Record<string, PK> = {
+          'h-water': 'waterIntake', 'h-sleep': 'sleep', 'h-supplements': 'supplements',
+          'h-steps': 'steps', 'h-meditation': 'meditation', 'h-stretching': 'stretching',
+          'h-protein': 'proteinIntake', 'h-creatine': 'creatine', 'h-omega3': 'omega3',
+          'h-vitamind': 'vitaminD', 'h-magnesium': 'magnesium', 'h-whey': 'wheyProtein',
+        };
+        const habitName = (h: Habit) => { const k = presetKeys[h.id]; return k ? t.habits[k] : h.name; };
+
+        const today = new Date();
+        let total7 = 0;
+        let completed7 = 0;
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const dateStr = d.toISOString().split('T')[0];
+          for (const a of clientAssignments) {
+            total7++;
+            const log = habitLogs.find(l => l.habitAssignmentId === a.id && l.logDate === dateStr);
+            if (log?.completed) completed7++;
+          }
+        }
+        const adherence = total7 > 0 ? Math.round((completed7 / total7) * 100) : 0;
+
+        return (
+          <GlassCard style={isMobile ? { padding: '0' } : undefined}>
+            <div
+              onClick={isMobile ? () => toggleSection('habits') : undefined}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '14px 16px' : '0', marginBottom: isMobile ? 0 : 14, cursor: isMobile ? 'pointer' : 'default' }}
+            >
+              <h3 style={{ margin: 0, fontSize: isMobile ? 14 : 16, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8 }}>
+                <Activity size={isMobile ? 15 : 18} style={{ color: 'var(--accent-primary)' }} />
+                {t.habits.habitCompliance}
+                <span style={{
+                  fontSize: isMobile ? 13 : 22, fontWeight: 700, fontFamily: 'var(--font-mono)', marginLeft: '4px',
+                  color: adherence >= 80 ? 'var(--accent-success)' : adherence >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                }}>
+                  {adherence}%
+                </span>
+              </h3>
+              {isMobile ? (
+                <ChevronDown size={14} color="var(--text-tertiary)" style={{ transform: expandedSections.habits ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+              ) : (
+                <span style={{
+                  fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)',
+                  color: adherence >= 80 ? 'var(--accent-success)' : adherence >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                }}>
+                  {adherence}%
+                </span>
+              )}
+            </div>
+
+            {(!isMobile || expandedSections.habits) && <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: isMobile ? '0 16px 14px' : '0' }}>
+              {clientAssignments.map(assignment => {
+                const habit = habits.find(h => h.id === assignment.habitId);
+                if (!habit) return null;
+
+                // 7-day dots
+                const dots = Array.from({ length: 7 }, (_, i) => {
+                  const d = new Date(today);
+                  d.setDate(d.getDate() - (6 - i));
+                  const dateStr = d.toISOString().split('T')[0];
+                  const log = habitLogs.find(l => l.habitAssignmentId === assignment.id && l.logDate === dateStr);
+                  return log?.completed ? 'completed' : log ? 'missed' : 'none';
+                });
+
+                // Streak
+                let streak = 0;
+                for (let i = 0; i < 365; i++) {
+                  const d = new Date(today);
+                  d.setDate(d.getDate() - i);
+                  const dateStr = d.toISOString().split('T')[0];
+                  const log = habitLogs.find(l => l.habitAssignmentId === assignment.id && l.logDate === dateStr);
+                  if (log?.completed) streak++;
+                  else break;
+                }
+
+                return (
+                  <div key={assignment.id} style={{
+                    display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, padding: isMobile ? '5px 8px' : '6px 10px',
+                    borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid var(--glass-border)',
+                  }}>
+                    <span style={{ fontSize: isMobile ? 11 : 13, fontWeight: 500, color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
+                      {habitName(habit)}
+                    </span>
+                    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                      {dots.map((s, di) => (
+                        <div key={di} style={{
+                          width: 7, height: 7, borderRadius: '50%',
+                          background: s === 'completed' ? 'var(--accent-success)' : s === 'missed' ? 'var(--accent-danger)' : 'rgba(255,255,255,0.06)',
+                        }} />
+                      ))}
+                    </div>
+                    {streak > 0 && (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-warm)', whiteSpace: 'nowrap' }}>
+                        🔥 {streak}{t.clientDetail.daySuffix}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>}
+          </GlassCard>
         );
       })()}
 
@@ -1063,49 +1101,59 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
         };
 
         return (
-          <GlassCard delay={0.3}>
-            <div style={styles.trainingSectionHeader}>
-              <div>
-                <h3 style={styles.chartTitle}>Check-In History</h3>
-                {nextScheduled && (
+          <GlassCard delay={0.3} style={isMobile ? { padding: '0' } : undefined}>
+            <div
+              onClick={isMobile ? () => toggleSection('checkIns') : undefined}
+              style={{ ...styles.trainingSectionHeader, ...(isMobile ? { flexDirection: 'row' as const, gap: '8px', padding: '14px 16px', cursor: 'pointer', marginBottom: 0 } : {}) }}
+            >
+              <div style={{ flex: 1 }}>
+                <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '14px' } : {}) }}>
+                  <ClipboardCheck size={isMobile ? 14 : 16} color="var(--accent-primary)" style={{ marginRight: '6px' }} />
+                  {t.clientDetail.checkInHistory}
+                  {isMobile && <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginLeft: '6px' }}>{completed.length} / {missed.length}</span>}
+                </h3>
+                {!isMobile && nextScheduled && (
                   <p style={styles.trainingSubtitle}>
-                    Next: {new Date(nextScheduled.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
+                    {t.clientDetail.nextLabel} {new Date(nextScheduled.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' })}
                   </p>
                 )}
               </div>
-              <div style={styles.trainingStats}>
-                <div style={styles.trainingStat}>
-                  <span style={styles.trainingStatValue}>{completed.length}</span>
-                  <span style={styles.trainingStatLabel}>done</span>
+              {isMobile ? (
+                <ChevronDown size={14} color="var(--text-tertiary)" style={{ transform: expandedSections.checkIns ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', flexShrink: 0 }} />
+              ) : (
+                <div style={styles.trainingStats}>
+                  <div style={styles.trainingStat}>
+                    <span style={styles.trainingStatValue}>{completed.length}</span>
+                    <span style={styles.trainingStatLabel}>{t.clientDetail.doneStat}</span>
+                  </div>
+                  <div style={styles.trainingStat}>
+                    <span style={styles.trainingStatValue}>{missed.length}</span>
+                    <span style={styles.trainingStatLabel}>{t.clientDetail.missedStat}</span>
+                  </div>
+                  <div style={styles.trainingStat}>
+                    <span style={styles.trainingStatValue}>{avgMood}</span>
+                    <span style={styles.trainingStatLabel}>{t.clientDetail.avgMood}</span>
+                  </div>
+                  <div style={styles.trainingStat}>
+                    <span style={{ ...styles.trainingStatValue, color: avgSteps >= 8000 ? 'var(--accent-success)' : avgSteps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
+                      {avgSteps.toLocaleString()}
+                    </span>
+                    <span style={styles.trainingStatLabel}>{t.clientDetail.avgSteps}</span>
+                  </div>
                 </div>
-                <div style={styles.trainingStat}>
-                  <span style={styles.trainingStatValue}>{missed.length}</span>
-                  <span style={styles.trainingStatLabel}>missed</span>
-                </div>
-                <div style={styles.trainingStat}>
-                  <span style={styles.trainingStatValue}>{avgMood}</span>
-                  <span style={styles.trainingStatLabel}>avg mood</span>
-                </div>
-                <div style={styles.trainingStat}>
-                  <span style={{ ...styles.trainingStatValue, color: avgSteps >= 8000 ? 'var(--accent-success)' : avgSteps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
-                    {avgSteps.toLocaleString()}
-                  </span>
-                  <span style={styles.trainingStatLabel}>avg steps</span>
-                </div>
-              </div>
+              )}
             </div>
 
-            <div style={styles.checkInList}>
+            {(!isMobile || expandedSections.checkIns) && <div style={{ ...styles.checkInList, padding: isMobile ? '0 16px 14px' : undefined }}>
               {clientCheckIns.length === 0 && (
                 <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '18px' }}>
-                  No check-ins yet.
+                  {t.clientDetail.noCheckIns}
                 </div>
               )}
               {clientCheckIns.map((ci, idx) => {
                 const MoodIcon = ci.mood ? moodIcons[ci.mood]?.icon || Meh : null;
                 const moodColor = ci.mood ? moodIcons[ci.mood]?.color || 'var(--text-secondary)' : '';
                 const statusColor = ci.status === 'completed' ? 'var(--accent-success)' : ci.status === 'scheduled' ? 'var(--accent-primary)' : 'var(--accent-danger)';
-                const statusBg = ci.status === 'completed' ? 'var(--accent-success-dim)' : ci.status === 'scheduled' ? 'var(--accent-primary-dim)' : 'rgba(239,68,68,0.1)';
 
                 return (
                   <motion.div
@@ -1120,70 +1168,86 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       }
                     }}
                     style={{
-                      ...styles.checkInRow,
+                      padding: isMobile ? '10px' : '12px 14px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid var(--border-subtle)',
+                      borderLeft: `3px solid ${statusColor}`,
                       cursor: ci.status === 'completed' ? 'pointer' : 'default',
-                      flexDirection: isMobile ? 'column' : 'row',
-                      alignItems: isMobile ? 'flex-start' : 'center',
-                      gap: isMobile ? '8px' : '16px',
+                      transition: 'background 0.1s',
+                      marginBottom: isMobile ? '6px' : '8px',
                     }}
                   >
-                    <div style={styles.checkInDate}>
-                      <Calendar size={13} color={statusColor} />
-                      <span>{new Date(ci.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    {/* Top: date + mood icon + status */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: ci.status === 'completed' ? (isMobile ? '6px' : '8px') : 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Calendar size={isMobile ? 10 : 12} color={statusColor} />
+                        <span style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {new Date(ci.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' })}
+                        </span>
+                        {MoodIcon && <MoodIcon size={isMobile ? 13 : 15} color={moodColor} />}
+                      </div>
+                      <span style={{ fontSize: isMobile ? '10px' : '12px', fontWeight: 600, color: statusColor, textTransform: 'capitalize' }}>
+                        {t.clientDetail.checkInStatusMap[ci.status] || ci.status}
+                      </span>
                     </div>
 
+                    {/* Bottom: metrics grid */}
                     {ci.status === 'completed' && (
-                      <div style={{ ...styles.checkInMetrics, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-                        {ci.weight && <span style={styles.checkInChip}>{ci.weight} kg</span>}
-                        {ci.bodyFat && <span style={styles.checkInChip}>{ci.bodyFat}% BF</span>}
-                        {ci.sleepHours && (
-                          <span style={styles.checkInChip}>
-                            <Moon size={10} /> {ci.sleepHours}h
-                          </span>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(80px, 1fr))', gap: isMobile ? '4px' : '6px' }}>
+                        {ci.weight != null && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.clientDetail.weight}</span>
+                            <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{ci.weight} kg</span>
+                          </div>
                         )}
-                        {ci.steps !== null && (
-                          <span style={{
-                            ...styles.checkInChip,
-                            color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)',
-                          }}>
-                            {ci.steps.toLocaleString()} steps
-                          </span>
+                        {ci.bodyFat != null && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.clientDetail.bodyFat}</span>
+                            <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{ci.bodyFat}%</span>
+                          </div>
                         )}
-                        {ci.energy !== null && ci.energy !== undefined && (
-                          <span style={styles.checkInChip}>E:{ci.energy}</span>
+                        {ci.sleepHours != null && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.clientDetail.sleepLabel}</span>
+                            <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}><Moon size={isMobile ? 10 : 11} style={{ opacity: 0.5 }} /> {ci.sleepHours}h</span>
+                          </div>
                         )}
-                        {ci.stress !== null && ci.stress !== undefined && (
-                          <span style={{
-                            ...styles.checkInChip,
-                            color: ci.stress >= 7 ? 'var(--accent-danger)' : ci.stress >= 5 ? 'var(--accent-warm)' : 'var(--text-secondary)',
-                          }}>S:{ci.stress}</span>
+                        {ci.steps != null && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.clientDetail.stepsLabel}</span>
+                            <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.steps.toLocaleString()}</span>
+                          </div>
                         )}
-                        {MoodIcon && (
-                          <span style={{ ...styles.checkInChip, color: moodColor }}>
-                            <MoodIcon size={12} />
-                          </span>
+                        {ci.energy != null && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.clientDetail.energyLabel}</span>
+                            <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.energy}/10</span>
+                          </div>
+                        )}
+                        {ci.stress != null && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t.clientDetail.stressLabel}</span>
+                            <span style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: ci.stress >= 7 ? 'var(--accent-danger)' : ci.stress >= 5 ? 'var(--accent-warm)' : 'var(--accent-success)' }}>{ci.stress}/10</span>
+                          </div>
                         )}
                       </div>
                     )}
-
-                    <span style={{ ...styles.checkInStatusBadge, color: statusColor, background: statusBg, marginLeft: isMobile ? '0' : 'auto' }}>
-                      {ci.status}
-                    </span>
                   </motion.div>
                 );
               })}
-            </div>
+            </div>}
           </GlassCard>
         );
       })()}
 
       {/* Activity Timeline */}
       {client.activityLog && client.activityLog.length > 0 && (
-        <GlassCard delay={0.28}>
+        <GlassCard delay={0.28} style={isMobile ? { padding: '14px 16px' } : undefined}>
           <div style={styles.trainingSectionHeader}>
             <div>
-              <h3 style={styles.chartTitle}>{t.clientDetail.activityLog}</h3>
-              <p style={styles.trainingSubtitle}>{client.activityLog.length} events</p>
+              <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}) }}>{t.clientDetail.activityLog}</h3>
+              <p style={{ ...styles.trainingSubtitle, ...(isMobile ? { fontSize: '12px' } : {}) }}>{t.clientDetail.events(client.activityLog.length)}</p>
             </div>
           </div>
           <div style={styles.activityTimeline}>
@@ -1196,12 +1260,12 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.04 }}
-                  style={styles.activityItem}
+                  style={{ ...styles.activityItem, ...(isMobile ? { padding: '8px 10px', gap: '10px' } : {}) }}
                 >
-                  <div style={styles.activityIcon}>{activityIcon(event.type)}</div>
+                  <div style={{ ...styles.activityIcon, ...(isMobile ? { width: '28px', height: '28px', borderRadius: '6px' } : {}) }}>{activityIcon(event.type)}</div>
                   <div style={styles.activityContent}>
-                    <span style={styles.activityDesc}>{event.description}</span>
-                    <span style={styles.activityTime}>
+                    <span style={{ ...styles.activityDesc, ...(isMobile ? { fontSize: '12px' } : {}) }}>{event.description}</span>
+                    <span style={{ ...styles.activityTime, ...(isMobile ? { fontSize: '11px' } : {}) }}>
                       <Clock size={11} />
                       {timeAgo(event.date)}
                     </span>
@@ -1213,40 +1277,20 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       )}
 
       {/* Bottom Row */}
-      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
-        {/* Performance Radar */}
-        <GlassCard delay={0.3}>
-          <h3 style={styles.chartTitle}>{t.clientDetail.progressTracker}</h3>
-          <div style={{ height: 260, marginTop: '8px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="var(--border-subtle-strong)" />
-                <PolarAngleAxis dataKey="metric" tick={{ fontSize: 15, fill: '#8b92a5' }} />
-                <Radar
-                  dataKey="value"
-                  stroke="#00e5c8"
-                  fill="#00e5c8"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-
+      <div style={{ ...styles.bottomGrid, gridTemplateColumns: '1fr' }}>
         {/* Goals + Coach Notes */}
-        <GlassCard delay={0.35}>
-          <h3 style={styles.chartTitle}>Goals</h3>
-          <div style={styles.goalsList}>
+        <GlassCard delay={0.35} style={isMobile ? { padding: '14px 16px' } : undefined}>
+          <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}) }}>{t.clientDetail.goals}</h3>
+          <div style={{ ...styles.goalsList, ...(isMobile ? { gap: '8px', marginTop: '10px' } : {}) }}>
             {client.goals.map((goal, i) => (
               <motion.div
                 key={i}
-                style={styles.goalItem}
+                style={{ ...styles.goalItem, ...(isMobile ? { fontSize: '12px', padding: '8px 10px', gap: '8px' } : {}) }}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + i * 0.05 }}
               >
-                <Target size={16} color="var(--accent-primary)" />
+                <Target size={isMobile ? 14 : 16} color="var(--accent-primary)" />
                 <span>{goal}</span>
               </motion.div>
             ))}
@@ -1254,8 +1298,8 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
           <div style={styles.divider} />
 
-          <h3 style={{ ...styles.chartTitle, marginTop: '16px' }}>Coach Notes</h3>
-          <p style={styles.notes}>{client.notes}</p>
+          <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}), marginTop: '16px' }}>{t.clientDetail.coachNotes}</h3>
+          <p style={{ ...styles.notes, ...(isMobile ? { fontSize: '12px' } : {}) }}>{client.notes}</p>
         </GlassCard>
       </div>
 
@@ -1280,13 +1324,13 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
               style={{ ...styles.modalCentered, width: isMobile ? 'calc(100% - 32px)' : '480px' }}
             >
               {/* Modal Header */}
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>
+              <div style={{ ...styles.modalHeader, ...(isMobile ? { padding: '14px 16px 12px' } : {}) }}>
+                <h3 style={{ ...styles.modalTitle, ...(isMobile ? { fontSize: '16px' } : {}) }}>
                   {activeModal === 'message' && t.clientDetail.sendMessage}
                   {activeModal === 'editPlan' && t.clientDetail.editPlanStatus}
                   {activeModal === 'notes' && t.clientDetail.notes}
                   {activeModal === 'assignProgram' && t.clientDetail.assignProgram}
-                  {activeModal === 'viewCheckIn' && 'Check-In Details'}
+                  {activeModal === 'viewCheckIn' && t.clientDetail.checkInDetails}
                 </h3>
                 <button onClick={() => setActiveModal(null)} style={styles.closeBtn}>
                   <X size={18} />
@@ -1295,9 +1339,9 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
               {/* Message Modal */}
               {activeModal === 'message' && (
-                <div style={styles.modalBody}>
+                <div style={{ ...styles.modalBody, ...(isMobile ? { padding: '14px 16px 16px', gap: '12px' } : {}) }}>
                   <div style={styles.modalRecipient}>
-                    <span style={styles.modalLabel}>To</span>
+                    <span style={styles.modalLabel}>{t.clientDetail.toLabel}</span>
                     <div style={styles.recipientChip}>
                       <div style={{ ...styles.miniAvatar, background: getAvatarColor(client.id) }}>
                         {getInitials(client.name)}
@@ -1328,7 +1372,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
               {/* Edit Plan Modal */}
               {activeModal === 'editPlan' && (
-                <div style={styles.modalBody}>
+                <div style={{ ...styles.modalBody, ...(isMobile ? { padding: '14px 16px 16px', gap: '12px' } : {}) }}>
                   <div style={styles.modalField}>
                     <span style={styles.modalLabel}>{t.clientDetail.plan}</span>
                     <div style={styles.modalPlanPicker}>
@@ -1396,7 +1440,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
               {/* Notes Modal */}
               {activeModal === 'notes' && (
-                <div style={styles.modalBody}>
+                <div style={{ ...styles.modalBody, ...(isMobile ? { padding: '14px 16px 16px', gap: '12px' } : {}) }}>
                   {/* Add Note toggle */}
                   {!showNoteInput ? (
                     <button
@@ -1404,7 +1448,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                       style={styles.addNoteBtn}
                     >
                       <Edit3 size={14} />
-                      Add Note
+                      {t.clientDetail.addNote}
                     </button>
                   ) : (
                     <div style={styles.modalField}>
@@ -1413,7 +1457,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                         onChange={(e) => setEditNotes(e.target.value)}
                         style={styles.modalTextarea}
                         rows={4}
-                        placeholder="Write a new note..."
+                        placeholder={t.clientDetail.writeNotePlaceholder}
                         autoFocus
                       />
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -1439,7 +1483,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                     <div style={styles.notesHistorySection}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <span style={{ ...styles.modalLabel, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          History ({client.notesHistory.length})
+                          {t.clientDetail.historyCount(client.notesHistory.length)}
                         </span>
                         <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>
                           <Star size={10} style={{ verticalAlign: 'middle', marginRight: '3px' }} />
@@ -1461,7 +1505,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                                   </span>
                                   {nh.isKey && (
                                     <span style={styles.keyBadge}>
-                                      <Star size={9} /> KEY
+                                      <Star size={9} /> {t.clientDetail.keyBadge}
                                     </span>
                                   )}
                                 </div>
@@ -1476,7 +1520,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                                         : {}
                                     ),
                                   }}
-                                  title={nh.isKey ? 'Remove key note' : keyCount >= 2 ? 'Max 2 key notes' : 'Mark as key note'}
+                                  title={nh.isKey ? t.clientDetail.removeKeyNote : keyCount >= 2 ? t.clientDetail.maxKeyNotes : t.clientDetail.markAsKeyNote}
                                 >
                                   <Star size={12} fill={nh.isKey ? 'var(--accent-warm)' : 'none'} />
                                 </button>
@@ -1489,7 +1533,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                     </div>
                   ) : (
                     <p style={{ fontSize: '18px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 0', margin: 0 }}>
-                      No notes yet. Click "Add Note" to get started.
+                      {t.clientDetail.noNotesYet}
                     </p>
                   )}
                 </div>
@@ -1497,14 +1541,14 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
               {/* Assign Program Modal */}
               {activeModal === 'assignProgram' && (
-                <div style={styles.modalBody}>
+                <div style={{ ...styles.modalBody, ...(isMobile ? { padding: '14px 16px 16px', gap: '12px' } : {}) }}>
                   <p style={{ fontSize: '18px', color: 'var(--text-secondary)', margin: 0 }}>
-                    Select which programs to assign to <strong style={{ color: 'var(--text-primary)' }}>{client.name}</strong>:
+                    {t.clientDetail.selectPrograms(client.name)}
                   </p>
                   <div style={styles.programList}>
                     {programs.filter(p => !p.isTemplate).length === 0 ? (
                       <p style={{ fontSize: '18px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '20px 0' }}>
-                        No programs available. Create one in the Programs page first.
+                        {t.clientDetail.noProgramsAvailable}
                       </p>
                     ) : (
                       programs.filter(p => !p.isTemplate).map(prog => {
@@ -1523,7 +1567,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                               <div style={styles.programRowName}>{prog.name}</div>
                               <div style={styles.programRowMeta}>
                                 <span style={{ ...styles.programStatusDot, background: prog.status === 'active' ? 'var(--accent-success)' : prog.status === 'draft' ? 'var(--accent-warm)' : 'var(--text-tertiary)' }} />
-                                {prog.status} &middot; {prog.days.length} days &middot; {prog.durationWeeks}w
+                                {t.clientDetail.programStatusMap[prog.status] || prog.status} &middot; {t.clientDetail.programDays(prog.days.length)} &middot; {prog.durationWeeks}w
                               </div>
                             </div>
                             {isAssigned && (
@@ -1536,178 +1580,221 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
                   </div>
                   <div style={styles.modalActions}>
                     <button onClick={() => { setActiveModal(null); flashSaved(t.clientDetail.programAssigned); }} style={styles.modalPrimaryBtn}>
-                      Done
+                      {t.clientDetail.doneBtn}
                     </button>
                   </div>
                 </div>
               )}
 
               {/* View Check-In Detail Modal */}
-              {activeModal === 'viewCheckIn' && selectedCheckIn && (
-                <div style={{ ...styles.modalBody, maxHeight: '70vh', overflowY: 'auto' }}>
-                  <div style={styles.checkInDetailGrid}>
-                    <div style={styles.checkInDetailItem}>
-                      <span style={styles.checkInDetailLabel}>Date</span>
-                      <span style={styles.checkInDetailValue}>
-                        {new Date(selectedCheckIn.date).toLocaleDateString(dateLocale, { month: 'long', day: 'numeric', year: 'numeric' })}
+              {activeModal === 'viewCheckIn' && selectedCheckIn && (() => {
+                const ciMoodIcons: Record<number, { icon: typeof Smile; color: string }> = {
+                  1: { icon: Angry, color: 'var(--accent-danger)' },
+                  2: { icon: Frown, color: 'var(--accent-warm)' },
+                  3: { icon: Meh, color: 'var(--text-secondary)' },
+                  4: { icon: Smile, color: 'var(--accent-success)' },
+                  5: { icon: SmilePlus, color: 'var(--accent-primary)' },
+                };
+                const ciMoodIcon = selectedCheckIn.mood ? ciMoodIcons[selectedCheckIn.mood] : null;
+                const textStyle = { fontSize: isMobile ? '13px' : '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: isMobile ? '8px 10px' : '10px 12px', borderRadius: 'var(--radius-sm)' };
+                const labelStyle = { ...styles.modalLabel, fontSize: isMobile ? '12px' : '17px' };
+                return (
+                <div style={{ ...styles.modalBody, ...(isMobile ? { padding: '14px 16px 16px', gap: '10px' } : {}), maxHeight: '75vh', overflowY: 'auto' }}>
+                  {/* Date header with mood */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: isMobile ? '8px' : '12px', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Calendar size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+                      <span style={{ fontSize: isMobile ? '15px' : '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {new Date(selectedCheckIn.date).toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
                       </span>
                     </div>
-                    {selectedCheckIn.weight && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>{t.clientDetail.weight}</span>
-                        <span style={styles.checkInDetailValue}>{selectedCheckIn.weight} kg</span>
+                    {ciMoodIcon && <ciMoodIcon.icon size={isMobile ? 18 : 22} color={ciMoodIcon.color} />}
+                  </div>
+
+                  {/* Metrics grid — compact 3-col */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: isMobile ? '6px' : '10px' }}>
+                    {selectedCheckIn.weight != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.weight}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{selectedCheckIn.weight} <span style={{ fontSize: isMobile ? '11px' : '13px', opacity: 0.5 }}>kg</span></span>
                       </div>
                     )}
-                    {selectedCheckIn.bodyFat && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>{t.clientDetail.bodyFat}</span>
-                        <span style={styles.checkInDetailValue}>{selectedCheckIn.bodyFat}%</span>
+                    {selectedCheckIn.bodyFat != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.bodyFat}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{selectedCheckIn.bodyFat}<span style={{ fontSize: isMobile ? '11px' : '13px', opacity: 0.5 }}>%</span></span>
                       </div>
                     )}
-                    {selectedCheckIn.mood && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Mood</span>
-                        <span style={styles.checkInDetailValue}>{selectedCheckIn.mood}/5</span>
+                    {selectedCheckIn.energy != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.energyLabel}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: selectedCheckIn.energy >= 7 ? 'var(--accent-success)' : selectedCheckIn.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{selectedCheckIn.energy}<span style={{ fontSize: isMobile ? '11px' : '13px', opacity: 0.5 }}>/10</span></span>
                       </div>
                     )}
-                    {selectedCheckIn.energy !== null && selectedCheckIn.energy !== undefined && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Energy</span>
-                        <span style={styles.checkInDetailValue}>{selectedCheckIn.energy}/10</span>
+                    {selectedCheckIn.stress != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.stressLabel}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: selectedCheckIn.stress >= 7 ? 'var(--accent-danger)' : selectedCheckIn.stress >= 5 ? 'var(--accent-warm)' : 'var(--accent-success)' }}>{selectedCheckIn.stress}<span style={{ fontSize: isMobile ? '11px' : '13px', opacity: 0.5 }}>/10</span></span>
                       </div>
                     )}
-                    {selectedCheckIn.stress !== null && selectedCheckIn.stress !== undefined && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Stress</span>
-                        <span style={{ ...styles.checkInDetailValue, color: (selectedCheckIn.stress || 0) >= 7 ? 'var(--accent-danger)' : (selectedCheckIn.stress || 0) >= 5 ? 'var(--accent-warm)' : 'var(--accent-success)' }}>
-                          {selectedCheckIn.stress}/10
-                        </span>
+                    {selectedCheckIn.sleepHours != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.sleepLabel}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{selectedCheckIn.sleepHours}<span style={{ fontSize: isMobile ? '11px' : '13px', opacity: 0.5 }}>h</span></span>
                       </div>
                     )}
-                    {selectedCheckIn.sleepHours && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Sleep</span>
-                        <span style={styles.checkInDetailValue}>{selectedCheckIn.sleepHours}h</span>
+                    {selectedCheckIn.steps != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.stepsLabel}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: (selectedCheckIn.steps || 0) >= 8000 ? 'var(--accent-success)' : (selectedCheckIn.steps || 0) >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{(selectedCheckIn.steps || 0).toLocaleString()}</span>
                       </div>
                     )}
-                    {selectedCheckIn.steps !== null && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Steps</span>
-                        <span style={{ ...styles.checkInDetailValue, color: (selectedCheckIn.steps || 0) >= 8000 ? 'var(--accent-success)' : (selectedCheckIn.steps || 0) >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>
-                          {(selectedCheckIn.steps || 0).toLocaleString()}
-                        </span>
+                    {selectedCheckIn.nutritionScore != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.nutritionLabel}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{selectedCheckIn.nutritionScore}<span style={{ fontSize: isMobile ? '11px' : '13px', opacity: 0.5 }}>/10</span></span>
                       </div>
                     )}
-                    {selectedCheckIn.nutritionScore !== null && selectedCheckIn.nutritionScore !== undefined && (
-                      <div style={styles.checkInDetailItem}>
-                        <span style={styles.checkInDetailLabel}>Nutrition</span>
-                        <span style={styles.checkInDetailValue}>{selectedCheckIn.nutritionScore}/10</span>
+                    {selectedCheckIn.mood != null && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: isMobile ? '8px' : '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: isMobile ? '9px' : '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.3px', fontWeight: 600 }}>{t.clientDetail.moodLabel}</span>
+                        <span style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: ciMoodIcon?.color || 'var(--text-primary)' }}>{selectedCheckIn.mood}<span style={{ fontSize: isMobile ? '11px' : '13px', opacity: 0.5 }}>/5</span></span>
                       </div>
                     )}
                   </div>
 
+                  {/* Notes sections */}
                   {selectedCheckIn.notes && (
-                    <div style={styles.modalField}>
-                      <span style={styles.modalLabel}>Client Notes</span>
-                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>
-                        {selectedCheckIn.notes}
-                      </p>
+                    <div style={{ ...styles.modalField, gap: isMobile ? '4px' : '8px' }}>
+                      <span style={labelStyle}>{t.clientDetail.clientNotes}</span>
+                      <p style={{ ...textStyle, background: 'var(--bg-subtle)', border: '1px solid var(--glass-border)' }}>{selectedCheckIn.notes}</p>
                     </div>
                   )}
-
                   {selectedCheckIn.wins && (
-                    <div style={styles.modalField}>
-                      <span style={{ ...styles.modalLabel, color: 'var(--accent-success)' }}>Wins</span>
-                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-success-dim)', border: '1px solid rgba(34,197,94,0.1)' }}>
-                        {selectedCheckIn.wins}
-                      </p>
+                    <div style={{ ...styles.modalField, gap: isMobile ? '4px' : '8px' }}>
+                      <span style={{ ...labelStyle, color: 'var(--accent-success)' }}>{t.clientDetail.winsLabel}</span>
+                      <p style={{ ...textStyle, background: 'var(--accent-success-dim)', border: '1px solid rgba(34,197,94,0.1)' }}>{selectedCheckIn.wins}</p>
                     </div>
                   )}
-
                   {selectedCheckIn.challenges && (
-                    <div style={styles.modalField}>
-                      <span style={{ ...styles.modalLabel, color: 'var(--accent-warm)' }}>Challenges</span>
-                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--accent-warm-dim)', border: '1px solid rgba(245,158,11,0.1)' }}>
-                        {selectedCheckIn.challenges}
-                      </p>
+                    <div style={{ ...styles.modalField, gap: isMobile ? '4px' : '8px' }}>
+                      <span style={{ ...labelStyle, color: 'var(--accent-warm)' }}>{t.clientDetail.challengesLabel}</span>
+                      <p style={{ ...textStyle, background: 'var(--accent-warm-dim)', border: '1px solid rgba(245,158,11,0.1)' }}>{selectedCheckIn.challenges}</p>
                     </div>
                   )}
 
-                  {/* Editable Coach Feedback */}
-                  <div style={styles.modalField}>
-                    <span style={{ ...styles.modalLabel, color: 'var(--accent-primary)' }}>Coach Feedback</span>
-                    <textarea
-                      defaultValue={selectedCheckIn.coachFeedback}
-                      onChange={(e) => setSelectedCheckIn(prev => prev ? { ...prev, coachFeedback: e.target.value } : null)}
-                      placeholder="Add your feedback for this check-in..."
-                      style={styles.modalTextarea}
-                      rows={3}
-                    />
-                  </div>
-
-                  {selectedCheckIn.reviewStatus === 'flagged' && selectedCheckIn.flagReason && (
-                    <div style={styles.modalField}>
-                      <span style={{ ...styles.modalLabel, color: 'var(--accent-danger)' }}>Flagged</span>
-                      <p style={{ fontSize: '18px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                        {selectedCheckIn.flagReason}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Review Status Badge */}
-                  {selectedCheckIn.reviewStatus && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '17px' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--text-tertiary)' }}>{t.clientDetail.status}:</span>
-                      <span style={{
-                        padding: '3px 10px',
-                        borderRadius: '20px',
-                        fontWeight: 600,
-                        fontSize: '15px',
-                        textTransform: 'capitalize' as const,
-                        color: selectedCheckIn.reviewStatus === 'reviewed' ? 'var(--accent-success)' : selectedCheckIn.reviewStatus === 'flagged' ? 'var(--accent-danger)' : 'var(--accent-warm)',
-                        background: selectedCheckIn.reviewStatus === 'reviewed' ? 'var(--accent-success-dim)' : selectedCheckIn.reviewStatus === 'flagged' ? 'rgba(239,68,68,0.1)' : 'var(--accent-warm-dim)',
-                      }}>
-                        {selectedCheckIn.reviewStatus}
+                  {/* Coach Feedback — editable if not reviewed, read-only if reviewed */}
+                  {selectedCheckIn.reviewStatus === 'reviewed' ? (
+                    selectedCheckIn.coachFeedback ? (
+                      <div style={{ ...styles.modalField, gap: isMobile ? '4px' : '8px' }}>
+                        <span style={{ ...labelStyle, color: 'var(--accent-primary)' }}>{t.clientDetail.coachFeedbackLabel}</span>
+                        <p style={{ ...textStyle, background: 'rgba(0,229,200,0.04)', border: '1px solid rgba(0,229,200,0.1)' }}>{selectedCheckIn.coachFeedback}</p>
+                      </div>
+                    ) : null
+                  ) : (
+                    <div style={{ ...styles.modalField, gap: isMobile ? '4px' : '8px' }}>
+                      <span style={{ ...labelStyle, color: 'var(--accent-primary)' }}>{t.clientDetail.coachFeedbackLabel}</span>
+                      <textarea
+                        defaultValue={selectedCheckIn.coachFeedback}
+                        onChange={(e) => setSelectedCheckIn(prev => prev ? { ...prev, coachFeedback: e.target.value } : null)}
+                        placeholder={t.clientDetail.feedbackPlaceholder}
+                        style={{ ...styles.modalTextarea, fontSize: isMobile ? '13px' : '20px', padding: isMobile ? '8px 10px' : '12px 14px', minHeight: isMobile ? '60px' : '80px' }}
+                        rows={2}
+                      />
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Send size={isMobile ? 8 : 9} /> {lang === 'pl' ? 'Widoczne dla klienta' : 'Visible to client'}
                       </span>
                     </div>
                   )}
 
-                  <div style={styles.modalActions}>
-                    <button onClick={() => { setActiveModal(null); setSelectedCheckIn(null); }} style={styles.modalCancelBtn}>
-                      {t.clientDetail.cancel}
-                    </button>
-                    {selectedCheckIn.reviewStatus !== 'flagged' && (
-                      <button
-                        onClick={() => {
-                          const reason = window.prompt('Flag reason (e.g. needs program change, schedule a call):');
-                          if (reason) {
-                            onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'flagged', flagReason: reason });
-                            setActiveModal(null);
-                            setSelectedCheckIn(null);
-                            flashSaved('Check-in flagged');
-                          }
-                        }}
-                        style={{ ...styles.modalCancelBtn, color: 'var(--accent-danger)', borderColor: 'rgba(239,68,68,0.3)' }}
-                      >
-                        <Flag size={14} />
-                        Flag
+                  {/* Flag reason */}
+                  {selectedCheckIn.reviewStatus === 'flagged' && selectedCheckIn.flagReason && (
+                    <div style={{ ...styles.modalField, gap: isMobile ? '4px' : '8px' }}>
+                      <span style={{ ...labelStyle, color: 'var(--accent-danger)' }}>{t.clientDetail.flaggedLabel}</span>
+                      <p style={{ ...textStyle, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>{selectedCheckIn.flagReason}</p>
+                    </div>
+                  )}
+
+                  {/* Actions — reviewed = only close, otherwise full actions */}
+                  {selectedCheckIn.reviewStatus === 'reviewed' ? (
+                    <div style={{ ...styles.modalActions, justifyContent: 'center' }}>
+                      <button onClick={() => { setActiveModal(null); setSelectedCheckIn(null); }} style={{ ...styles.modalCancelBtn, fontSize: isMobile ? '13px' : '18px', padding: isMobile ? '8px 24px' : '8px 16px' }}>
+                        {lang === 'pl' ? 'Zamknij' : 'Close'}
                       </button>
+                    </div>
+                  ) : (
+                  <div style={{ ...styles.modalActions, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '6px' : '8px' }}>
+                    {isMobile ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'reviewed' });
+                            setActiveModal(null); setSelectedCheckIn(null);
+                            flashSaved(t.clientDetail.checkInReviewedFlash);
+                          }}
+                          style={{ ...styles.modalPrimaryBtn, width: '100%', justifyContent: 'center', fontSize: '13px', padding: '10px 16px' }}
+                        >
+                          <Save size={13} />
+                          {t.clientDetail.markReviewedBtn}
+                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button onClick={() => { setActiveModal(null); setSelectedCheckIn(null); }} style={{ ...styles.modalCancelBtn, flex: 1, textAlign: 'center', fontSize: '12px', padding: '7px 10px' }}>
+                            {t.clientDetail.cancel}
+                          </button>
+                          {selectedCheckIn.reviewStatus !== 'flagged' && (
+                            <button
+                              onClick={() => {
+                                const reason = window.prompt(t.clientDetail.flagReasonPrompt);
+                                if (reason) {
+                                  onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'flagged', flagReason: reason });
+                                  setActiveModal(null); setSelectedCheckIn(null);
+                                  flashSaved(t.clientDetail.checkInFlaggedFlash);
+                                }
+                              }}
+                              style={{ ...styles.modalCancelBtn, flex: 1, textAlign: 'center', fontSize: '12px', padding: '7px 10px', color: 'var(--accent-danger)', borderColor: 'rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                            >
+                              <Flag size={11} /> {t.clientDetail.flagBtn}
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => { setActiveModal(null); setSelectedCheckIn(null); }} style={styles.modalCancelBtn}>
+                          {t.clientDetail.cancel}
+                        </button>
+                        {selectedCheckIn.reviewStatus !== 'flagged' && (
+                          <button
+                            onClick={() => {
+                              const reason = window.prompt(t.clientDetail.flagReasonPrompt);
+                              if (reason) {
+                                onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'flagged', flagReason: reason });
+                                setActiveModal(null); setSelectedCheckIn(null);
+                                flashSaved(t.clientDetail.checkInFlaggedFlash);
+                              }
+                            }}
+                            style={{ ...styles.modalCancelBtn, color: 'var(--accent-danger)', borderColor: 'rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Flag size={14} /> {t.clientDetail.flagBtn}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'reviewed' });
+                            setActiveModal(null); setSelectedCheckIn(null);
+                            flashSaved(t.clientDetail.checkInReviewedFlash);
+                          }}
+                          style={styles.modalPrimaryBtn}
+                        >
+                          <Save size={14} /> {t.clientDetail.markReviewedBtn}
+                        </button>
+                      </>
                     )}
-                    <button
-                      onClick={() => {
-                        onUpdateCheckIn(selectedCheckIn.id, { coachFeedback: selectedCheckIn.coachFeedback, reviewStatus: 'reviewed' });
-                        setActiveModal(null);
-                        setSelectedCheckIn(null);
-                        flashSaved('Check-in reviewed');
-                      }}
-                      style={styles.modalPrimaryBtn}
-                    >
-                      <Save size={14} />
-                      {selectedCheckIn.reviewStatus === 'reviewed' ? t.clientDetail.save : 'Mark Reviewed'}
-                    </button>
                   </div>
+                  )}
                 </div>
-              )}
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}

@@ -32,6 +32,7 @@ interface ClientInsightsProps {
   setLogs: WorkoutSetLog[];
   checkIns: CheckIn[];
   program: WorkoutProgram | null;
+  lang: string;
   t: {
     insightsTitle: string;
     insightsSub: string;
@@ -71,9 +72,11 @@ function generateInsights(
   setLogs: WorkoutSetLog[],
   checkIns: CheckIn[],
   program: WorkoutProgram | null,
+  pl: boolean,
 ): Insight[] {
   const insights: Insight[] = [];
   const today = new Date().toISOString().split('T')[0];
+  const dateLocale = pl ? 'pl-PL' : 'en-US';
 
   // Filter to this client's data
   const clientLogs = workoutLogs.filter(l => l.clientId === client.id);
@@ -100,11 +103,16 @@ function generateInsights(
   if (lastWorkoutDate) {
     const daysSinceLast = daysBetween(lastWorkoutDate, today);
     if (daysSinceLast >= 7) {
+      const formattedDate = new Date(lastWorkoutDate).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' });
       insights.push({
         id: 'missed-week',
         icon: <AlertTriangle size={16} />,
-        title: `No workouts in ${daysSinceLast} days`,
-        detail: `Last session was ${new Date(lastWorkoutDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}. Consider a check-in message.`,
+        title: pl
+          ? `Brak treningów od ${daysSinceLast} dni`
+          : `No workouts in ${daysSinceLast} days`,
+        detail: pl
+          ? `Ostatnia sesja: ${formattedDate}. Rozważ wysłanie wiadomości.`
+          : `Last session was ${formattedDate}. Consider a check-in message.`,
         severity: 'alert',
         priority: 95,
       });
@@ -112,8 +120,12 @@ function generateInsights(
       insights.push({
         id: 'gap-warning',
         icon: <Activity size={16} />,
-        title: `${daysSinceLast} days since last workout`,
-        detail: 'Training gap is widening. A nudge might help maintain momentum.',
+        title: pl
+          ? `${daysSinceLast} dni od ostatniego treningu`
+          : `${daysSinceLast} days since last workout`,
+        detail: pl
+          ? 'Przerwa w treningach się wydłuża. Przypomnienie może pomóc utrzymać tempo.'
+          : 'Training gap is widening. A nudge might help maintain momentum.',
         severity: 'warning',
         priority: 70,
       });
@@ -122,8 +134,10 @@ function generateInsights(
     insights.push({
       id: 'no-workouts',
       icon: <AlertTriangle size={16} />,
-      title: 'No workouts logged yet',
-      detail: 'Client is active but hasn\'t logged any sessions. Make sure they have a program assigned.',
+      title: pl ? 'Brak zarejestrowanych treningów' : 'No workouts logged yet',
+      detail: pl
+        ? 'Klient jest aktywny, ale nie zalogował żadnych sesji. Upewnij się, że ma przypisany program.'
+        : 'Client is active but hasn\'t logged any sessions. Make sure they have a program assigned.',
       severity: 'alert',
       priority: 90,
     });
@@ -138,11 +152,16 @@ function generateInsights(
   const prior4w = clientLogs.filter(l => l.completed && l.date >= eightWeeksAgo.toISOString().split('T')[0] && l.date < fourWeeksAgo.toISOString().split('T')[0]).length;
 
   if (prior4w > 0 && recent4w < prior4w * 0.5) {
+    const dropPct = Math.round((1 - recent4w / prior4w) * 100);
     insights.push({
       id: 'freq-drop',
       icon: <TrendingDown size={16} />,
-      title: `Training frequency dropped ${Math.round((1 - recent4w / prior4w) * 100)}%`,
-      detail: `${recent4w} sessions in last 4 weeks vs ${prior4w} prior. Possible disengagement.`,
+      title: pl
+        ? `Częstotliwość treningów spadła o ${dropPct}%`
+        : `Training frequency dropped ${dropPct}%`,
+      detail: pl
+        ? `${recent4w} sesji w ostatnich 4 tyg. vs ${prior4w} wcześniej. Możliwe zniechęcenie.`
+        : `${recent4w} sessions in last 4 weeks vs ${prior4w} prior. Possible disengagement.`,
       severity: 'warning',
       priority: 80,
     });
@@ -150,8 +169,10 @@ function generateInsights(
     insights.push({
       id: 'freq-up',
       icon: <TrendingUp size={16} />,
-      title: 'Training frequency is up!',
-      detail: `${recent4w} sessions in last 4 weeks vs ${prior4w} prior. Great momentum.`,
+      title: pl ? 'Częstotliwość treningów wzrosła!' : 'Training frequency is up!',
+      detail: pl
+        ? `${recent4w} sesji w ostatnich 4 tyg. vs ${prior4w} wcześniej. Świetne tempo.`
+        : `${recent4w} sessions in last 4 weeks vs ${prior4w} prior. Great momentum.`,
       severity: 'positive',
       priority: 40,
     });
@@ -165,10 +186,16 @@ function generateInsights(
     insights.push({
       id: 'streak-fire',
       icon: <Flame size={16} />,
-      title: `${client.streak}-day streak${client.streak >= 14 ? ' — on fire!' : ''}`,
-      detail: client.streak >= 14
-        ? 'Exceptional consistency. Consider recognizing this milestone with a message.'
-        : 'Good momentum building. Keep encouraging them.',
+      title: pl
+        ? `Seria ${client.streak} dni${client.streak >= 14 ? ' — petarda!' : ''}`
+        : `${client.streak}-day streak${client.streak >= 14 ? ' — on fire!' : ''}`,
+      detail: pl
+        ? (client.streak >= 14
+          ? 'Wyjątkowa regularność. Rozważ docenienie tego kamienia milowego wiadomością.'
+          : 'Dobre tempo się buduje. Kontynuuj motywowanie.')
+        : (client.streak >= 14
+          ? 'Exceptional consistency. Consider recognizing this milestone with a message.'
+          : 'Good momentum building. Keep encouraging them.'),
       severity: 'positive',
       priority: client.streak >= 14 ? 35 : 25,
     });
@@ -202,8 +229,12 @@ function generateInsights(
       insights.push({
         id: `pr-${ex.name}`,
         icon: <Zap size={16} />,
-        title: `New PR on ${ex.name}: ${maxWeight}kg`,
-        detail: `All-time best! Up from ${sorted[0].weight}kg at the start.`,
+        title: pl
+          ? `Nowy rekord w ${ex.name}: ${maxWeight}kg`
+          : `New PR on ${ex.name}: ${maxWeight}kg`,
+        detail: pl
+          ? `Rekord wszech czasów! Wzrost z ${sorted[0].weight}kg na początku.`
+          : `All-time best! Up from ${sorted[0].weight}kg at the start.`,
         severity: 'positive',
         priority: 50,
       });
@@ -221,8 +252,12 @@ function generateInsights(
         insights.push({
           id: `stall-${ex.name}`,
           icon: <Target size={16} />,
-          title: `${ex.name} has plateaued at ${recentMax}kg`,
-          detail: `Same weight for 3+ weeks. Consider a deload or progression scheme change.`,
+          title: pl
+            ? `${ex.name} — plateau na ${recentMax}kg`
+            : `${ex.name} has plateaued at ${recentMax}kg`,
+          detail: pl
+            ? 'Ten sam ciężar od 3+ tygodni. Rozważ deload lub zmianę schematu progresji.'
+            : 'Same weight for 3+ weeks. Consider a deload or progression scheme change.',
           severity: 'warning',
           priority: 65,
         });
@@ -248,8 +283,12 @@ function generateInsights(
       insights.push({
         id: 'weight-against-goal',
         icon: <AlertTriangle size={16} />,
-        title: `Weight trending up (+${recentChange.toFixed(1)}kg) against fat loss goal`,
-        detail: 'Review nutrition compliance and training volume. May need calorie adjustment.',
+        title: pl
+          ? `Waga rośnie (+${recentChange.toFixed(1)}kg) wbrew celowi redukcji`
+          : `Weight trending up (+${recentChange.toFixed(1)}kg) against fat loss goal`,
+        detail: pl
+          ? 'Sprawdź zgodność z dietą i objętość treningową. Może być potrzebna korekta kalorii.'
+          : 'Review nutrition compliance and training volume. May need calorie adjustment.',
         severity: 'warning',
         priority: 75,
       });
@@ -257,8 +296,12 @@ function generateInsights(
       insights.push({
         id: 'weight-on-track',
         icon: <TrendingDown size={16} />,
-        title: `Weight dropping — on track for fat loss goal`,
-        detail: `Down ${Math.abs(recentChange).toFixed(1)}kg recently. Good trajectory.`,
+        title: pl
+          ? 'Waga spada — cel redukcji na dobrej drodze'
+          : 'Weight dropping — on track for fat loss goal',
+        detail: pl
+          ? `Spadek o ${Math.abs(recentChange).toFixed(1)}kg ostatnio. Dobra trajektoria.`
+          : `Down ${Math.abs(recentChange).toFixed(1)}kg recently. Good trajectory.`,
         severity: 'positive',
         priority: 30,
       });
@@ -266,8 +309,12 @@ function generateInsights(
       insights.push({
         id: 'weight-losing-bulk',
         icon: <AlertTriangle size={16} />,
-        title: `Weight dropping during muscle-building phase`,
-        detail: `Down ${Math.abs(recentChange).toFixed(1)}kg. May need to increase caloric intake.`,
+        title: pl
+          ? 'Waga spada w fazie budowy masy'
+          : 'Weight dropping during muscle-building phase',
+        detail: pl
+          ? `Spadek o ${Math.abs(recentChange).toFixed(1)}kg. Może być potrzebne zwiększenie kalorii.`
+          : `Down ${Math.abs(recentChange).toFixed(1)}kg. May need to increase caloric intake.`,
         severity: 'warning',
         priority: 70,
       });
@@ -288,8 +335,12 @@ function generateInsights(
         insights.push({
           id: 'sleep-low',
           icon: <Moon size={16} />,
-          title: `Sleep averaging ${recentSleep.toFixed(1)} hours`,
-          detail: 'Sub-6hr sleep tanks recovery and training performance. Worth addressing.',
+          title: pl
+            ? `Sen średnio ${recentSleep.toFixed(1)} godzin`
+            : `Sleep averaging ${recentSleep.toFixed(1)} hours`,
+          detail: pl
+            ? 'Poniżej 6h snu niszczy regenerację i wydajność treningową. Warto się tym zająć.'
+            : 'Sub-6hr sleep tanks recovery and training performance. Worth addressing.',
           severity: 'alert',
           priority: 85,
         });
@@ -301,22 +352,32 @@ function generateInsights(
     const energyValues = recentCheckIns.map(c => c.energy).filter((s): s is number => s != null && s > 0);
 
     if (stressValues.length >= 2 && avg(stressValues.slice(-2)) >= 8) {
+      const stressAvg = avg(stressValues.slice(-2)).toFixed(0);
       insights.push({
         id: 'stress-high',
         icon: <AlertTriangle size={16} />,
-        title: `Stress levels consistently high (${avg(stressValues.slice(-2)).toFixed(0)}/10)`,
-        detail: 'High stress impacts recovery and adherence. Consider adjusting training intensity.',
+        title: pl
+          ? `Poziom stresu stale wysoki (${stressAvg}/10)`
+          : `Stress levels consistently high (${stressAvg}/10)`,
+        detail: pl
+          ? 'Wysoki stres wpływa na regenerację i motywację. Rozważ zmniejszenie intensywności treningów.'
+          : 'High stress impacts recovery and adherence. Consider adjusting training intensity.',
         severity: 'warning',
         priority: 72,
       });
     }
 
     if (energyValues.length >= 2 && avg(energyValues.slice(-2)) <= 3) {
+      const energyAvg = avg(energyValues.slice(-2)).toFixed(0);
       insights.push({
         id: 'energy-low',
         icon: <Zap size={16} />,
-        title: `Energy levels critically low (${avg(energyValues.slice(-2)).toFixed(0)}/10)`,
-        detail: 'Low energy + training = injury risk. Check sleep, nutrition, and training load.',
+        title: pl
+          ? `Poziom energii krytycznie niski (${energyAvg}/10)`
+          : `Energy levels critically low (${energyAvg}/10)`,
+        detail: pl
+          ? 'Niska energia + trening = ryzyko kontuzji. Sprawdź sen, dietę i obciążenie treningowe.'
+          : 'Low energy + training = injury risk. Check sleep, nutrition, and training load.',
         severity: 'alert',
         priority: 82,
       });
@@ -328,8 +389,12 @@ function generateInsights(
       insights.push({
         id: 'mood-drop',
         icon: <Activity size={16} />,
-        title: 'Mood has been low in recent check-ins',
-        detail: 'Consecutive low mood scores. A supportive message could make a big difference.',
+        title: pl
+          ? 'Nastrój obniżony w ostatnich check-inach'
+          : 'Mood has been low in recent check-ins',
+        detail: pl
+          ? 'Kolejne niskie oceny nastroju. Wspierająca wiadomość może wiele zmienić.'
+          : 'Consecutive low mood scores. A supportive message could make a big difference.',
         severity: 'warning',
         priority: 68,
       });
@@ -347,8 +412,12 @@ function generateInsights(
       insights.push({
         id: 'checkin-overdue',
         icon: <AlertTriangle size={16} />,
-        title: `No check-in in ${daysSinceCheckIn} days`,
-        detail: 'Check-in overdue. Send a reminder to maintain accountability.',
+        title: pl
+          ? `Brak check-inu od ${daysSinceCheckIn} dni`
+          : `No check-in in ${daysSinceCheckIn} days`,
+        detail: pl
+          ? 'Check-in zaległy. Wyślij przypomnienie, żeby utrzymać odpowiedzialność.'
+          : 'Check-in overdue. Send a reminder to maintain accountability.',
         severity: daysSinceCheckIn > 14 ? 'alert' : 'warning',
         priority: daysSinceCheckIn > 14 ? 85 : 73,
       });
@@ -357,8 +426,10 @@ function generateInsights(
     insights.push({
       id: 'no-checkins',
       icon: <AlertTriangle size={16} />,
-      title: 'No check-ins submitted yet',
-      detail: 'Client hasn\'t submitted any check-ins. Remind them about the weekly check-in flow.',
+      title: pl ? 'Brak przesłanych check-inów' : 'No check-ins submitted yet',
+      detail: pl
+        ? 'Klient nie przesłał jeszcze żadnych check-inów. Przypomnij o cotygodniowym check-inie.'
+        : 'Client hasn\'t submitted any check-ins. Remind them about the weekly check-in flow.',
       severity: 'info',
       priority: 55,
     });
@@ -372,8 +443,10 @@ function generateInsights(
     insights.push({
       id: 'no-program',
       icon: <Target size={16} />,
-      title: 'No active program assigned',
-      detail: 'Client is active but has no workout program. Assign one to start tracking progress.',
+      title: pl ? 'Brak przypisanego programu' : 'No active program assigned',
+      detail: pl
+        ? 'Klient jest aktywny, ale nie ma programu treningowego. Przypisz program, aby śledzić postępy.'
+        : 'Client is active but has no workout program. Assign one to start tracking progress.',
       severity: 'alert',
       priority: 88,
     });
@@ -389,11 +462,16 @@ function generateInsights(
     const totalSessions = clientLogs.filter(l => l.completed).length;
     const daysSinceStart = client.startDate ? Math.max(1, daysBetween(client.startDate, today)) : 30;
     const sessionsPerWeek = (totalSessions / daysSinceStart * 7).toFixed(1);
+    const formattedStart = new Date(client.startDate || Date.now()).toLocaleDateString(dateLocale, { month: 'short', year: 'numeric' });
     insights.push({
       id: 'training-summary',
       icon: <Activity size={16} />,
-      title: `${totalSessions} sessions logged — ${sessionsPerWeek}/week avg`,
-      detail: `Training since ${new Date(client.startDate || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}.`,
+      title: pl
+        ? `${totalSessions} sesji — ${sessionsPerWeek}/tydz. średnio`
+        : `${totalSessions} sessions logged — ${sessionsPerWeek}/week avg`,
+      detail: pl
+        ? `Trenuje od ${formattedStart}.`
+        : `Training since ${formattedStart}.`,
       severity: 'info',
       priority: 15,
     });
@@ -404,11 +482,18 @@ function generateInsights(
   if (allWeights.length >= 2) {
     const totalChange = allWeights[allWeights.length - 1] - allWeights[0];
     const direction = totalChange < 0 ? 'down' : totalChange > 0 ? 'up' : 'stable';
+    const dirLabel = pl
+      ? (direction === 'stable' ? 'stabilna' : direction === 'up' ? 'w górę' : 'w dół')
+      : (direction === 'stable' ? 'stable' : direction);
     insights.push({
       id: 'body-snapshot',
       icon: direction === 'down' ? <TrendingDown size={16} /> : direction === 'up' ? <TrendingUp size={16} /> : <Activity size={16} />,
-      title: `Weight ${direction === 'stable' ? 'stable' : direction} ${Math.abs(totalChange).toFixed(1)}kg since start`,
-      detail: `${allWeights[0]}kg → ${allWeights[allWeights.length - 1]}kg across ${allWeights.length} measurements.`,
+      title: pl
+        ? `Waga ${dirLabel} ${Math.abs(totalChange).toFixed(1)}kg od początku`
+        : `Weight ${direction === 'stable' ? 'stable' : direction} ${Math.abs(totalChange).toFixed(1)}kg since start`,
+      detail: pl
+        ? `${allWeights[0]}kg → ${allWeights[allWeights.length - 1]}kg w ${allWeights.length} pomiarach.`
+        : `${allWeights[0]}kg → ${allWeights[allWeights.length - 1]}kg across ${allWeights.length} measurements.`,
       severity: direction === 'stable' ? 'info' : 'positive',
       priority: 20,
     });
@@ -419,14 +504,17 @@ function generateInsights(
     const firstCI = clientCheckIns[0].date;
     const weeksSinceFirst = Math.max(1, daysBetween(firstCI, today) / 7);
     const ciPerWeek = (clientCheckIns.length / weeksSinceFirst).toFixed(1);
+    const good = clientCheckIns.length >= weeksSinceFirst * 0.8;
     insights.push({
       id: 'checkin-rate',
       icon: <Target size={16} />,
-      title: `${clientCheckIns.length} check-ins — ${ciPerWeek}/week`,
-      detail: clientCheckIns.length >= weeksSinceFirst * 0.8
-        ? 'Excellent check-in compliance.'
-        : 'Room to improve check-in consistency.',
-      severity: clientCheckIns.length >= weeksSinceFirst * 0.8 ? 'positive' : 'info',
+      title: pl
+        ? `${clientCheckIns.length} check-inów — ${ciPerWeek}/tydz.`
+        : `${clientCheckIns.length} check-ins — ${ciPerWeek}/week`,
+      detail: pl
+        ? (good ? 'Doskonała regularność check-inów.' : 'Jest pole do poprawy regularności check-inów.')
+        : (good ? 'Excellent check-in compliance.' : 'Room to improve check-in consistency.'),
+      severity: good ? 'positive' : 'info',
       priority: 18,
     });
   }
@@ -438,8 +526,12 @@ function generateInsights(
       insights.push({
         id: 'last-active',
         icon: <Activity size={16} />,
-        title: `Last active ${daysInactive} days ago`,
-        detail: 'Might be worth a quick check-in message.',
+        title: pl
+          ? `Ostatnia aktywność ${daysInactive} dni temu`
+          : `Last active ${daysInactive} days ago`,
+        detail: pl
+          ? 'Może warto wysłać krótką wiadomość.'
+          : 'Might be worth a quick check-in message.',
         severity: 'info',
         priority: 45,
       });
@@ -461,9 +553,10 @@ const severityColors: Record<InsightSeverity, { color: string; bg: string; borde
 
 // ── Component ──
 
-export default function ClientInsights({ client, workoutLogs, setLogs, checkIns, program, t }: ClientInsightsProps) {
+export default function ClientInsights({ client, workoutLogs, setLogs, checkIns, program, lang, t }: ClientInsightsProps) {
   const [expanded, setExpanded] = useState(false);
-  const insights = generateInsights(client, workoutLogs, setLogs, checkIns, program);
+  const pl = lang === 'pl';
+  const insights = generateInsights(client, workoutLogs, setLogs, checkIns, program, pl);
 
   if (insights.length === 0) {
     return null; // Don't render empty card
@@ -473,6 +566,13 @@ export default function ClientInsights({ client, workoutLogs, setLogs, checkIns,
   const warnCount = insights.filter(i => i.severity === 'warning').length;
   const visibleInsights = expanded ? insights : insights.slice(0, 4);
   const hasMore = insights.length > 4;
+
+  const alertLabel = pl
+    ? (alertCount === 1 ? 'alert' : 'alerty')
+    : (alertCount === 1 ? 'alert' : 'alerts');
+  const warnLabel = pl
+    ? (warnCount === 1 ? 'ostrzeżenie' : 'ostrzeżenia')
+    : (warnCount === 1 ? 'warning' : 'warnings');
 
   return (
     <GlassCard delay={0.27}>
@@ -491,12 +591,12 @@ export default function ClientInsights({ client, workoutLogs, setLogs, checkIns,
         <div style={styles.badges}>
           {alertCount > 0 && (
             <span style={{ ...styles.badge, color: severityColors.alert.color, background: severityColors.alert.bg, borderColor: severityColors.alert.border }}>
-              {alertCount} alert{alertCount > 1 ? 's' : ''}
+              {alertCount} {alertLabel}
             </span>
           )}
           {warnCount > 0 && (
             <span style={{ ...styles.badge, color: severityColors.warning.color, background: severityColors.warning.bg, borderColor: severityColors.warning.border }}>
-              {warnCount} warning{warnCount > 1 ? 's' : ''}
+              {warnCount} {warnLabel}
             </span>
           )}
         </div>

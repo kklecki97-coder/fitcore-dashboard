@@ -17,85 +17,85 @@ export default function ProgramCreateChooser({ onChooseManual, onChooseAI, onCho
   const c = t.programChooser;
 
   return (
-    <div style={{ ...s.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-        <ArrowLeft size={16} /> {c.backToPrograms}
+    <div style={{ ...s.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '16px' : '24px' }}>
+      <motion.button onClick={onBack} style={{ ...s.backBtn, ...(isMobile ? { fontSize: '13px', padding: '6px 10px' } : {}) }} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
+        <ArrowLeft size={isMobile ? 14 : 16} /> {c.backToPrograms}
       </motion.button>
 
       <div style={s.header}>
-        <h2 style={s.title}>{c.title}</h2>
-        <p style={s.subtitle}>{c.subtitle}</p>
+        <h2 style={{ ...s.title, fontSize: isMobile ? '20px' : '28px' }}>{c.title}</h2>
+        <p style={{ ...s.subtitle, fontSize: isMobile ? '13px' : '18px' }}>{c.subtitle}</p>
       </div>
 
-      <div style={{ ...s.grid, flexDirection: isMobile ? 'column' : 'row' }}>
+      <div style={{ ...s.grid, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : '20px' }}>
         {/* AI Option */}
-        <GlassCard delay={0.1} hover>
+        <GlassCard delay={0.1} hover style={isMobile ? { padding: '0' } : undefined}>
           <motion.button
             onClick={onChooseAI}
-            style={s.choiceCard}
+            style={{ ...s.choiceCard, ...(isMobile ? { padding: '16px 14px', gap: '10px' } : {}) }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
-            <div style={s.iconWrap}>
-              <div style={{ ...s.iconCircle, background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))' }}>
-                <Sparkles size={28} color="var(--text-on-accent)" />
+            <div style={{ ...s.iconWrap, marginBottom: isMobile ? '0' : '4px' }}>
+              <div style={{ ...s.iconCircle, background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))', ...(isMobile ? { width: '44px', height: '44px', borderRadius: '14px' } : {}) }}>
+                <Sparkles size={isMobile ? 20 : 28} color="var(--text-on-accent)" />
               </div>
             </div>
-            <h3 style={s.choiceTitle}>{c.aiTitle}</h3>
-            <p style={s.choiceDesc}>{c.aiDesc}</p>
-            <div style={s.featureList}>
-              {c.aiFeatures.map((f: string) => <span key={f} style={s.feature}>{f}</span>)}
+            <h3 style={{ ...s.choiceTitle, fontSize: isMobile ? '16px' : '24px' }}>{c.aiTitle}</h3>
+            <p style={{ ...s.choiceDesc, fontSize: isMobile ? '12px' : '16px' }}>{c.aiDesc}</p>
+            <div style={{ ...s.featureList, gap: isMobile ? '4px' : '6px' }}>
+              {c.aiFeatures.map((f: string) => <span key={f} style={{ ...s.feature, fontSize: isMobile ? '11px' : '14px', padding: isMobile ? '2px 8px' : '4px 12px' }}>{f}</span>)}
             </div>
-            <div style={s.choiceBtnAI}>
-              <Sparkles size={16} /> {c.aiBtn}
+            <div style={{ ...s.choiceBtnAI, ...(isMobile ? { fontSize: '13px', padding: '8px 20px', gap: '6px', marginTop: '4px' } : {}) }}>
+              <Sparkles size={isMobile ? 14 : 16} /> {c.aiBtn}
             </div>
           </motion.button>
         </GlassCard>
 
         {/* Manual Option */}
-        <GlassCard delay={0.15} hover>
+        <GlassCard delay={0.15} hover style={isMobile ? { padding: '0' } : undefined}>
           <motion.button
             onClick={onChooseManual}
-            style={s.choiceCard}
+            style={{ ...s.choiceCard, ...(isMobile ? { padding: '16px 14px', gap: '10px' } : {}) }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
-            <div style={s.iconWrap}>
-              <div style={{ ...s.iconCircle, background: 'var(--bg-subtle-hover)' }}>
-                <Wrench size={28} color="var(--text-secondary)" />
+            <div style={{ ...s.iconWrap, marginBottom: isMobile ? '0' : '4px' }}>
+              <div style={{ ...s.iconCircle, background: 'var(--bg-subtle-hover)', ...(isMobile ? { width: '44px', height: '44px', borderRadius: '14px' } : {}) }}>
+                <Wrench size={isMobile ? 20 : 28} color="var(--text-secondary)" />
               </div>
             </div>
-            <h3 style={s.choiceTitle}>{c.manualTitle}</h3>
-            <p style={s.choiceDesc}>{c.manualDesc}</p>
-            <div style={s.featureList}>
-              {c.manualFeatures.map((f: string) => <span key={f} style={s.feature}>{f}</span>)}
+            <h3 style={{ ...s.choiceTitle, fontSize: isMobile ? '16px' : '24px' }}>{c.manualTitle}</h3>
+            <p style={{ ...s.choiceDesc, fontSize: isMobile ? '12px' : '16px' }}>{c.manualDesc}</p>
+            <div style={{ ...s.featureList, gap: isMobile ? '4px' : '6px' }}>
+              {c.manualFeatures.map((f: string) => <span key={f} style={{ ...s.feature, fontSize: isMobile ? '11px' : '14px', padding: isMobile ? '2px 8px' : '4px 12px' }}>{f}</span>)}
             </div>
-            <div style={s.choiceBtnManual}>
-              <Wrench size={16} /> {c.manualBtn}
+            <div style={{ ...s.choiceBtnManual, ...(isMobile ? { fontSize: '13px', padding: '8px 20px', gap: '6px', marginTop: '4px' } : {}) }}>
+              <Wrench size={isMobile ? 14 : 16} /> {c.manualBtn}
             </div>
           </motion.button>
         </GlassCard>
 
         {/* Import Option */}
-        <GlassCard delay={0.2} hover>
+        <GlassCard delay={0.2} hover style={isMobile ? { padding: '0' } : undefined}>
           <motion.button
             onClick={onChooseImport}
-            style={s.choiceCard}
+            style={{ ...s.choiceCard, ...(isMobile ? { padding: '16px 14px', gap: '10px' } : {}) }}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
-            <div style={s.iconWrap}>
-              <div style={{ ...s.iconCircle, background: 'rgba(168, 85, 247, 0.15)' }}>
-                <FileSpreadsheet size={28} color="#a855f7" />
+            <div style={{ ...s.iconWrap, marginBottom: isMobile ? '0' : '4px' }}>
+              <div style={{ ...s.iconCircle, background: 'rgba(168, 85, 247, 0.15)', ...(isMobile ? { width: '44px', height: '44px', borderRadius: '14px' } : {}) }}>
+                <FileSpreadsheet size={isMobile ? 20 : 28} color="#a855f7" />
               </div>
             </div>
-            <h3 style={s.choiceTitle}>{c.importTitle}</h3>
-            <p style={s.choiceDesc}>{c.importDesc}</p>
-            <div style={s.featureList}>
-              {c.importFeatures.map((f: string) => <span key={f} style={s.feature}>{f}</span>)}
+            <h3 style={{ ...s.choiceTitle, fontSize: isMobile ? '16px' : '24px' }}>{c.importTitle}</h3>
+            <p style={{ ...s.choiceDesc, fontSize: isMobile ? '12px' : '16px' }}>{c.importDesc}</p>
+            <div style={{ ...s.featureList, gap: isMobile ? '4px' : '6px' }}>
+              {c.importFeatures.map((f: string) => <span key={f} style={{ ...s.feature, fontSize: isMobile ? '11px' : '14px', padding: isMobile ? '2px 8px' : '4px 12px' }}>{f}</span>)}
             </div>
-            <div style={s.choiceBtnImport}>
-              <FileSpreadsheet size={16} /> {c.importBtn}
+            <div style={{ ...s.choiceBtnImport, ...(isMobile ? { fontSize: '13px', padding: '8px 20px', gap: '6px', marginTop: '4px' } : {}) }}>
+              <FileSpreadsheet size={isMobile ? 14 : 16} /> {c.importBtn}
             </div>
           </motion.button>
         </GlassCard>

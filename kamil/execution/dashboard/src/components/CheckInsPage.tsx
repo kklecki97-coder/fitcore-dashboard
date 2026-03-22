@@ -71,14 +71,14 @@ function DeltaBadge({ current, previous, unit, inverse }: { current: number; pre
   );
 }
 
-function ScoreBar({ value, max = 10, color }: { value: number; max?: number; color: string }) {
+function ScoreBar({ value, max = 10, color, compact }: { value: number; max?: number; color: string; compact?: boolean }) {
   const pct = (value / max) * 100;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: 'var(--score-bar-track)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '4px' : '6px' }}>
+      <div style={{ flex: 1, height: compact ? '3px' : '4px', borderRadius: '2px', background: 'var(--score-bar-track)' }}>
         <div style={{ width: `${pct}%`, height: '100%', borderRadius: '2px', background: color, transition: 'width 0.3s' }} />
       </div>
-      <span style={{ fontSize: '15px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
+      <span style={{ fontSize: compact ? '12px' : '15px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
     </div>
   );
 }
@@ -96,6 +96,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   const [messageDraft, setMessageDraft] = useState('');
   const [messageSent, setMessageSent] = useState(false);
   const [showFlagInput, setShowFlagInput] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; label: string } | null>(null);
 
   const locale = getLocale(lang);
 
@@ -217,33 +218,33 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
     { key: 'pending', label: t.checkIns.pending, count: pendingReview.length, color: 'var(--accent-warm)' },
     { key: 'flagged', label: t.checkIns.flagged, count: flagged.length, color: 'var(--accent-danger)' },
     { key: 'reviewed', label: t.checkIns.reviewed, count: reviewed.length, color: 'var(--accent-success)' },
-    { key: 'missed', label: t.checkIns.missed, count: missedCheckIns.length, color: 'var(--accent-danger)' },
     { key: 'all', label: t.checkIns.all, count: completedCheckIns.length + missedCheckIns.length, color: 'var(--text-secondary)' },
   ];
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px', gap: isMobile ? '14px' : '20px' }}>
       {/* Main Queue */}
-      <GlassCard delay={0.2}>
+      <GlassCard delay={0.2} style={isMobile ? { padding: '16px' } : undefined}>
         {/* Header with tabs */}
-        <div style={styles.queueHeader}>
+        <div style={{ ...styles.queueHeader, marginBottom: isMobile ? '12px' : '16px' }}>
           <div style={styles.queueTitleRow}>
-            <ClipboardCheck size={18} color="var(--accent-primary)" />
-            <h3 style={styles.queueTitle}>{t.checkIns.reviewQueue}</h3>
+            <ClipboardCheck size={isMobile ? 15 : 18} color="var(--accent-primary)" />
+            <h3 style={{ ...styles.queueTitle, fontSize: isMobile ? '15px' : '22px' }}>{t.checkIns.reviewQueue}</h3>
           </div>
-          <div style={styles.tabRow}>
+          <div style={{ ...styles.tabRow, gap: isMobile ? '4px' : '6px' }}>
             {tabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setFilter(tab.key)}
                 style={{
                   ...styles.tab,
+                  ...(isMobile ? { fontSize: '12px', padding: '4px 8px', gap: '4px' } : {}),
                   ...(filter === tab.key ? { background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)', borderColor: 'rgba(0,229,200,0.15)' } : {}),
                 }}
               >
                 {tab.label}
                 {tab.count > 0 && (
-                  <span style={{ ...styles.tabBadge, background: filter === tab.key ? tab.color : 'var(--bg-subtle-hover)', color: filter === tab.key ? '#fff' : 'var(--text-tertiary)' }}>
+                  <span style={{ ...styles.tabBadge, background: filter === tab.key ? tab.color : 'var(--bg-subtle-hover)', color: filter === tab.key ? '#fff' : 'var(--text-tertiary)', ...(isMobile ? { fontSize: '10px', padding: '0px 5px' } : {}) }}>
                     {tab.count}
                   </span>
                 )}
@@ -253,15 +254,15 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
         </div>
 
         {/* Search */}
-        <div style={styles.searchRow}>
-          <div style={styles.searchBox}>
-            <Search size={14} color="var(--text-tertiary)" />
+        <div style={{ ...styles.searchRow, marginBottom: isMobile ? '10px' : '12px' }}>
+          <div style={{ ...styles.searchBox, ...(isMobile ? { padding: '6px 10px' } : {}) }}>
+            <Search size={isMobile ? 12 : 14} color="var(--text-tertiary)" />
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={t.checkIns.searchClients}
-              style={styles.searchInput}
+              style={{ ...styles.searchInput, fontSize: isMobile ? '13px' : '18px' }}
             />
           </div>
         </div>
@@ -302,16 +303,16 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                   {/* Collapsed row */}
                   <div
                     onClick={() => setExpandedId(isExpanded ? null : ci.id)}
-                    style={styles.queueItemHeader}
+                    style={{ ...styles.queueItemHeader, ...(isMobile ? { padding: '10px 12px', gap: '10px' } : {}) }}
                   >
                     {/* Left: avatar + name + date + days since */}
-                    <div style={styles.queueItemLeft}>
-                      <div style={{ ...styles.avatar, background: getAvatarColor(ci.clientId) }}>
+                    <div style={{ ...styles.queueItemLeft, gap: isMobile ? '8px' : '12px' }}>
+                      <div style={{ ...styles.avatar, background: getAvatarColor(ci.clientId), ...(isMobile ? { width: '30px', height: '30px', fontSize: '12px', borderRadius: '8px' } : {}) }}>
                         {getInitials(ci.clientName)}
                       </div>
                       <div>
-                        <div style={styles.queueClientName}>{ci.clientName}</div>
-                        <div style={styles.queueDate}>
+                        <div style={{ ...styles.queueClientName, fontSize: isMobile ? '14px' : '20px' }}>{ci.clientName}</div>
+                        <div style={{ ...styles.queueDate, fontSize: isMobile ? '11px' : '17px' }}>
                           {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
                           {client && <span style={{ marginLeft: '8px', color: 'var(--text-tertiary)' }}>{client.plan}</span>}
                           {(() => {
@@ -396,17 +397,17 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         transition={{ duration: 0.2 }}
                         style={{ overflow: 'hidden' }}
                       >
-                        <div style={styles.expandedContent}>
+                        <div style={{ ...styles.expandedContent, ...(isMobile ? { padding: '0 12px 12px', paddingTop: '12px', gap: '12px' } : {}) }}>
                           {/* Missed check-in - simplified view */}
                           {ci.status === 'missed' ? (
                             <>
                               <div style={styles.missedBanner}>
-                                <AlertTriangle size={18} color="var(--accent-danger)" />
+                                <AlertTriangle size={isMobile ? 15 : 18} color="var(--accent-danger)" />
                                 <div>
-                                  <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                  <div style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                     {t.checkIns.missedCheckIn(ci.clientName)}
                                   </div>
-                                  <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                  <div style={{ fontSize: isMobile ? '11px' : '13px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
                                     {t.checkIns.dueOn} {new Date(ci.date).toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })} - {t.checkIns.noDataSubmitted}
                                   </div>
                                 </div>
@@ -430,62 +431,62 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           <div style={{ ...styles.comparisonGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
                             {/* This Week */}
                             <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>{t.checkIns.thisWeek} - {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</div>
-                              <div style={styles.metricsGrid}>
+                              <div style={{ ...styles.comparisonLabel, fontSize: isMobile ? '11px' : '15px' }}>{t.checkIns.thisWeek} - {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</div>
+                              <div style={{ ...styles.metricsGrid, gap: isMobile ? '6px' : '8px' }}>
                                 {ci.weight != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>{t.checkIns.weight}</span>
-                                    <span style={styles.metricCellValue}>{ci.weight}kg</span>
+                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
+                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.weight}</span>
+                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px' }}>{ci.weight}kg</span>
                                     {prev?.weight != null && <DeltaBadge current={ci.weight} previous={prev.weight} unit="kg" inverse />}
                                   </div>
                                 )}
                                 {ci.bodyFat != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>{t.checkIns.bodyFat}</span>
-                                    <span style={styles.metricCellValue}>{ci.bodyFat}%</span>
+                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
+                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.bodyFat}</span>
+                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px' }}>{ci.bodyFat}%</span>
                                     {prev?.bodyFat != null && <DeltaBadge current={ci.bodyFat} previous={prev.bodyFat} unit="%" inverse />}
                                   </div>
                                 )}
                                 {ci.steps != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>{t.checkIns.steps}</span>
-                                    <span style={{ ...styles.metricCellValue, color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.steps.toLocaleString()}</span>
+                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
+                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.steps}</span>
+                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px', color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.steps.toLocaleString()}</span>
                                     {prev?.steps != null && <DeltaBadge current={ci.steps} previous={prev.steps} unit="" />}
                                   </div>
                                 )}
                                 {ci.sleepHours != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>{t.checkIns.sleepHours}</span>
-                                    <span style={styles.metricCellValue}>{ci.sleepHours}h</span>
+                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
+                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.sleepHours}</span>
+                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px' }}>{ci.sleepHours}h</span>
                                     {prev?.sleepHours != null && <DeltaBadge current={ci.sleepHours} previous={prev.sleepHours} unit="h" />}
                                   </div>
                                 )}
                               </div>
 
                               {/* Wellness bars */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '4px' : '6px', marginTop: isMobile ? '8px' : '12px' }}>
                                 {ci.mood && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>{t.checkIns.mood}</span>
-                                    <ScoreBar value={ci.mood} max={5} color={moodIcons[ci.mood]?.color || 'var(--text-secondary)'} />
+                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
+                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.mood}</span>
+                                    <ScoreBar value={ci.mood} max={5} color={moodIcons[ci.mood]?.color || 'var(--text-secondary)'} compact={isMobile} />
                                   </div>
                                 )}
                                 {ci.energy != null && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>{t.checkIns.energy}</span>
-                                    <ScoreBar value={ci.energy} color={ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
+                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
+                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.energy}</span>
+                                    <ScoreBar value={ci.energy} color={ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} compact={isMobile} />
                                   </div>
                                 )}
                                 {ci.stress != null && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>{t.checkIns.stress}</span>
-                                    <ScoreBar value={ci.stress} color={ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
+                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
+                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.stress}</span>
+                                    <ScoreBar value={ci.stress} color={ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)'} compact={isMobile} />
                                   </div>
                                 )}
                                 {ci.nutritionScore != null && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>{t.checkIns.nutritionScore}</span>
-                                    <ScoreBar value={ci.nutritionScore} color={ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
+                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
+                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.nutritionScore}</span>
+                                    <ScoreBar value={ci.nutritionScore} color={ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} compact={isMobile} />
                                   </div>
                                 )}
                               </div>
@@ -493,13 +494,13 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
 
                             {/* Trends */}
                             <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>{t.checkIns.weekTrends}</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              <div style={{ ...styles.comparisonLabel, fontSize: isMobile ? '11px' : '15px' }}>{t.checkIns.weekTrends}</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '12px' }}>
                                 {(() => {
                                   const weightTrend = getTrend(ci.clientId, 'weight');
                                   return weightTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>{t.checkIns.weight}</span>
+                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
+                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.weight}</span>
                                       <Sparkline data={weightTrend} color="var(--accent-primary)" />
                                     </div>
                                   );
@@ -507,8 +508,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 {(() => {
                                   const stepsTrend = getTrend(ci.clientId, 'steps');
                                   return stepsTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>{t.checkIns.steps}</span>
+                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
+                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.steps}</span>
                                       <Sparkline data={stepsTrend} color="var(--accent-success)" />
                                     </div>
                                   );
@@ -516,8 +517,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 {(() => {
                                   const moodTrend = getTrend(ci.clientId, 'mood');
                                   return moodTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>{t.checkIns.mood}</span>
+                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
+                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.mood}</span>
                                       <Sparkline data={moodTrend} color="var(--accent-warm)" />
                                     </div>
                                   );
@@ -525,8 +526,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 {(() => {
                                   const sleepTrend = getTrend(ci.clientId, 'sleepHours');
                                   return sleepTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>{t.checkIns.sleepHours}</span>
+                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
+                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.sleepHours}</span>
                                       <Sparkline data={sleepTrend} color="var(--accent-secondary)" />
                                     </div>
                                   );
@@ -534,8 +535,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 {(() => {
                                   const energyTrend = getTrend(ci.clientId, 'energy');
                                   return energyTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>{t.checkIns.energy}</span>
+                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
+                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.energy}</span>
                                       <Sparkline data={energyTrend} color="#f59e0b" />
                                     </div>
                                   );
@@ -545,56 +546,60 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           </div>
 
                           {/* Client notes / wins / challenges */}
-                          <div style={{ ...styles.notesGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr' }}>
+                          <div style={{ ...styles.notesGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: isMobile ? '8px' : '12px' }}>
                             {ci.notes && (
                               <div style={styles.noteBlock}>
-                                <span style={styles.noteLabel}>{t.checkIns.notes}</span>
-                                <p style={styles.noteText}>{ci.notes}</p>
+                                <span style={{ ...styles.noteLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.notes}</span>
+                                <p style={{ ...styles.noteText, fontSize: isMobile ? '12px' : '17px', padding: isMobile ? '6px 8px' : '8px 10px' }}>{ci.notes}</p>
                               </div>
                             )}
                             {ci.wins && (
                               <div style={styles.noteBlock}>
-                                <span style={{ ...styles.noteLabel, color: 'var(--accent-success)' }}>
-                                  <Award size={11} /> {t.checkIns.wins}
+                                <span style={{ ...styles.noteLabel, color: 'var(--accent-success)', fontSize: isMobile ? '10px' : '14px' }}>
+                                  <Award size={isMobile ? 9 : 11} /> {t.checkIns.wins}
                                 </span>
-                                <p style={styles.noteText}>{ci.wins}</p>
+                                <p style={{ ...styles.noteText, fontSize: isMobile ? '12px' : '17px', padding: isMobile ? '6px 8px' : '8px 10px', background: 'var(--accent-success-dim)', border: '1px solid rgba(34,197,94,0.1)' }}>{ci.wins}</p>
                               </div>
                             )}
                             {ci.challenges && (
                               <div style={styles.noteBlock}>
-                                <span style={{ ...styles.noteLabel, color: 'var(--accent-warm)' }}>
-                                  <Target size={11} /> {t.checkIns.challenges}
+                                <span style={{ ...styles.noteLabel, color: 'var(--accent-warm)', fontSize: isMobile ? '10px' : '14px' }}>
+                                  <Target size={isMobile ? 9 : 11} /> {t.checkIns.challenges}
                                 </span>
-                                <p style={styles.noteText}>{ci.challenges}</p>
+                                <p style={{ ...styles.noteText, fontSize: isMobile ? '12px' : '17px', padding: isMobile ? '6px 8px' : '8px 10px', background: 'var(--accent-warm-dim)', border: '1px solid rgba(245,158,11,0.1)' }}>{ci.challenges}</p>
                               </div>
                             )}
                           </div>
 
-                          {/* Point 5: Progress Photos */}
+                          {/* Progress Photos */}
                           {ci.photos && ci.photos.length > 0 && (
                             <div>
-                              <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)' }}>
-                                <Camera size={11} /> {t.checkIns.progressPhotos}
+                              <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)', fontSize: isMobile ? '10px' : '14px' }}>
+                                <Camera size={isMobile ? 9 : 11} /> {t.checkIns.progressPhotos}
                               </span>
-                              <div style={styles.photosRow}>
+                              <div style={{ ...styles.photosRow, gap: isMobile ? '8px' : '12px' }}>
                                 {ci.photos.map((photo, pi) => (
-                                  <div key={pi} style={styles.photoCard}>
+                                  <div
+                                    key={pi}
+                                    style={{ ...styles.photoCard, cursor: photo.url ? 'pointer' : 'default' }}
+                                    onClick={() => { if (photo.url) setLightboxPhoto({ url: photo.url, label: photo.label }); }}
+                                  >
                                     {photo.url ? (
                                       <img src={photo.url} alt={photo.label} style={styles.photoImage} />
                                     ) : (
-                                      <div style={styles.photoPlaceholder}>
-                                        <ImageIcon size={24} color="var(--text-tertiary)" style={{ opacity: 0.4 }} />
+                                      <div style={{ ...styles.photoPlaceholder, ...(isMobile ? { height: '80px' } : {}) }}>
+                                        <ImageIcon size={isMobile ? 18 : 24} color="var(--text-tertiary)" style={{ opacity: 0.4 }} />
                                       </div>
                                     )}
-                                    <span style={styles.photoLabel}>{photo.label}</span>
+                                    <span style={{ ...styles.photoLabel, fontSize: isMobile ? '10px' : '12px' }}>{photo.label}</span>
                                   </div>
                                 ))}
                               </div>
                             </div>
                           )}
                           {ci.photos && ci.photos.length === 0 && ci.status === 'completed' && (
-                            <div style={styles.noPhotoBanner}>
-                              <Camera size={14} color="var(--text-tertiary)" />
+                            <div style={{ ...styles.noPhotoBanner, fontSize: isMobile ? '11px' : '14px', padding: isMobile ? '8px 10px' : '10px 14px' }}>
+                              <Camera size={isMobile ? 12 : 14} color="var(--text-tertiary)" />
                               <span>{t.checkIns.noPhotosThisWeek}</span>
                             </div>
                           )}
@@ -602,8 +607,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {/* Previous coach feedback (if exists) */}
                           {ci.coachFeedback && ci.reviewStatus === 'reviewed' && (
                             <div style={styles.existingFeedback}>
-                              <span style={{ ...styles.noteLabel, color: 'var(--accent-primary)' }}>{t.checkIns.yourFeedback}</span>
-                              <p style={styles.noteText}>{ci.coachFeedback}</p>
+                              <span style={{ ...styles.noteLabel, color: 'var(--accent-primary)', fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.yourFeedback}</span>
+                              <p style={{ ...styles.noteText, fontSize: isMobile ? '12px' : '17px', padding: isMobile ? '6px 8px' : '8px 10px', background: 'rgba(0,229,200,0.04)', border: '1px solid rgba(0,229,200,0.1)' }}>{ci.coachFeedback}</p>
                             </div>
                           )}
 
@@ -626,14 +631,14 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Point 6: Add follow-up note (for reviewed check-ins) */}
-                          {ci.reviewStatus === 'reviewed' && (
-                            <div style={styles.followUpInput}>
+                          {/* Point 6: Add follow-up note (only for flagged check-ins) */}
+                          {ci.reviewStatus === 'flagged' && (
+                            <div style={{ ...styles.followUpInput, gap: isMobile ? '6px' : '8px' }}>
                               <input
                                 value={followUpDrafts[ci.id] || ''}
                                 onChange={e => setFollowUpDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
                                 placeholder={t.checkIns.addFollowUpPlaceholder}
-                                style={styles.followUpField}
+                                style={{ ...styles.followUpField, fontSize: isMobile ? '12px' : '15px', padding: isMobile ? '6px 8px' : '8px 12px' }}
                                 onKeyDown={e => { if (e.key === 'Enter') handleAddFollowUp(ci); }}
                               />
                               <button
@@ -661,62 +666,76 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {/* Action bar - pending check-ins */}
                           {ci.reviewStatus === 'pending' && (
                             <div style={styles.actionBar}>
-                              <textarea
-                                value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
-                                onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                placeholder={t.checkIns.writeFeedbackPlaceholder}
-                                style={styles.feedbackInput}
-                                rows={2}
-                              />
+                              <div>
+                                <textarea
+                                  value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
+                                  onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                  placeholder={t.checkIns.writeFeedbackPlaceholder}
+                                  style={{ ...styles.feedbackInput, fontSize: isMobile ? '13px' : '18px', padding: isMobile ? '8px 10px' : '10px 12px' }}
+                                  rows={2}
+                                />
+                                <div style={{ fontSize: isMobile ? '10px' : '12px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Send size={isMobile ? 8 : 10} />
+                                  {lang === 'pl' ? 'Twoja opinia będzie widoczna dla klienta' : 'Your feedback will be visible to the client'}
+                                </div>
+                              </div>
                               {/* Flag input - only shown when toggled */}
                               {showFlagInput === ci.id && (
-                                <div style={styles.flagRow}>
-                                  <Flag size={13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                <div style={{ ...styles.flagRow, ...(isMobile ? { padding: '6px 10px', gap: '6px' } : {}) }}>
+                                  <Flag size={isMobile ? 11 : 13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
                                   <input
                                     value={flagDrafts[ci.id] || ''}
                                     onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
                                     placeholder={t.checkIns.flagReasonPlaceholder}
-                                    style={styles.flagInput}
+                                    style={{ ...styles.flagInput, fontSize: isMobile ? '12px' : '15px' }}
                                     autoFocus
                                     onKeyDown={e => { if (e.key === 'Enter' && flagDrafts[ci.id]?.trim()) handleFlag(ci.id); if (e.key === 'Escape') setShowFlagInput(null); }}
                                   />
                                   <button
                                     onClick={() => handleFlag(ci.id)}
-                                    style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5 }}
+                                    style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5, fontSize: isMobile ? '12px' : '17px', padding: isMobile ? '5px 10px' : '8px 12px' }}
                                     disabled={!flagDrafts[ci.id]?.trim()}
                                   >
-                                    {t.checkIns.flag}
+                                    <Send size={isMobile ? 10 : 12} />
                                   </button>
                                 </div>
                               )}
-                              <div style={styles.actionButtons}>
-                                <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
-                                  {t.checkIns.viewProfile}
-                                </button>
-                                <button
-                                  onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })}
-                                  style={styles.actionBtnMessage}
-                                >
-                                  <MessageSquare size={13} />
-                                  {t.checkIns.sendMessage}
-                                </button>
-                                {showFlagInput !== ci.id && (
-                                  <button
-                                    onClick={() => setShowFlagInput(ci.id)}
-                                    style={styles.actionBtnDanger}
-                                  >
-                                    <Flag size={13} />
-                                    {t.checkIns.flag}
-                                  </button>
+                              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '6px' : '8px', flexWrap: isMobile ? undefined : 'wrap' }}>
+                                {isMobile ? (
+                                  <>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                      <button onClick={() => onViewClient(ci.clientId)} style={{ ...styles.actionBtnSecondary, flex: 1, justifyContent: 'center', fontSize: '12px', padding: '7px 10px' }}>
+                                        {t.checkIns.viewProfile}
+                                      </button>
+                                      <button onClick={() => setShowFlagInput(showFlagInput === ci.id ? null : ci.id)} style={{ ...styles.actionBtnDanger, flex: 1, justifyContent: 'center', fontSize: '12px', padding: '7px 10px', ...(showFlagInput === ci.id ? { background: 'rgba(239,68,68,0.2)', borderColor: 'rgba(239,68,68,0.4)' } : {}) }}>
+                                        <Flag size={11} />
+                                        {t.checkIns.flag}
+                                      </button>
+                                    </div>
+                                    <button
+                                      onClick={() => handleMarkReviewed(ci.id)}
+                                      style={{ ...styles.actionBtnPrimary, justifyContent: 'center', fontSize: '13px', padding: '10px 16px' }}
+                                    >
+                                      <CheckCircle2 size={13} />
+                                      {t.checkIns.markReviewed}
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
+                                      {t.checkIns.viewProfile}
+                                    </button>
+                                    <button onClick={() => setShowFlagInput(showFlagInput === ci.id ? null : ci.id)} style={{ ...styles.actionBtnDanger, ...(showFlagInput === ci.id ? { background: 'rgba(239,68,68,0.2)', borderColor: 'rgba(239,68,68,0.4)' } : {}) }}>
+                                      <Flag size={13} />
+                                      {t.checkIns.flag}
+                                    </button>
+                                    <div style={{ flex: 1 }} />
+                                    <button onClick={() => handleMarkReviewed(ci.id)} style={styles.actionBtnPrimary}>
+                                      <CheckCircle2 size={13} />
+                                      {t.checkIns.markReviewed}
+                                    </button>
+                                  </>
                                 )}
-                                <div style={{ flex: 1 }} />
-                                <button
-                                  onClick={() => handleMarkReviewed(ci.id)}
-                                  style={styles.actionBtnPrimary}
-                                >
-                                  <CheckCircle2 size={13} />
-                                  {t.checkIns.markReviewed}
-                                </button>
                               </div>
                             </div>
                           )}
@@ -724,36 +743,48 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {/* Action bar - flagged check-ins */}
                           {ci.reviewStatus === 'flagged' && (
                             <div style={styles.actionBar}>
-                              <textarea
-                                value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
-                                onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                placeholder={t.checkIns.addFeedbackPlaceholder}
-                                style={styles.feedbackInput}
-                                rows={2}
-                              />
-                              <div style={styles.actionButtons}>
-                                <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>{t.checkIns.viewProfile}</button>
-                                <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
-                                  <MessageSquare size={13} />
-                                  {t.checkIns.sendMessage}
-                                </button>
-                                <div style={{ flex: 1 }} />
-                                <button onClick={() => handleMarkReviewed(ci.id)} style={styles.actionBtnPrimary}>
-                                  <CheckCircle2 size={13} />
-                                  {t.checkIns.resolveReview}
-                                </button>
+                              <div>
+                                <textarea
+                                  value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
+                                  onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                  placeholder={t.checkIns.addFeedbackPlaceholder}
+                                  style={{ ...styles.feedbackInput, fontSize: isMobile ? '13px' : '18px', padding: isMobile ? '8px 10px' : '10px 12px' }}
+                                  rows={2}
+                                />
+                                <div style={{ fontSize: isMobile ? '10px' : '12px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Send size={isMobile ? 8 : 10} />
+                                  {lang === 'pl' ? 'Twoja opinia będzie widoczna dla klienta' : 'Your feedback will be visible to the client'}
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? '6px' : '8px', flexWrap: isMobile ? undefined : 'wrap' }}>
+                                {isMobile ? (
+                                  <>
+                                    <button onClick={() => onViewClient(ci.clientId)} style={{ ...styles.actionBtnSecondary, justifyContent: 'center', fontSize: '12px', padding: '7px 10px' }}>
+                                      {t.checkIns.viewProfile}
+                                    </button>
+                                    <button onClick={() => handleMarkReviewed(ci.id)} style={{ ...styles.actionBtnPrimary, justifyContent: 'center', fontSize: '13px', padding: '10px 16px' }}>
+                                      <CheckCircle2 size={13} />
+                                      {t.checkIns.resolveReview}
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>{t.checkIns.viewProfile}</button>
+                                    <div style={{ flex: 1 }} />
+                                    <button onClick={() => handleMarkReviewed(ci.id)} style={styles.actionBtnPrimary}>
+                                      <CheckCircle2 size={13} />
+                                      {t.checkIns.resolveReview}
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
                           )}
 
-                          {/* Reviewed - just view + message shortcuts */}
+                          {/* Reviewed - just view profile */}
                           {ci.reviewStatus === 'reviewed' && (
-                            <div style={styles.actionButtons}>
-                              <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>{t.checkIns.viewProfile}</button>
-                              <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
-                                <MessageSquare size={13} />
-                                {t.checkIns.message}
-                              </button>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button onClick={() => onViewClient(ci.clientId)} style={{ ...styles.actionBtnSecondary, flex: isMobile ? 1 : undefined, justifyContent: 'center', ...(isMobile ? { fontSize: '12px', padding: '7px 10px' } : {}) }}>{t.checkIns.viewProfile}</button>
                             </div>
                           )}
                           </>
@@ -877,6 +908,78 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                 )}
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Photo Lightbox */}
+      <AnimatePresence>
+        {lightboxPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxPhoto(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 9999,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '24px',
+              cursor: 'pointer',
+            }}
+          >
+            <motion.img
+              src={lightboxPhoto.url}
+              alt={lightboxPhoto.label}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                maxWidth: '100%',
+                maxHeight: 'calc(100vh - 120px)',
+                borderRadius: '12px',
+                objectFit: 'contain',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+              }}
+            />
+            <motion.span
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                marginTop: '12px',
+                fontSize: '14px',
+                color: 'rgba(255,255,255,0.7)',
+                fontFamily: 'var(--font-display)',
+              }}
+            >
+              {lightboxPhoto.label}
+            </motion.span>
+            <button
+              onClick={() => setLightboxPhoto(null)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#fff',
+              }}
+            >
+              <X size={18} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

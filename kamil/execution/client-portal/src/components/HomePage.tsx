@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Dumbbell, Send, ClipboardCheck, ArrowRight, Check, X, MessageSquare, ChevronDown, Zap } from 'lucide-react';
 import GlassCard from './GlassCard';
 import AnimatedNumber from './AnimatedNumber';
@@ -42,6 +43,30 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   const { t, lang } = useLang();
 
   const [showAllWeeks, setShowAllWeeks] = useState(false);
+  const [dismissedFeedbackIds, setDismissedFeedbackIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('fitcore-dismissed-feedback') || '[]'); } catch { return []; }
+  });
+
+  // Find check-ins with new coach feedback that haven't been dismissed
+  const newFeedback = checkIns.filter(ci => ci.coachFeedback && ci.reviewStatus === 'reviewed' && !dismissedFeedbackIds.includes(ci.id));
+  const latestFeedback = newFeedback.length > 0 ? newFeedback.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] : null;
+
+  const handleDismissFeedback = () => {
+    if (!latestFeedback) return;
+    const updated = [...dismissedFeedbackIds, latestFeedback.id];
+    setDismissedFeedbackIds(updated);
+    localStorage.setItem('fitcore-dismissed-feedback', JSON.stringify(updated));
+    onNavigate('check-in' as ClientPage);
+  };
+
+  // Sync dismissed list on mount
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('fitcore-dismissed-feedback') || '[]');
+      if (stored.length !== dismissedFeedbackIds.length) setDismissedFeedbackIds(stored);
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Workout color map - same workout types share a color ──
   const dayColorMap: Record<string, number> = {};
@@ -185,29 +210,76 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   })();
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '16px 14px' : '24px', gap: isMobile ? '14px' : '20px' }}>
       {/* ── Greeting ── */}
-      <div style={styles.welcome}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <h1 style={styles.greeting}>{dynamicGreeting}</h1>
-          {client.streak >= 3 && <StreakFlame streak={client.streak} size={28} />}
+      <div style={{ ...styles.welcome, marginBottom: isMobile ? '0px' : '2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '10px' }}>
+          <h1 style={{ ...styles.greeting, fontSize: isMobile ? '26px' : '34px' }}>{dynamicGreeting}</h1>
+          {client.streak >= 3 && <StreakFlame streak={client.streak} size={isMobile ? 22 : 28} />}
         </div>
         {client.streak >= 3 && (
-          <div style={styles.streakBadge}>
+          <div style={{ ...styles.streakBadge, fontSize: isMobile ? '12px' : '14px', padding: isMobile ? '3px 10px' : '4px 12px', marginTop: isMobile ? '4px' : '6px' }}>
             <AnimatedNumber value={client.streak} duration={1200} />
             <span style={{ marginLeft: '4px' }}>{t.home.dayStreak}</span>
           </div>
         )}
       </div>
 
+      {/* ── New Coach Feedback Banner ── */}
+      <AnimatePresence>
+        {latestFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div
+              onClick={handleDismissFeedback}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: isMobile ? '10px' : '12px',
+                padding: isMobile ? '10px 12px' : '12px 16px',
+                borderRadius: isMobile ? '12px' : 'var(--radius-lg, 16px)',
+                background: 'linear-gradient(135deg, rgba(0,229,200,0.1) 0%, rgba(99,102,241,0.08) 100%)',
+                border: '1px solid rgba(0,229,200,0.2)',
+                cursor: 'pointer',
+                transition: 'border-color 0.2s',
+              }}
+            >
+              <div style={{
+                width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px', borderRadius: isMobile ? '8px' : '10px',
+                background: 'var(--accent-primary-dim, rgba(0,229,200,0.15))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <MessageSquare size={isMobile ? 15 : 18} color="var(--accent-primary, #00e5c8)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: isMobile ? '12px' : '14px', fontWeight: 600, color: 'var(--text-primary, #e0e0e0)' }}>
+                  {lang === 'pl' ? 'Trener odpowiedział na Twój check-in' : 'Coach responded to your check-in'}
+                </div>
+                <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-secondary, #8b92a5)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {latestFeedback.coachFeedback}
+                </div>
+              </div>
+              <ArrowRight size={16} color="var(--accent-primary, #00e5c8)" style={{ flexShrink: 0 }} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Today's Workout ── */}
       <GlassCard delay={0.05} style={styles.workoutCard}>
-        <div style={styles.cardHeader}>
+        <div style={{ ...styles.cardHeader, gap: isMobile ? '10px' : '12px', marginBottom: isMobile ? '10px' : '12px' }}>
           <div style={{ position: 'relative', display: 'inline-flex' }}>
             <div style={{
               ...styles.cardIcon,
+              width: isMobile ? '38px' : '44px',
+              height: isMobile ? '38px' : '44px',
               animation: todayWorkout ? 'icon-pulse 2s ease-in-out infinite' : 'icon-pulse 4s ease-in-out infinite',
-            }}><Dumbbell size={20} /></div>
+            }}><Dumbbell size={isMobile ? 17 : 20} /></div>
             {!todayWorkout && (
               <>
                 {[0, 1, 2].map(i => (
@@ -226,13 +298,13 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             )}
           </div>
           <div>
-            <div style={styles.cardTitle}>{t.home.todaysWorkout}</div>
-            <div style={styles.cardSub}>{todayWorkout?.name || t.home.restDay}</div>
+            <div style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '18px' }}>{t.home.todaysWorkout}</div>
+            <div style={{ ...styles.cardSub, fontSize: isMobile ? '13px' : '15px' }}>{todayWorkout?.name || t.home.restDay}</div>
           </div>
         </div>
         {todayWorkout ? (
           <>
-            <div style={styles.workoutMeta}>
+            <div style={{ ...styles.workoutMeta, fontSize: isMobile ? '13px' : '15px', gap: isMobile ? '12px' : '16px', marginBottom: isMobile ? '12px' : '16px' }}>
               <span>{todayWorkout.exercises.length} {t.home.exercises}</span>
               <span>{(() => {
                 // Calculate approximate time: ~2 min per set + rest between sets
@@ -242,37 +314,37 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                 return t.home.approxTime(approxMin > 0 ? approxMin : 60);
               })()}</span>
             </div>
-            <button style={styles.startBtn} onClick={() => onNavigate('program')}>
-              {t.home.startWorkout} <ArrowRight size={16} />
+            <button style={{ ...styles.startBtn, padding: isMobile ? '12px' : '14px', fontSize: isMobile ? '14px' : '16px' }} onClick={() => onNavigate('program')}>
+              {t.home.startWorkout} <ArrowRight size={isMobile ? 14 : 16} />
             </button>
           </>
         ) : (
-          <p style={styles.restText}>{t.home.restText}</p>
+          <p style={{ ...styles.restText, fontSize: isMobile ? '13px' : '15px' }}>{t.home.restText}</p>
         )}
       </GlassCard>
 
       {/* ── Quick Actions ── */}
-      <div style={styles.quickActions}>
-        <button style={styles.quickBtn} onClick={() => onNavigate('program')}>
-          <div style={{ ...styles.quickIcon, background: 'var(--accent-warm-dim)', color: 'var(--accent-warm)' }}>
-            <Zap size={22} />
+      <div style={{ ...styles.quickActions, gap: isMobile ? '8px' : '12px' }}>
+        <button style={{ ...styles.quickBtn, gap: isMobile ? '8px' : '12px', padding: isMobile ? '14px 6px' : '20px 8px' }} onClick={() => onNavigate('program')}>
+          <div style={{ ...styles.quickIcon, background: 'var(--accent-warm-dim)', color: 'var(--accent-warm)', width: isMobile ? '40px' : '48px', height: isMobile ? '40px' : '48px', borderRadius: isMobile ? '10px' : '12px' }}>
+            <Zap size={isMobile ? 18 : 22} />
           </div>
-          <span style={styles.quickLabel}>{t.home.logWorkout}</span>
+          <span style={{ ...styles.quickLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.home.logWorkout}</span>
         </button>
-        <button style={styles.quickBtn} onClick={() => onNavigate('check-in')}>
+        <button style={{ ...styles.quickBtn, gap: isMobile ? '8px' : '12px', padding: isMobile ? '14px 6px' : '20px 8px' }} onClick={() => onNavigate('check-in')}>
           <div style={styles.quickIconWrap}>
-            <div style={{ ...styles.quickIcon, background: 'var(--accent-secondary-dim)', color: 'var(--accent-secondary)' }}>
-              <ClipboardCheck size={22} />
+            <div style={{ ...styles.quickIcon, background: 'var(--accent-secondary-dim)', color: 'var(--accent-secondary)', width: isMobile ? '40px' : '48px', height: isMobile ? '40px' : '48px', borderRadius: isMobile ? '10px' : '12px' }}>
+              <ClipboardCheck size={isMobile ? 18 : 22} />
             </div>
             {checkInDueNow && <div style={styles.quickBadge} />}
           </div>
-          <span style={styles.quickLabel}>{t.home.checkIn}</span>
+          <span style={{ ...styles.quickLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.home.checkIn}</span>
         </button>
-        <button style={styles.quickBtn} onClick={() => onNavigate('messages')}>
-          <div style={{ ...styles.quickIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>
-            <Send size={22} />
+        <button style={{ ...styles.quickBtn, gap: isMobile ? '8px' : '12px', padding: isMobile ? '14px 6px' : '20px 8px' }} onClick={() => onNavigate('messages')}>
+          <div style={{ ...styles.quickIcon, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)', width: isMobile ? '40px' : '48px', height: isMobile ? '40px' : '48px', borderRadius: isMobile ? '10px' : '12px' }}>
+            <Send size={isMobile ? 18 : 22} />
           </div>
-          <span style={styles.quickLabel}>{t.home.message}</span>
+          <span style={{ ...styles.quickLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.home.message}</span>
         </button>
       </div>
 
@@ -293,9 +365,9 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       <GlassCard delay={0.1}>
         {/* Week progress header */}
         {totalTrainingDays > 0 && (
-          <div style={styles.weekHeader}>
-            <span style={styles.weekHeaderLabel}>{t.home.thisWeek}</span>
-            <span style={styles.weekHeaderProgress}>
+          <div style={{ ...styles.weekHeader, marginBottom: isMobile ? '10px' : '12px' }}>
+            <span style={{ ...styles.weekHeaderLabel, fontSize: isMobile ? '13px' : '15px' }}>{t.home.thisWeek}</span>
+            <span style={{ ...styles.weekHeaderProgress, fontSize: isMobile ? '12px' : '14px' }}>
               {completedThisWeek}/{totalTrainingDays} {t.home.workouts}
             </span>
           </div>
@@ -303,7 +375,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
         {Object.keys(dayAssignments).length === 0 && program && (
           <div style={styles.planPrompt}>{t.home.planYourWeek}</div>
         )}
-        <div style={styles.weekRow}>
+        <div style={{ ...styles.weekRow, gap: isMobile ? '4px' : '6px' }}>
           {weekDays.map(wd => {
             const completed = wd.log?.completed;
             const c = wd.colorIdx >= 0 ? WORKOUT_COLORS[wd.colorIdx] : null;
@@ -351,15 +423,18 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                 key={wd.dateStr}
                 style={{
                   ...styles.weekDay,
+                  padding: isMobile ? '6px 2px 8px' : '8px 2px 10px',
+                  borderRadius: isMobile ? '8px' : '10px',
                   background: cellBg,
                   border: cellBorder,
                   boxShadow: cellShadow,
                   opacity: cellOpacity,
                 }}
               >
-                <div style={styles.weekDayLabel}>{wd.day}</div>
+                <div style={{ ...styles.weekDayLabel, fontSize: isMobile ? '10px' : '12px' }}>{wd.day}</div>
                 <div style={{
                   ...styles.weekDayNum,
+                  fontSize: isMobile ? '15px' : '18px',
                   color: numColor,
                 }}>
                   {wd.date}
@@ -381,10 +456,10 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       {/* ── Program Progress ── */}
       {program && programWeeks > 0 && (
         <GlassCard delay={0.15}>
-          <div style={styles.progressRow}>
+          <div style={{ ...styles.progressRow, gap: isMobile ? '12px' : '16px' }}>
             {/* SVG Ring */}
-            <div style={styles.ringWrap}>
-              <svg width="72" height="72" viewBox="0 0 72 72">
+            <div style={{ ...styles.ringWrap, width: isMobile ? '60px' : '72px', height: isMobile ? '60px' : '72px' }}>
+              <svg width={isMobile ? '60' : '72'} height={isMobile ? '60' : '72'} viewBox="0 0 72 72">
                 <circle cx="36" cy="36" r="30" fill="none" stroke="var(--glass-border)" strokeWidth="5" />
                 <circle
                   cx="36" cy="36" r="30"
@@ -399,14 +474,14 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                 />
               </svg>
               <div style={styles.ringLabel}>
-                <span style={styles.ringPct}>{progressPct}%</span>
+                <span style={{ ...styles.ringPct, fontSize: isMobile ? '15px' : '18px' }}>{progressPct}%</span>
               </div>
             </div>
 
             {/* Text details */}
             <div style={styles.progressInfo}>
-              <div style={styles.progressTitle}>{program.name}</div>
-              <div style={styles.progressWeek}>{currentWeek > 0 ? `${t.home.weekOf} ${currentWeek} ${t.home.of} ${programWeeks}` : `${t.home.starts} ${new Date(program.createdAt + 'T00:00:00').toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</div>
+              <div style={{ ...styles.progressTitle, fontSize: isMobile ? '14px' : '16px' }}>{program.name}</div>
+              <div style={{ ...styles.progressWeek, fontSize: isMobile ? '12px' : '14px', marginBottom: isMobile ? '8px' : '10px' }}>{currentWeek > 0 ? `${t.home.weekOf} ${currentWeek} ${t.home.of} ${programWeeks}` : `${t.home.starts} ${new Date(program.createdAt + 'T00:00:00').toLocaleDateString(lang === 'pl' ? 'pl-PL' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`}</div>
               <div style={styles.progressBar}>
                 <div style={{ ...styles.progressBarFill, width: `${progressPct}%` }} />
               </div>
@@ -414,11 +489,11 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
           </div>
 
           {/* Motivational line */}
-          <div style={styles.motiveLine}>{motiveLine}</div>
+          <div style={{ ...styles.motiveLine, fontSize: isMobile ? '12px' : '14px', marginTop: isMobile ? '10px' : '14px', paddingTop: isMobile ? '10px' : '12px' }}>{motiveLine}</div>
 
           {/* Weekly consistency - collapsed: last 4 with dots, expanded: grid of squares */}
           {!showAllWeeks ? (
-            <div style={styles.consistencyRow}>
+            <div style={{ ...styles.consistencyRow, marginTop: isMobile ? '10px' : '12px' }}>
               {recentWeeks.map((w) => {
                 const isPerfect = w.completed >= w.target;
                 return (
@@ -426,12 +501,14 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                     ...styles.consistencyWeek,
                     ...(w.isCurrent ? styles.consistencyWeekCurrent : {}),
                   }}>
-                    <div style={styles.consistencyDots}>
+                    <div style={{ ...styles.consistencyDots, gap: isMobile ? '3px' : '4px' }}>
                       {Array.from({ length: w.target }, (_, j) => (
                         <div
                           key={j}
                           style={{
                             ...styles.consistencyDot,
+                            width: isMobile ? '6px' : '8px',
+                            height: isMobile ? '6px' : '8px',
                             background: j < w.completed ? 'var(--accent-success)' : 'rgba(255,255,255,0.15)',
                           }}
                         />
@@ -439,6 +516,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                     </div>
                     <span style={{
                       ...styles.consistencyFraction,
+                      fontSize: isMobile ? '10px' : '11px',
                       color: isPerfect ? 'var(--accent-success)' : 'var(--text-tertiary)',
                     }}>
                       {w.completed}/{w.target}
@@ -448,7 +526,7 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
               })}
             </div>
           ) : (
-            <div style={styles.weekGrid}>
+            <div style={{ ...styles.weekGrid, gap: isMobile ? '6px' : '8px', marginTop: isMobile ? '10px' : '12px' }}>
               {allProgramWeeks.map((w) => {
                 const isPerfect = !w.isFuture && w.completed >= w.target;
                 const pct = w.isFuture ? 0 : w.target > 0 ? w.completed / w.target : 0;
@@ -475,12 +553,14 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                   >
                     <span style={{
                       ...styles.weekSquareNum,
+                      fontSize: isMobile ? '13px' : '15px',
                       color: w.isCurrent ? 'var(--accent-primary)' : isPerfect ? 'var(--accent-success)' : 'var(--text-secondary)',
                     }}>
                       {w.weekNum}
                     </span>
                     <span style={{
                       ...styles.weekSquareSub,
+                      fontSize: isMobile ? '9px' : '10px',
                       color: w.isFuture ? 'var(--text-tertiary)' : isPerfect ? 'var(--accent-success)' : w.isCurrent ? 'var(--accent-primary)' : 'var(--text-tertiary)',
                     }}>
                       {w.isFuture ? '-' : `${w.completed}/${w.target}`}
@@ -510,17 +590,17 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
       {/* ── Latest from Coach ── */}
       {lastCoachMsg && (
         <GlassCard delay={0.2} hover onClick={() => onNavigate('messages')}>
-          <div style={styles.coachRow}>
-            <div style={styles.coachIcon}>
-              <MessageSquare size={18} />
+          <div style={{ ...styles.coachRow, gap: isMobile ? '10px' : '12px' }}>
+            <div style={{ ...styles.coachIcon, width: isMobile ? '38px' : '44px', height: isMobile ? '38px' : '44px' }}>
+              <MessageSquare size={isMobile ? 15 : 18} />
             </div>
             <div style={styles.coachContent}>
-              <div style={styles.coachName}>{coachName}</div>
-              <p style={styles.coachText}>
+              <div style={{ ...styles.coachName, fontSize: isMobile ? '11px' : '13px' }}>{coachName}</div>
+              <p style={{ ...styles.coachText, fontSize: isMobile ? '13px' : '15px' }}>
                 {lastCoachMsg.text.length > 80 ? lastCoachMsg.text.slice(0, 80) + '...' : lastCoachMsg.text}
               </p>
             </div>
-            <ArrowRight size={16} color="var(--text-tertiary)" />
+            <ArrowRight size={isMobile ? 14 : 16} color="var(--text-tertiary)" />
           </div>
         </GlassCard>
       )}

@@ -4,6 +4,7 @@ import {
   ArrowLeft, Sparkles, Loader2, Send, Check, Dumbbell, User, ChevronRight,
 } from 'lucide-react';
 import useIsMobile from '../hooks/useIsMobile';
+import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 import type { Client, WorkoutProgram, WorkoutDay, Exercise } from '../types';
 
@@ -89,6 +90,7 @@ CRITICAL RULES for generation:
 
 export default function AIProgramCreator({ clients, onGenerated, onBack }: AIProgramCreatorProps) {
   useIsMobile(); // hook must be called
+  const { lang } = useLang();
   const [selectedClientId, setSelectedClientId] = useState('');
   const [phase, setPhase] = useState<'pick-client' | 'chat'>('pick-client');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -239,10 +241,10 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   // ═══════════════════════════════════════
   if (phase === 'pick-client') {
     return (
-      <div style={{ ...s.outerPage, padding: isMobile ? '12px' : '24px' }}>
+      <div style={{ ...s.outerPage, padding: isMobile ? '14px 16px' : '24px' }}>
         <div style={{ ...s.pickerCentered, padding: isMobile ? '12px 0' : '24px 20px' }}>
-          <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-            <ArrowLeft size={15} /> Back to Programs
+          <motion.button onClick={onBack} style={{ ...s.backBtn, ...(isMobile ? { fontSize: '13px', padding: '6px 10px' } : {}) }} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
+            <ArrowLeft size={isMobile ? 13 : 15} /> {lang === 'pl' ? 'Powrót' : 'Back'}
           </motion.button>
           <motion.div
             style={s.pickerCard}
@@ -252,10 +254,10 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           >
             <div style={s.pickerGlow} />
             <div style={s.pickerIconWrap}>
-              <div style={s.pickerIcon}><Sparkles size={22} /></div>
+              <div style={{ ...s.pickerIcon, ...(isMobile ? { width: '44px', height: '44px', borderRadius: '12px' } : {}) }}><Sparkles size={isMobile ? 18 : 22} /></div>
             </div>
-            <h2 style={s.pickerTitle}>AI Program Builder</h2>
-            <p style={s.pickerDesc}>Select a client to get started</p>
+            <h2 style={{ ...s.pickerTitle, ...(isMobile ? { fontSize: '18px' } : {}) }}>{lang === 'pl' ? 'Kreator AI' : 'AI Program Builder'}</h2>
+            <p style={{ ...s.pickerDesc, ...(isMobile ? { fontSize: '12px' } : {}) }}>{lang === 'pl' ? 'Wybierz klienta' : 'Select a client to get started'}</p>
             <div style={s.clientList}>
               {clients.filter(c => c.status === 'active').map(client => (
                 <motion.button
@@ -263,17 +265,18 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                   onClick={() => setSelectedClientId(client.id)}
                   style={{
                     ...s.clientCard,
+                    ...(isMobile ? { padding: '10px 12px', gap: '10px' } : {}),
                     borderColor: selectedClientId === client.id ? 'var(--accent-primary)' : 'var(--glass-border)',
                     background: selectedClientId === client.id ? 'rgba(0,229,200,0.08)' : 'transparent',
                   }}
                   whileTap={{ scale: 0.99 }}
                 >
-                  <div style={{ ...s.clientAvatar, background: selectedClientId === client.id ? 'var(--accent-primary)' : 'var(--bg-subtle-hover)' }}>
+                  <div style={{ ...s.clientAvatar, ...(isMobile ? { width: '28px', height: '28px', borderRadius: '7px', fontSize: '11px' } : {}), background: selectedClientId === client.id ? 'var(--accent-primary)' : 'var(--bg-subtle-hover)' }}>
                     {client.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </div>
                   <div style={s.clientInfo}>
-                    <span style={s.clientName}>{client.name}</span>
-                    <span style={s.clientMeta}>{client.plan}</span>
+                    <span style={{ ...s.clientName, ...(isMobile ? { fontSize: '14px' } : {}) }}>{client.name}</span>
+                    <span style={{ ...s.clientMeta, ...(isMobile ? { fontSize: '11px' } : {}) }}>{client.plan}</span>
                   </div>
                   {selectedClientId === client.id ? (
                     <div style={s.checkMark}><Check size={13} /></div>
@@ -285,11 +288,11 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
             </div>
             <motion.button
               onClick={startChat}
-              style={{ ...s.pickerStartBtn, opacity: selectedClientId ? 1 : 0.35, pointerEvents: selectedClientId ? 'auto' : 'none' }}
+              style={{ ...s.pickerStartBtn, ...(isMobile ? { fontSize: '13px' } : {}), opacity: selectedClientId ? 1 : 0.35, pointerEvents: selectedClientId ? 'auto' : 'none' }}
               whileHover={selectedClientId ? { scale: 1.01 } : {}}
               whileTap={selectedClientId ? { scale: 0.99 } : {}}
             >
-              <Sparkles size={15} /> Start Building
+              <Sparkles size={15} /> {lang === 'pl' ? 'Rozpocznij' : 'Start Building'}
             </motion.button>
           </motion.div>
         </div>
@@ -301,13 +304,13 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
   // WORKSPACE - Left cards + Right chatbot
   // ═══════════════════════════════════════
   return (
-    <div style={{ ...s.outerPage, padding: isMobile ? '12px' : '24px' }}>
+    <div style={{ ...s.outerPage, padding: isMobile ? '14px 16px' : '24px' }}>
       <div style={{ ...s.layoutGrid, gridTemplateColumns: isMobile ? '1fr' : '320px 1fr' }}>
         {/* ── LEFT COLUMN (hidden on mobile) ── */}
         {!isMobile && <div style={s.leftCol}>
           {/* Back */}
           <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-            <ArrowLeft size={15} /> Back to Programs
+            <ArrowLeft size={15} /> {lang === 'pl' ? 'Powrót' : 'Back'}
           </motion.button>
 
           {/* Card 1: Selected Client */}
@@ -319,7 +322,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           >
             <div style={s.leftCardHeader}>
               <User size={14} color="var(--accent-primary)" />
-              <span style={s.leftCardTitle}>Client</span>
+              <span style={s.leftCardTitle}>{lang === 'pl' ? 'Klient' : 'Client'}</span>
             </div>
             {selectedClient && (
               <div style={{ ...s.clientCard, borderColor: 'var(--accent-primary)', background: 'rgba(0,229,200,0.08)', cursor: 'default' }}>
@@ -344,24 +347,24 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           >
             <div style={s.leftCardHeader}>
               <Sparkles size={14} color="var(--accent-primary)" />
-              <span style={s.leftCardTitle}>AI Program Builder</span>
+              <span style={s.leftCardTitle}>{lang === 'pl' ? 'Kreator AI' : 'AI Program Builder'}</span>
             </div>
             <div style={s.infoContent}>
               <p style={s.infoText}>
-                Describe the training plan in the chat and FitCore AI will generate a complete periodized program.
+                {lang === 'pl' ? 'Opisz plan treningowy w czacie, a FitCore AI wygeneruje kompletny program.' : 'Describe the training plan in the chat and FitCore AI will generate a complete periodized program.'}
               </p>
               <div style={s.infoSteps}>
                 <div style={{ ...s.infoStep, opacity: phase === 'chat' ? 1 : 0.4 }}>
                   <div style={{ ...s.stepDot, background: messages.length > 0 ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
-                  <span>Discuss the program</span>
+                  <span>{lang === 'pl' ? 'Omów program' : 'Discuss the program'}</span>
                 </div>
                 <div style={{ ...s.infoStep, opacity: aiReady ? 1 : 0.4 }}>
                   <div style={{ ...s.stepDot, background: aiReady ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
-                  <span>Generate program</span>
+                  <span>{lang === 'pl' ? 'Generuj program' : 'Generate program'}</span>
                 </div>
                 <div style={{ ...s.infoStep, opacity: generatedProgram ? 1 : generating ? 0.7 : 0.4 }}>
                   <div style={{ ...s.stepDot, background: generatedProgram ? 'var(--accent-primary)' : 'var(--glass-border)' }} />
-                  <span>Review & save</span>
+                  <span>{lang === 'pl' ? 'Sprawdź i zapisz' : 'Review & save'}</span>
                 </div>
               </div>
             </div>
@@ -376,19 +379,19 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           >
             <div style={s.leftCardHeader}>
               <Dumbbell size={14} color="var(--accent-primary)" />
-              <span style={s.leftCardTitle}>Program</span>
+              <span style={s.leftCardTitle}>{lang === 'pl' ? 'Program' : 'Program'}</span>
             </div>
             {generatedProgram ? (
               <div style={s.programPreview}>
                 <div style={s.programName}>{generatedProgram.name}</div>
-                <div style={s.programMeta}>{generatedProgram.durationWeeks} weeks · {generatedProgram.days.length} training days</div>
+                <div style={s.programMeta}>{generatedProgram.durationWeeks} {lang === 'pl' ? 'tyg.' : 'weeks'} · {generatedProgram.days.length} {lang === 'pl' ? 'dni treningowych' : 'training days'}</div>
                 <div style={s.programDays}>
                   {generatedProgram.days.map((day, i) => (
                     <div key={day.id} style={s.programDay}>
                       <div style={s.programDayHeader}>
                         <div style={{ ...s.programDayDot, background: i % 2 === 0 ? 'var(--accent-primary)' : 'var(--accent-secondary)' }} />
                         <span style={s.programDayName}>{day.name}</span>
-                        <span style={s.programDayCount}>{day.exercises.length} exercises</span>
+                        <span style={s.programDayCount}>{day.exercises.length} {lang === 'pl' ? 'ćwiczeń' : 'exercises'}</span>
                       </div>
                       <div style={s.programExercises}>
                         {day.exercises.map((ex) => (
@@ -407,14 +410,14 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >
-                  <Check size={14} /> Save Program
+                  <Check size={14} /> {lang === 'pl' ? 'Zapisz Program' : 'Save Program'}
                 </motion.button>
               </div>
             ) : (
               <div style={s.programEmpty}>
                 <Dumbbell size={20} color="var(--text-tertiary)" style={{ opacity: 0.3 }} />
                 <span style={s.programEmptyText}>
-                  {generating ? 'Generating...' : 'Program will appear here after generation'}
+                  {generating ? (lang === 'pl' ? 'Generowanie...' : 'Generating...') : (lang === 'pl' ? 'Program pojawi się tutaj po wygenerowaniu' : 'Program will appear here after generation')}
                 </span>
               </div>
             )}
@@ -424,8 +427,8 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
         {/* ── Mobile: back button + save button above chat ── */}
         {isMobile && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between' }}>
-            <motion.button onClick={onBack} style={s.backBtn} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-              <ArrowLeft size={15} /> Back
+            <motion.button onClick={onBack} style={{ ...s.backBtn, fontSize: '13px', padding: '6px 10px' }} whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
+              <ArrowLeft size={13} /> {lang === 'pl' ? 'Powrót' : 'Back'}
             </motion.button>
             {generatedProgram && (
               <motion.button
@@ -434,7 +437,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
               >
-                <Check size={14} /> Save Program
+                <Check size={14} /> {lang === 'pl' ? 'Zapisz Program' : 'Save Program'}
               </motion.button>
             )}
           </div>
@@ -450,20 +453,20 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           <div style={s.cardGlow} />
 
           {/* Card header */}
-          <div style={s.cardHeader}>
+          <div style={{ ...s.cardHeader, ...(isMobile ? { padding: '12px 16px' } : {}) }}>
             <div style={s.cardHeaderLeft}>
               <div style={s.cardHeaderIcon}><Sparkles size={14} /></div>
               <span style={s.cardTitle}>FitCore AI</span>
             </div>
             <div style={s.cardOnline}>
               <div style={s.onlineDot} />
-              <span>Online</span>
+              <span>{lang === 'pl' ? 'Online' : 'Online'}</span>
             </div>
           </div>
 
           {/* Messages area */}
           <div style={s.cardMessages}>
-            <div style={s.cardMessagesInner}>
+            <div style={{ ...s.cardMessagesInner, ...(isMobile ? { padding: '16px 14px', gap: '14px' } : {}) }}>
                   <AnimatePresence initial={false}>
                     {messages.map((msg) => (
                       <motion.div
@@ -475,14 +478,14 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                         {msg.role === 'assistant' ? (
                           <div style={s.aiMsg}>
                             <div style={s.aiAvatar}><Sparkles size={11} /></div>
-                            <div style={s.aiBubble}>
-                              <div style={s.aiText}>{msg.text}</div>
+                            <div style={{ ...s.aiBubble, ...(isMobile ? { padding: '8px 12px' } : {}) }}>
+                              <div style={{ ...s.aiText, ...(isMobile ? { fontSize: '13px' } : {}) }}>{msg.text}</div>
                             </div>
                           </div>
                         ) : (
                           <div style={s.userMsg}>
-                            <div style={s.userBubble}>
-                              <div style={s.userText}>{msg.text}</div>
+                            <div style={{ ...s.userBubble, ...(isMobile ? { padding: '8px 12px' } : {}) }}>
+                              <div style={{ ...s.userText, ...(isMobile ? { fontSize: '13px' } : {}) }}>{msg.text}</div>
                             </div>
                           </div>
                         )}
@@ -510,7 +513,7 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'flex' }}>
                         <Loader2 size={15} color="var(--accent-primary)" />
                       </motion.div>
-                      <span style={s.genText}>Building your program...</span>
+                      <span style={s.genText}>{lang === 'pl' ? 'Tworzenie programu...' : 'Building your program...'}</span>
                     </motion.div>
                   )}
               <div ref={chatEndRef} />
@@ -518,18 +521,18 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
           </div>
 
           {/* Card footer */}
-          <div style={s.cardFooter}>
+          <div style={{ ...s.cardFooter, ...(isMobile ? { padding: '10px 14px 14px' } : {}) }}>
             {aiReady && !generating && !generatedProgram && (
               <motion.button
                 onClick={generateProgram}
-                style={s.genBtn}
+                style={{ ...s.genBtn, ...(isMobile ? { fontSize: '13px', padding: '9px 0' } : {}) }}
                 disabled={loading}
                 whileHover={!loading ? { scale: 1.01 } : {}}
                 whileTap={!loading ? { scale: 0.99 } : {}}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <Dumbbell size={14} /> Generate Program
+                <Dumbbell size={14} /> {lang === 'pl' ? 'Generuj Program' : 'Generate Program'}
               </motion.button>
             )}
             <div style={s.inputRow}>
@@ -538,19 +541,19 @@ export default function AIProgramCreator({ clients, onGenerated, onBack }: AIPro
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Describe the program you need..."
-                style={s.textInput}
+                placeholder={lang === 'pl' ? 'Opisz program, którego potrzebujesz...' : 'Describe the program you need...'}
+                style={{ ...s.textInput, ...(isMobile ? { fontSize: '13px', padding: '9px 12px' } : {}) }}
                 rows={1}
                 disabled={loading}
               />
               <motion.button
                 onClick={sendMessage}
-                style={{ ...s.sendBtn, opacity: input.trim() && !loading ? 1 : 0.25 }}
+                style={{ ...s.sendBtn, ...(isMobile ? { width: '32px', height: '32px', borderRadius: '8px' } : {}), opacity: input.trim() && !loading ? 1 : 0.25 }}
                 disabled={!input.trim() || loading}
                 whileHover={input.trim() && !loading ? { scale: 1.06 } : {}}
                 whileTap={input.trim() && !loading ? { scale: 0.94 } : {}}
               >
-                <Send size={14} />
+                <Send size={isMobile ? 12 : 14} />
               </motion.button>
             </div>
           </div>

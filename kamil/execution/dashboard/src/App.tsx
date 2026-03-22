@@ -36,7 +36,7 @@ import type { Page, Theme, Client, Message, WorkoutProgram, Invoice, CheckIn, Ap
 import { exerciseCatalogSeed } from './data/exercise-seed';
 
 function App() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { showToast } = useToast();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1207,8 +1207,15 @@ function App() {
                 setPendingProgram(null);
                 setCurrentPage('programs');
               }}
-              onBack={handleBackFromProgram}
-              backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
+              onBack={() => {
+                if (selectedProgramId) {
+                  handleBackFromProgram();
+                } else {
+                  setCurrentPage('program-create-chooser');
+                  setPendingProgram(null);
+                }
+              }}
+              backLabel={lang === 'pl' ? 'Powrót' : 'Back'}
             />
           </ErrorBoundary>
         );

@@ -13,8 +13,8 @@ interface CheckInPageProps {
   clientName: string;
 }
 
-function NumberStepper({ value, onChange, min, max, step = 1, placeholder }: {
-  value: string; onChange: (v: string) => void; min?: number; max?: number; step?: number; placeholder?: string;
+function NumberStepper({ value, onChange, min, max, step = 1, placeholder, compact }: {
+  value: string; onChange: (v: string) => void; min?: number; max?: number; step?: number; placeholder?: string; compact?: boolean;
 }) {
   const numVal = value === '' ? null : parseFloat(value);
   const canDec = numVal !== null && (min === undefined || Math.round((numVal - step) * 100) / 100 >= min);
@@ -36,14 +36,14 @@ function NumberStepper({ value, onChange, min, max, step = 1, placeholder }: {
   return (
     <div style={stepperStyles.wrap}>
       <button
-        style={{ ...stepperStyles.btn, opacity: canDec ? 1 : 0.3 }}
+        style={{ ...stepperStyles.btn, ...(compact ? { width: '34px', height: '38px' } : {}), opacity: canDec ? 1 : 0.3 }}
         onClick={() => adjust(-1)}
         type="button"
       >
-        <Minus size={14} />
+        <Minus size={compact ? 12 : 14} />
       </button>
       <input
-        style={stepperStyles.input}
+        style={{ ...stepperStyles.input, ...(compact ? { padding: '8px 4px', fontSize: '14px' } : {}) }}
         type="number"
         inputMode="decimal"
         value={value}
@@ -54,11 +54,11 @@ function NumberStepper({ value, onChange, min, max, step = 1, placeholder }: {
         step={step}
       />
       <button
-        style={{ ...stepperStyles.btn, opacity: canInc ? 1 : 0.3 }}
+        style={{ ...stepperStyles.btn, ...(compact ? { width: '34px', height: '38px' } : {}), opacity: canInc ? 1 : 0.3 }}
         onClick={() => adjust(1)}
         type="button"
       >
-        <Plus size={14} />
+        <Plus size={compact ? 12 : 14} />
       </button>
     </div>
   );
@@ -212,36 +212,36 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   };
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '20px 16px' : '24px' }}>
+    <div style={{ ...styles.page, ...(isMobile ? { padding: '16px 14px', gap: '14px' } : {}) }}>
       {/* Tabs */}
       <div style={styles.tabs}>
         <button
           onClick={() => setTab('submit')}
-          style={{ ...styles.tab, ...(tab === 'submit' ? styles.tabActive : {}) }}
+          style={{ ...styles.tab, ...(isMobile ? { padding: '10px', fontSize: '13px' } : {}), ...(tab === 'submit' ? styles.tabActive : {}) }}
         >
-          <ClipboardCheck size={16} /> {t.checkIn.submit}
+          <ClipboardCheck size={isMobile ? 14 : 16} /> {t.checkIn.submit}
         </button>
         <button
           onClick={() => setTab('history')}
-          style={{ ...styles.tab, ...(tab === 'history' ? styles.tabActive : {}) }}
+          style={{ ...styles.tab, ...(isMobile ? { padding: '10px', fontSize: '13px' } : {}), ...(tab === 'history' ? styles.tabActive : {}) }}
         >
-          <MessageSquare size={16} /> {t.checkIn.history} ({completed.length})
+          <MessageSquare size={isMobile ? 14 : 16} /> {t.checkIn.history} ({completed.length})
         </button>
       </div>
 
       {tab === 'submit' ? (
-        <div style={styles.formWrap}>
+        <div style={{ ...styles.formWrap, ...(isMobile ? { gap: '12px' } : {}) }}>
           {/* Essentials: Weight + Mood (always visible) */}
           <GlassCard delay={0.05}>
-            <div style={styles.fieldRow}>
-              <div style={{ ...styles.field, flex: 1 }}>
-                <label style={styles.label}>{t.checkIn.weightKg}</label>
-                <NumberStepper value={form.weight} onChange={v => setForm({ ...form, weight: v })} step={0.1} min={30} max={250} placeholder="83.5" />
+            <div style={{ ...styles.fieldRow, ...(isMobile ? { gap: '8px' } : {}) }}>
+              <div style={{ ...styles.field, flex: 1, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.weightKg}</label>
+                <NumberStepper value={form.weight} onChange={v => setForm({ ...form, weight: v })} step={0.1} min={30} max={250} placeholder="83.5" compact={isMobile} />
               </div>
             </div>
             <div style={{ marginTop: '4px' }}>
-              <label style={styles.label}>{t.checkIn.mood}</label>
-              <div style={styles.moodRow}>
+              <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.mood}</label>
+              <div style={{ ...styles.moodRow, ...(isMobile ? { gap: '6px', marginBottom: '10px' } : {}) }}>
                 {([1, 2, 3, 4, 5] as const).map(val => {
                   const m = moodIcons[val];
                   const Icon = m.icon;
@@ -252,21 +252,22 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                       onClick={() => setForm({ ...form, mood: val })}
                       style={{
                         ...styles.moodBtn,
+                        ...(isMobile ? { width: '40px', height: '40px' } : {}),
                         background: active ? `${m.color}20` : 'transparent',
                         borderColor: active ? m.color : 'var(--glass-border)',
                         color: active ? m.color : 'var(--text-tertiary)',
                       }}
                       title={m.label}
                     >
-                      <Icon size={20} />
+                      <Icon size={isMobile ? 16 : 20} />
                     </button>
                   );
                 })}
               </div>
             </div>
-            <div style={styles.field}>
-              <label style={styles.label}>{t.checkIn.notes}</label>
-              <textarea style={styles.textarea} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder={t.checkIn.notesPlaceholder} rows={2} />
+            <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+              <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.notes}</label>
+              <textarea style={{ ...styles.textarea, ...(isMobile ? { padding: '10px 12px', fontSize: '14px' } : {}) }} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder={t.checkIn.notesPlaceholder} rows={2} />
             </div>
           </GlassCard>
 
@@ -276,62 +277,62 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
               style={styles.sectionToggle}
               onClick={() => setMoreDetailsOpen(prev => !prev)}
             >
-              <div style={{ ...styles.sectionTitle, marginBottom: 0 }}>{'More Details'}</div>
+              <div style={{ ...styles.sectionTitle, marginBottom: 0, ...(isMobile ? { fontSize: '13px' } : {}) }}>{'More Details'}</div>
               <div style={styles.sectionToggleRight}>
-                <span style={styles.optionalBadge}>{t.checkIn.optional}</span>
+                <span style={{ ...styles.optionalBadge, ...(isMobile ? { fontSize: '10px', padding: '2px 8px' } : {}) }}>{t.checkIn.optional}</span>
                 {moreDetailsOpen ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
               </div>
             </div>
             {moreDetailsOpen && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} style={{ marginTop: isMobile ? '10px' : '14px', display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '14px' }}>
                 {/* Body Fat */}
-                <div style={styles.field}>
-                  <label style={styles.label}>{t.checkIn.bodyFatPct}</label>
-                  <NumberStepper value={form.bodyFat} onChange={v => setForm({ ...form, bodyFat: v })} step={0.1} min={3} max={60} placeholder="18.5" />
+                <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                  <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.bodyFatPct}</label>
+                  <NumberStepper value={form.bodyFat} onChange={v => setForm({ ...form, bodyFat: v })} step={0.1} min={3} max={60} placeholder="18.5" compact={isMobile} />
                 </div>
 
                 {/* Wellness */}
-                <div style={styles.fieldRow}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>{t.checkIn.energy}</label>
-                    <NumberStepper value={form.energy} onChange={v => setForm({ ...form, energy: v })} min={1} max={10} placeholder="7" />
+                <div style={{ ...styles.fieldRow, ...(isMobile ? { gap: '8px' } : {}) }}>
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.energy}</label>
+                    <NumberStepper value={form.energy} onChange={v => setForm({ ...form, energy: v })} min={1} max={10} placeholder="7" compact={isMobile} />
                   </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>{t.checkIn.stress}</label>
-                    <NumberStepper value={form.stress} onChange={v => setForm({ ...form, stress: v })} min={1} max={10} placeholder="4" />
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.stress}</label>
+                    <NumberStepper value={form.stress} onChange={v => setForm({ ...form, stress: v })} min={1} max={10} placeholder="4" compact={isMobile} />
                   </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>{t.checkIn.sleepHrs}</label>
-                    <NumberStepper value={form.sleepHours} onChange={v => setForm({ ...form, sleepHours: v })} step={0.5} min={0} max={16} placeholder="7.5" />
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.sleepHrs}</label>
+                    <NumberStepper value={form.sleepHours} onChange={v => setForm({ ...form, sleepHours: v })} step={0.5} min={0} max={16} placeholder="7.5" compact={isMobile} />
                   </div>
                 </div>
 
                 {/* Compliance */}
-                <div style={styles.fieldRow}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>{t.checkIn.stepsDailyAvg}</label>
-                    <NumberStepper value={form.steps} onChange={v => setForm({ ...form, steps: v })} min={0} max={50000} step={500} placeholder="8000" />
+                <div style={{ ...styles.fieldRow, ...(isMobile ? { gap: '8px' } : {}) }}>
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.stepsDailyAvg}</label>
+                    <NumberStepper value={form.steps} onChange={v => setForm({ ...form, steps: v })} min={0} max={50000} step={500} placeholder="8000" compact={isMobile} />
                   </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>{t.checkIn.nutrition}</label>
-                    <NumberStepper value={form.nutritionScore} onChange={v => setForm({ ...form, nutritionScore: v })} min={1} max={10} placeholder="8" />
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.nutrition}</label>
+                    <NumberStepper value={form.nutritionScore} onChange={v => setForm({ ...form, nutritionScore: v })} min={1} max={10} placeholder="8" compact={isMobile} />
                   </div>
                 </div>
 
                 {/* Self-Report */}
-                <div style={styles.field}>
-                  <label style={styles.label}>{t.checkIn.winsThisWeek}</label>
-                  <textarea style={styles.textarea} value={form.wins} onChange={e => setForm({ ...form, wins: e.target.value })} placeholder={t.checkIn.winsPlaceholder} rows={2} />
+                <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                  <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.winsThisWeek}</label>
+                  <textarea style={{ ...styles.textarea, ...(isMobile ? { padding: '10px 12px', fontSize: '14px' } : {}) }} value={form.wins} onChange={e => setForm({ ...form, wins: e.target.value })} placeholder={t.checkIn.winsPlaceholder} rows={2} />
                 </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>{t.checkIn.challenges}</label>
-                  <textarea style={styles.textarea} value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} placeholder={t.checkIn.challengesPlaceholder} rows={2} />
+                <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                  <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.challenges}</label>
+                  <textarea style={{ ...styles.textarea, ...(isMobile ? { padding: '10px 12px', fontSize: '14px' } : {}) }} value={form.challenges} onChange={e => setForm({ ...form, challenges: e.target.value })} placeholder={t.checkIn.challengesPlaceholder} rows={2} />
                 </div>
 
                 {/* Progress Photos */}
                 <div>
-                  <div style={{ ...styles.sectionTitle, marginBottom: '8px' }}>{t.checkIn.progressPhotos}</div>
-                  <div style={styles.photoSlots}>
+                  <div style={{ ...styles.sectionTitle, marginBottom: '8px', ...(isMobile ? { fontSize: '13px', marginBottom: '6px' } : {}) }}>{t.checkIn.progressPhotos}</div>
+                  <div style={{ ...styles.photoSlots, ...(isMobile ? { gap: '8px', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))' } : {}) }}>
                     {photoSlots.map(slot => {
                       const existing = photos.find(p => p.label === slot.label);
                       return (
@@ -344,7 +345,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                             onChange={e => handlePhotoUpload(slot.key, slot.label, e)}
                           />
                           {existing ? (
-                            <div style={styles.photoPreview}>
+                            <div style={{ ...styles.photoPreview, ...(isMobile ? { width: '60px', height: '60px' } : {}) }}>
                               <img src={existing.url} alt={slot.label} style={styles.photoImg} />
                               <button
                                 style={styles.photoRemoveBtn}
@@ -355,13 +356,13 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                             </div>
                           ) : (
                             <div
-                              style={styles.photoUploadBox}
+                              style={{ ...styles.photoUploadBox, ...(isMobile ? { width: '60px', height: '60px' } : {}) }}
                               onClick={() => fileInputRefs.current[slot.key]?.click()}
                             >
-                              <Camera size={20} color="var(--text-tertiary)" />
+                              <Camera size={isMobile ? 16 : 20} color="var(--text-tertiary)" />
                             </div>
                           )}
-                          <div style={styles.photoSlotLabel}>{slot.displayLabel}</div>
+                          <div style={{ ...styles.photoSlotLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{slot.displayLabel}</div>
                         </div>
                       );
                     })}
@@ -374,19 +375,20 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
           <button
             style={{
               ...styles.submitBtn,
+              ...(isMobile ? { padding: '14px', fontSize: '14px', marginBottom: '16px' } : {}),
               ...(isSubmitting || !hasAnyData ? { opacity: 0.6, cursor: 'not-allowed' } : {}),
             }}
             onClick={handleSubmit}
             disabled={isSubmitting || !hasAnyData}
           >
-            <Send size={16} /> {isSubmitting ? t.checkIn.submitting : !hasAnyData ? t.checkIn.fillAtLeastOne : t.checkIn.submitCheckIn}
+            <Send size={isMobile ? 14 : 16} /> {isSubmitting ? t.checkIn.submitting : !hasAnyData ? t.checkIn.fillAtLeastOne : t.checkIn.submitCheckIn}
           </button>
         </div>
       ) : (
-        <div style={styles.historyList}>
+        <div style={{ ...styles.historyList, ...(isMobile ? { gap: '8px' } : {}) }}>
           {completed.length === 0 ? (
             <GlassCard>
-              <p style={styles.emptyText}>{t.checkIn.noCheckIns}</p>
+              <p style={{ ...styles.emptyText, ...(isMobile ? { fontSize: '13px', padding: '14px' } : {}) }}>{t.checkIn.noCheckIns}</p>
             </GlassCard>
           ) : (
             <>
@@ -400,19 +402,19 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                 const avgMood = completed.filter(ci => ci.mood != null).reduce((sum, ci) => sum + ci.mood!, 0) / completed.filter(ci => ci.mood != null).length;
                 return (
                   <GlassCard delay={0}>
-                    <div style={styles.trendRow}>
+                    <div style={{ ...styles.trendRow, ...(isMobile ? { gap: '12px' } : {}) }}>
                       <div style={styles.trendItem}>
-                        <div style={styles.trendLabel}>Weight trend</div>
-                        <div style={{ ...styles.trendValue, color: diff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                        <div style={{ ...styles.trendLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>Weight trend</div>
+                        <div style={{ ...styles.trendValue, ...(isMobile ? { fontSize: '20px' } : {}), color: diff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
                           {diff <= 0 ? '\u2193' : '\u2191'} {Math.abs(diff).toFixed(1)}kg
                         </div>
-                        <div style={styles.trendSub}>{oldest}kg → {latest}kg</div>
+                        <div style={{ ...styles.trendSub, ...(isMobile ? { fontSize: '11px' } : {}) }}>{oldest}kg → {latest}kg</div>
                       </div>
-                      <div style={styles.trendDivider} />
+                      <div style={{ ...styles.trendDivider, ...(isMobile ? { height: '32px' } : {}) }} />
                       <div style={styles.trendItem}>
-                        <div style={styles.trendLabel}>Avg mood</div>
-                        <div style={styles.trendValue}>{avgMood ? avgMood.toFixed(1) : '-'}/5</div>
-                        <div style={styles.trendSub}>{completed.length} check-ins</div>
+                        <div style={{ ...styles.trendLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>Avg mood</div>
+                        <div style={{ ...styles.trendValue, ...(isMobile ? { fontSize: '20px' } : {}) }}>{avgMood ? avgMood.toFixed(1) : '-'}/5</div>
+                        <div style={{ ...styles.trendSub, ...(isMobile ? { fontSize: '11px' } : {}) }}>{completed.length} check-ins</div>
                       </div>
                     </div>
                   </GlassCard>
@@ -431,48 +433,48 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                       style={styles.historyHeader}
                       onClick={() => setExpandedId(isExpanded ? null : ci.id)}
                     >
-                      <div style={styles.historyLeft}>
-                        <div style={styles.historyDate}>{ci.date}</div>
+                      <div style={{ ...styles.historyLeft, ...(isMobile ? { gap: '8px' } : {}) }}>
+                        <div style={{ ...styles.historyDate, ...(isMobile ? { fontSize: '13px' } : {}) }}>{ci.date}</div>
                         <div style={styles.historyChips}>
                           {ci.weight && (
-                            <span style={styles.chip}>
+                            <span style={{ ...styles.chip, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}) }}>
                               {ci.weight}kg
                               {weightDiff != null && (
-                                <span style={{ color: weightDiff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)', marginLeft: '3px', fontSize: '10px' }}>
+                                <span style={{ color: weightDiff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)', marginLeft: '3px', fontSize: isMobile ? '9px' : '10px' }}>
                                   {weightDiff <= 0 ? '\u2193' : '\u2191'}{Math.abs(weightDiff).toFixed(1)}
                                 </span>
                               )}
                             </span>
                           )}
-                          {MoodIcon && <MoodIcon size={14} color={mood?.color} />}
-                          {ci.coachFeedback && <span style={{ ...styles.chip, background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>Reviewed</span>}
+                          {MoodIcon && <MoodIcon size={isMobile ? 12 : 14} color={mood?.color} />}
+                          {ci.coachFeedback && <span style={{ ...styles.chip, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}), background: 'var(--accent-primary-dim)', color: 'var(--accent-primary)' }}>Reviewed</span>}
                         </div>
                       </div>
-                      {isExpanded ? <ChevronUp size={16} color="var(--text-tertiary)" /> : <ChevronDown size={16} color="var(--text-tertiary)" />}
+                      {isExpanded ? <ChevronUp size={isMobile ? 14 : 16} color="var(--text-tertiary)" /> : <ChevronDown size={isMobile ? 14 : 16} color="var(--text-tertiary)" />}
                     </div>
 
                   {isExpanded && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      style={styles.historyDetail}
+                      style={{ ...styles.historyDetail, ...(isMobile ? { marginTop: '10px', paddingTop: '10px', gap: '8px' } : {}) }}
                     >
-                      <div style={styles.detailGrid}>
-                        {ci.energy != null && <div style={styles.detailItem}><span style={styles.detailLabel}>{t.checkIn.energyLabel}</span><span style={styles.detailValue}>{ci.energy}/10</span></div>}
-                        {ci.stress != null && <div style={styles.detailItem}><span style={styles.detailLabel}>{t.checkIn.stressLabel}</span><span style={styles.detailValue}>{ci.stress}/10</span></div>}
-                        {ci.sleepHours != null && <div style={styles.detailItem}><span style={styles.detailLabel}>{t.checkIn.sleepLabel}</span><span style={styles.detailValue}>{ci.sleepHours}h</span></div>}
-                        {ci.nutritionScore != null && <div style={styles.detailItem}><span style={styles.detailLabel}>{t.checkIn.nutritionLabel}</span><span style={styles.detailValue}>{ci.nutritionScore}/10</span></div>}
+                      <div style={{ ...styles.detailGrid, ...(isMobile ? { gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' } : {}) }}>
+                        {ci.energy != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.energyLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.energy}/10</span></div>}
+                        {ci.stress != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.stressLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.stress}/10</span></div>}
+                        {ci.sleepHours != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.sleepLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.sleepHours}h</span></div>}
+                        {ci.nutritionScore != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.nutritionLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.nutritionScore}/10</span></div>}
                       </div>
-                      {ci.notes && <div style={styles.detailText}><strong>{t.checkIn.notesLabel}</strong> {ci.notes}</div>}
-                      {ci.wins && <div style={{ ...styles.detailText, color: 'var(--accent-success)' }}><strong>{t.checkIn.winsLabel}</strong> {ci.wins}</div>}
-                      {ci.challenges && <div style={{ ...styles.detailText, color: 'var(--accent-warm)' }}><strong>{t.checkIn.challengesLabel}</strong> {ci.challenges}</div>}
+                      {ci.notes && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}) }}><strong>{t.checkIn.notesLabel}</strong> {ci.notes}</div>}
+                      {ci.wins && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}), color: 'var(--accent-success)' }}><strong>{t.checkIn.winsLabel}</strong> {ci.wins}</div>}
+                      {ci.challenges && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}), color: 'var(--accent-warm)' }}><strong>{t.checkIn.challengesLabel}</strong> {ci.challenges}</div>}
                       {ci.photos?.length > 0 && (
                         <div>
-                          <div style={styles.detailLabel}>{t.checkIn.progressPhotos}</div>
-                          <div style={styles.historyPhotos}>
+                          <div style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.progressPhotos}</div>
+                          <div style={{ ...styles.historyPhotos, ...(isMobile ? { gap: '6px' } : {}) }}>
                             {ci.photos.map((photo, pi) => (
                               <div key={pi} style={styles.historyPhotoCard}>
-                                <img src={photo.url} alt={photo.label} style={styles.historyPhotoImg} />
+                                <img src={photo.url} alt={photo.label} style={{ ...styles.historyPhotoImg, ...(isMobile ? { width: '60px', height: '80px' } : {}) }} />
                                 <span style={styles.historyPhotoLabel}>{photo.label}</span>
                               </div>
                             ))}
@@ -480,9 +482,9 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                         </div>
                       )}
                       {ci.coachFeedback && (
-                        <div style={styles.feedbackBox}>
-                          <div style={styles.feedbackLabel}>{t.checkIn.coachFeedback}</div>
-                          <p style={styles.feedbackText}>{ci.coachFeedback}</p>
+                        <div style={{ ...styles.feedbackBox, ...(isMobile ? { padding: '10px' } : {}) }}>
+                          <div style={{ ...styles.feedbackLabel, ...(isMobile ? { fontSize: '10px', marginBottom: '4px' } : {}) }}>{t.checkIn.coachFeedback}</div>
+                          <p style={{ ...styles.feedbackText, ...(isMobile ? { fontSize: '13px' } : {}) }}>{ci.coachFeedback}</p>
                         </div>
                       )}
                     </motion.div>
