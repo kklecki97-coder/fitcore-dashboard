@@ -3,24 +3,23 @@ import { motion } from 'framer-motion';
 import {
   Users,
   DollarSign,
-  TrendingUp,
+
   ArrowUpRight,
   ArrowDownRight,
   AlertTriangle,
   CalendarCheck,
-  MessageSquare,
   Sparkles,
   Loader2,
   RefreshCw,
   ChevronDown,
   FileBarChart,
 } from 'lucide-react';
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-} from 'recharts';
+
 import GlassCard from './GlassCard';
+import ActivityFeed from './ActivityFeed';
 import AnimatedNumber from './AnimatedNumber';
-import { getInitials, getAvatarColor } from '../data';
+import SmartCoachWidget from './SmartCoachWidget';
+
 import useIsMobile from '../hooks/useIsMobile';
 import { useAIBriefing } from '../hooks/useAIBriefing';
 import { useLang } from '../i18n';
@@ -30,7 +29,7 @@ import { filterAtRiskClients } from '../utils/client-analysis';
 import { getDailyQuote } from '../utils/formatting';
 import { computeWeeklyReport } from '../utils/weekly-report';
 import WeeklyReport from './WeeklyReport';
-import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, CheckIn } from '../types';
+import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, WorkoutSetLog, CheckIn } from '../types';
 
 const QUOTE_AUTHORS = [
   'Unknown',
@@ -52,8 +51,11 @@ interface OverviewPageProps {
   invoices: Invoice[];
   workoutLogs: WorkoutLog[];
   checkIns: CheckIn[];
+  workoutSetLogs: WorkoutSetLog[];
   onViewClient: (id: string) => void;
-  onNavigate: (page: 'messages' | 'clients') => void;
+  onNavigate: (page: 'messages' | 'clients' | 'check-ins') => void;
+  onSendMessage: (msg: Message) => void;
+  onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
   profileName?: string;
 }
 
@@ -65,14 +67,14 @@ function getTimeGreeting(t: { overview: { greetingMorning: (n: string) => string
   return t.overview.greetingNight(name);
 }
 
-export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate, profileName }: OverviewPageProps) {
+export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, workoutSetLogs, onViewClient, onNavigate, onSendMessage, onUpdateCheckIn, profileName }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const { briefing, loading: briefingLoading, refresh: refreshBriefing } = useAIBriefing(clients, invoices, workoutLogs, checkIns, messages, programs, lang);
   const [ready, setReady] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [messagesExpanded, setMessagesExpanded] = useState(false);
+  // messagesExpanded removed — Recent Messages replaced by ActivityFeed
   const reportData = useMemo(() => computeWeeklyReport(clients, messages, invoices, workoutLogs, checkIns), [clients, messages, invoices, workoutLogs, checkIns]);
 
   useEffect(() => {
@@ -98,7 +100,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const totalRevenue = invoices
     .filter(inv => inv.status === 'paid' && inv.period.toLowerCase() === currentPeriod.toLowerCase())
     .reduce((sum, inv) => sum + inv.amount, 0);
-  const unreadMessages = messages.filter(m => !m.isRead && !m.isFromCoach);
+  // unreadMessages removed — Recent Messages replaced by ActivityFeed
 
   // Compute revenue chart from real invoices
   const revenueData = useMemo(() => computeRevenueChartData(invoices), [invoices]);
@@ -107,14 +109,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const prevMonth = revenueData[revenueData.length - 2];
   const revenueChange = calculateRevenueChange(lastMonth.revenue, prevMonth?.revenue ?? 0);
 
-  // At-risk: based on real data - paused, no workouts in 7 days, or overdue check-in
+  // At-risk count (used in stat card)
   const atRiskClients = filterAtRiskClients(clients, workoutLogs);
-  // Used for at-risk reason display below
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
   // Pending check-ins: check-ins that coach hasn't reviewed yet
   const pendingCheckInsList = checkIns.filter(ci => ci.reviewStatus === 'pending');
 
@@ -414,6 +410,20 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         })}
       </div>
 
+      {/* Smart Coach Widget */}
+      <SmartCoachWidget
+        clients={clients}
+        messages={messages}
+        checkIns={checkIns}
+        invoices={invoices}
+        workoutLogs={workoutLogs}
+        programs={programs}
+        onSendMessage={onSendMessage}
+        onUpdateCheckIn={onUpdateCheckIn}
+        lang={lang as 'en' | 'pl'}
+        isMobile={isMobile}
+      />
+
       {/* AI Dashboard Summary */}
       <GlassCard delay={0.15} style={isMobile ? { padding: '16px' } : undefined}>
         <div style={styles.cardHeader}>
@@ -488,242 +498,35 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         )}
       </GlassCard>
 
-      {/* Revenue Chart */}
-      <GlassCard delay={0.2} style={isMobile ? { padding: '16px' } : undefined}>
-        <div style={styles.cardHeader}>
-          <div>
-            <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.revenueOverview}</h3>
-            <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.overview.monthlyRecurring}</p>
-          </div>
-          <div style={styles.legendRow}>
-            <span style={getLegendDotStyle('#00e5c8')} />
-            <span style={styles.legendText}>{t.overview.revenue}</span>
-          </div>
-        </div>
-        <div style={{ height: isMobile ? 180 : 220, marginTop: '16px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00e5c8" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#00e5c8" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: isMobile ? 11 : 17, fill: '#525a6e', fontFamily: 'Outfit' }}
-              />
-              <YAxis
-                domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: isMobile ? 11 : 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}
-                tickFormatter={(v) => formatCurrency(v, lang)}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle-strong)',
-                  borderRadius: '10px',
-                  boxShadow: 'var(--shadow-elevated)',
-                  fontSize: '18px',
-                  fontFamily: 'Outfit',
-                }}
-                labelStyle={{ color: '#8b92a5' }}
-                itemStyle={{ color: '#00e5c8' }}
-                formatter={(value) => [formatCurrency(value as number, lang), t.overview.revenue]}
-              />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#00e5c8"
-                strokeWidth={2.5}
-                fill="url(#revenueGrad)"
-                dot={{ fill: '#00e5c8', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, strokeWidth: 2, stroke: 'var(--text-on-accent)' }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </GlassCard>
+      {/* Activity Feed — mobile only: right after Dashboard Summary */}
+      {isMobile && (
+        <ActivityFeed
+          clients={clients}
+          messages={messages}
+          checkIns={checkIns}
+          workoutLogs={workoutLogs}
+          workoutSetLogs={workoutSetLogs}
+          invoices={invoices}
+          onViewClient={onViewClient}
+          onNavigate={onNavigate}
+          isMobile={isMobile}
+        />
+      )}
 
-      {/* Bottom Row */}
-      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)' }}>
-        {/* At-Risk Clients */}
-        <GlassCard delay={0.3} style={isMobile ? { padding: '16px' } : undefined}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.atRiskClientsTitle}</h3>
-              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>
-                {atRiskClients.length > 0
-                  ? t.overview.clientsNeedAttention(atRiskClients.length)
-                  : t.overview.allOnTrack}
-              </p>
-            </div>
-            <AlertTriangle size={16} color={atRiskClients.length > 0 ? 'var(--accent-danger)' : 'var(--text-tertiary)'} />
-          </div>
-          <div style={styles.riskList}>
-            {atRiskClients.length === 0 ? (
-              <div style={styles.emptyState}>
-                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>{t.overview.noAtRisk}</span>
-              </div>
-            ) : (
-              atRiskClients.map((client, i) => {
-                const reasons: string[] = [];
-                if (client.status === 'paused') reasons.push(t.overview.paused);
-                const clientRecentWorkouts = workoutLogs.filter(w => w.clientId === client.id && w.date >= sevenDaysAgoStr);
-                if (clientRecentWorkouts.length === 0 && client.status !== 'paused') reasons.push(t.overview.noStreak);
-                if (client.nextCheckIn && client.nextCheckIn !== '-') {
-                  const ciDate = new Date(client.nextCheckIn);
-                  ciDate.setHours(0, 0, 0, 0);
-                  if (ciDate < today) reasons.push(t.overview.overdueCheckIn ?? 'Overdue check-in');
-                }
-                return (
-                  <motion.div
-                    key={client.id}
-                    style={styles.riskItem}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.35 + i * 0.05 }}
-                    onClick={() => onViewClient(client.id)}
-                  >
-                    <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
-                      {getInitials(client.name)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 500 }}>{client.name}</div>
-                      <div style={styles.riskReasons}>
-                        {reasons.map((r, j) => (
-                          <span key={j} style={styles.riskTag}>{r}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: isMobile ? '12px' : '17px', color: 'var(--text-tertiary)' }}>
-                      {client.lastActive}
-                    </div>
-                  </motion.div>
-                );
-              })
-            )}
-          </div>
-        </GlassCard>
-
-        {/* Top Performers */}
-        <GlassCard delay={0.35} style={isMobile ? { padding: '16px' } : undefined}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.topPerformers}</h3>
-              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.overview.highestProgress}</p>
-            </div>
-            <TrendingUp size={16} color="var(--text-tertiary)" />
-          </div>
-          <div style={styles.clientList}>
-            {[...clients]
-              .sort((a, b) => b.progress - a.progress)
-              .slice(0, 5)
-              .map((client: Client, i: number) => (
-                <motion.div
-                  key={client.id}
-                  style={styles.clientRow}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + i * 0.05 }}
-                  onClick={() => onViewClient(client.id)}
-                >
-                  <div style={{ ...styles.rank, color: i === 0 ? 'var(--accent-warm)' : 'var(--text-tertiary)' }}>
-                    #{i + 1}
-                  </div>
-                  <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
-                    {getInitials(client.name)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 500 }}>{client.name}</div>
-                    <div style={{ fontSize: isMobile ? '12px' : '17px', color: 'var(--text-secondary)' }}>{client.plan}</div>
-                  </div>
-                  <div style={styles.progressContainer}>
-                    <div style={styles.progressBar}>
-                      <motion.div
-                        style={{
-                          ...styles.progressFill,
-                          background: client.progress > 80 ? 'var(--accent-success)' : client.progress > 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-                        }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${client.progress}%` }}
-                        transition={{ delay: 0.5 + i * 0.1, duration: 0.6, ease: 'easeOut' }}
-                      />
-                    </div>
-                    <span style={styles.progressText}>{client.progress}%</span>
-                  </div>
-                </motion.div>
-              ))}
-          </div>
-        </GlassCard>
-
-        {/* Recent Messages */}
-        <GlassCard delay={0.4} style={{ gridColumn: '1 / -1', ...(isMobile ? { padding: '16px' } : {}) }}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.recentMessages}</h3>
-              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.overview.unread(unreadMessages.length)}</p>
-            </div>
-            <button onClick={() => onNavigate('messages')} style={styles.viewAllBtn}>
-              {t.overview.viewAll}
-            </button>
-          </div>
-          {(() => {
-            const filteredMessages = messages.filter(m => !m.isFromCoach);
-            const visibleMessages = isMobile && !messagesExpanded ? filteredMessages.slice(0, 2) : filteredMessages.slice(0, 5);
-            const hasMore = isMobile && !messagesExpanded && filteredMessages.length > 2;
-            return (
-              <>
-                <div style={styles.messageList}>
-                  {visibleMessages.map((msg, i) => (
-                    <motion.div
-                      key={msg.id}
-                      style={styles.messageItem}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.45 + i * 0.05 }}
-                      onClick={() => onNavigate('messages')}
-                    >
-                      <div style={{ ...styles.avatar, background: getAvatarColor(msg.clientId), flexShrink: 0 }}>
-                        {getInitials(msg.clientName)}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={styles.msgHeader}>
-                          <span style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 500 }}>{msg.clientName}</span>
-                          {!msg.isRead && <span style={styles.unreadDot} />}
-                        </div>
-                        <div style={{ ...styles.msgText, fontSize: isMobile ? '13px' : '17px' }}>{msg.text}</div>
-                      </div>
-                      <MessageSquare size={14} color="var(--accent-primary)" style={{ flexShrink: 0, cursor: 'pointer' }} />
-                    </motion.div>
-                  ))}
-                </div>
-                {isMobile && (hasMore || messagesExpanded) && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setMessagesExpanded(prev => !prev); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                      width: '100%', padding: '8px 0', marginTop: '4px',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: 'var(--accent-primary)', fontSize: '13px', fontFamily: 'Outfit',
-                    }}
-                  >
-                    {messagesExpanded ? (lang === 'pl' ? 'Zwiń' : 'Show less') : (lang === 'pl' ? `Pokaż więcej (${filteredMessages.length - 2})` : `Show more (${filteredMessages.length - 2})`)}
-                    <ChevronDown size={14} style={{
-                      transform: messagesExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s ease',
-                    }} />
-                  </button>
-                )}
-              </>
-            );
-          })()}
-        </GlassCard>
-      </div>
+      {/* Activity Feed — desktop only */}
+      {!isMobile && (
+        <ActivityFeed
+          clients={clients}
+          messages={messages}
+          checkIns={checkIns}
+          workoutLogs={workoutLogs}
+          workoutSetLogs={workoutSetLogs}
+          invoices={invoices}
+          onViewClient={onViewClient}
+          onNavigate={onNavigate}
+          isMobile={isMobile}
+        />
+      )}
 
       {/* Weekly Report Modal */}
       <WeeklyReport
@@ -736,14 +539,6 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   );
 }
 
-function getLegendDotStyle(color: string): React.CSSProperties {
-  return {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: color,
-  };
-}
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -815,11 +610,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-secondary)',
     marginTop: '4px',
   },
-  bottomGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '16px',
-  },
   cardHeader: {
     display: 'flex',
     alignItems: 'flex-start',
@@ -829,20 +619,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '21px',
     fontWeight: 600,
     color: 'var(--text-primary)',
-  },
-  cardSubtitle: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
-    marginTop: '2px',
-  },
-  legendRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  legendText: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
   },
   riskList: {
     display: 'flex',
@@ -877,64 +653,6 @@ const styles: Record<string, React.CSSProperties> = {
   emptyState: {
     padding: '24px 0',
     textAlign: 'center',
-  },
-  clientList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    marginTop: '16px',
-  },
-  clientRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '8px 10px',
-    borderRadius: 'var(--radius-sm)',
-    cursor: 'pointer',
-    transition: 'background 0.15s',
-  },
-  rank: {
-    fontSize: '17px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    width: '24px',
-  },
-  avatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '15px',
-    fontWeight: 700,
-    color: 'var(--text-on-accent)',
-    flexShrink: 0,
-  },
-  progressContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    width: '100px',
-  },
-  progressBar: {
-    flex: 1,
-    height: '4px',
-    borderRadius: '2px',
-    background: 'var(--bg-subtle-hover)',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: '2px',
-  },
-  progressText: {
-    fontSize: '17px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-mono)',
-    color: 'var(--text-secondary)',
-    width: '32px',
-    textAlign: 'right',
   },
   messageList: {
     display: 'flex',

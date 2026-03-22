@@ -29,6 +29,21 @@ export function getEngagementColor(score: number): string {
   return '#ef4444';
 }
 
+/** Accent-colored variant matching the old engagement-score palette. */
+export function getScoreColor(score: number): string {
+  if (score >= 80) return '#20dba4';
+  if (score >= 50) return '#f59e0b';
+  if (score >= 25) return '#f97316';
+  return '#e8637a';
+}
+
+export function getScoreLabel(score: number): string {
+  if (score >= 80) return 'excellent';
+  if (score >= 50) return 'good';
+  if (score >= 25) return 'needsAttention';
+  return 'atRisk';
+}
+
 export function getTrendArrow(trend: 'up' | 'stable' | 'down'): string {
   switch (trend) {
     case 'up': return '↑';

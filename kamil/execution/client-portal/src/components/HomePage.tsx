@@ -27,12 +27,13 @@ interface HomePageProps {
   messages: Message[];
   coachName: string;
   onNavigate: (page: ClientPage) => void;
+  onFeedbackClick?: (checkInId: string) => void;
   weeklySchedule: WeeklySchedule | null;
   onUpdateSchedule: (assignments: Record<string, string>) => void;
 }
 
 // onUpdateSchedule is scaffolded for weekly schedule feature
-export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, weeklySchedule, onUpdateSchedule: _onUpdateSchedule }: HomePageProps) {
+export default function HomePage({ client, program, workoutLogs, checkIns, messages, coachName, onNavigate, onFeedbackClick, weeklySchedule, onUpdateSchedule: _onUpdateSchedule }: HomePageProps) {
   void _onUpdateSchedule; // scaffolded for inline schedule editing on home page
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
@@ -51,7 +52,11 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
     const updated = [...dismissedFeedbackIds, latestFeedback.id];
     setDismissedFeedbackIds(updated);
     localStorage.setItem('fitcore-dismissed-feedback', JSON.stringify(updated));
-    onNavigate('check-in' as ClientPage);
+    if (onFeedbackClick) {
+      onFeedbackClick(latestFeedback.id);
+    } else {
+      onNavigate('check-in' as ClientPage);
+    }
   };
 
   // Sync dismissed list on mount

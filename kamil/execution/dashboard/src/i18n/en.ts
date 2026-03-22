@@ -124,6 +124,17 @@ export const en = {
     greetingNight: (name: string) => `Burning the midnight oil, ${name}`,
   },
 
+  activityFeed: {
+    title: 'Activity Feed',
+    filterAll: 'All',
+    filterWorkouts: 'Workouts',
+    filterCheckIns: 'Check-ins',
+    filterMessages: 'Messages',
+    filterPayments: 'Payments',
+    noEvents: 'No activity yet — events will appear here as your clients train, check in, and message you.',
+    noFilteredEvents: 'No events matching this filter recently.',
+  },
+
   clients: {
     addClient: 'Add Client',
     searchPlaceholder: 'Search clients...',

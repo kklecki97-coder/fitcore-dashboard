@@ -147,7 +147,7 @@ function App() {
     // so all queries here automatically return only this coach's data.
     const loadClients = async (): Promise<Client[]> => {
       const { data, error } = await supabase.from('clients').select('*').order('created_at');
-      if (error) { console.error('loadClients failed:', error); /* TODO: error tracking (Sentry) */ return []; }
+      if (error) { console.error('loadClients failed:', error); showToast('Failed to load clients. Please refresh.', 'error'); return []; }
       if (data) {
         // Load client_metrics time-series data
         const clientIds = data.map(r => r.id);
@@ -201,7 +201,7 @@ function App() {
       // Fix #15: Build name map instead of .find() per record
       const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
       const { data, error } = await supabase.from('messages').select('*').order('timestamp');
-      if (error) { console.error('loadMessages failed:', error); /* TODO: error tracking (Sentry) */ return; }
+      if (error) { console.error('loadMessages failed:', error); showToast('Failed to load messages.', 'error'); return; }
       if (data) {
         setAllMessages(data.map(r => ({
           id: r.id,
@@ -220,7 +220,7 @@ function App() {
     const loadInvoices = async (clientsList: Client[]) => {
       const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
       const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
-      if (error) { console.error('loadInvoices failed:', error); /* TODO: error tracking (Sentry) */ return; }
+      if (error) { console.error('loadInvoices failed:', error); showToast('Failed to load invoices.', 'error'); return; }
       if (data) {
         setAllInvoices(data.map(r => ({
           id: r.id,
@@ -241,7 +241,7 @@ function App() {
     const loadCheckIns = async (clientsList: Client[]) => {
       const nameMap = new Map(clientsList.map(c => [c.id, c.name]));
       const { data, error } = await supabase.from('check_ins').select('*').order('date', { ascending: false });
-      if (error) { console.error('loadCheckIns failed:', error); /* TODO: error tracking (Sentry) */ return; }
+      if (error) { console.error('loadCheckIns failed:', error); showToast('Failed to load check-ins.', 'error'); return; }
       if (data) {
         // Load photos for all check-ins
         const checkInIds = data.map(r => r.id);
@@ -302,7 +302,7 @@ function App() {
         .from('workout_programs')
         .select(`*, workout_days(*, exercises(*)), program_clients(client_id)`)
         .order('created_at');
-      if (error) { console.error('loadPrograms failed:', error); /* TODO: error tracking (Sentry) */ return; }
+      if (error) { console.error('loadPrograms failed:', error); showToast('Failed to load programs.', 'error'); return; }
       if (data) {
         setAllPrograms(data.map(p => ({
           id: p.id,
@@ -339,7 +339,7 @@ function App() {
 
     const loadWorkoutLogs = async () => {
       const { data, error } = await supabase.from('workout_logs').select('*, clients(name)').order('date', { ascending: false });
-      if (error) { console.error('loadWorkoutLogs failed:', error); /* TODO: error tracking (Sentry) */ return; }
+      if (error) { console.error('loadWorkoutLogs failed:', error); showToast('Failed to load workout logs.', 'error'); return; }
       if (data) {
         setAllWorkoutLogs(data.map(r => ({
           id: r.id,
@@ -355,7 +355,7 @@ function App() {
 
     const loadSetLogs = async () => {
       const { data, error } = await supabase.from('workout_set_logs').select('*').order('date', { ascending: false });
-      if (error) { console.error('loadSetLogs failed:', error); /* TODO: error tracking (Sentry) */ return; }
+      if (error) { console.error('loadSetLogs failed:', error); showToast('Failed to load set logs.', 'error'); return; }
       if (data) {
         setAllSetLogs(data.map(r => ({
           id: r.id,
@@ -374,7 +374,7 @@ function App() {
 
     const loadPlans = async () => {
       const { data, error } = await supabase.from('coaching_plans').select('*').order('created_at');
-      if (error) { console.error('loadPlans failed:', error); /* TODO: error tracking (Sentry) */ return; }
+      if (error) { console.error('loadPlans failed:', error); showToast('Failed to load plans.', 'error'); return; }
       if (data) {
         setAllPlans(data.map(r => ({
           id: r.id,
@@ -401,6 +401,7 @@ function App() {
         loadSetLogs(),
         loadPlans(),
       ]).finally(() => {
+        initialLoadDoneRef.current = true;
         setDataLoading(false);
         // Show onboarding for first-time coaches (no clients, not seen before)
         if (clientsList.length === 0 && !localStorage.getItem('fitcore-onboarding-done')) {
@@ -415,6 +416,7 @@ function App() {
 
   // ── Realtime messages - subscribe to INSERT/UPDATE on messages table ──
   const clientsRef = useRef<Client[]>([]);
+  const initialLoadDoneRef = useRef(false);
   useEffect(() => { clientsRef.current = allClients; }, [allClients]);
 
   useEffect(() => {
@@ -426,6 +428,8 @@ function App() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
+          // Skip realtime events during initial load — load query will have the latest data
+          if (!initialLoadDoneRef.current) return;
           const r = payload.new as Record<string, unknown>;
           const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
           const msg: Message = {
@@ -470,6 +474,7 @@ function App() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'check_ins' },
         (payload) => {
+          if (!initialLoadDoneRef.current) return;
           const r = payload.new as Record<string, unknown>;
           const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
           const ci: CheckIn = {
@@ -540,6 +545,7 @@ function App() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'workout_logs' },
         (payload) => {
+          if (!initialLoadDoneRef.current) return;
           const r = payload.new as Record<string, unknown>;
           const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
           const log: WorkoutLog = {
@@ -552,6 +558,61 @@ function App() {
             completed: (r.completed as boolean) ?? false,
           };
           setAllWorkoutLogs(prev => prev.some(l => l.id === log.id) ? prev : [log, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn]);
+
+  // ── Realtime workout set logs — for PR detection in Activity Feed ──
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const channel = supabase
+      .channel('coach-set-logs')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'workout_set_logs' },
+        (payload) => {
+          if (!initialLoadDoneRef.current) return;
+          const r = payload.new as Record<string, unknown>;
+          const log: WorkoutSetLog = {
+            id: r.id as string,
+            date: r.date as string,
+            clientId: r.client_id as string,
+            exerciseId: r.exercise_id as string,
+            exerciseName: r.exercise_name as string,
+            setNumber: (r.set_number as number) ?? 0,
+            reps: (r.reps as number) ?? 0,
+            weight: (r.weight as string) ?? '',
+            completed: (r.completed as boolean) ?? false,
+            rpe: r.rpe as number | null | undefined,
+          };
+          setAllSetLogs(prev => prev.some(l => l.id === log.id) ? prev : [log, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn]);
+
+  // ── Realtime invoices — payment status changes (paid/overdue) ──
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const channel = supabase
+      .channel('coach-invoices')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'invoices' },
+        (payload) => {
+          const r = payload.new as Record<string, unknown>;
+          setAllInvoices(prev => prev.map(inv =>
+            inv.id === r.id
+              ? { ...inv, status: r.status as Invoice['status'], paidDate: (r.paid_date as string) ?? null }
+              : inv
+          ));
         }
       )
       .subscribe();
@@ -696,7 +757,7 @@ function App() {
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
       const { error } = await supabase.from('clients').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdateClient failed:', error); // TODO: error tracking (Sentry)
+      if (error) { console.error('handleUpdateClient failed:', error); showToast('Failed to update client.', 'error'); }
     }
   };
 
@@ -733,7 +794,7 @@ function App() {
       delivery_status: msg.deliveryStatus,
     });
     if (error) {
-      console.error('handleSendMessage failed:', error); // TODO: error tracking (Sentry)
+      console.error('handleSendMessage failed:', error); showToast('Failed to send message.', 'error');
       // Rollback optimistic update
       setAllMessages(prev => prev.filter(m => m.id !== msg.id));
     }
@@ -751,7 +812,7 @@ function App() {
       notes: program.notes || '',
       updated_at: new Date().toISOString(),
     });
-    if (r1.error) console.error('saveProgramToDb upsert:', r1.error); // TODO: error tracking (Sentry)
+    if (r1.error) { console.error('saveProgramToDb upsert:', r1.error); showToast('Failed to save program.', 'error'); }
     // Sync program_clients junction table
     await supabase.from('program_clients').delete().eq('program_id', program.id);
     if (program.clientIds.length > 0) {
@@ -767,7 +828,7 @@ function App() {
         id: day.id, program_id: program.id, name: day.name, day_order: di,
       }));
       const { error: daysError } = await supabase.from('workout_days').insert(dayRows);
-      if (daysError) { console.error('saveProgramToDb days insert:', daysError); /* TODO: error tracking (Sentry) */ return; }
+      if (daysError) { console.error('saveProgramToDb days insert:', daysError); showToast('Failed to save program days.', 'error'); return; }
       // Batch insert all exercises across all days at once
       const exerciseRows = program.days.flatMap((day, _di) =>
         day.exercises.map((ex, ei) => ({
@@ -778,7 +839,7 @@ function App() {
       );
       if (exerciseRows.length > 0) {
         const { error: exError } = await supabase.from('exercises').insert(exerciseRows);
-        if (exError) console.error('saveProgramToDb exercises insert:', exError); // TODO: error tracking (Sentry)
+        if (exError) { console.error('saveProgramToDb exercises insert:', exError); showToast('Failed to save exercises.', 'error'); }
       }
     }
   };
@@ -807,7 +868,7 @@ function App() {
     setAllPrograms(prev => prev.filter(p => p.id !== id));
     const { error } = await supabase.from('workout_programs').delete().eq('id', id);
     if (error) {
-      console.error('handleDeleteProgram failed:', error); // TODO: error tracking (Sentry)
+      console.error('handleDeleteProgram failed:', error); showToast('Failed to delete program.', 'error');
       if (removed) setAllPrograms(prev => [...prev, removed]);
     }
   };
@@ -859,7 +920,7 @@ function App() {
     if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
     if (Object.keys(dbUpdates).length > 0) {
       const { error } = await supabase.from('invoices').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdateInvoice failed:', error); // TODO: error tracking (Sentry)
+      if (error) { console.error('handleUpdateInvoice failed:', error); showToast('Failed to update invoice.', 'error'); }
     }
   };
 
@@ -884,7 +945,7 @@ function App() {
       plan: invoice.plan,
     });
     if (error) {
-      console.error('handleAddInvoice failed:', error); // TODO: error tracking (Sentry)
+      console.error('handleAddInvoice failed:', error); showToast('Failed to create invoice.', 'error');
       setAllInvoices(prev => prev.filter(inv => inv.id !== invoice.id));
       showToast('Failed to create invoice', 'error');
     } else {
@@ -909,7 +970,7 @@ function App() {
       is_active: plan.isActive,
     });
     if (error) {
-      console.error('handleAddPlan failed:', error); // TODO: error tracking (Sentry)
+      console.error('handleAddPlan failed:', error); showToast('Failed to create plan.', 'error');
       setAllPlans(prev => prev.filter(p => p.id !== plan.id));
     }
   };
@@ -925,7 +986,7 @@ function App() {
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
       const { error } = await supabase.from('coaching_plans').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdatePlan failed:', error); // TODO: error tracking (Sentry)
+      if (error) { console.error('handleUpdatePlan failed:', error); showToast('Failed to update plan.', 'error'); }
     }
   };
 
@@ -934,7 +995,7 @@ function App() {
     setAllPlans(prev => prev.filter(p => p.id !== id));
     const { error } = await supabase.from('coaching_plans').delete().eq('id', id);
     if (error) {
-      console.error('handleDeletePlan failed:', error); // TODO: error tracking (Sentry)
+      console.error('handleDeletePlan failed:', error); showToast('Failed to delete plan.', 'error');
       if (removed) setAllPlans(prev => [...prev, removed]);
     }
   };
@@ -961,7 +1022,7 @@ function App() {
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();
       const { error } = await supabase.from('check_ins').update(dbUpdates).eq('id', id);
-      if (error) console.error('handleUpdateCheckIn failed:', error); // TODO: error tracking (Sentry)
+      if (error) { console.error('handleUpdateCheckIn failed:', error); showToast('Failed to update check-in.', 'error'); }
     }
   };
 
@@ -988,7 +1049,7 @@ function App() {
       flag_reason: checkIn.flagReason,
     });
     if (error) {
-      console.error('handleAddCheckIn failed:', error); // TODO: error tracking (Sentry)
+      console.error('handleAddCheckIn failed:', error); showToast('Failed to create check-in.', 'error');
       setAllCheckIns(prev => prev.filter(ci => ci.id !== checkIn.id));
     }
   };
@@ -1009,7 +1070,7 @@ function App() {
     // Each page wrapped in ErrorBoundary so one page crash doesn't kill the whole app
     switch (currentPage) {
       case 'overview':
-        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} workoutSetLogs={allSetLogs} onViewClient={handleViewClient} onNavigate={handleNavigate} onSendMessage={handleSendMessage} onUpdateCheckIn={handleUpdateCheckIn} profileName={profileName} /></ErrorBoundary>;
       case 'clients':
         return (
           <ErrorBoundary>
@@ -1200,7 +1261,7 @@ function App() {
           </ErrorBoundary>
         );
       default:
-        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} onViewClient={handleViewClient} onNavigate={handleNavigate} profileName={profileName} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} invoices={allInvoices} workoutLogs={allWorkoutLogs} checkIns={allCheckIns} workoutSetLogs={allSetLogs} onViewClient={handleViewClient} onNavigate={handleNavigate} onSendMessage={handleSendMessage} onUpdateCheckIn={handleUpdateCheckIn} profileName={profileName} /></ErrorBoundary>;
     }
   };
 

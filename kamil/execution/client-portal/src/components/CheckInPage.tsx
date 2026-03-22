@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ClipboardCheck, ChevronDown, ChevronUp, Send, MessageSquare, Smile, Frown, Meh, SmilePlus, Angry, Minus, Plus, Camera, X } from 'lucide-react';
 import GlassCard from './GlassCard';
@@ -11,6 +11,7 @@ interface CheckInPageProps {
   onSubmitCheckIn: (checkIn: CheckIn) => void;
   clientId: string;
   clientName: string;
+  highlightCheckInId?: string | null;
 }
 
 function NumberStepper({ value, onChange, min, max, step = 1, placeholder, compact }: {
@@ -100,11 +101,19 @@ const stepperStyles: Record<string, React.CSSProperties> = {
   },
 };
 
-export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clientName }: CheckInPageProps) {
+export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clientName, highlightCheckInId }: CheckInPageProps) {
   const isMobile = useIsMobile();
   const { t } = useLang();
-  const [tab, setTab] = useState<'submit' | 'history'>('submit');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'submit' | 'history'>(highlightCheckInId ? 'history' : 'submit');
+  const [expandedId, setExpandedId] = useState<string | null>(highlightCheckInId ?? null);
+
+  // When navigating from feedback notification, open history tab with that check-in expanded
+  useEffect(() => {
+    if (highlightCheckInId) {
+      setTab('history');
+      setExpandedId(highlightCheckInId);
+    }
+  }, [highlightCheckInId]);
   const [moreDetailsOpen, setMoreDetailsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

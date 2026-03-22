@@ -126,6 +126,17 @@ export const pl: Translations = {
     greetingNight: (name: string) => `Nocna sesja, ${name}`,
   },
 
+  activityFeed: {
+    title: 'Aktywność',
+    filterAll: 'Wszystko',
+    filterWorkouts: 'Treningi',
+    filterCheckIns: 'Check-iny',
+    filterMessages: 'Wiadomości',
+    filterPayments: 'Płatności',
+    noEvents: 'Brak aktywności — wydarzenia pojawią się gdy klienci zaczną trenować, wysyłać raporty i pisać wiadomości.',
+    noFilteredEvents: 'Brak wydarzeń pasujących do tego filtra.',
+  },
+
   clients: {
     addClient: 'Dodaj Klienta',
     searchPlaceholder: 'Szukaj klientów...',

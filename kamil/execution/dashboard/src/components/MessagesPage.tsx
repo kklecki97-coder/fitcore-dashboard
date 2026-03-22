@@ -177,13 +177,25 @@ export default function MessagesPage({ isMobile = false, clients, messages, onSe
 
   // ── Broadcast coach typing to client ──
   const lastBroadcastRef = useRef(0);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    if (!selectedClient) return;
+    const channel = supabase.channel(`typing-coach-${selectedClient}`);
+    channel.subscribe();
+    typingChannelRef.current = channel;
+    return () => {
+      supabase.removeChannel(channel);
+      typingChannelRef.current = null;
+    };
+  }, [selectedClient]);
 
   const broadcastCoachTyping = useCallback(() => {
-    if (!selectedClient) return;
+    if (!selectedClient || !typingChannelRef.current) return;
     const now = Date.now();
     if (now - lastBroadcastRef.current < 2000) return; // debounce 2s
     lastBroadcastRef.current = now;
-    supabase.channel(`typing-${selectedClient}`).send({
+    typingChannelRef.current.send({
       type: 'broadcast',
       event: 'typing',
       payload: { isCoach: true },

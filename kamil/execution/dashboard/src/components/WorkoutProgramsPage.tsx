@@ -112,7 +112,7 @@ export default function WorkoutProgramsPage({
           const isExpanded = expandedId === program.id;
           const accent = cardAccents[i % cardAccents.length];
           return (
-            <GlassCard key={program.id} delay={i * 0.04} hover style={{ padding: 0 }}>
+            <GlassCard key={program.id} delay={i * 0.04} hover style={{ padding: 0, overflow: 'visible', zIndex: openMenuId === program.id ? 50 : 'auto', position: 'relative' }}>
               {/* Accent gradient bar */}
               <div style={{
                 height: '3px',
@@ -386,7 +386,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-card)',
     border: '1px solid var(--glass-border)',
     boxShadow: 'var(--shadow-elevated)',
-    zIndex: 20,
+    zIndex: 100,
     display: 'flex',
     flexDirection: 'column',
     gap: '2px',

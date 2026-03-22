@@ -107,7 +107,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
         .eq('id', session.user.id)
         .single();
       if (error) {
-        console.error('Failed to load Stripe Connect status:', error); // TODO: error tracking (Sentry)
+        console.error('Failed to load Stripe Connect status:', error);
         setStripeLoadError(true);
         return;
       }

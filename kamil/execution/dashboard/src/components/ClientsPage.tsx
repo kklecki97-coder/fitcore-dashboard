@@ -381,7 +381,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               delay={i * 0.04}
               hover
               onClick={() => onViewClient(client.id)}
-              style={isMobile ? { padding: '14px 16px' } : undefined}
+              style={{ ...(isMobile ? { padding: '14px 16px' } : {}), overflow: 'visible', ...(openMenuId === client.id ? { zIndex: 50, position: 'relative' as const } : {}) }}
             >
               <div style={{ ...styles.cardTop, ...(isMobile ? { marginBottom: '12px' } : {}) }}>
                 <div style={{ ...styles.clientInfo, ...(isMobile ? { gap: '8px' } : {}) }}>

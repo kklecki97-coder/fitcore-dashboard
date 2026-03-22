@@ -148,6 +148,8 @@ function App() {
   const setCurrentPage = (page: ClientPage) => {
     _setCurrentPage(page);
     try { sessionStorage.setItem('fitcore-client-page', page); } catch { /* ignore */ }
+    // Clear highlight when navigating to check-in normally (not from feedback notification)
+    if (page !== 'check-in') setHighlightCheckInId(null);
     // Mark unread coach messages as read when opening messages
     if (page === 'messages') {
       const unreadIds = messages.filter(m => m.isFromCoach && !m.isRead).map(m => m.id);
@@ -165,6 +167,7 @@ function App() {
 
   const [dataLoading, setDataLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [highlightCheckInId, setHighlightCheckInId] = useState<string | null>(null);
 
   // ── Data state (loaded from Supabase) ──
   const [clientUser, setClientUser] = useState<Client | null>(null);
@@ -1061,6 +1064,10 @@ function App() {
               messages={messages}
               coachName={coachName}
               onNavigate={setCurrentPage}
+              onFeedbackClick={(checkInId) => {
+                setHighlightCheckInId(checkInId);
+                setCurrentPage('check-in');
+              }}
               weeklySchedule={weeklySchedule}
               onUpdateSchedule={handleUpdateSchedule}
             />
@@ -1093,6 +1100,7 @@ function App() {
               onSubmitCheckIn={handleSubmitCheckIn}
               clientId={clientUser.id}
               clientName={clientUser.name}
+              highlightCheckInId={highlightCheckInId}
             />
           </ErrorBoundary>
         );
