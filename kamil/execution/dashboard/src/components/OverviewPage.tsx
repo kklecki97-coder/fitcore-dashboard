@@ -19,8 +19,10 @@ import GlassCard from './GlassCard';
 import ActivityFeed from './ActivityFeed';
 import AnimatedNumber from './AnimatedNumber';
 import SmartCoachWidget from './SmartCoachWidget';
+import AutopilotQueue from './AutopilotQueue';
 
 import useIsMobile from '../hooks/useIsMobile';
+import { useAutopilot } from '../hooks/useAutopilot';
 import { useAIBriefing } from '../hooks/useAIBriefing';
 import { useLang } from '../i18n';
 import { formatCurrency, getLocale } from '../lib/locale';
@@ -74,6 +76,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const [ready, setReady] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const autopilot = useAutopilot(clients, messages, checkIns, invoices, workoutLogs, programs, lang as 'en' | 'pl');
   // messagesExpanded removed — Recent Messages replaced by ActivityFeed
   const reportData = useMemo(() => computeWeeklyReport(clients, messages, invoices, workoutLogs, checkIns), [clients, messages, invoices, workoutLogs, checkIns]);
 
@@ -421,6 +424,33 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         onSendMessage={onSendMessage}
         onUpdateCheckIn={onUpdateCheckIn}
         lang={lang as 'en' | 'pl'}
+        isMobile={isMobile}
+      />
+
+      {/* Autopilot Queue — AI-generated message drafts for coach review */}
+      <AutopilotQueue
+        drafts={autopilot.drafts}
+        loading={autopilot.loading}
+        onApprove={(id) => autopilot.approveDraft(id)}
+        onSkip={(id) => autopilot.skipDraft(id)}
+        onEdit={(id, text) => autopilot.updateDraftText(id, text)}
+        onSendMessage={onSendMessage}
+        onApproveAll={() => {
+          const approved = autopilot.approveAll();
+          approved.forEach(draft => {
+            onSendMessage({
+              id: crypto.randomUUID(),
+              clientId: draft.clientId,
+              clientName: draft.clientName,
+              clientAvatar: '',
+              text: draft.text,
+              timestamp: new Date().toISOString(),
+              isRead: false,
+              isFromCoach: true,
+            });
+          });
+        }}
+        onRegenerate={autopilot.regenerate}
         isMobile={isMobile}
       />
 
