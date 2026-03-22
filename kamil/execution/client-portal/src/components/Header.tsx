@@ -1,4 +1,4 @@
-import { Settings, Heart } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
 
@@ -9,7 +9,7 @@ interface HeaderProps {
   currentPage?: ClientPage;
 }
 
-export default function Header({ clientName, isMobile, onNavigate, currentPage }: HeaderProps) {
+export default function Header({ clientName, isMobile, onNavigate }: HeaderProps) {
   const { t, lang, switchLang } = useLang();
 
   const handleLangToggle = () => {
@@ -35,19 +35,6 @@ export default function Header({ clientName, isMobile, onNavigate, currentPage }
           {lang === 'en' ? 'PL' : 'EN'}
         </button>
 
-        {onNavigate && (
-          <button
-            onClick={() => onNavigate('habits')}
-            style={{
-              ...styles.settingsBtn,
-              color: currentPage === 'habits' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              borderColor: currentPage === 'habits' ? 'var(--accent-primary)' : 'var(--glass-border)',
-            }}
-            aria-label="Habits"
-          >
-            <Heart size={18} />
-          </button>
-        )}
         {isMobile && onNavigate && (
           <button
             onClick={() => onNavigate('settings')}
