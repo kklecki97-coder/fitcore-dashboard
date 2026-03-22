@@ -1,4 +1,4 @@
-import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut, Heart } from 'lucide-react';
+import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
@@ -18,7 +18,6 @@ const navIcons: Record<string, typeof Home> = {
   'check-in': ClipboardCheck,
   progress: TrendingUp,
   messages: MessageSquare,
-  habits: Heart,
   invoices: DollarSign,
   settings: Settings,
 };
@@ -35,7 +34,6 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
     'check-in': t.nav.checkIn,
     progress: t.nav.progress,
     messages: t.nav.messages,
-    habits: t.nav.habits,
     invoices: t.nav.invoices || 'Invoices',
     settings: t.nav.settings,
   };
@@ -111,7 +109,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
 
       {/* Nav items */}
       <div style={styles.sideNavItems}>
-        {[...navPages, 'habits' as ClientPage].map((page) => {
+        {navPages.map((page) => {
           const active = currentPage === page;
           const Icon = navIcons[page];
           return (
