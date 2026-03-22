@@ -141,46 +141,6 @@ export interface Invoice {
   paymentUrl: string | null;
 }
 
-export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar' | 'invoices' | 'habits';
+export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar' | 'invoices';
 
 export type Theme = 'dark' | 'light';
-
-// ── Habit Tracking ──
-
-export type HabitType = 'checkbox' | 'number' | 'scale';
-
-export interface Habit {
-  id: string;
-  coachId: string | null;
-  name: string;
-  type: HabitType;
-  defaultTarget: number | null;
-  unit: string | null;
-  icon: string;
-  isPreset: boolean;
-  isActive: boolean;
-  createdAt: string;
-}
-
-export interface HabitAssignment {
-  id: string;
-  coachId: string;
-  clientId: string;
-  habitId: string;
-  habit?: Habit;
-  targetValue: number | null;
-  startDate: string;
-  endDate: string | null;
-  isActive: boolean;
-  createdAt: string;
-}
-
-export interface HabitLog {
-  id: string;
-  clientId: string;
-  habitAssignmentId: string;
-  logDate: string;
-  value: number | null;
-  completed: boolean;
-  createdAt: string;
-}

@@ -30,7 +30,7 @@ import { filterAtRiskClients } from '../utils/client-analysis';
 import { getDailyQuote } from '../utils/formatting';
 import { computeWeeklyReport } from '../utils/weekly-report';
 import WeeklyReport from './WeeklyReport';
-import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, CheckIn, HabitAssignment, HabitLog } from '../types';
+import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, CheckIn } from '../types';
 
 const QUOTE_AUTHORS = [
   'Unknown',
@@ -55,8 +55,6 @@ interface OverviewPageProps {
   onViewClient: (id: string) => void;
   onNavigate: (page: 'messages' | 'clients') => void;
   profileName?: string;
-  habitAssignments?: HabitAssignment[];
-  habitLogs?: HabitLog[];
 }
 
 function getTimeGreeting(t: { overview: { greetingMorning: (n: string) => string; greetingAfternoon: (n: string) => string; greetingEvening: (n: string) => string; greetingNight: (n: string) => string } }, name: string): string {
@@ -67,7 +65,7 @@ function getTimeGreeting(t: { overview: { greetingMorning: (n: string) => string
   return t.overview.greetingNight(name);
 }
 
-export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate, profileName, habitAssignments, habitLogs }: OverviewPageProps) {
+export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, onViewClient, onNavigate, profileName }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const { briefing, loading: briefingLoading, refresh: refreshBriefing } = useAIBriefing(clients, invoices, workoutLogs, checkIns, messages, programs, lang);
@@ -550,72 +548,6 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
           </ResponsiveContainer>
         </div>
       </GlassCard>
-
-      {/* Habit Compliance Widget */}
-      {habitAssignments && habitLogs && habitAssignments.length > 0 && (
-        <GlassCard delay={0.25} style={isMobile ? { padding: '16px' } : undefined}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.habits.habitCompliance}</h3>
-              <p style={{ ...styles.cardSubtitle, fontSize: isMobile ? '12px' : '17px' }}>{t.habits.clientsTracking(
-                new Set(habitAssignments.filter(a => a.isActive).map(a => a.clientId)).size
-              )}</p>
-            </div>
-            <TrendingUp size={16} color="var(--accent-primary)" />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {(() => {
-              // Group by client, calculate adherence for last 7 days
-              const clientIds = [...new Set(habitAssignments.filter(a => a.isActive).map(a => a.clientId))];
-              const clientData = clientIds.map(cId => {
-                const client = clients.find(c => c.id === cId);
-                const ca = habitAssignments.filter(a => a.clientId === cId && a.isActive);
-                const today = new Date();
-                let total = 0;
-                let completed = 0;
-                for (let i = 0; i < 7; i++) {
-                  const d = new Date(today);
-                  d.setDate(d.getDate() - i);
-                  const dateStr = d.toISOString().split('T')[0];
-                  for (const a of ca) {
-                    total++;
-                    const log = habitLogs.find(l => l.habitAssignmentId === a.id && l.logDate === dateStr);
-                    if (log?.completed) completed++;
-                  }
-                }
-                return { clientId: cId, name: client?.name ?? 'Unknown', adherence: total > 0 ? Math.round((completed / total) * 100) : 0 };
-              }).sort((a, b) => a.adherence - b.adherence); // worst first
-
-              return clientData.slice(0, 5).map(cd => (
-                <div
-                  key={cd.clientId}
-                  onClick={() => onViewClient(cd.clientId)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px',
-                    borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                    background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)',
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', flex: 1 }}>{cd.name}</span>
-                  <div style={{ width: 60, height: 5, borderRadius: 3, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%', borderRadius: 3, width: `${cd.adherence}%`,
-                      background: cd.adherence >= 80 ? 'var(--accent-success)' : cd.adherence >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)',
-                    }} />
-                  </div>
-                  <span style={{
-                    fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)', minWidth: 32, textAlign: 'right',
-                    color: cd.adherence >= 80 ? 'var(--accent-success)' : cd.adherence >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)',
-                  }}>
-                    {cd.adherence}%
-                  </span>
-                </div>
-              ));
-            })()}
-          </div>
-        </GlassCard>
-      )}
 
       {/* Bottom Row */}
       <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)' }}>

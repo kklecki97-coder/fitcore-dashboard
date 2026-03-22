@@ -20,7 +20,7 @@ import { supabase } from '../lib/supabase';
 import { calculateMetricChange } from '../utils/client-metrics';
 import { calculateEngagement, generateEngagementInsight, getSuggestedAction } from '../utils/engagement';
 import { getLocale, formatCurrency } from '../lib/locale';
-import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan, Habit, HabitAssignment, HabitLog } from '../types';
+import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
 
 interface ClientDetailPageProps {
   clientId: string;
@@ -38,12 +38,9 @@ interface ClientDetailPageProps {
   onUpdateProgram: (programId: string, updates: Partial<WorkoutProgram>) => void;
   onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
   onAddCheckIn: (checkIn: CheckIn) => void;
-  habits?: Habit[];
-  habitAssignments?: HabitAssignment[];
-  habitLogs?: HabitLog[];
 }
 
-export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, messages, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn, habits, habitAssignments, habitLogs }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, messages, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
   const client = clients.find(c => c.id === clientId);
@@ -964,117 +961,6 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
         />
       )}
 
-      {/* Habit Tracking Section */}
-      {habits && habitAssignments && habitLogs && (() => {
-        const clientAssignments = habitAssignments.filter(a => a.clientId === client.id && a.isActive);
-        if (clientAssignments.length === 0) return null;
-
-        type PK = 'waterIntake' | 'sleep' | 'supplements' | 'steps' | 'meditation' | 'stretching' | 'proteinIntake' | 'creatine' | 'omega3' | 'vitaminD' | 'magnesium' | 'wheyProtein';
-        const presetKeys: Record<string, PK> = {
-          'h-water': 'waterIntake', 'h-sleep': 'sleep', 'h-supplements': 'supplements',
-          'h-steps': 'steps', 'h-meditation': 'meditation', 'h-stretching': 'stretching',
-          'h-protein': 'proteinIntake', 'h-creatine': 'creatine', 'h-omega3': 'omega3',
-          'h-vitamind': 'vitaminD', 'h-magnesium': 'magnesium', 'h-whey': 'wheyProtein',
-        };
-        const habitName = (h: Habit) => { const k = presetKeys[h.id]; return k ? t.habits[k] : h.name; };
-
-        const today = new Date();
-        let total7 = 0;
-        let completed7 = 0;
-        for (let i = 0; i < 7; i++) {
-          const d = new Date(today);
-          d.setDate(d.getDate() - i);
-          const dateStr = d.toISOString().split('T')[0];
-          for (const a of clientAssignments) {
-            total7++;
-            const log = habitLogs.find(l => l.habitAssignmentId === a.id && l.logDate === dateStr);
-            if (log?.completed) completed7++;
-          }
-        }
-        const adherence = total7 > 0 ? Math.round((completed7 / total7) * 100) : 0;
-
-        return (
-          <GlassCard style={isMobile ? { padding: '0' } : undefined}>
-            <div
-              onClick={isMobile ? () => toggleSection('habits') : undefined}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '14px 16px' : '0', marginBottom: isMobile ? 0 : 14, cursor: isMobile ? 'pointer' : 'default' }}
-            >
-              <h3 style={{ margin: 0, fontSize: isMobile ? 14 : 16, fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8 }}>
-                <Activity size={isMobile ? 15 : 18} style={{ color: 'var(--accent-primary)' }} />
-                {t.habits.habitCompliance}
-                <span style={{
-                  fontSize: isMobile ? 13 : 22, fontWeight: 700, fontFamily: 'var(--font-mono)', marginLeft: '4px',
-                  color: adherence >= 80 ? 'var(--accent-success)' : adherence >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)',
-                }}>
-                  {adherence}%
-                </span>
-              </h3>
-              {isMobile ? (
-                <ChevronDown size={14} color="var(--text-tertiary)" style={{ transform: expandedSections.habits ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-              ) : (
-                <span style={{
-                  fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)',
-                  color: adherence >= 80 ? 'var(--accent-success)' : adherence >= 50 ? 'var(--accent-warm)' : 'var(--accent-danger)',
-                }}>
-                  {adherence}%
-                </span>
-              )}
-            </div>
-
-            {(!isMobile || expandedSections.habits) && <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: isMobile ? '0 16px 14px' : '0' }}>
-              {clientAssignments.map(assignment => {
-                const habit = habits.find(h => h.id === assignment.habitId);
-                if (!habit) return null;
-
-                // 7-day dots
-                const dots = Array.from({ length: 7 }, (_, i) => {
-                  const d = new Date(today);
-                  d.setDate(d.getDate() - (6 - i));
-                  const dateStr = d.toISOString().split('T')[0];
-                  const log = habitLogs.find(l => l.habitAssignmentId === assignment.id && l.logDate === dateStr);
-                  return log?.completed ? 'completed' : log ? 'missed' : 'none';
-                });
-
-                // Streak
-                let streak = 0;
-                for (let i = 0; i < 365; i++) {
-                  const d = new Date(today);
-                  d.setDate(d.getDate() - i);
-                  const dateStr = d.toISOString().split('T')[0];
-                  const log = habitLogs.find(l => l.habitAssignmentId === assignment.id && l.logDate === dateStr);
-                  if (log?.completed) streak++;
-                  else break;
-                }
-
-                return (
-                  <div key={assignment.id} style={{
-                    display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10, padding: isMobile ? '5px 8px' : '6px 10px',
-                    borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid var(--glass-border)',
-                  }}>
-                    <span style={{ fontSize: isMobile ? 11 : 13, fontWeight: 500, color: 'var(--text-primary)', flex: 1, minWidth: 0 }}>
-                      {habitName(habit)}
-                    </span>
-                    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                      {dots.map((s, di) => (
-                        <div key={di} style={{
-                          width: 7, height: 7, borderRadius: '50%',
-                          background: s === 'completed' ? 'var(--accent-success)' : s === 'missed' ? 'var(--accent-danger)' : 'rgba(255,255,255,0.06)',
-                        }} />
-                      ))}
-                    </div>
-                    {streak > 0 && (
-                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-warm)', whiteSpace: 'nowrap' }}>
-                        🔥 {streak}{t.clientDetail.daySuffix}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>}
-          </GlassCard>
-        );
-      })()}
 
       {/* Check-In History */}
       {(() => {

@@ -1,4 +1,4 @@
-import type { Client, Message, WorkoutLog, WorkoutProgram, CheckIn, WorkoutSetLog, Habit, HabitAssignment, HabitLog } from './types';
+import type { Client, Message, WorkoutLog, WorkoutProgram, CheckIn, WorkoutSetLog } from './types';
 
 // ── Mock client: Marcus Chen (c1) ──
 export const clientUser: Client = {
@@ -204,68 +204,3 @@ export const myWorkoutLogs: WorkoutLog[] = [
 
 // ── Set logs for today's workout (Upper Body A) ──
 export const initialSetLogs: WorkoutSetLog[] = [];
-
-// ── Preset Habits ──
-export const presetHabits: Habit[] = [
-  { id: 'h-water', coachId: null, name: 'Water Intake', type: 'number', defaultTarget: 3, unit: 'L', icon: 'Droplets', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-sleep', coachId: null, name: 'Sleep', type: 'number', defaultTarget: 8, unit: 'h', icon: 'Moon', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-supplements', coachId: null, name: 'Supplements', type: 'checkbox', defaultTarget: null, unit: null, icon: 'Pill', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-creatine', coachId: null, name: 'Creatine', type: 'checkbox', defaultTarget: null, unit: null, icon: 'Pill', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-omega3', coachId: null, name: 'Omega-3', type: 'checkbox', defaultTarget: null, unit: null, icon: 'Pill', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-vitamind', coachId: null, name: 'Vitamin D', type: 'checkbox', defaultTarget: null, unit: null, icon: 'Pill', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-magnesium', coachId: null, name: 'Magnesium', type: 'checkbox', defaultTarget: null, unit: null, icon: 'Pill', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-whey', coachId: null, name: 'Whey Protein', type: 'checkbox', defaultTarget: null, unit: null, icon: 'Pill', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-  { id: 'h-steps', coachId: null, name: 'Steps', type: 'number', defaultTarget: 10000, unit: 'steps', icon: 'Footprints', isPreset: true, isActive: true, createdAt: '2026-01-01' },
-];
-
-// ── Marcus's habit assignments ──
-export const myHabitAssignments: HabitAssignment[] = [
-  { id: 'ha-1', coachId: 'coach1', clientId: 'c1', habitId: 'h-water', targetValue: 3, startDate: '2026-02-01', endDate: null, isActive: true, createdAt: '2026-02-01' },
-  { id: 'ha-2', coachId: 'coach1', clientId: 'c1', habitId: 'h-sleep', targetValue: 7.5, startDate: '2026-02-01', endDate: null, isActive: true, createdAt: '2026-02-01' },
-  { id: 'ha-3', coachId: 'coach1', clientId: 'c1', habitId: 'h-creatine', targetValue: null, startDate: '2026-02-01', endDate: null, isActive: true, createdAt: '2026-02-01' },
-  { id: 'ha-3b', coachId: 'coach1', clientId: 'c1', habitId: 'h-omega3', targetValue: null, startDate: '2026-02-01', endDate: null, isActive: true, createdAt: '2026-02-01' },
-  { id: 'ha-3c', coachId: 'coach1', clientId: 'c1', habitId: 'h-vitamind', targetValue: null, startDate: '2026-02-01', endDate: null, isActive: true, createdAt: '2026-02-01' },
-  { id: 'ha-4', coachId: 'coach1', clientId: 'c1', habitId: 'h-steps', targetValue: 10000, startDate: '2026-02-01', endDate: null, isActive: true, createdAt: '2026-02-01' },
-];
-
-// ── Marcus's habit logs (last 14 days) ──
-function generateClientHabitLogs(): HabitLog[] {
-  const logs: HabitLog[] = [];
-  const today = new Date('2026-03-21');
-  let logId = 1;
-  const assignments = [
-    { assignmentId: 'ha-1', type: 'number' as const, target: 3, adherence: 0.85 },
-    { assignmentId: 'ha-2', type: 'number' as const, target: 7.5, adherence: 0.7 },
-    { assignmentId: 'ha-3', type: 'checkbox' as const, target: null, adherence: 0.9 },
-    { assignmentId: 'ha-3b', type: 'checkbox' as const, target: null, adherence: 0.85 },
-    { assignmentId: 'ha-3c', type: 'checkbox' as const, target: null, adherence: 0.8 },
-    { assignmentId: 'ha-4', type: 'number' as const, target: 10000, adherence: 0.75 },
-  ];
-  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - dayOffset);
-    const dateStr = date.toISOString().split('T')[0];
-    for (const a of assignments) {
-      const completed = Math.random() < a.adherence;
-      let value: number | null = null;
-      if (a.type === 'checkbox') {
-        value = completed ? 1 : 0;
-      } else if (a.target !== null) {
-        const variance = completed ? (0.9 + Math.random() * 0.3) : (0.4 + Math.random() * 0.4);
-        value = Math.round(a.target * variance * 10) / 10;
-      }
-      logs.push({
-        id: `hl-${logId++}`,
-        clientId: 'c1',
-        habitAssignmentId: a.assignmentId,
-        logDate: dateStr,
-        value,
-        completed,
-        createdAt: dateStr,
-      });
-    }
-  }
-  return logs;
-}
-
-export const myHabitLogs: HabitLog[] = generateClientHabitLogs();
