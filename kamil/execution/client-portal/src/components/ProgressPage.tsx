@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2 } from 'lucide-react';
+import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 import ShareProgressCard from './ShareProgressCard';
 // Charts will be re-enabled once clients have enough data points
 // import { ResponsiveContainer, Area, AreaChart, XAxis, YAxis, Tooltip } from 'recharts';
@@ -9,6 +10,7 @@ import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 import { matchMainLift, MAIN_LIFT_PATTERNS, parseTarget } from '../utils/lift-matching';
+import { calculateOverallProgress } from '../utils/calculateProgress';
 import type { Client, WorkoutLog, CheckIn, WorkoutSetLog } from '../types';
 
 
@@ -237,6 +239,9 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
 
   // Compute share card data
   const weeksIn = client.startDate ? Math.max(1, Math.floor((Date.now() - new Date(client.startDate).getTime()) / (7 * 24 * 60 * 60 * 1000))) : 0;
+  const overallProgress = calculateOverallProgress(client, workoutLogs);
+  const hasAnyData = (client.goalTargets && Object.values(client.goalTargets).some(v => v != null)) || workoutLogs.length > 0;
+
   const weightChange = startWeight && currentWeight ? Math.round((currentWeight - startWeight) * 10) / 10 : null;
   const totalWorkoutsCompleted = workoutLogs.filter(w => w.completed).length;
   const completionRate = workoutLogs.length > 0 ? Math.round((totalWorkoutsCompleted / workoutLogs.length) * 100) : 0;
@@ -247,6 +252,86 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
 
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px 14px 100px' : '24px 24px 80px', gap: isMobile ? '14px' : undefined }}>
+
+      {/* ── OVERALL PROGRESS HERO ── */}
+      <GlassCard delay={0} style={{ padding: isMobile ? '10px 14px' : '16px 20px', position: 'relative' as const, overflow: 'hidden' as const }}>
+        {/* Glow behind the ring */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: isMobile ? '80px' : '110px', height: isMobile ? '80px' : '110px',
+          borderRadius: '50%', background: 'radial-gradient(circle, rgba(0,229,200,0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+
+        <div style={{ textAlign: 'center' as const, position: 'relative' as const }}>
+          <div style={{
+            fontSize: isMobile ? '10px' : '11px', fontWeight: 700, textTransform: 'uppercase' as const,
+            letterSpacing: '1.5px', color: 'var(--text-tertiary)', marginBottom: isMobile ? '6px' : '10px',
+          }}>
+            {t.progress.overallProgress}
+          </div>
+
+          {hasAnyData ? (
+            <>
+              {/* Circular progress ring */}
+              <div style={{ position: 'relative', width: isMobile ? '80px' : '100px', height: isMobile ? '80px' : '100px', margin: '0 auto' }}>
+                <svg width="100%" height="100%" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                  {/* Background ring */}
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+                  {/* Progress ring */}
+                  <motion.circle
+                    cx="50" cy="50" r="42" fill="none"
+                    stroke={overallProgress >= 80 ? 'var(--accent-success, #22c55e)' : overallProgress >= 50 ? 'var(--accent-primary)' : 'var(--accent-warm, #f59e0b)'}
+                    strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 42}`}
+                    initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
+                    animate={{ strokeDashoffset: 2 * Math.PI * 42 * (1 - overallProgress / 100) }}
+                    transition={{ duration: 1.2, ease: 'easeOut' }}
+                  />
+                </svg>
+                {/* Center number */}
+                <div style={{
+                  position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' as const,
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <div style={{
+                    fontSize: isMobile ? '20px' : '26px', fontWeight: 800, letterSpacing: '-1px',
+                    color: 'var(--text-primary)', fontFamily: 'var(--font-display)',
+                  }}>
+                    <AnimatedNumber value={overallProgress} duration={1200} />%
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakdown labels */}
+              <div style={{
+                display: 'flex', justifyContent: 'center', gap: isMobile ? '14px' : '20px',
+                marginTop: isMobile ? '6px' : '8px', fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)',
+              }}>
+                {goalProgress.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Target size={isMobile ? 11 : 13} color="var(--accent-primary)" />
+                    <span>{t.progress.goalsComponent} 75%</span>
+                  </div>
+                )}
+                {workoutLogs.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Zap size={isMobile ? 11 : 13} color="var(--accent-primary)" />
+                    <span>{t.progress.frequencyComponent} 25%</span>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{
+              padding: isMobile ? '12px 8px' : '16px 12px', fontSize: isMobile ? '12px' : '13px',
+              color: 'var(--text-tertiary)', lineHeight: 1.6,
+            }}>
+              {t.progress.noDataYet}
+            </div>
+          )}
+        </div>
+      </GlassCard>
 
       {/* Share Progress Button */}
       <button

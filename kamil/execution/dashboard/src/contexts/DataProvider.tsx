@@ -6,6 +6,7 @@ import type {
   Client, Message, WorkoutProgram, Invoice, CheckIn,
   AppNotification, WorkoutLog, WorkoutSetLog, CoachingPlan,
 } from '../types';
+import { calculateOverallProgress } from '../utils/calculateProgress';
 
 // ── Context shape ──
 
@@ -407,11 +408,11 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
       }
     };
 
-    const loadWorkoutLogs = async () => {
+    const loadWorkoutLogs = async (): Promise<WorkoutLog[]> => {
       const { data, error } = await supabase.from('workout_logs').select('*, clients(name)').order('date', { ascending: false });
-      if (error) { console.error('loadWorkoutLogs failed:', error); showToast('Failed to load workout logs.', 'error'); return; }
+      if (error) { console.error('loadWorkoutLogs failed:', error); showToast('Failed to load workout logs.', 'error'); return []; }
       if (data) {
-        setAllWorkoutLogs(data.map(r => ({
+        const logs = data.map(r => ({
           id: r.id,
           clientId: r.client_id,
           clientName: r.clients?.name ?? '',
@@ -419,8 +420,11 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
           duration: r.duration ?? 0,
           date: r.date,
           completed: r.completed ?? false,
-        })));
+        }));
+        setAllWorkoutLogs(logs);
+        return logs;
       }
+      return [];
     };
 
     const loadSetLogs = async () => {
@@ -470,7 +474,29 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
         loadWorkoutLogs(),
         loadSetLogs(),
         loadPlans(),
-      ]).finally(() => {
+      ]).then(([, , , , workoutLogs]) => {
+        // ── Auto-calculate overall progress for each client ──
+        const logs = (workoutLogs ?? []) as WorkoutLog[];
+        const updates: { id: string; progress: number }[] = [];
+
+        const updatedClients = clientsList.map((client) => {
+          if (client.status !== 'active') return client;
+          const newProgress = calculateOverallProgress(client, logs);
+          if (newProgress !== client.progress) {
+            updates.push({ id: client.id, progress: newProgress });
+            return { ...client, progress: newProgress };
+          }
+          return client;
+        });
+
+        if (updates.length > 0) {
+          setAllClients(updatedClients);
+          // Persist to Supabase in background (fire-and-forget)
+          for (const u of updates) {
+            supabase.from('clients').update({ progress: u.progress }).eq('id', u.id).then();
+          }
+        }
+      }).finally(() => {
         initialLoadDoneRef.current = true;
         setDataLoading(false);
         // Show onboarding for first-time coaches (no clients, not seen before)
@@ -689,7 +715,20 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
   // ── Handlers ──
 
   const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
-    setAllClients(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    // Merge updates into client, then recalculate progress if relevant fields changed
+    const needsRecalc = updates.goalTargets !== undefined || updates.metrics !== undefined;
+    let mergedClient: Client | undefined;
+
+    setAllClients(prev => prev.map(c => {
+      if (c.id !== id) return c;
+      mergedClient = { ...c, ...updates };
+      if (needsRecalc && mergedClient.status === 'active') {
+        const newProgress = calculateOverallProgress(mergedClient, allWorkoutLogs);
+        mergedClient = { ...mergedClient, progress: newProgress };
+      }
+      return mergedClient;
+    }));
+
     const dbUpdates: Record<string, unknown> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.email !== undefined) dbUpdates.email = updates.email;
@@ -698,7 +737,8 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
     if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate || null;
     if (updates.nextCheckIn !== undefined) dbUpdates.next_check_in = updates.nextCheckIn || null;
     if (updates.monthlyRate !== undefined) dbUpdates.monthly_rate = updates.monthlyRate;
-    if (updates.progress !== undefined) dbUpdates.progress = updates.progress;
+    if (updates.progress !== undefined && !needsRecalc) dbUpdates.progress = updates.progress;
+    if (needsRecalc && mergedClient) dbUpdates.progress = mergedClient.progress;
     if (updates.height !== undefined) dbUpdates.height = updates.height;
     if (updates.streak !== undefined) dbUpdates.streak = updates.streak;
     if (updates.goals !== undefined) dbUpdates.goals = updates.goals;
