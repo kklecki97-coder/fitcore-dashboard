@@ -710,8 +710,6 @@ function EngageBatchCard({ leads, onMarkAllTouched, dailyLimitReached }: {
 
   // Determine what touch this batch is on (all leads in a batch should be at the same touch level)
   const currentTouch = Math.min(...leads.map(l => (l.touch_count || 0))) + 1
-  const isNewBatch = leads.every(l => l.status === 'new')
-
   const touchLabels: Record<number, { title: string; desc: string; btn: string }> = {
     1: { title: 'Touch 1 — First Contact', desc: 'Follow + Like 2-3 posts + Comment on 1 post', btn: 'Mark Touch 1 Done' },
     2: { title: 'Touch 2 — Stay Visible', desc: 'Like 2-3 more posts + Comment on another post', btn: 'Mark Touch 2 Done' },
@@ -1245,11 +1243,10 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
   )
 }
 
-function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayEngaged, todayDmed, onMarkReplied }: {
+function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, onMarkReplied }: {
   engageBatch: Lead[]
   dmBatch: Lead[]
   followUpLeads: Lead[]
-  todayEngaged: number
   todayDmed: number
   onMarkReplied: (id: number) => void
 }) {
@@ -1913,7 +1910,7 @@ function Dashboard() {
     const now = new Date().toISOString()
     const updates: Record<string, string> = { status: newStatus }
     if (timestampField) updates[timestampField] = now
-    if (newStatus === 'engaged') updates.engaged_by = account
+    if (newStatus === 'warming') updates.engaged_by = account
     if (newStatus === 'dmed') updates.dmed_by = account
 
     try {
@@ -1950,13 +1947,7 @@ function Dashboard() {
     return d.getTime()
   }, [])
 
-  const todayEngaged = useMemo(() =>
-    allLeads.filter(l => {
-      if (l.engaged_by !== account || !l.engaged_at) return false
-      return new Date(l.engaged_at).getTime() >= todayStart
-    }).length,
-    [allLeads, account, todayStart]
-  )
+
 
   const todayDmed = useMemo(() =>
     allLeads.filter(l => {
@@ -2244,7 +2235,6 @@ function Dashboard() {
             engageBatch={engageBatch}
             dmBatch={dmBatch}
             followUpLeads={followUpLeads}
-            todayEngaged={todayEngaged}
             todayDmed={todayDmed}
             onMarkReplied={(id) => handleStatusChange(id, 'replied')}
           />
