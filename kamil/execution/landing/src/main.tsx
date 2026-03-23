@@ -1,6 +1,6 @@
 import { StrictMode, useEffect, useRef } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { I18nProvider, useLang } from './i18n'
 import { AuthProvider } from './auth'
 import './index.css'
@@ -13,6 +13,7 @@ import ProtectedRoute from './components/ProtectedRoute.tsx'
 import PrivacyPage from './PrivacyPage.tsx'
 import TermsPage from './TermsPage.tsx'
 import ContactPage from './ContactPage.tsx'
+import NotFoundPage from './NotFoundPage.tsx'
 
 function LangUrlSync() {
   const { pathname } = useLocation();
@@ -74,9 +75,9 @@ function AppRoutes() {
         <Route path="/pl/privacy" element={<PrivacyPage />} />
         <Route path="/pl/terms" element={<TermsPage />} />
         <Route path="/pl/contact" element={<ContactPage />} />
-        {/* Catch-all */}
-        <Route path="/pl/*" element={<Navigate to="/pl/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* 404 */}
+        <Route path="/pl/*" element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
   );
