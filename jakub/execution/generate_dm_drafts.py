@@ -63,9 +63,9 @@ async def supabase_update(session, url, key, table, match_col, match_val, data):
 
 
 # --- SYSTEM PROMPT ---
-SYSTEM_PROMPT = """You write personalized Instagram DMs for FitCore outreach to fitness coaches.
+SYSTEM_PROMPT = """You write personalized Instagram DMs in POLISH for FitCore outreach to Polish fitness coaches.
 
-CONTEXT: We build custom client management dashboards for fitness coaches. The DM starts a conversation - it's NOT a pitch. You're warming them up.
+CONTEXT: We build custom client management dashboards for fitness coaches. The DM starts a conversation - it's NOT a pitch. You're warming them up. ALL messages MUST be written in Polish.
 
 HARD RULES:
 1. Under 3 sentences total. Coaches get 50+ DMs a day - long messages get skipped.
@@ -76,34 +76,34 @@ HARD RULES:
 6. Use their first name naturally.
 7. No emojis. No exclamation marks. Lowercase-feeling energy.
 8. NEVER mention "dashboard", "FitCore", "product", "tool", or "software" in the first DM. This is a conversation starter, not a sales pitch.
+9. WRITE EVERYTHING IN POLISH. Natural, casual Polish - like texting a friend.
 
-BANNED PHRASES:
-- "I noticed" / "I saw" / "I came across" / "I checked out"
-- "Love your" / "Love how" / "Love that"
-- "Impressive" / "Amazing" / "Incredible" / "Great to see"
-- "Quick question" (overused, sounds scripted)
-- "Reaching out because" (corporate speak)
+BANNED PHRASES (Polish equivalents too):
+- "Zauwazylem" / "Zobaczylem" / "Trafilem na" (sounds stalky)
+- "Super" / "Swietne" / "Niesamowite" / "Imponujace" (generic praise)
+- "Mam szybkie pytanie" (overused, sounds scripted)
+- "Pisze do Ciebie bo" (corporate speak)
 - Any mention of our product or what we do
 
 VARY between these styles (pick one per lead based on what info you have):
 
 Style A - Curiosity Opener:
 Reference something specific about their coaching, then ask how they handle client management.
-Example: "Hey Jake, been checking out your content... how are you managing all your clients right now?"
+Example: "Hej Kuba, ogladam Twoje treningi... jak ogarniasz wszystkich klientow na co dzien?"
 
 Style B - Observation Opener:
 Comment on a specific post topic or their niche, then ask about their systems.
-Example: "Hey Sarah, saw your post about progressive overload for beginners. are you tracking client progress somewhere or is it more manual?"
+Example: "Hej Ania, ciekawy post o progresji dla poczatkujacych. sledzisz gdzies postepy klientow czy bardziej na oko?"
 
 Style C - Pain-Based Opener:
 Reference a scaling signal (growing, busy, many clients), then empathize with the management burden.
-Example: "Hey Mike, looks like you're scaling past 30 clients. most coaches at that stage say the admin side starts eating their time. is that the case for you too?"
+Example: "Hej Maciek, wyglada na to ze masz juz sporo klientow. wiekszosc trenerow na tym etapie mowi ze admin zaczyna zjadac czas. u Ciebie tez tak?"
 
 Style D - Compliment + Question:
 Genuine compliment about their results or approach, then ask about client experience.
-Example: "Hey Emma, your client transformations are legit. do your clients get to see their own progress data anywhere or just during check-ins?"
+Example: "Hej Kasia, metamorfozy Twoich klientow robia wrazenie. Twoi klienci widza gdzies swoje postepy czy tylko na check-inach?"
 
-OUTPUT: Return ONLY the DM text. No quotes, no JSON, no explanation. Just the message ready to copy-paste."""
+OUTPUT: Return ONLY the DM text in Polish. No quotes, no JSON, no explanation. Just the message ready to copy-paste."""
 
 
 def build_dm_prompt(lead):
@@ -150,24 +150,26 @@ Pick the style (A/B/C/D) that works best given the data available. If bio is ric
 Remember: just the DM text, nothing else."""
 
 
-async def generate_dm(session, semaphore, i, total, lead, openai_key, sb_url, sb_key, results):
-    """Generate a DM draft for a single lead."""
+async def generate_dm(session, semaphore, i, total, lead, anthropic_key, sb_url, sb_key, results):
+    """Generate a DM draft for a single lead using Claude Sonnet 4.6."""
     async with semaphore:
         handle = lead.get("instagram_handle", "unknown")
         name = lead.get("full_name") or handle
 
         prompt = build_dm_prompt(lead)
 
-        # Call OpenAI
-        url = "https://api.openai.com/v1/chat/completions"
+        # Call Anthropic Claude
+        url = "https://api.anthropic.com/v1/messages"
         headers = {
-            "Authorization": f"Bearer {openai_key}",
+            "x-api-key": anthropic_key,
+            "anthropic-version": "2023-06-01",
             "Content-Type": "application/json",
         }
         data = {
-            "model": "gpt-4o-mini",
+            "model": "claude-sonnet-4-6",
+            "max_tokens": 300,
+            "system": SYSTEM_PROMPT,
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt},
             ],
         }
@@ -176,11 +178,11 @@ async def generate_dm(session, semaphore, i, total, lead, openai_key, sb_url, sb
             async with session.post(url, headers=headers, json=data, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                 if resp.status != 200:
                     error_body = await resp.text()
-                    print(f"  [{i+1}/{total}] @{handle}... OPENAI ERROR: {resp.status} - {error_body[:150]}")
+                    print(f"  [{i+1}/{total}] @{handle}... CLAUDE ERROR: {resp.status} - {error_body[:150]}")
                     results["errors"] += 1
                     return
                 result = await resp.json()
-                dm_text = result["choices"][0]["message"]["content"].strip()
+                dm_text = (result.get("content", [{}])[0].get("text", "")).strip()
 
                 # Clean up any quotes or markdown the model might add
                 if dm_text.startswith('"') and dm_text.endswith('"'):
@@ -225,13 +227,13 @@ async def main_async():
     env = load_env()
     sb_url = env.get("SUPABASE_URL", "")
     sb_key = env.get("SUPABASE_KEY", "")
-    openai_key = env.get("OPENAI_API_KEY", "")
+    anthropic_key = env.get("ANTHROPIC_API_KEY", "")
 
     if not sb_url or not sb_key:
         print("ERROR: SUPABASE_URL and SUPABASE_KEY must be set in .env")
         sys.exit(1)
-    if not openai_key:
-        print("ERROR: OPENAI_API_KEY must be set in .env")
+    if not anthropic_key:
+        print("ERROR: ANTHROPIC_API_KEY must be set in .env")
         sys.exit(1)
 
     async with aiohttp.ClientSession() as session:
@@ -270,8 +272,8 @@ async def main_async():
             return
 
         print(f"Found {len(eligible)} leads ready for DM drafts")
-        print(f"Using model: gpt-4o-mini")
-        print(f"Estimated cost: ~${len(eligible) * 0.005:.2f}")
+        print(f"Using model: claude-sonnet-4-6")
+        print(f"Estimated cost: ~${len(eligible) * 0.003:.2f}")
         print()
 
         if dry_run:
@@ -287,7 +289,7 @@ async def main_async():
         results = {"generated": 0, "errors": 0}
 
         tasks = [
-            generate_dm(session, semaphore, i, len(eligible), lead, openai_key, sb_url, sb_key, results)
+            generate_dm(session, semaphore, i, len(eligible), lead, anthropic_key, sb_url, sb_key, results)
             for i, lead in enumerate(eligible[:limit])
         ]
         await asyncio.gather(*tasks)
