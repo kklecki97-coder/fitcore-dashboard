@@ -15,7 +15,7 @@ const makeClient = (overrides: Partial<Client> = {}): Client => ({
   nextCheckIn: '2026-03-25',
   monthlyRate: 200,
   progress: 50,
-  metrics: { weight: [80, 82], bodyFat: [15, 14], benchPress: [60, 65], squat: [80, 85], deadlift: [100, 110] },
+  metrics: { weight: [80, 82], bodyFat: [15, 14], benchPress: [60, 65], squat: [80, 85], deadlift: [100, 110], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
   goals: ['Lose weight'],
   notes: '',
   notesHistory: [],
@@ -46,6 +46,11 @@ const makeCheckIn = (overrides: Partial<CheckIn> = {}): CheckIn => ({
   status: 'completed',
   weight: 80,
   bodyFat: 15,
+  waist: null,
+  hips: null,
+  chest: null,
+  bicep: null,
+  thigh: null,
   mood: 4,
   energy: 7,
   stress: 3,
@@ -266,7 +271,7 @@ describe('generateTriggers', () => {
     it('fires at streak of 7', () => {
       const client = makeClient({
         streak: 7,
-        metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+        metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
       });
       const result = generateTriggers([client], [], [], [], [], [], [], 'en');
       expect(result.some(t => t.type === 'streak')).toBe(true);
@@ -275,7 +280,7 @@ describe('generateTriggers', () => {
     it('does NOT fire at streak of 8', () => {
       const client = makeClient({
         streak: 8,
-        metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+        metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
       });
       const result = generateTriggers([client], [], [], [], [], [], [], 'en');
       expect(result.some(t => t.type === 'streak')).toBe(false);
@@ -285,7 +290,7 @@ describe('generateTriggers', () => {
   describe('pr trigger', () => {
     it('fires when latest lift exceeds previous max', () => {
       const client = makeClient({
-        metrics: { weight: [80], bodyFat: [15], benchPress: [60, 65, 70], squat: [80], deadlift: [100] },
+        metrics: { weight: [80], bodyFat: [15], benchPress: [60, 65, 70], squat: [80], deadlift: [100], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
       });
       const result = generateTriggers([client], [], [], [], [], [], [], 'en');
       expect(result.some(t => t.type === 'pr')).toBe(true);
@@ -293,7 +298,7 @@ describe('generateTriggers', () => {
 
     it('does NOT fire when latest is below max', () => {
       const client = makeClient({
-        metrics: { weight: [80], bodyFat: [15], benchPress: [60, 70, 65], squat: [80], deadlift: [100] },
+        metrics: { weight: [80], bodyFat: [15], benchPress: [60, 70, 65], squat: [80], deadlift: [100], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
       });
       const result = generateTriggers([client], [], [], [], [], [], [], 'en');
       expect(result.some(t => t.type === 'pr')).toBe(false);
@@ -331,7 +336,7 @@ describe('generateTriggers', () => {
     it('generates Polish text when lang=pl', () => {
       const client = makeClient({
         streak: 14,
-        metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+        metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
       });
       const result = generateTriggers([client], [], [], [], [], [], [], 'pl');
       const streak = result.find(t => t.type === 'streak');

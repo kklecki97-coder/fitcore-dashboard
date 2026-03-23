@@ -18,6 +18,7 @@ export const clientUser: Client = {
     benchPress: [80, 82.5, 85, 87.5, 90, 90, 92.5],
     squat: [100, 105, 110, 115, 117.5, 120, 122.5],
     deadlift: [120, 125, 130, 135, 140, 142.5, 145],
+    waist: [], hips: [], chest: [], bicep: [], thigh: [],
   },
   height: 178,
   goals: ['Drop to 80kg by April', 'Bench press 100kg', 'Improve sleep to 7+ hours', 'Run a 5K under 25 min'],
@@ -95,7 +96,7 @@ export const myProgram: WorkoutProgram = {
 export const myCheckIns: CheckIn[] = [
   {
     id: 'ci-m1', clientId: 'c1', clientName: 'Marcus Chen', date: '2026-02-17', status: 'completed',
-    weight: 83.8, bodyFat: 18.6, mood: 4, energy: 7, stress: 4, sleepHours: 7.5,
+    weight: 83.8, bodyFat: 18.6, waist: null, hips: null, chest: null, bicep: null, thigh: null, mood: 4, energy: 7, stress: 4, sleepHours: 7.5,
     steps: 9200, nutritionScore: 8,
     notes: 'Feeling strong this week. Sleep has been improving a lot.',
     wins: 'Hit a new bench PR at 92.5kg. Stuck to meal plan 6 out of 7 days.',
@@ -105,7 +106,7 @@ export const myCheckIns: CheckIn[] = [
   },
   {
     id: 'ci-m2', clientId: 'c1', clientName: 'Marcus Chen', date: '2026-02-10', status: 'completed',
-    weight: 84.2, bodyFat: 19.0, mood: 4, energy: 6, stress: 5, sleepHours: 6.5,
+    weight: 84.2, bodyFat: 19.0, waist: null, hips: null, chest: null, bicep: null, thigh: null, mood: 4, energy: 6, stress: 5, sleepHours: 6.5,
     steps: 8500, nutritionScore: 7,
     notes: 'Decent week overall. Work stress was higher than usual.',
     wins: 'Didn\'t miss any sessions despite busy schedule. Squat felt smooth at 120kg.',
@@ -115,7 +116,7 @@ export const myCheckIns: CheckIn[] = [
   },
   {
     id: 'ci-m3', clientId: 'c1', clientName: 'Marcus Chen', date: '2026-02-03', status: 'completed',
-    weight: 84.9, bodyFat: 19.5, mood: 3, energy: 5, stress: 6, sleepHours: 6,
+    weight: 84.9, bodyFat: 19.5, waist: null, hips: null, chest: null, bicep: null, thigh: null, mood: 3, energy: 5, stress: 6, sleepHours: 6,
     steps: 7200, nutritionScore: 6,
     notes: 'Rough week. Felt tired and motivation was low.',
     wins: 'Still showed up for 4 out of 5 sessions.',
@@ -125,7 +126,7 @@ export const myCheckIns: CheckIn[] = [
   },
   {
     id: 'ci-m4', clientId: 'c1', clientName: 'Marcus Chen', date: '2026-01-27', status: 'completed',
-    weight: 85.5, bodyFat: 20.1, mood: 4, energy: 7, stress: 4, sleepHours: 7,
+    weight: 85.5, bodyFat: 20.1, waist: null, hips: null, chest: null, bicep: null, thigh: null, mood: 4, energy: 7, stress: 4, sleepHours: 7,
     steps: 10500, nutritionScore: 7,
     notes: 'Good week. Feeling the program clicking.',
     wins: 'Deadlift 140kg for 5 reps felt solid. Weight trending down nicely.',
@@ -135,7 +136,7 @@ export const myCheckIns: CheckIn[] = [
   },
   {
     id: 'ci-m5', clientId: 'c1', clientName: 'Marcus Chen', date: '2026-01-20', status: 'completed',
-    weight: 86.8, bodyFat: 20.8, mood: 3, energy: 6, stress: 5, sleepHours: 6.5,
+    weight: 86.8, bodyFat: 20.8, waist: null, hips: null, chest: null, bicep: null, thigh: null, mood: 3, energy: 6, stress: 5, sleepHours: 6.5,
     steps: 8000, nutritionScore: 6,
     notes: 'First week back after holiday break. Body felt stiff.',
     wins: 'Got back to routine without missing a beat. Bench at 85kg x 10.',
@@ -145,7 +146,7 @@ export const myCheckIns: CheckIn[] = [
   },
   {
     id: 'ci-m6', clientId: 'c1', clientName: 'Marcus Chen', date: '2026-01-13', status: 'completed',
-    weight: 87.2, bodyFat: 21.5, mood: 3, energy: 5, stress: 4, sleepHours: 6,
+    weight: 87.2, bodyFat: 21.5, waist: null, hips: null, chest: null, bicep: null, thigh: null, mood: 3, energy: 5, stress: 4, sleepHours: 6,
     steps: 5500, nutritionScore: 5,
     notes: 'Holiday aftermath. Getting back on track.',
     wins: 'Showed up Monday and didn\'t skip.',
@@ -155,7 +156,7 @@ export const myCheckIns: CheckIn[] = [
   },
   {
     id: 'ci-m7', clientId: 'c1', clientName: 'Marcus Chen', date: '2026-02-24', status: 'scheduled',
-    weight: null, bodyFat: null, mood: null, energy: null, stress: null, sleepHours: null,
+    weight: null, bodyFat: null, waist: null, hips: null, chest: null, bicep: null, thigh: null, mood: null, energy: null, stress: null, sleepHours: null,
     steps: null, nutritionScore: null,
     notes: '', wins: '', challenges: '', coachFeedback: '',
     reviewStatus: 'pending', flagReason: '', photos: [],

@@ -19,6 +19,7 @@ const makeClient = (overrides: Partial<Client> = {}): Client => ({
     benchPress: [80, 85, 90],
     squat: [100, 110, 120],
     deadlift: [120, 130, 140],
+    waist: [], hips: [], chest: [], bicep: [], thigh: [],
   },
   goals: [],
   notes: '',
@@ -108,7 +109,7 @@ describe('buildClientRadarData', () => {
 
   it('handles zero metrics gracefully', () => {
     const client = makeClient({
-      metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+      metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
       streak: 0,
       progress: 0,
     });

@@ -129,6 +129,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   const [form, setForm] = useState({
     weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '',
     steps: '', nutritionScore: '', notes: '', wins: '', challenges: '',
+    waist: '', hips: '', chest: '', bicep: '', thigh: '',
   });
   const [photos, setPhotos] = useState<{ url: string; label: string; file?: File }[]>([]);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -185,7 +186,8 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
   const completed = checkIns.filter(ci => ci.status === 'completed').sort((a, b) => b.date.localeCompare(a.date));
 
   const hasAnyData = form.weight || form.bodyFat || form.mood || form.energy || form.stress
-    || form.sleepHours || form.steps || form.nutritionScore || form.notes || form.wins || form.challenges || photos.length > 0;
+    || form.sleepHours || form.steps || form.nutritionScore || form.notes || form.wins || form.challenges
+    || form.waist || form.hips || form.chest || form.bicep || form.thigh || photos.length > 0;
 
   const handleSubmit = () => {
     if (isSubmitting || !hasAnyData) return;
@@ -199,6 +201,11 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
       status: 'completed',
       weight: form.weight ? parseFloat(form.weight) : null,
       bodyFat: form.bodyFat ? parseFloat(form.bodyFat) : null,
+      waist: form.waist ? parseFloat(form.waist) : null,
+      hips: form.hips ? parseFloat(form.hips) : null,
+      chest: form.chest ? parseFloat(form.chest) : null,
+      bicep: form.bicep ? parseFloat(form.bicep) : null,
+      thigh: form.thigh ? parseFloat(form.thigh) : null,
       mood: (form.mood !== 0 ? form.mood : null) as CheckIn['mood'],
       energy: form.energy ? parseInt(form.energy, 10) : null,
       stress: form.stress ? parseInt(form.stress, 10) : null,
@@ -214,7 +221,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
       flagReason: '',
     };
     onSubmitCheckIn(ci);
-    setForm({ weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '', steps: '', nutritionScore: '', notes: '', wins: '', challenges: '' });
+    setForm({ weight: '', bodyFat: '', mood: 0, energy: '', stress: '', sleepHours: '', steps: '', nutritionScore: '', notes: '', wins: '', challenges: '', waist: '', hips: '', chest: '', bicep: '', thigh: '' });
     setPhotos([]);
     setTab('history');
 
@@ -299,6 +306,33 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                 <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
                   <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.bodyFatPct}</label>
                   <NumberStepper value={form.bodyFat} onChange={v => setForm({ ...form, bodyFat: v })} step={0.1} min={3} max={60} placeholder="18.5" compact={isMobile} />
+                </div>
+
+                {/* Body Measurements (circumferences) */}
+                <div style={{ ...styles.sectionTitle, marginBottom: isMobile ? '4px' : '6px', marginTop: '4px', ...(isMobile ? { fontSize: '13px' } : {}) }}>{t.checkIn.bodyMeasurements}</div>
+                <div style={{ ...styles.fieldRow, ...(isMobile ? { gap: '8px' } : {}) }}>
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.waistCm}</label>
+                    <NumberStepper value={form.waist} onChange={v => setForm({ ...form, waist: v })} step={0.5} min={40} max={200} placeholder="82" compact={isMobile} />
+                  </div>
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.hipsCm}</label>
+                    <NumberStepper value={form.hips} onChange={v => setForm({ ...form, hips: v })} step={0.5} min={50} max={200} placeholder="96" compact={isMobile} />
+                  </div>
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.chestCm}</label>
+                    <NumberStepper value={form.chest} onChange={v => setForm({ ...form, chest: v })} step={0.5} min={50} max={200} placeholder="100" compact={isMobile} />
+                  </div>
+                </div>
+                <div style={{ ...styles.fieldRow, ...(isMobile ? { gap: '8px' } : {}) }}>
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.bicepCm}</label>
+                    <NumberStepper value={form.bicep} onChange={v => setForm({ ...form, bicep: v })} step={0.5} min={15} max={60} placeholder="35" compact={isMobile} />
+                  </div>
+                  <div style={{ ...styles.field, ...(isMobile ? { marginBottom: '4px' } : {}) }}>
+                    <label style={{ ...styles.label, ...(isMobile ? { fontSize: '11px', marginBottom: '4px' } : {}) }}>{t.checkIn.thighCm}</label>
+                    <NumberStepper value={form.thigh} onChange={v => setForm({ ...form, thigh: v })} step={0.5} min={30} max={100} placeholder="58" compact={isMobile} />
+                  </div>
                 </div>
 
                 {/* Wellness */}
@@ -548,6 +582,15 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                         {ci.sleepHours != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.sleepLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.sleepHours}h</span></div>}
                         {ci.nutritionScore != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.nutritionLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.nutritionScore}/10</span></div>}
                       </div>
+                      {(ci.waist != null || ci.hips != null || ci.chest != null || ci.bicep != null || ci.thigh != null) && (
+                        <div style={{ ...styles.detailGrid, ...(isMobile ? { gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' } : {}) }}>
+                          {ci.waist != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.waistCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.waist}cm</span></div>}
+                          {ci.hips != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.hipsCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.hips}cm</span></div>}
+                          {ci.chest != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.chestCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.chest}cm</span></div>}
+                          {ci.bicep != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.bicepCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.bicep}cm</span></div>}
+                          {ci.thigh != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.thighCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.thigh}cm</span></div>}
+                        </div>
+                      )}
                       {ci.notes && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}) }}><strong>{t.checkIn.notesLabel}</strong> {ci.notes}</div>}
                       {ci.wins && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}), color: 'var(--accent-success)' }}><strong>{t.checkIn.winsLabel}</strong> {ci.wins}</div>}
                       {ci.challenges && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}), color: 'var(--accent-warm)' }}><strong>{t.checkIn.challengesLabel}</strong> {ci.challenges}</div>}

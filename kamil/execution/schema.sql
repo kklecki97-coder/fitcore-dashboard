@@ -46,6 +46,12 @@ create table if not exists client_metrics (
   bench_press numeric,
   squat numeric,
   deadlift numeric,
+  -- body circumferences (cm)
+  waist numeric,
+  hips numeric,
+  chest numeric,
+  bicep numeric,
+  thigh numeric,
   created_at timestamptz default now()
 );
 
@@ -132,6 +138,12 @@ create table if not exists check_ins (
   -- body metrics
   weight numeric,
   body_fat numeric,
+  -- body circumferences (cm)
+  waist numeric,
+  hips numeric,
+  chest numeric,
+  bicep numeric,
+  thigh numeric,
   -- wellness (1-5 mood, 1-10 others)
   mood integer check (mood between 1 and 5),
   energy integer check (energy between 1 and 10),

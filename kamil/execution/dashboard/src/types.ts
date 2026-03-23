@@ -24,6 +24,12 @@ export interface Client {
     benchPress: number[];
     squat: number[];
     deadlift: number[];
+    // Body circumferences (cm)
+    waist: number[];
+    hips: number[];
+    chest: number[];
+    bicep: number[];
+    thigh: number[];
   };
   goals: string[];
   goalTargets?: GoalTargets;
@@ -128,6 +134,12 @@ export interface CheckIn {
   // ── Body metrics ──
   weight: number | null;
   bodyFat: number | null;
+  // ── Body circumferences (cm) ──
+  waist: number | null;
+  hips: number | null;
+  chest: number | null;
+  bicep: number | null;
+  thigh: number | null;
   // ── Wellness scores (1-10 scales) ──
   mood: 1 | 2 | 3 | 4 | 5 | null;
   energy: number | null;       // 1-10

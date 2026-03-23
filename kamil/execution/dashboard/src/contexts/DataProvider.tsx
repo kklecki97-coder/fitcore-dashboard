@@ -228,10 +228,10 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
           .order('recorded_at');
 
         // Group metrics by client_id
-        const metricsMap = new Map<string, { weight: number[]; bodyFat: number[]; benchPress: number[]; squat: number[]; deadlift: number[] }>();
+        const metricsMap = new Map<string, { weight: number[]; bodyFat: number[]; benchPress: number[]; squat: number[]; deadlift: number[]; waist: number[]; hips: number[]; chest: number[]; bicep: number[]; thigh: number[] }>();
         for (const m of metricsRows ?? []) {
           if (!metricsMap.has(m.client_id)) {
-            metricsMap.set(m.client_id, { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] });
+            metricsMap.set(m.client_id, { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] });
           }
           const entry = metricsMap.get(m.client_id)!;
           if (m.weight != null) entry.weight.push(Number(m.weight));
@@ -239,6 +239,11 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
           if (m.bench_press != null) entry.benchPress.push(Number(m.bench_press));
           if (m.squat != null) entry.squat.push(Number(m.squat));
           if (m.deadlift != null) entry.deadlift.push(Number(m.deadlift));
+          if (m.waist != null) entry.waist.push(Number(m.waist));
+          if (m.hips != null) entry.hips.push(Number(m.hips));
+          if (m.chest != null) entry.chest.push(Number(m.chest));
+          if (m.bicep != null) entry.bicep.push(Number(m.bicep));
+          if (m.thigh != null) entry.thigh.push(Number(m.thigh));
         }
 
         const clients = data.map(r => ({
@@ -257,7 +262,7 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
           goals: r.goals ?? [],
           goalTargets: r.goal_targets ?? {},
           notes: r.notes ?? '',
-          metrics: metricsMap.get(r.id) ?? { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+          metrics: metricsMap.get(r.id) ?? { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
           notesHistory: [],
           activityLog: [],
           lastActive: r.last_active ?? '',
@@ -350,6 +355,11 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
           status: r.status,
           weight: r.weight,
           bodyFat: r.body_fat,
+          waist: r.waist ?? null,
+          hips: r.hips ?? null,
+          chest: r.chest ?? null,
+          bicep: r.bicep ?? null,
+          thigh: r.thigh ?? null,
           mood: r.mood,
           energy: r.energy,
           stress: r.stress,
@@ -577,6 +587,11 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
             status: r.status as CheckIn['status'],
             weight: r.weight as number | null,
             bodyFat: r.body_fat as number | null,
+            waist: (r.waist as number | null) ?? null,
+            hips: (r.hips as number | null) ?? null,
+            chest: (r.chest as number | null) ?? null,
+            bicep: (r.bicep as number | null) ?? null,
+            thigh: (r.thigh as number | null) ?? null,
             mood: r.mood as CheckIn['mood'],
             energy: r.energy as number | null,
             stress: r.stress as number | null,

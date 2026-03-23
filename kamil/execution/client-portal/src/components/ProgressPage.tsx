@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2, Zap } from 'lucide-react';
+import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2, Zap, Ruler } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ShareProgressCard from './ShareProgressCard';
 // Charts will be re-enabled once clients have enough data points
@@ -440,6 +440,75 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
           </GlassCard>
         )}
       </div>
+
+      {/* ── BODY MEASUREMENTS TABLE ── */}
+      {(() => {
+        const measurementKeys = ['waist', 'hips', 'chest', 'bicep', 'thigh'] as const;
+        const measurementLabels: Record<string, string> = {
+          waist: t.progress.waist ?? 'Waist',
+          hips: t.progress.hips ?? 'Hips',
+          chest: t.progress.chest ?? 'Chest',
+          bicep: t.progress.bicep ?? 'Bicep',
+          thigh: t.progress.thigh ?? 'Thigh',
+        };
+        const hasMeasurements = measurementKeys.some(k => metrics[k] && metrics[k].length > 0);
+
+        return hasMeasurements ? (
+          <GlassCard delay={0.32} style={isMobile ? { padding: '14px' } : undefined}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '12px' : '16px' }}>
+              <Ruler size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+              <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {t.progress.measurements ?? 'Measurements'}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto auto auto' : '1fr auto auto auto', gap: 0 }}>
+              {/* Header row */}
+              <div style={{ padding: isMobile ? '6px 0' : '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>&nbsp;</span>
+              </div>
+              {[t.progress.start ?? 'Start', t.progress.current ?? 'Current', t.progress.change ?? 'Change'].map(header => (
+                <div key={header} style={{ padding: isMobile ? '6px 8px' : '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)', textAlign: 'right' as const }}>
+                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>{header}</span>
+                </div>
+              ))}
+              {/* Data rows */}
+              {measurementKeys.map(key => {
+                const vals = metrics[key];
+                if (!vals || vals.length === 0) return null;
+                const startVal = vals[0];
+                const currentVal = vals[vals.length - 1];
+                const change = currentVal - startVal;
+                const showChange = vals.length > 1;
+                return [
+                  <div key={`${key}-label`} style={{ padding: isMobile ? '8px 0' : '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{measurementLabels[key]}</span>
+                  </div>,
+                  <div key={`${key}-start`} style={{ padding: isMobile ? '8px 8px' : '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{startVal}</span>
+                    <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
+                  </div>,
+                  <div key={`${key}-current`} style={{ padding: isMobile ? '8px 8px' : '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>{currentVal}</span>
+                    <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
+                  </div>,
+                  <div key={`${key}-change`} style={{ padding: isMobile ? '8px 8px' : '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    {showChange ? (
+                      <span style={{
+                        fontSize: isMobile ? '13px' : '14px', fontFamily: 'var(--font-mono)', fontWeight: 600,
+                        color: change < 0 ? 'var(--accent-primary)' : change > 0 ? 'var(--accent-warm)' : 'var(--text-tertiary)',
+                      }}>
+                        {change > 0 ? '+' : ''}{change.toFixed(1)}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: isMobile ? '12px' : '13px', color: 'var(--text-tertiary)' }}>—</span>
+                    )}
+                  </div>,
+                ];
+              })}
+            </div>
+          </GlassCard>
+        ) : null;
+      })()}
 
       {/* ── 3. GOALS ── */}
       {goalProgress.length > 0 && (

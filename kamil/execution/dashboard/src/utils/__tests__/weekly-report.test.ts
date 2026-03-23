@@ -5,7 +5,7 @@ import type { Client, Message, Invoice, WorkoutLog, CheckIn } from '../../types'
 const makeClient = (overrides: Partial<Client> = {}): Client => ({
   id: 'c1', name: 'Test', avatar: '', email: '', plan: 'Premium',
   status: 'active', startDate: '', nextCheckIn: '', monthlyRate: 200,
-  progress: 50, metrics: { weight: [85, 83], bodyFat: [18, 17], benchPress: [80, 90], squat: [100, 110], deadlift: [120, 120] },
+  progress: 50, metrics: { weight: [85, 83], bodyFat: [18, 17], benchPress: [80, 90], squat: [100, 110], deadlift: [120, 120], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
   goals: [], notes: '', notesHistory: [], activityLog: [], lastActive: '2026-03-19', streak: 5,
   ...overrides,
 });
@@ -21,7 +21,8 @@ const makeInvoice = (paidDate: string, amount = 200): Invoice => ({
 
 const makeCheckIn = (date: string, reviewStatus: 'pending' | 'reviewed' | 'flagged' = 'reviewed'): CheckIn => ({
   id: `ci-${date}`, clientId: 'c1', clientName: 'Test', date, status: 'completed',
-  weight: 83, bodyFat: 17, mood: 4, energy: 7, stress: 3, sleepHours: 7,
+  weight: 83, bodyFat: 17, waist: null, hips: null, chest: null, bicep: null, thigh: null,
+  mood: 4, energy: 7, stress: 3, sleepHours: 7,
   steps: 8000, nutritionScore: 7, notes: '', wins: '', challenges: '',
   coachFeedback: '', photos: [], reviewStatus, flagReason: '', followUpNotes: [],
 });
@@ -125,7 +126,7 @@ describe('computeWeeklyReport', () => {
   it('detects new PRs from client metrics', () => {
     const clients = [
       makeClient({
-        metrics: { weight: [], bodyFat: [], benchPress: [80, 90], squat: [100, 100], deadlift: [120, 130] },
+        metrics: { weight: [], bodyFat: [], benchPress: [80, 90], squat: [100, 100], deadlift: [120, 130], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
       }),
     ];
     const result = computeWeeklyReport(clients, [], [], [], [], now);

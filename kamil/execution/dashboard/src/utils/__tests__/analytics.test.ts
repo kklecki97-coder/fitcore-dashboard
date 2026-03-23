@@ -33,7 +33,7 @@ const makeClient = (overrides: Partial<Client> = {}): Client => ({
   nextCheckIn: '2026-03-25',
   monthlyRate: 200,
   progress: 50,
-  metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+  metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
   goals: [],
   notes: '',
   notesHistory: [],

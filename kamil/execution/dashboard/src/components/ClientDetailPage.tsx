@@ -5,7 +5,7 @@ import {
   TrendingUp, TrendingDown, Minus,
   Edit3, MessageSquare, FileText,
   Dumbbell, ChevronDown, Sparkles,
-  Download,
+  Download, Ruler,
 } from 'lucide-react';
 // recharts radar removed — no longer used
 import jsPDF from 'jspdf';
@@ -83,6 +83,11 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     benchPress: '',
     squat: '',
     deadlift: '',
+    waist: '',
+    hips: '',
+    chest: '',
+    bicep: '',
+    thigh: '',
   });
 
   // Load client's weekly schedule for calendar
@@ -259,12 +264,22 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
     const latBench = client.metrics.benchPress[client.metrics.benchPress.length - 1];
     const latSquat = client.metrics.squat[client.metrics.squat.length - 1];
     const latDeadlift = client.metrics.deadlift[client.metrics.deadlift.length - 1];
+    const latWaist = client.metrics.waist[client.metrics.waist.length - 1];
+    const latHips = client.metrics.hips[client.metrics.hips.length - 1];
+    const latChest = client.metrics.chest[client.metrics.chest.length - 1];
+    const latBicep = client.metrics.bicep[client.metrics.bicep.length - 1];
+    const latThigh = client.metrics.thigh[client.metrics.thigh.length - 1];
     const metrics = [
       `${t.clientDetail.weight}: ${latW ?? '-'} kg`,
       `${t.clientDetail.bodyFat}: ${latBF ?? '-'}%`,
       `${t.clientDetail.benchPress}: ${latBench ?? '-'} kg`,
       `${t.clientDetail.squat}: ${latSquat ?? '-'} kg`,
       `${t.clientDetail.deadlift}: ${latDeadlift ?? '-'} kg`,
+      ...(latWaist != null ? [`${t.clientDetail.waist ?? 'Waist'}: ${latWaist} cm`] : []),
+      ...(latHips != null ? [`${t.clientDetail.hips ?? 'Hips'}: ${latHips} cm`] : []),
+      ...(latChest != null ? [`${t.clientDetail.chest ?? 'Chest'}: ${latChest} cm`] : []),
+      ...(latBicep != null ? [`${t.clientDetail.bicep ?? 'Bicep'}: ${latBicep} cm`] : []),
+      ...(latThigh != null ? [`${t.clientDetail.thigh ?? 'Thigh'}: ${latThigh} cm`] : []),
       `${t.clientDetail.monthlyRate}: ${formatCurrency(client.monthlyRate, lang)}`,
       `${t.clientDetail.pdfProgress}: ${client.progress}%`,
       `${t.clientDetail.pdfStreak}: ${client.streak} ${t.clientDetail.pdfStreakDays}`,
@@ -513,6 +528,68 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
           </div>
         </GlassCard>
       </div>
+
+      {/* Body Measurements */}
+      {(() => {
+        const mKeys = ['waist', 'hips', 'chest', 'bicep', 'thigh'] as const;
+        const mLabels: Record<string, string> = {
+          waist: t.clientDetail.waist ?? 'Waist',
+          hips: t.clientDetail.hips ?? 'Hips',
+          chest: t.clientDetail.chest ?? 'Chest',
+          bicep: t.clientDetail.bicep ?? 'Bicep',
+          thigh: t.clientDetail.thigh ?? 'Thigh',
+        };
+        const hasMeasurements = mKeys.some(k => client.metrics[k] && client.metrics[k].length > 0);
+        if (!hasMeasurements) return null;
+        return (
+          <GlassCard delay={0.18} style={isMobile ? { padding: '12px' } : undefined}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '10px' : '14px' }}>
+              <Ruler size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+              <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {t.clientDetail.measurements ?? 'Measurements'}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto auto auto' : '1fr auto auto auto', gap: 0 }}>
+              {/* Header */}
+              <div style={{ padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }} />
+              {[t.clientDetail.start ?? 'Start', t.clientDetail.current ?? 'Current', t.clientDetail.change ?? 'Change'].map(h => (
+                <div key={h} style={{ padding: '6px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', textAlign: 'right' as const }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>{h}</span>
+                </div>
+              ))}
+              {/* Rows */}
+              {mKeys.map(key => {
+                const vals = client.metrics[key];
+                if (!vals || vals.length === 0) return null;
+                const s = vals[0];
+                const c = vals[vals.length - 1];
+                const d = c - s;
+                const show = vals.length > 1;
+                return [
+                  <div key={`${key}-l`} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{mLabels[key]}</span>
+                  </div>,
+                  <div key={`${key}-s`} style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{s}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
+                  </div>,
+                  <div key={`${key}-c`} style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>{c}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
+                  </div>,
+                  <div key={`${key}-d`} style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    {show ? (
+                      <span style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: d < 0 ? 'var(--accent-success)' : d > 0 ? 'var(--accent-danger)' : 'var(--text-tertiary)' }}>
+                        {d > 0 ? '+' : ''}{d.toFixed(1)}
+                      </span>
+                    ) : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
+                  </div>,
+                ];
+              })}
+            </div>
+          </GlassCard>
+        );
+      })()}
 
       {/* Training Calendar */}
       <ClientDetailTrainingCalendar

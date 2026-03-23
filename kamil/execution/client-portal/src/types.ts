@@ -23,6 +23,12 @@ export interface Client {
     benchPress: number[];
     squat: number[];
     deadlift: number[];
+    // Body circumferences (cm)
+    waist: number[];
+    hips: number[];
+    chest: number[];
+    bicep: number[];
+    thigh: number[];
   };
   height: number | null;
   goals: string[];
@@ -100,6 +106,12 @@ export interface CheckIn {
   status: 'completed' | 'scheduled' | 'missed';
   weight: number | null;
   bodyFat: number | null;
+  // ── Body circumferences (cm) ──
+  waist: number | null;
+  hips: number | null;
+  chest: number | null;
+  bicep: number | null;
+  thigh: number | null;
   mood: 1 | 2 | 3 | 4 | 5 | null;
   energy: number | null;
   stress: number | null;

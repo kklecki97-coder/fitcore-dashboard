@@ -226,6 +226,11 @@ function App() {
       benchPress: (metricsData ?? []).filter(m => m.bench_press != null).map(m => Number(m.bench_press)),
       squat: (metricsData ?? []).filter(m => m.squat != null).map(m => Number(m.squat)),
       deadlift: (metricsData ?? []).filter(m => m.deadlift != null).map(m => Number(m.deadlift)),
+      waist: (metricsData ?? []).filter(m => m.waist != null).map(m => Number(m.waist)),
+      hips: (metricsData ?? []).filter(m => m.hips != null).map(m => Number(m.hips)),
+      chest: (metricsData ?? []).filter(m => m.chest != null).map(m => Number(m.chest)),
+      bicep: (metricsData ?? []).filter(m => m.bicep != null).map(m => Number(m.bicep)),
+      thigh: (metricsData ?? []).filter(m => m.thigh != null).map(m => Number(m.thigh)),
     };
 
     const client: Client = {
@@ -359,6 +364,11 @@ function App() {
         status: r.status,
         weight: r.weight,
         bodyFat: r.body_fat,
+        waist: r.waist ?? null,
+        hips: r.hips ?? null,
+        chest: r.chest ?? null,
+        bicep: r.bicep ?? null,
+        thigh: r.thigh ?? null,
         mood: r.mood,
         energy: r.energy,
         stress: r.stress,
@@ -749,6 +759,11 @@ function App() {
       status: ci.status,
       weight: ci.weight,
       body_fat: ci.bodyFat,
+      waist: ci.waist,
+      hips: ci.hips,
+      chest: ci.chest,
+      bicep: ci.bicep,
+      thigh: ci.thigh,
       mood: ci.mood,
       energy: ci.energy,
       stress: ci.stress,
@@ -770,13 +785,19 @@ function App() {
       return;
     }
 
-    // Sync weight & body_fat to client_metrics so HomePage picks them up
-    if (ci.weight != null || ci.bodyFat != null) {
+    // Sync body metrics to client_metrics so HomePage picks them up
+    const hasBodyMetrics = ci.weight != null || ci.bodyFat != null || ci.waist != null || ci.hips != null || ci.chest != null || ci.bicep != null || ci.thigh != null;
+    if (hasBodyMetrics) {
       const { error: metricsErr } = await supabase.from('client_metrics').insert({
         client_id: ci.clientId,
         recorded_at: ci.date,
         weight: ci.weight,
         body_fat: ci.bodyFat,
+        waist: ci.waist,
+        hips: ci.hips,
+        chest: ci.chest,
+        bicep: ci.bicep,
+        thigh: ci.thigh,
       });
       if (metricsErr) console.error('client_metrics sync failed:', metricsErr);
       else {
@@ -785,7 +806,12 @@ function App() {
           if (!prev) return prev;
           const newWeight = ci.weight != null ? [...prev.metrics.weight, ci.weight] : prev.metrics.weight;
           const newBodyFat = ci.bodyFat != null ? [...prev.metrics.bodyFat, ci.bodyFat] : prev.metrics.bodyFat;
-          return { ...prev, metrics: { ...prev.metrics, weight: newWeight, bodyFat: newBodyFat } };
+          const newWaist = ci.waist != null ? [...prev.metrics.waist, ci.waist] : prev.metrics.waist;
+          const newHips = ci.hips != null ? [...prev.metrics.hips, ci.hips] : prev.metrics.hips;
+          const newChest = ci.chest != null ? [...prev.metrics.chest, ci.chest] : prev.metrics.chest;
+          const newBicep = ci.bicep != null ? [...prev.metrics.bicep, ci.bicep] : prev.metrics.bicep;
+          const newThigh = ci.thigh != null ? [...prev.metrics.thigh, ci.thigh] : prev.metrics.thigh;
+          return { ...prev, metrics: { ...prev.metrics, weight: newWeight, bodyFat: newBodyFat, waist: newWaist, hips: newHips, chest: newChest, bicep: newBicep, thigh: newThigh } };
         });
       }
     }

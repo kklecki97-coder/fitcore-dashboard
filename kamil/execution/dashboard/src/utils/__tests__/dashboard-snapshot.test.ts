@@ -5,7 +5,7 @@ import type { Client, Invoice, CheckIn, Message, WorkoutProgram } from '../../ty
 const makeClient = (overrides: Partial<Client> = {}): Client => ({
   id: 'c1', name: 'Test', avatar: '', email: '', plan: 'Premium',
   status: 'active', startDate: '', nextCheckIn: '', monthlyRate: 200,
-  progress: 50, metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
+  progress: 50, metrics: { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [], waist: [], hips: [], chest: [], bicep: [], thigh: [] },
   goals: [], notes: '', notesHistory: [], activityLog: [], lastActive: '', streak: 0,
   ...overrides,
 });

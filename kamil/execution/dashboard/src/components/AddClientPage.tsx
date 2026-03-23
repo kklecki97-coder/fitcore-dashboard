@@ -174,6 +174,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
         benchPress: [],
         squat: [],
         deadlift: [],
+        waist: [], hips: [], chest: [], bicep: [], thigh: [],
       },
       goals: goals.trim() ? goals.split(',').map(g => g.trim()).filter(Boolean) : [],
       goalTargets: {

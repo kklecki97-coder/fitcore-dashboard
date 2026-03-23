@@ -122,6 +122,11 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
         benchPress: benchNum ? [benchNum] : client.metrics?.benchPress ?? [],
         squat: squatNum ? [squatNum] : client.metrics?.squat ?? [],
         deadlift: deadliftNum ? [deadliftNum] : client.metrics?.deadlift ?? [],
+        waist: client.metrics?.waist ?? [],
+        hips: client.metrics?.hips ?? [],
+        chest: client.metrics?.chest ?? [],
+        bicep: client.metrics?.bicep ?? [],
+        thigh: client.metrics?.thigh ?? [],
       },
     });
   };
