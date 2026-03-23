@@ -146,6 +146,7 @@ def run_apify_actor(api_key, actor_id, run_input, poll_interval=5):
 
 # --- HASHTAG SEARCH ---
 HASHTAGS = [
+    # Specific coach hashtags
     "trenerpersonalny",
     "treningpersonalny",
     "trenerfitness",
@@ -156,6 +157,19 @@ HASHTAGS = [
     "trenerpolska",
     "fitnesstrener",
     "treningsilowy",
+    # Broader Polish fitness hashtags (more posts = more leads to filter)
+    "trener",
+    "treningindywidualny",
+    "fitpolska",
+    "polskitrener",
+    "dietaitrening",
+    "coachingonline",
+    "treningipolska",
+    "transformacjasylwetki",
+    "planytreningowe",
+    "treningpersonalnywarszawa",
+    "treningpersonalnykrakow",
+    "treningpersonalnywroclaw",
 ]
 
 def search_hashtags(api_key, limit_per_hashtag=100):
@@ -188,6 +202,11 @@ SEARCH_KEYWORDS = [
     "coaching fitness",
     "dietetyk online",
     "trenerka personalna",
+    "trener personalny",
+    "online coaching fitness polska",
+    "prowadzenie treningowe",
+    "trener online polska",
+    "personal trainer poland",
 ]
 
 def search_keywords(api_key, limit_per_keyword=50):
@@ -413,14 +432,14 @@ def filter_profiles(profiles, min_followers=1000, max_followers=50000):
 
 
 # --- AI QUALIFICATION ---
-def qualify_with_ai(leads, api_key_openai):
-    """Use GPT to verify each lead is a real Polish fitness coach."""
+def qualify_with_ai(leads, api_key_anthropic):
+    """Use Claude Sonnet 4.6 to verify each lead is a real Polish fitness coach."""
     print(f"\n{'='*60}")
-    print(f"STEP 3b: AI qualification - verifying {len(leads)} leads")
+    print(f"STEP 3b: AI qualification - verifying {len(leads)} leads with Claude Sonnet 4.6")
     print(f"{'='*60}")
 
-    if not api_key_openai:
-        print("  [WARN] OPENAI_API_KEY not found, skipping AI qualification")
+    if not api_key_anthropic:
+        print("  [WARN] ANTHROPIC_API_KEY not found, skipping AI qualification")
         return leads
 
     qualified = []
@@ -457,17 +476,18 @@ Respond ONLY with this exact JSON format, nothing else:
 {{"is_polish": true/false, "is_fitness_coach": true/false, "reason": "one sentence explanation"}}"""
 
         body = json.dumps({
-            "model": "gpt-5-mini",
+            "model": "claude-sonnet-4-6",
+            "max_tokens": 200,
             "messages": [{"role": "user", "content": prompt}],
-            "max_completion_tokens": 1000,
         }).encode("utf-8")
 
         req = urllib.request.Request(
-            "https://api.openai.com/v1/chat/completions",
+            "https://api.anthropic.com/v1/messages",
             data=body,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key_openai}",
+                "x-api-key": api_key_anthropic,
+                "anthropic-version": "2023-06-01",
             },
             method="POST",
         )
@@ -475,15 +495,13 @@ Respond ONLY with this exact JSON format, nothing else:
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
-                content = result["choices"][0]["message"]["content"].strip()
+                content = (result.get("content", [{}])[0].get("text", "")).strip()
 
-                # If empty response (reasoning model used all tokens), reject as unqualified
                 if not content:
                     print(f"  {i+1}/{len(leads)} @{handle}: [EMPTY RESPONSE] - rejecting (unverified)")
                     rejected += 1
                     continue
 
-                # Parse JSON response
                 # Strip markdown code blocks if present
                 if content.startswith("```"):
                     content = content.split("\n", 1)[1] if "\n" in content else content
@@ -514,7 +532,7 @@ Respond ONLY with this exact JSON format, nothing else:
 
         # Small delay to avoid rate limits
         if i < len(leads) - 1:
-            time.sleep(0.3)
+            time.sleep(0.2)
 
     print(f"\n  AI qualification: {len(qualified)} passed, {rejected} rejected")
     return qualified
@@ -751,9 +769,9 @@ def main():
         print("\nNo leads passed filtering. Try adjusting criteria.")
         return
 
-    # Step 3b: AI qualification
-    openai_key = env.get("OPENAI_API_KEY")
-    leads = qualify_with_ai(leads, openai_key)
+    # Step 3b: AI qualification (Claude Sonnet 4.6)
+    anthropic_key = env.get("ANTHROPIC_API_KEY")
+    leads = qualify_with_ai(leads, anthropic_key)
 
     if not leads:
         print("\nNo leads passed AI qualification. Try adjusting criteria.")

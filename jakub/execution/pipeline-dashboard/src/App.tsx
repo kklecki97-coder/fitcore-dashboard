@@ -7,16 +7,16 @@ import {
 } from 'lucide-react'
 
 // ─── Supabase Config ───
-const SUPABASE_URL = 'https://vjimeeiovrqjitoxmzeb.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_51_z3oNgQx0IYRwmJhutDQ_YNoq1_G0'
+const SUPABASE_URL = 'https://vawghpnaoimtplfimjrw.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_kexh4iFbuoEYrtHgNJbI3Q_Z19AMEwo'
 
 // ─── Constants ───
-const DAILY_ENGAGE_LIMIT = 20
+const DAILY_ENGAGE_LIMIT = 15
 
-type Account = 'jakub' | 'fitcore'
+type Account = 'jakub' | 'kamil'
 const ACCOUNTS: { key: Account; label: string; color: string }[] = [
   { key: 'jakub', label: 'Jakub', color: '#6366f1' },
-  { key: 'fitcore', label: 'FitCore', color: '#f59e0b' },
+  { key: 'kamil', label: 'Kamil', color: '#f59e0b' },
 ]
 
 // ─── Types ───
@@ -46,15 +46,21 @@ interface Lead {
   account: string | null
   engaged_by: string | null
   dmed_by: string | null
+  touch_count: number
+  touch1_at: string | null
+  touch2_at: string | null
+  touch3_at: string | null
+  last_touch_at: string | null
 }
 
-type PipelineStage = 'new' | 'engaged' | 'dmed' | 'replied' | 'call_booked' | 'closed' | 'dead'
+type PipelineStage = 'new' | 'warming' | 'warm' | 'dmed' | 'replied' | 'call_booked' | 'closed' | 'dead'
 type ViewMode = 'tasks' | 'pipeline'
 
 const STAGES: { key: PipelineStage; label: string; color: string; icon: typeof Search }[] = [
   { key: 'new', label: 'New Leads', color: '#8b92a5', icon: Search },
-  { key: 'engaged', label: 'Engaged', color: '#6366f1', icon: Users },
-  { key: 'dmed', label: 'DM Sent', color: '#f59e0b', icon: MessageCircle },
+  { key: 'warming', label: 'Warming Up', color: '#6366f1', icon: Heart },
+  { key: 'warm', label: 'Ready to DM', color: '#f59e0b', icon: MessageSquare },
+  { key: 'dmed', label: 'DM Sent', color: '#fb923c', icon: MessageCircle },
   { key: 'replied', label: 'Replied', color: '#00e5c8', icon: MessageCircle },
   { key: 'call_booked', label: 'Call Booked', color: '#22c55e', icon: Phone },
   { key: 'closed', label: 'Closed', color: '#10b981', icon: CheckCircle },
@@ -691,9 +697,9 @@ function DailyActivityChart({ data }: {
 
 // ─── Daily Tasks Components ───
 
-function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
+function EngageBatchCard({ leads, onMarkAllTouched, dailyLimitReached }: {
   leads: Lead[]
-  onMarkAllEngaged: () => void
+  onMarkAllTouched: () => void
   dailyLimitReached: boolean
 }) {
   const [marking, setMarking] = useState(false)
@@ -702,16 +708,26 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
   const [openedCount, setOpenedCount] = useState(0)
   const [openTimerRef, setOpenTimerRef] = useState<ReturnType<typeof setInterval> | null>(null)
 
+  // Determine what touch this batch is on (all leads in a batch should be at the same touch level)
+  const currentTouch = Math.min(...leads.map(l => (l.touch_count || 0))) + 1
+  const isNewBatch = leads.every(l => l.status === 'new')
+
+  const touchLabels: Record<number, { title: string; desc: string; btn: string }> = {
+    1: { title: 'Touch 1 — First Contact', desc: 'Follow + Like 2-3 posts + Comment on 1 post', btn: 'Mark Touch 1 Done' },
+    2: { title: 'Touch 2 — Stay Visible', desc: 'Like 2-3 more posts + Comment on another post', btn: 'Mark Touch 2 Done' },
+    3: { title: 'Touch 3 — Final Warmup', desc: 'Like + Comment again — after this they move to DM queue', btn: 'Mark Touch 3 Done' },
+  }
+  const touchInfo = touchLabels[currentTouch] || touchLabels[1]
+
   const handleMarkAll = async () => {
     setMarking(true)
-    await onMarkAllEngaged()
+    await onMarkAllTouched()
     setDone(true)
     setMarking(false)
   }
 
   const handleOpenAll = () => {
     if (openingAll) {
-      // Stop
       if (openTimerRef) clearInterval(openTimerRef)
       setOpenTimerRef(null)
       setOpeningAll(false)
@@ -721,7 +737,6 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
     setOpeningAll(true)
     setOpenedCount(0)
 
-    // Open the first one immediately
     window.open(`https://instagram.com/${leads[0].instagram_handle}`, '_blank')
     setOpenedCount(1)
 
@@ -730,7 +745,6 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
       return
     }
 
-    // Open the rest every 5 seconds
     let idx = 1
     const timer = setInterval(() => {
       if (idx >= leads.length) {
@@ -751,22 +765,22 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
     return (
       <GlassCard style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <UserPlus size={20} color="#6366f1" />
-          <div style={{ fontSize: 18, fontWeight: 600 }}>Engage Batch</div>
+          <Heart size={20} color="#6366f1" />
+          <div style={{ fontSize: 18, fontWeight: 600 }}>Warmup Batch</div>
         </div>
         <div style={{ color: 'var(--text-secondary)', fontSize: 14, textAlign: 'center', padding: 20 }}>
           {dailyLimitReached ? (
             <>
               <div style={{ color: 'var(--accent-success)', fontWeight: 600, marginBottom: 6 }}>
                 <Check size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-                Daily engage limit reached (20/20)
+                All touches done for current batch!
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-                Come back tomorrow for the next batch. Don't exceed 20 follows/day to stay safe on Instagram.
+                Leads are cooling down. DM batch will appear after 2 days.
               </div>
             </>
           ) : (
-            <>No new leads to engage. Run <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4 }}>find_instagram_leads.py --output supabase</code> to add more.</>
+            <>No leads to warm up. Run the scraper to add more.</>
           )}
         </div>
       </GlassCard>
@@ -777,11 +791,23 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
     <GlassCard style={{ marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <UserPlus size={20} color="#6366f1" />
+          <Heart size={20} color="#6366f1" />
           <div>
-            <div style={{ fontSize: 18, fontWeight: 600 }}>Engage Batch</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 600 }}>{touchInfo.title}</span>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[1, 2, 3].map(t => (
+                  <div key={t} style={{
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: t <= (currentTouch - 1) ? '#6366f1' : t === currentTouch ? '#6366f1' + '60' : 'var(--glass-border)',
+                    border: t === currentTouch ? '2px solid #6366f1' : 'none',
+                    boxSizing: 'border-box',
+                  }} />
+                ))}
+              </div>
+            </div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-              {leads.length} profiles to follow, like 3 posts, comment on 1
+              {leads.length} profiles — {touchInfo.desc}
             </div>
           </div>
         </div>
@@ -824,9 +850,9 @@ function EngageBatchCard({ leads, onMarkAllEngaged, dailyLimitReached }: {
               opacity: marking ? 0.6 : 1,
             }}
           >
-            {done ? <><Check size={16} /> All Engaged</> :
+            {done ? <><Check size={16} /> Touch {currentTouch} Done!</> :
              marking ? <><RefreshCw size={16} className="spin" /> Marking...</> :
-             <><CheckCircle size={16} /> Mark All as Engaged</>}
+             <><CheckCircle size={16} /> {touchInfo.btn}</>}
           </button>
         </div>
       </div>
@@ -1219,11 +1245,13 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
   )
 }
 
-function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
+function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayEngaged, todayDmed, onMarkReplied }: {
   engageBatch: Lead[]
   dmBatch: Lead[]
+  followUpLeads: Lead[]
   todayEngaged: number
   todayDmed: number
+  onMarkReplied: (id: number) => void
 }) {
   const today = new Date()
   const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
@@ -1272,7 +1300,7 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
           }}>
             STEP 1
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>Engage</span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Warmup</span>
         </div>
 
         <div style={{ marginBottom: 8 }}>
@@ -1283,8 +1311,8 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
             color: 'var(--text-tertiary)',
             marginBottom: 4,
           }}>
-            <span>Follow + Like + Comment</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>{Math.min(todayEngaged, DAILY_ENGAGE_LIMIT)}/{DAILY_ENGAGE_LIMIT}</span>
+            <span>3-touch warmup</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{engageBatch.length > 0 ? `${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1}/3` : '-'}</span>
           </div>
           <div style={{
             height: 6,
@@ -1294,7 +1322,7 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
           }}>
             <div style={{
               height: '100%',
-              width: `${Math.min((todayEngaged / DAILY_ENGAGE_LIMIT) * 100, 100)}%`,
+              width: engageBatch.length > 0 ? `${((Math.min(...engageBatch.map(l => l.touch_count || 0))) / 3) * 100}%` : '0%',
               background: '#6366f1',
               borderRadius: 3,
               transition: 'width 0.5s ease',
@@ -1304,8 +1332,8 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
 
         <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
           {engageBatch.length > 0
-            ? `${engageBatch.length} profiles ready`
-            : todayEngaged >= DAILY_ENGAGE_LIMIT ? 'Done for today' : 'No new leads'}
+            ? `${engageBatch.length} profiles — touch ${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1} of 3`
+            : 'No leads to warm up'}
         </div>
       </div>
 
@@ -1391,11 +1419,61 @@ function DailyTasksSidebar({ engageBatch, dmBatch, todayEngaged, todayDmed }: {
             STEP 3
           </div>
           <span style={{ fontSize: 13, fontWeight: 600 }}>Follow Up</span>
+          {followUpLeads.length > 0 && (
+            <span style={{ fontSize: 11, color: '#00e5c8', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+              {followUpLeads.length}
+            </span>
+          )}
         </div>
 
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-          Check replies and update statuses in Pipeline view
-        </div>
+        {followUpLeads.length === 0 ? (
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+            No DM'd leads awaiting reply
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {followUpLeads.slice(0, 8).map(lead => {
+              const daysAgo = lead.dmed_at ? Math.floor((Date.now() - new Date(lead.dmed_at).getTime()) / 86400000) : 0
+              return (
+                <div key={lead.id} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                  padding: '6px 8px', borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-elevated)', fontSize: 11,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                    <a
+                      href={`https://instagram.com/${lead.instagram_handle.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {lead.instagram_handle}
+                    </a>
+                    <span style={{ color: 'var(--text-tertiary)', fontSize: 10, flexShrink: 0 }}>
+                      {daysAgo === 0 ? 'today' : daysAgo === 1 ? '1d ago' : `${daysAgo}d ago`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => onMarkReplied(lead.id)}
+                    style={{
+                      background: '#00e5c8' + '18', border: '1px solid #00e5c8' + '40',
+                      borderRadius: 'var(--radius-sm)', padding: '3px 8px',
+                      color: '#00e5c8', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                      fontFamily: 'var(--font-display)', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Replied
+                  </button>
+                </div>
+              )
+            })}
+            {followUpLeads.length > 8 && (
+              <div style={{ fontSize: 10, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                +{followUpLeads.length - 8} more in Pipeline view
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Daily limits info */}
@@ -1524,7 +1602,7 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
           <Lock size={24} color="var(--accent-primary)" />
         </div>
 
-        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>Outreach Pipeline</div>
+        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6 }}>FitCore Outreach</div>
         <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 28 }}>Enter PIN to continue</div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 24 }}>
@@ -1656,7 +1734,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ViewMode>('tasks')
-  const [engageBatchIds, setEngageBatchIds] = useState<Record<Account, number[] | null>>({ jakub: null, fitcore: null })
+  const [engageBatchIds, setEngageBatchIds] = useState<Record<Account, number[] | null>>({ jakub: null, kamil: null })
   const [filterStage, setFilterStage] = useState<PipelineStage | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'score' | 'followers' | 'recent'>('score')
@@ -1677,9 +1755,9 @@ function Dashboard() {
     }
   }
 
-  // Leads that belong to this account: either new (shared pool) or worked by this account
+  // Leads that belong to this account: assigned to them OR worked by them
   const leads = useMemo(() => allLeads.filter(l =>
-    l.status === 'new' || l.engaged_by === account || l.dmed_by === account
+    l.account === account || l.engaged_by === account || l.dmed_by === account
   ), [allLeads, account])
 
   const fetchLeads = useCallback(async () => {
@@ -1700,44 +1778,122 @@ function Dashboard() {
     fetchLeads()
   }, [fetchLeads])
 
-  // Snapshot engage batches for BOTH accounts at once from the shared new pool - interleaved by score
+  // Auto-assign unassigned new leads evenly between operators (persists to Supabase)
   useEffect(() => {
-    if (engageBatchIds.jakub !== null || allLeads.length === 0) return
+    if (allLeads.length === 0) return
+    const unassigned = allLeads.filter(l => l.status === 'new' && !l.account)
+    if (unassigned.length === 0) return
+
+    // Sort by score descending, interleave assignment
+    const sorted = [...unassigned].sort((a, b) => (b.score || 0) - (a.score || 0))
+    const jakubCount = allLeads.filter(l => l.account === 'jakub' && l.status === 'new').length
+    const kamilCount = allLeads.filter(l => l.account === 'kamil' && l.status === 'new').length
+
+    const assignments: { id: number; account: string }[] = []
+    let jCount = jakubCount
+    let kCount = kamilCount
+
+    for (const lead of sorted) {
+      if (jCount <= kCount) {
+        assignments.push({ id: lead.id, account: 'jakub' })
+        jCount++
+      } else {
+        assignments.push({ id: lead.id, account: 'kamil' })
+        kCount++
+      }
+    }
+
+    // Update local state immediately
+    setAllLeads(prev => prev.map(l => {
+      const a = assignments.find(x => x.id === l.id)
+      return a ? { ...l, account: a.account } : l
+    }))
+
+    // Persist to Supabase in background
+    for (const a of assignments) {
+      supabaseFetch(`instagram_leads?id=eq.${a.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ account: a.account }),
+      }).catch(err => console.error('Failed to assign lead:', err))
+    }
+  }, [allLeads.length]) // only run when lead count changes (new leads loaded)
+
+  // Snapshot engage batches - now based on pre-assigned leads
+  // Wait until all leads are assigned (no unassigned new leads)
+  useEffect(() => {
+    if (allLeads.length === 0) return
+    const hasUnassigned = allLeads.some(l => l.status === 'new' && !l.account)
+    if (hasUnassigned) return // wait for auto-assign to finish
 
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
     const ts = todayStart.getTime()
 
-    // Count how many each account already engaged today
     const jakubEngagedToday = allLeads.filter(l => l.engaged_by === 'jakub' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
-    const fitcoreEngagedToday = allLeads.filter(l => l.engaged_by === 'fitcore' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
+    const kamilEngagedToday = allLeads.filter(l => l.engaged_by === 'kamil' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
 
     const jakubSlots = Math.max(0, DAILY_ENGAGE_LIMIT - jakubEngagedToday)
-    const fitcoreSlots = Math.max(0, DAILY_ENGAGE_LIMIT - fitcoreEngagedToday)
+    const kamilSlots = Math.max(0, DAILY_ENGAGE_LIMIT - kamilEngagedToday)
 
-    // Get all new leads sorted by score, interleave between accounts
-    const newLeads = allLeads.filter(l => l.status === 'new').sort((a, b) => (b.score || 0) - (a.score || 0))
+    // Each operator only sees leads assigned to them
+    const jakubNew = allLeads.filter(l => l.status === 'new' && l.account === 'jakub').sort((a, b) => (b.score || 0) - (a.score || 0))
+    const kamilNew = allLeads.filter(l => l.status === 'new' && l.account === 'kamil').sort((a, b) => (b.score || 0) - (a.score || 0))
 
-    const jakubIds: number[] = []
-    const fitcoreIds: number[] = []
+    setEngageBatchIds({
+      jakub: jakubNew.slice(0, jakubSlots).map(l => l.id),
+      kamil: kamilNew.slice(0, kamilSlots).map(l => l.id),
+    })
+  }, [allLeads])
 
-    for (const lead of newLeads) {
-      if (jakubIds.length < jakubSlots && jakubIds.length <= fitcoreIds.length) {
-        jakubIds.push(lead.id)
-      } else if (fitcoreIds.length < fitcoreSlots) {
-        fitcoreIds.push(lead.id)
-      } else if (jakubIds.length < jakubSlots) {
-        jakubIds.push(lead.id)
-      }
+  // Handle a single touch on a lead (warmup progression)
+  const handleTouch = async (id: number) => {
+    const lead = allLeads.find(l => l.id === id)
+    if (!lead) return
+
+    const now = new Date().toISOString()
+    const currentTouches = lead.touch_count || 0
+    const newTouchCount = currentTouches + 1
+    const touchField = `touch${newTouchCount}_at`
+
+    const updates: Record<string, string | number | null> = {
+      touch_count: newTouchCount,
+      [touchField]: now,
+      last_touch_at: now,
+      engaged_by: account,
     }
 
-    setEngageBatchIds({ jakub: jakubIds, fitcore: fitcoreIds })
-  }, [allLeads, engageBatchIds.jakub])
+    if (newTouchCount === 1) {
+      // First touch: move from new to warming
+      updates.status = 'warming'
+      updates.engaged_at = now
+    } else if (newTouchCount >= 3) {
+      // All 3 touches done: move to warm (ready for DM after cooldown)
+      updates.status = 'warm'
+    }
+
+    try {
+      await supabaseFetch(`instagram_leads?id=eq.${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      })
+      setAllLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } as Lead : l))
+    } catch (err) {
+      console.error('Failed to record touch:', err)
+    }
+  }
+
+  // Batch touch: mark all leads in batch as touched once
+  const batchTouch = async (ids: number[]) => {
+    for (const id of ids) {
+      await handleTouch(id)
+    }
+    fetchLeads() // refresh after batch
+  }
 
   const handleStatusChange = async (id: number, newStatus: PipelineStage) => {
     const updates: Record<string, string | null> = { status: newStatus }
     const now = new Date().toISOString()
 
-    if (newStatus === 'engaged') { updates.engaged_at = now; updates.engaged_by = account }
+    if (newStatus === 'warming') { updates.engaged_at = now; updates.engaged_by = account }
     if (newStatus === 'dmed') { updates.dmed_at = now; updates.dmed_by = account }
 
     try {
@@ -1842,26 +1998,44 @@ function Dashboard() {
     return days
   }, [allLeads, account])
 
-  // Today's engage batch: from interleaved snapshot, only show this account's portion
+  // Today's warmup batch: leads assigned to this account that need touches
+  // Shows: new leads (touch 0) + warming leads (touch 1-2) — up to 15
   const engageBatch = useMemo(() => {
+    // First: leads currently being warmed (touch 1 or 2 — not done yet)
+    const warming = allLeads
+      .filter(l => l.status === 'warming' && l.account === account && (l.touch_count || 0) < 3)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+
+    // If warming batch exists, show those (same batch until all 3 touches done)
+    if (warming.length > 0) return warming
+
+    // Otherwise, pick next batch of new leads
     const ids = engageBatchIds[account]
     return ids === null
       ? []
       : allLeads.filter(l => ids.includes(l.id) && l.status === 'new')
   }, [allLeads, engageBatchIds, account])
 
-  // DM-ready batch: leads engaged BY THIS ACCOUNT, waiting for DM
+  // DM-ready batch: leads with all 3 touches done + 2 day cooldown passed
   const dmBatch = useMemo(() => {
-    const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
+    const twoDaysAgo = Date.now() - (2 * 24 * 60 * 60 * 1000)
     return allLeads
       .filter(l => {
-        if (l.status !== 'engaged') return false
+        if (l.status !== 'warm') return false
         if (l.engaged_by !== account) return false
-        if (!l.engaged_at) return false
-        return new Date(l.engaged_at).getTime() < todayMidnight.getTime()
+        if (!l.last_touch_at) return false
+        // 2-day cooldown after last touch
+        return new Date(l.last_touch_at).getTime() <= twoDaysAgo
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [allLeads, account])
+
+  // Follow-up leads: DM'd by this account, awaiting reply
+  const followUpLeads = useMemo(() =>
+    allLeads.filter(l => l.status === 'dmed' && l.dmed_by === account)
+      .sort((a, b) => new Date(a.dmed_at || 0).getTime() - new Date(b.dmed_at || 0).getTime()),
+    [allLeads, account]
+  )
 
   // Pipeline view filters - show leads this account worked + new leads
   const filtered = accountLeads
@@ -1900,10 +2074,10 @@ function Dashboard() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <Target size={28} color="var(--accent-primary)" />
-              <h1 style={{ fontSize: 26, fontWeight: 700 }}>Outreach Pipeline</h1>
+              <h1 style={{ fontSize: 26, fontWeight: 700 }}>FitCore Outreach</h1>
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 6, marginLeft: 40 }}>
-              Instagram DM outreach tracker
+              Polish fitness coaches · Instagram DM pipeline
             </p>
           </div>
         </div>
@@ -1996,6 +2170,55 @@ function Dashboard() {
         </div>
       )}
 
+      {/* Pipeline Summary + Progress */}
+      {!loading && allLeads.length > 0 && (
+        <div style={{ padding: '16px 40px 0', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {/* Pipeline stats */}
+          {[
+            { label: 'Total', value: accountLeads.length, color: 'var(--text-secondary)' },
+            { label: 'New', value: counts['new'] || 0, color: '#6b7280' },
+            { label: 'Warming', value: counts['warming'] || 0, color: '#6366f1' },
+            { label: 'Ready', value: counts['warm'] || 0, color: '#f59e0b' },
+            { label: "DM'd", value: counts['dmed'] || 0, color: '#fb923c' },
+            { label: 'Replied', value: counts['replied'] || 0, color: '#00e5c8' },
+            { label: 'Closed', value: counts['closed'] || 0, color: '#22c55e' },
+          ].map(s => (
+            <div key={s.label} style={{
+              background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
+              borderRadius: 'var(--radius-md)', padding: '10px 16px',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 70,
+            }}>
+              <span style={{ fontSize: 20, fontWeight: 700, color: s.color, fontFamily: 'var(--font-mono)' }}>{s.value}</span>
+              <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.label}</span>
+            </div>
+          ))}
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Today's progress for both operators */}
+          <div style={{
+            background: 'var(--bg-card)', border: '1px solid var(--glass-border)',
+            borderRadius: 'var(--radius-md)', padding: '10px 16px',
+            display: 'flex', gap: 20, alignItems: 'center',
+          }}>
+            <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Today</div>
+            {ACCOUNTS.map(a => {
+              const eng = allLeads.filter(l => l.engaged_by === a.key && l.engaged_at && new Date(l.engaged_at).getTime() >= todayStart).length
+              const dm = allLeads.filter(l => l.dmed_by === a.key && l.dmed_at && new Date(l.dmed_at).getTime() >= todayStart).length
+              return (
+                <div key={a.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: a.color }}>{a.label}</span>
+                  <span style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                    {eng}/{DAILY_ENGAGE_LIMIT} eng · {dm} DM
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Loading */}
       {loading && allLeads.length === 0 ? (
         <div style={{ padding: '40px' }}>
@@ -2020,20 +2243,135 @@ function Dashboard() {
           <DailyTasksSidebar
             engageBatch={engageBatch}
             dmBatch={dmBatch}
+            followUpLeads={followUpLeads}
             todayEngaged={todayEngaged}
             todayDmed={todayDmed}
+            onMarkReplied={(id) => handleStatusChange(id, 'replied')}
           />
 
           {/* Main content */}
           <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Today's Plan Card */}
+            <GlassCard style={{ marginBottom: 20, borderColor: 'var(--accent-primary)' + '40' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 10,
+                  background: 'var(--accent-primary)' + '18',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Target size={16} color="var(--accent-primary)" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>Today's Plan</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                    {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Warmup task */}
+                {engageBatch.length > 0 && (() => {
+                  const touchNum = Math.min(...engageBatch.map(l => (l.touch_count || 0))) + 1
+                  const isFirstTouch = touchNum === 1
+                  return (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                      background: '#6366f1' + '10', borderRadius: 'var(--radius-sm)',
+                      border: '1px solid #6366f1' + '25',
+                    }}>
+                      <Heart size={16} color="#6366f1" />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                          Warmup — Touch {touchNum}/3
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                          {isFirstTouch
+                            ? `Follow ${engageBatch.length} profiles + Like 2-3 posts each + Comment on 1 post each`
+                            : `Like 2-3 posts + Comment on 1 post for ${engageBatch.length} profiles`}
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: 11, fontWeight: 700, color: '#6366f1',
+                        fontFamily: 'var(--font-mono)',
+                        background: '#6366f1' + '18', padding: '4px 8px', borderRadius: 6,
+                      }}>
+                        {engageBatch.length} leads
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* DM task */}
+                {dmBatch.length > 0 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                    background: '#f59e0b' + '10', borderRadius: 'var(--radius-sm)',
+                    border: '1px solid #f59e0b' + '25',
+                  }}>
+                    <Send size={16} color="#f59e0b" />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        Send DMs
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                        Copy-paste personalized DMs to {dmBatch.length} warmed-up leads
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: 11, fontWeight: 700, color: '#f59e0b',
+                      fontFamily: 'var(--font-mono)',
+                      background: '#f59e0b' + '18', padding: '4px 8px', borderRadius: 6,
+                    }}>
+                      {dmBatch.length} leads
+                    </div>
+                  </div>
+                )}
+
+                {/* Follow-up task */}
+                {followUpLeads.length > 0 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                    background: '#00e5c8' + '10', borderRadius: 'var(--radius-sm)',
+                    border: '1px solid #00e5c8' + '25',
+                  }}>
+                    <MessageCircle size={16} color="#00e5c8" />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        Check Replies
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                        Check if any DM'd leads replied — mark as replied
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: 11, fontWeight: 700, color: '#00e5c8',
+                      fontFamily: 'var(--font-mono)',
+                      background: '#00e5c8' + '18', padding: '4px 8px', borderRadius: 6,
+                    }}>
+                      {followUpLeads.length} pending
+                    </div>
+                  </div>
+                )}
+
+                {/* Nothing to do */}
+                {engageBatch.length === 0 && dmBatch.length === 0 && followUpLeads.length === 0 && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                    background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)',
+                  }}>
+                    <Check size={16} color="var(--accent-success)" />
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                      All caught up! No tasks for today.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </GlassCard>
+
             <EngageBatchCard
               leads={engageBatch}
-              dailyLimitReached={todayEngaged >= DAILY_ENGAGE_LIMIT}
-              onMarkAllEngaged={() => batchUpdateStatus(
-                engageBatch.map(l => l.id),
-                'engaged',
-                'engaged_at'
-              )}
+              dailyLimitReached={engageBatch.length === 0 && allLeads.some(l => l.status === 'warm' && l.engaged_by === account)}
+              onMarkAllTouched={() => batchTouch(engageBatch.map(l => l.id))}
             />
 
             <DmBatchCard
@@ -2205,8 +2543,18 @@ function Dashboard() {
             </GlassCard>
           ) : (
             <div>
-              {filtered.map(lead => (
-                <LeadRow key={lead.id} lead={lead} onStatusChange={handleStatusChange} />
+              {filtered.map((lead, i) => (
+                <div key={lead.id} style={{ display: 'flex', alignItems: 'stretch' }}>
+                  <div style={{
+                    width: 40, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)',
+                  }}>
+                    {i + 1}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <LeadRow lead={lead} onStatusChange={handleStatusChange} />
+                  </div>
+                </div>
               ))}
             </div>
           )}
