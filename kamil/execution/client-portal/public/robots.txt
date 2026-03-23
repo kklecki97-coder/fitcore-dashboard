@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+Sitemap: https://client.fitcore.tech/sitemap.xml
