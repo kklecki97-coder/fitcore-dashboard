@@ -1933,7 +1933,7 @@ function Dashboard() {
   // ─── Computed data (filtered to current account's work) ───
   // For pipeline counts, only show leads this account worked on (not the shared new pool)
   const accountLeads = useMemo(() => allLeads.filter(l =>
-    l.engaged_by === account || l.dmed_by === account || l.status === 'new'
+    l.account === account || l.engaged_by === account || l.dmed_by === account
   ), [allLeads, account])
 
   const counts: Record<string, number> = {}
@@ -2424,8 +2424,8 @@ function Dashboard() {
             marginBottom: 24,
           }}>
             <StatCard label="Total Leads" value={leads.length} color="var(--text-primary)" icon={Users} />
-            <StatCard label="Active Pipeline" value={activeLeads} sub="Excluding dead & closed" color="var(--accent-primary)" icon={TrendingUp} />
-            <StatCard label="US-Based" value={usLeads} sub={`${leads.length > 0 ? ((usLeads / leads.length) * 100).toFixed(0) : 0}% of total`} color="var(--accent-secondary)" icon={Target} />
+            <StatCard label="Your Leads" value={accountLeads.length} sub="Assigned to you" color="var(--accent-primary)" icon={TrendingUp} />
+            <StatCard label="Poland-Based" value={usLeads} sub={`${accountLeads.length > 0 ? ((usLeads / accountLeads.length) * 100).toFixed(0) : 0}% of your leads`} color="var(--accent-secondary)" icon={Target} />
             <StatCard label="Conversion Rate" value={`${conversionRate}%`} sub={`${counts['closed'] || 0} closed`} color="var(--accent-success)" icon={CheckCircle} />
           </div>
 
