@@ -10,7 +10,7 @@ import {
   AlertTriangle, Eye, TrendingUp,
   Clock, DollarSign, UserMinus,
   Shield, Lock, CreditCard, UserCheck, ChevronDown,
-  FileText, HelpCircle,
+  FileText, HelpCircle, Instagram,
 } from 'lucide-react';
 import { useLang } from './i18n';
 import type { Lang } from './i18n';
@@ -258,7 +258,7 @@ export default function App() {
   const navLinks = [
     { label: t.nav.features, href: '#features' },
     { label: t.nav.howItWorks, href: '#how-it-works-steps' },
-    // { label: t.nav.pricing, href: '#pricing' },  // temporarily hidden
+    { label: t.nav.pricing, href: '#pricing' },
     { label: 'FAQ', href: '#faq' },
   ];
 
@@ -509,7 +509,7 @@ export default function App() {
             className="hero-cta-buttons"
             style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}
           >
-            <a href="#contact" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_get_started', { section: 'hero' }); }} style={{
+            <a href="#pricing" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_get_started', { section: 'hero' }); }} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '16px 36px', borderRadius: 'var(--radius-md)',
@@ -1004,9 +1004,9 @@ export default function App() {
 
 
       {/* ════════════════════════════════════════════════════════
-          PRICING — temporarily hidden, will re-enable later
+          WHAT YOU GET + FREE DEMO CTA
          ════════════════════════════════════════════════════════ */}
-      {false && <Section id="pricing">
+      <Section id="pricing">
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 100px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
@@ -1028,7 +1028,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Pricing card */}
           <GlassCard style={{
             padding: '0',
             border: '1px solid rgba(0, 229, 200, 0.2)',
@@ -1047,36 +1046,38 @@ export default function App() {
               display: 'grid', gridTemplateColumns: '1fr 1fr',
             }} className="pricing-inner-grid">
 
-              {/* Left - price block */}
+              {/* Left - Free demo + contact */}
               <div style={{
                 padding: '52px 48px',
                 borderRight: '1px solid var(--glass-border)',
                 display: 'flex', flexDirection: 'column', justifyContent: 'center',
               }}>
-                {/* Free trial */}
                 <div style={{ marginBottom: 32 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
-                    {t.pricing.startFreeLabel}
+                    {t.pricing.demoHeading}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                    <span style={{
-                      fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: 800, color: 'var(--accent-primary)',
-                      fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
-                    }}>{t.pricing.trialPrice}</span>
-                    <span style={{ fontSize: 16, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.trialDuration}</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8, lineHeight: 1.5 }}>
-                    {t.pricing.trialNote}
-                  </div>
-                  {/* Trial badge */}
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
-                    background: 'var(--accent-primary-dim)', border: '1px solid rgba(0, 229, 200, 0.2)',
-                    borderRadius: 'var(--radius-sm)', padding: '10px 16px',
-                  }}>
-                    <CheckCircle2 size={15} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)' }}>
-                      {t.pricing.trialBadge}
+                  <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: 24 }}>
+                    {t.pricing.demoSubheading}
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer"
+                      onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_book_demo', { section: 'pricing' }); }}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
+                        color: '#07090e', padding: '15px 32px', borderRadius: 'var(--radius-md)',
+                        fontWeight: 700, fontSize: 15, textDecoration: 'none',
+                        animation: 'pulse-glow 3s ease-in-out infinite',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                    >
+                      {t.pricing.demoCta} <ArrowRight size={16} />
+                    </a>
+                    <span style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                      {t.pricing.demoNote}
                     </span>
                   </div>
                 </div>
@@ -1084,59 +1085,36 @@ export default function App() {
                 {/* Divider */}
                 <div style={{ height: 1, background: 'var(--glass-border)', marginBottom: 32 }} />
 
-                {/* After trial */}
-                <div style={{ marginBottom: 32 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
-                    {t.pricing.afterTrialLabel}
+                {/* Contact */}
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 16 }}>
+                    {t.pricing.contactLabel}
                   </div>
-                  <div className="pricing-after-trial" style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
-                    <span style={{
-                      fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: 800, color: 'var(--text-primary)',
-                      fontFamily: 'var(--font-mono)', letterSpacing: -2, lineHeight: 1,
-                    }}>{t.pricing.setupPrice}</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.oneTime}</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>{t.pricing.plus}</span>
-                    <span style={{
-                      fontSize: 'clamp(24px, 6vw, 32px)', fontWeight: 800, color: 'var(--text-primary)',
-                      fontFamily: 'var(--font-mono)', letterSpacing: -1, lineHeight: 1,
-                    }}>{t.pricing.monthlyPrice}</span>
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>{t.pricing.perMonth}</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                    {t.pricing.cancelNote}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <Link to={checkoutUrl} style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
-                    color: '#07090e', padding: '15px 32px', borderRadius: 'var(--radius-md)',
-                    fontWeight: 700, fontSize: 15, textDecoration: 'none',
-                    animation: 'pulse-glow 3s ease-in-out infinite',
-                    transition: 'transform 0.2s',
+                  <a href="mailto:contact@fitcore.tech" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                    color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 15, fontWeight: 600,
+                    transition: 'opacity 0.2s',
                   }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                   >
-                    {t.pricing.ctaPrimary} <ArrowRight size={16} />
-                  </Link>
-                  <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    background: 'transparent',
-                    border: '1px solid rgba(0, 229, 200, 0.3)',
-                    color: 'var(--accent-primary)', padding: '12px 28px', borderRadius: 'var(--radius-md)',
-                    fontWeight: 600, fontSize: 13, textDecoration: 'none',
-                    transition: 'all 0.2s',
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.6)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.3)'; e.currentTarget.style.background = 'transparent'; }}
-                  >
-                    {t.pricing.ctaSecondary}
+                    <Mail size={16} />
+                    {t.pricing.contactEmail}
                   </a>
-                  <span style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center', marginTop: 4 }}>
-                    {t.pricing.noCreditCard}
-                  </span>
+                  <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8, lineHeight: 1.5, marginBottom: 16 }}>
+                    {t.pricing.contactEmailNote}
+                  </p>
+                  <a href="https://www.instagram.com/fitcoretech/" target="_blank" rel="noopener noreferrer" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                    color: 'var(--accent-primary)', textDecoration: 'none', fontSize: 15, fontWeight: 600,
+                    transition: 'opacity 0.2s',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                  >
+                    <Instagram size={16} />
+                    @fitcoretech
+                  </a>
                 </div>
               </div>
 
@@ -1178,7 +1156,7 @@ export default function App() {
           </GlassCard>
 
         </div>
-      </Section>}
+      </Section>
 
       {/* ── Responsive: fork grid + objections grid + pricing ── */}
       <style>{`
@@ -1461,7 +1439,7 @@ export default function App() {
                 {[
                   { label: t.nav.features, href: '#features' },
                   { label: t.nav.howItWorks, href: '#how-it-works-steps' },
-                  // { label: t.nav.pricing, href: '#pricing' },  // temporarily hidden
+                  { label: t.nav.pricing, href: '#pricing' },
                   { label: t.footer?.security || 'Security', href: '#security' },
                   { label: 'FAQ', href: '#faq' },
                 ].map(link => (
