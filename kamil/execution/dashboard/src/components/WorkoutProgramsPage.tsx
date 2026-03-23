@@ -223,19 +223,19 @@ export default function WorkoutProgramsPage({
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirm && (
-          <>
-            <motion.div
-              style={styles.overlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDeleteConfirm(null)}
-            />
+          <motion.div
+            style={styles.overlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setDeleteConfirm(null)}
+          >
             <motion.div
               style={styles.modal}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>{t.programs.deleteProgram}</h3>
@@ -257,7 +257,7 @@ export default function WorkoutProgramsPage({
                 </button>
               </div>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -459,19 +459,17 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--overlay-bg)',
     backdropFilter: 'blur(4px)',
     zIndex: 100,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modal: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
     width: '90vw',
     maxWidth: '440px',
     background: 'var(--bg-card)',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-lg)',
     boxShadow: 'var(--shadow-elevated)',
-    zIndex: 101,
     overflow: 'hidden',
   },
   modalHeader: {
