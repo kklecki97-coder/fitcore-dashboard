@@ -236,7 +236,6 @@ export default function App() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.12], [1, 0.96]);
 
-  const checkoutUrl = lang === 'pl' ? '/pl/checkout' : '/checkout';
   const accountUrl = lang === 'pl' ? '/pl/account' : '/account';
   const loginUrl = lang === 'pl' ? '/pl/login' : '/login';
   const { isLoggedIn } = useAuth();
