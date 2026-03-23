@@ -771,10 +771,10 @@ function EngageBatchCard({ leads, onMarkAllTouched, dailyLimitReached }: {
             <>
               <div style={{ color: 'var(--accent-success)', fontWeight: 600, marginBottom: 6 }}>
                 <Check size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-                All touches done for current batch!
+                Today's touch done!
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-                Leads are cooling down. DM batch will appear after 2 days.
+                Come back tomorrow for the next touch. Same batch will show up.
               </div>
             </>
           ) : (
@@ -1243,11 +1243,12 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
   )
 }
 
-function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, onMarkReplied }: {
+function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, touchDoneForToday, onMarkReplied }: {
   engageBatch: Lead[]
   dmBatch: Lead[]
   followUpLeads: Lead[]
   todayDmed: number
+  touchDoneForToday: boolean
   onMarkReplied: (id: number) => void
 }) {
   const today = new Date()
@@ -1329,7 +1330,9 @@ function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, onM
 
         <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
           {engageBatch.length > 0
-            ? `${engageBatch.length} profiles — touch ${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1} of 3`
+            ? touchDoneForToday
+              ? 'Done for today ✓'
+              : `${engageBatch.length} profiles — touch ${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1} of 3`
             : 'No leads to warm up'}
         </div>
       </div>
@@ -1990,22 +1993,34 @@ function Dashboard() {
   }, [allLeads, account])
 
   // Today's warmup batch: leads assigned to this account that need touches
-  // Shows: new leads (touch 0) + warming leads (touch 1-2) — up to 15
-  const engageBatch = useMemo(() => {
+  // Rule: only ONE touch per day. If last touch was today, show "done for today"
+  const todayMidnight = useMemo(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime()
+  }, [])
+
+  const { engageBatch, touchDoneForToday } = useMemo(() => {
     // First: leads currently being warmed (touch 1 or 2 — not done yet)
     const warming = allLeads
       .filter(l => l.status === 'warming' && l.account === account && (l.touch_count || 0) < 3)
       .sort((a, b) => (b.score || 0) - (a.score || 0))
 
-    // If warming batch exists, show those (same batch until all 3 touches done)
-    if (warming.length > 0) return warming
+    // If warming batch exists, check if last touch was already done today
+    if (warming.length > 0) {
+      const lastTouched = warming.some(l => l.last_touch_at && new Date(l.last_touch_at).getTime() >= todayMidnight)
+      if (lastTouched) {
+        // Already touched today — don't show batch, show "done for today"
+        return { engageBatch: warming, touchDoneForToday: true }
+      }
+      return { engageBatch: warming, touchDoneForToday: false }
+    }
 
     // Otherwise, pick next batch of new leads
     const ids = engageBatchIds[account]
-    return ids === null
+    const newBatch = ids === null
       ? []
       : allLeads.filter(l => ids.includes(l.id) && l.status === 'new')
-  }, [allLeads, engageBatchIds, account])
+    return { engageBatch: newBatch, touchDoneForToday: false }
+  }, [allLeads, engageBatchIds, account, todayMidnight])
 
   // DM-ready batch: leads with all 3 touches done + 2 day cooldown passed
   const dmBatch = useMemo(() => {
@@ -2236,6 +2251,7 @@ function Dashboard() {
             dmBatch={dmBatch}
             followUpLeads={followUpLeads}
             todayDmed={todayDmed}
+            touchDoneForToday={touchDoneForToday}
             onMarkReplied={(id) => handleStatusChange(id, 'replied')}
           />
 
@@ -2263,6 +2279,27 @@ function Dashboard() {
                 {engageBatch.length > 0 && (() => {
                   const touchNum = Math.min(...engageBatch.map(l => (l.touch_count || 0))) + 1
                   const isFirstTouch = touchNum === 1
+
+                  if (touchDoneForToday) {
+                    return (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                        background: 'rgba(34, 197, 94, 0.08)', borderRadius: 'var(--radius-sm)',
+                        border: '1px solid rgba(34, 197, 94, 0.2)',
+                      }}>
+                        <Check size={16} color="#22c55e" />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#22c55e' }}>
+                            Touch {touchNum - 1}/3 done for today!
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                            Come back tomorrow for Touch {touchNum}/3 — same {engageBatch.length} profiles
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+
                   return (
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
@@ -2359,8 +2396,8 @@ function Dashboard() {
             </GlassCard>
 
             <EngageBatchCard
-              leads={engageBatch}
-              dailyLimitReached={engageBatch.length === 0 && allLeads.some(l => l.status === 'warm' && l.engaged_by === account)}
+              leads={touchDoneForToday ? [] : engageBatch}
+              dailyLimitReached={touchDoneForToday}
               onMarkAllTouched={() => batchTouch(engageBatch.map(l => l.id))}
             />
 
