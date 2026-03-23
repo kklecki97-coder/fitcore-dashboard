@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Mail, Calendar, Flame, Target,
-  TrendingUp, TrendingDown, Minus, DollarSign,
+  TrendingUp, TrendingDown, Minus,
   Edit3, MessageSquare, FileText,
   Dumbbell, ChevronDown, Sparkles,
   Download,
@@ -23,7 +23,8 @@ import { supabase } from '../lib/supabase';
 import { calculateMetricChange } from '../utils/client-metrics';
 import { calculateEngagement, generateEngagementInsight, getSuggestedAction } from '../utils/engagement';
 import { getLocale, formatCurrency } from '../lib/locale';
-import type { Client, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
+import type { Client, GoalTargets, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
+import { Check, X } from 'lucide-react';
 
 interface ClientDetailPageProps {
   clientId: string;
@@ -86,6 +87,8 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
 
   // Load client's weekly schedule for calendar
   const [clientSchedule, setClientSchedule] = useState<Record<string, string>>({});
+  const [editingGoals, setEditingGoals] = useState(false);
+  const [editGoalTargets, setEditGoalTargets] = useState<GoalTargets>({});
   useEffect(() => {
     if (!clientId) return;
     (async () => {
@@ -486,8 +489,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
         <GlassCard delay={0.14} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
           <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.monthlyRate}</div>
           <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>
-            <DollarSign size={isMobile ? 15 : 20} style={{ opacity: 0.5 }} />
-            {client.monthlyRate}
+            {formatCurrency(client.monthlyRate, lang)}
           </div>
           <div style={{ ...styles.metricChange, ...(isMobile ? { fontSize: '11px', marginTop: '2px' } : {}), color: 'var(--text-tertiary)' }}>
             <Minus size={isMobile ? 11 : 14} />
@@ -614,21 +616,98 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       <div style={{ ...styles.bottomGrid, gridTemplateColumns: '1fr' }}>
         {/* Goals + Coach Notes */}
         <GlassCard delay={0.35} style={isMobile ? { padding: '14px 16px' } : undefined}>
-          <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}) }}>{t.clientDetail.goals}</h3>
-          <div style={{ ...styles.goalsList, ...(isMobile ? { gap: '8px', marginTop: '10px' } : {}) }}>
-            {client.goals.map((goal, i) => (
-              <motion.div
-                key={i}
-                style={{ ...styles.goalItem, ...(isMobile ? { fontSize: '12px', padding: '8px 10px', gap: '8px' } : {}) }}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.05 }}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}), margin: 0 }}>{t.clientDetail.goals}</h3>
+            {!editingGoals && (
+              <button
+                onClick={() => { setEditingGoals(true); setEditGoalTargets(client.goalTargets ?? {}); }}
+                style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600 }}
               >
-                <Target size={isMobile ? 14 : 16} color="var(--accent-primary)" />
-                <span>{goal}</span>
-              </motion.div>
-            ))}
+                <Edit3 size={14} /> {t.clientDetail.editGoals}
+              </button>
+            )}
           </div>
+
+          {!editingGoals ? (
+            <>
+              <div style={{ ...styles.goalsList, ...(isMobile ? { gap: '8px', marginTop: '10px' } : {}) }}>
+                {client.goals.map((goal, i) => (
+                  <motion.div
+                    key={i}
+                    style={{ ...styles.goalItem, ...(isMobile ? { fontSize: '12px', padding: '8px 10px', gap: '8px' } : {}) }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + i * 0.05 }}
+                  >
+                    <Target size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+                    <span>{goal}</span>
+                  </motion.div>
+                ))}
+              </div>
+              {/* Show current targets if set */}
+              {client.goalTargets && Object.values(client.goalTargets).some(v => v != null) && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>{t.clientDetail.goalTargets}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {client.goalTargets.targetWeight != null && <span style={styles.targetTag}>{t.clientDetail.targetWeight}: {client.goalTargets.targetWeight}</span>}
+                    {client.goalTargets.targetBodyFat != null && <span style={styles.targetTag}>{t.clientDetail.targetBodyFat}: {client.goalTargets.targetBodyFat}</span>}
+                    {client.goalTargets.targetBenchPress != null && <span style={styles.targetTag}>{t.clientDetail.targetBenchPress}: {client.goalTargets.targetBenchPress}</span>}
+                    {client.goalTargets.targetSquat != null && <span style={styles.targetTag}>{t.clientDetail.targetSquat}: {client.goalTargets.targetSquat}</span>}
+                    {client.goalTargets.targetDeadlift != null && <span style={styles.targetTag}>{t.clientDetail.targetDeadlift}: {client.goalTargets.targetDeadlift}</span>}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t.clientDetail.goalTargets}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
+                {[
+                  { key: 'targetWeight' as const, label: t.clientDetail.targetWeight },
+                  { key: 'targetBodyFat' as const, label: t.clientDetail.targetBodyFat },
+                  { key: 'targetBenchPress' as const, label: t.clientDetail.targetBenchPress },
+                  { key: 'targetSquat' as const, label: t.clientDetail.targetSquat },
+                  { key: 'targetDeadlift' as const, label: t.clientDetail.targetDeadlift },
+                ].map(({ key, label }) => (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={editGoalTargets[key] ?? ''}
+                      onChange={e => setEditGoalTargets(prev => ({ ...prev, [key]: e.target.value ? Number(e.target.value) : undefined }))}
+                      placeholder="—"
+                      style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none' }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <button
+                  onClick={() => setEditingGoals(false)}
+                  style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                >
+                  <X size={14} /> {t.clientDetail.cancelEdit}
+                </button>
+                <button
+                  onClick={() => {
+                    // Clean up undefined values
+                    const cleaned: GoalTargets = {};
+                    if (editGoalTargets.targetWeight != null) cleaned.targetWeight = editGoalTargets.targetWeight;
+                    if (editGoalTargets.targetBodyFat != null) cleaned.targetBodyFat = editGoalTargets.targetBodyFat;
+                    if (editGoalTargets.targetBenchPress != null) cleaned.targetBenchPress = editGoalTargets.targetBenchPress;
+                    if (editGoalTargets.targetSquat != null) cleaned.targetSquat = editGoalTargets.targetSquat;
+                    if (editGoalTargets.targetDeadlift != null) cleaned.targetDeadlift = editGoalTargets.targetDeadlift;
+                    onUpdateClient(client.id, { goalTargets: cleaned });
+                    setEditingGoals(false);
+                  }}
+                  style={{ flex: 1, padding: '8px', borderRadius: '8px', border: 'none', background: 'var(--accent-primary)', color: '#000', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                >
+                  <Check size={14} /> {t.clientDetail.saveGoals}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div style={styles.divider} />
 
@@ -854,6 +933,16 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 'var(--radius-sm)',
     background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
+  },
+  targetTag: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--accent-primary)',
+    background: 'var(--accent-primary-dim)',
+    padding: '4px 10px',
+    borderRadius: '8px',
+    border: '1px solid rgba(0,229,200,0.15)',
+    fontFamily: 'var(--font-mono)',
   },
   divider: {
     height: '1px',

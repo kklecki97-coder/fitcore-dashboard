@@ -1,3 +1,11 @@
+export interface GoalTargets {
+  targetWeight?: number;
+  targetBodyFat?: number;
+  targetBenchPress?: number;
+  targetSquat?: number;
+  targetDeadlift?: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -18,6 +26,7 @@ export interface Client {
   };
   height: number | null;
   goals: string[];
+  goalTargets?: GoalTargets;
   notes: string;
   lastActive: string;
   streak: number;

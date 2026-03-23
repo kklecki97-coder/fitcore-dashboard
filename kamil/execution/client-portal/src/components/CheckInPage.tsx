@@ -131,6 +131,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
     steps: '', nutritionScore: '', notes: '', wins: '', challenges: '',
   });
   const [photos, setPhotos] = useState<{ url: string; label: string; file?: File }[]>([]);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const fixedSlots: { label: string; key: string; displayLabel: string }[] = [
@@ -401,29 +402,102 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
             </GlassCard>
           ) : (
             <>
-              {/* Weight trend summary */}
+              {/* Stats summary */}
               {(() => {
+                if (completed.length === 0) return null;
                 const weights = completed.filter(ci => ci.weight != null).map(ci => ci.weight!);
-                if (weights.length < 2) return null;
-                const latest = weights[0];
-                const oldest = weights[weights.length - 1];
-                const diff = latest - oldest;
-                const avgMood = completed.filter(ci => ci.mood != null).reduce((sum, ci) => sum + ci.mood!, 0) / completed.filter(ci => ci.mood != null).length;
+                const latest = weights.length > 0 ? weights[0] : null;
+                const oldest = weights.length > 0 ? weights[weights.length - 1] : null;
+                const diff = latest != null && oldest != null && weights.length >= 2 ? latest - oldest : null;
+                const moodCIs = completed.filter(ci => ci.mood != null);
+                const avgMood = moodCIs.length > 0 ? moodCIs.reduce((sum, ci) => sum + ci.mood!, 0) / moodCIs.length : null;
+                const sleepCIs = completed.filter(ci => ci.sleepHours != null);
+                const avgSleep = sleepCIs.length > 0 ? sleepCIs.reduce((sum, ci) => sum + ci.sleepHours!, 0) / sleepCIs.length : null;
+                const energyCIs = completed.filter(ci => ci.energy != null);
+                const avgEnergy = energyCIs.length > 0 ? energyCIs.reduce((sum, ci) => sum + ci.energy!, 0) / energyCIs.length : null;
+                const isDown = diff != null ? diff <= 0 : true;
+                const moodEmoji = avgMood ? (avgMood >= 4 ? '😊' : avgMood >= 3 ? '😐' : '😔') : '—';
+
+                const cardBase: React.CSSProperties = {
+                  flex: 1, padding: isMobile ? '10px 6px' : '14px 10px', borderRadius: '12px',
+                  textAlign: 'center', minWidth: 0,
+                };
+                const iconBase: React.CSSProperties = {
+                  width: isMobile ? 26 : 30, height: isMobile ? 26 : 30, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto', marginBottom: isMobile ? 5 : 6,
+                  fontSize: isMobile ? '13px' : '14px',
+                };
+                const valueBase: React.CSSProperties = {
+                  fontSize: isMobile ? '17px' : '22px', fontWeight: 800,
+                  fontFamily: 'var(--font-mono)', lineHeight: 1.1,
+                };
+                const unitSpan: React.CSSProperties = {
+                  fontSize: isMobile ? '10px' : '12px', fontWeight: 600, opacity: 0.5,
+                };
+                const labelBase: React.CSSProperties = {
+                  fontSize: isMobile ? '8px' : '9px', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.8px',
+                  color: 'var(--text-tertiary)', marginTop: isMobile ? 4 : 5,
+                };
+
                 return (
                   <GlassCard delay={0}>
-                    <div style={{ ...styles.trendRow, ...(isMobile ? { gap: '12px' } : {}) }}>
-                      <div style={styles.trendItem}>
-                        <div style={{ ...styles.trendLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>Weight trend</div>
-                        <div style={{ ...styles.trendValue, ...(isMobile ? { fontSize: '20px' } : {}), color: diff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-                          {diff <= 0 ? '\u2193' : '\u2191'} {Math.abs(diff).toFixed(1)}kg
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: isMobile ? '6px' : '10px' }}>
+                      {/* Weight */}
+                      <div style={{
+                        ...cardBase,
+                        background: isDown
+                          ? 'linear-gradient(135deg, rgba(0,229,200,0.08) 0%, rgba(0,229,200,0.02) 100%)'
+                          : 'linear-gradient(135deg, rgba(255,107,107,0.08) 0%, rgba(255,107,107,0.02) 100%)',
+                        border: `1px solid ${isDown ? 'rgba(0,229,200,0.12)' : 'rgba(255,107,107,0.12)'}`,
+                      }}>
+                        <div style={{ ...iconBase, background: isDown ? 'rgba(0,229,200,0.12)' : 'rgba(255,107,107,0.12)' }}>
+                          {isDown ? '↓' : '↑'}
                         </div>
-                        <div style={{ ...styles.trendSub, ...(isMobile ? { fontSize: '11px' } : {}) }}>{oldest}kg → {latest}kg</div>
+                        <div style={{ ...valueBase, color: diff != null ? (isDown ? 'var(--accent-success)' : 'var(--accent-danger)') : 'var(--text-tertiary)' }}>
+                          {diff != null ? <>{Math.abs(diff).toFixed(1)}<span style={unitSpan}>kg</span></> : '—'}
+                        </div>
+                        <div style={labelBase}>{t.checkIn.weightKg.replace(' (kg)', '').replace(' (kg)', '')}</div>
                       </div>
-                      <div style={{ ...styles.trendDivider, ...(isMobile ? { height: '32px' } : {}) }} />
-                      <div style={styles.trendItem}>
-                        <div style={{ ...styles.trendLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>Avg mood</div>
-                        <div style={{ ...styles.trendValue, ...(isMobile ? { fontSize: '20px' } : {}) }}>{avgMood ? avgMood.toFixed(1) : '-'}/5</div>
-                        <div style={{ ...styles.trendSub, ...(isMobile ? { fontSize: '11px' } : {}) }}>{completed.length} check-ins</div>
+
+                      {/* Mood */}
+                      <div style={{
+                        ...cardBase,
+                        background: 'linear-gradient(135deg, rgba(255,193,7,0.08) 0%, rgba(255,193,7,0.02) 100%)',
+                        border: '1px solid rgba(255,193,7,0.10)',
+                      }}>
+                        <div style={{ ...iconBase, background: 'rgba(255,193,7,0.12)' }}>{moodEmoji}</div>
+                        <div style={{ ...valueBase, color: 'var(--text-primary)' }}>
+                          {avgMood ? avgMood.toFixed(1) : '—'}<span style={unitSpan}>/5</span>
+                        </div>
+                        <div style={labelBase}>{t.checkIn.mood}</div>
+                      </div>
+
+                      {/* Sleep */}
+                      <div style={{
+                        ...cardBase,
+                        background: 'linear-gradient(135deg, rgba(129,140,248,0.08) 0%, rgba(129,140,248,0.02) 100%)',
+                        border: '1px solid rgba(129,140,248,0.10)',
+                      }}>
+                        <div style={{ ...iconBase, background: 'rgba(129,140,248,0.12)' }}>😴</div>
+                        <div style={{ ...valueBase, color: 'var(--text-primary)' }}>
+                          {avgSleep ? avgSleep.toFixed(1) : '—'}<span style={unitSpan}>h</span>
+                        </div>
+                        <div style={labelBase}>{t.checkIn.sleepLabel}</div>
+                      </div>
+
+                      {/* Energy */}
+                      <div style={{
+                        ...cardBase,
+                        background: 'linear-gradient(135deg, rgba(251,146,60,0.08) 0%, rgba(251,146,60,0.02) 100%)',
+                        border: '1px solid rgba(251,146,60,0.10)',
+                      }}>
+                        <div style={{ ...iconBase, background: 'rgba(251,146,60,0.12)' }}>⚡</div>
+                        <div style={{ ...valueBase, color: 'var(--text-primary)' }}>
+                          {avgEnergy ? avgEnergy.toFixed(1) : '—'}<span style={unitSpan}>/10</span>
+                        </div>
+                        <div style={labelBase}>{t.checkIn.energyLabel}</div>
                       </div>
                     </div>
                   </GlassCard>
@@ -482,7 +556,7 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                           <div style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.progressPhotos}</div>
                           <div style={{ ...styles.historyPhotos, ...(isMobile ? { gap: '6px' } : {}) }}>
                             {ci.photos.map((photo, pi) => (
-                              <div key={pi} style={styles.historyPhotoCard}>
+                              <div key={pi} style={{ ...styles.historyPhotoCard, cursor: 'pointer' }} onClick={() => setLightboxSrc(photo.url)}>
                                 <img src={photo.url} alt={photo.label} style={{ ...styles.historyPhotoImg, ...(isMobile ? { width: '60px', height: '80px' } : {}) }} />
                                 <span style={styles.historyPhotoLabel}>{photo.label}</span>
                               </div>
@@ -503,6 +577,16 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
             })}
             </>
           )}
+        </div>
+      )}
+      {/* Lightbox modal */}
+      {lightboxSrc && (
+        <div
+          onClick={() => setLightboxSrc(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', cursor: 'pointer' }}
+        >
+          <button onClick={() => setLightboxSrc(null)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#fff', cursor: 'pointer', zIndex: 10000 }}><X size={28} /></button>
+          <img src={lightboxSrc} alt="Progress photo" style={{ maxWidth: '90vw', maxHeight: 'calc(100vh - 80px)', borderRadius: '8px', objectFit: 'contain' }} />
         </div>
       )}
     </div>

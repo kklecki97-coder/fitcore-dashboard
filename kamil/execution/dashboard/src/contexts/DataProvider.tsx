@@ -254,6 +254,7 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
           height: r.height,
           streak: r.streak ?? 0,
           goals: r.goals ?? [],
+          goalTargets: r.goal_targets ?? {},
           notes: r.notes ?? '',
           metrics: metricsMap.get(r.id) ?? { weight: [], bodyFat: [], benchPress: [], squat: [], deadlift: [] },
           notesHistory: [],
@@ -701,6 +702,7 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
     if (updates.height !== undefined) dbUpdates.height = updates.height;
     if (updates.streak !== undefined) dbUpdates.streak = updates.streak;
     if (updates.goals !== undefined) dbUpdates.goals = updates.goals;
+    if (updates.goalTargets !== undefined) dbUpdates.goal_targets = updates.goalTargets;
     if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
     if (Object.keys(dbUpdates).length > 0) {
       dbUpdates.updated_at = new Date().toISOString();

@@ -86,56 +86,86 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
     unit: 'kg',
   }));
 
-  // ── Goal progress - handle empty data gracefully ──
+  // ── Goal progress - use goalTargets for measurable progress ──
 
-  const goalProgress = client.goals.map(goal => {
-    const g = goal.toLowerCase();
+  const targets = client.goalTargets ?? {};
+  const goalProgress: { goal: string; progress: number; label: string }[] = [];
 
-    // Weight-related goals
-    if ((g.includes('weight') || g.includes('drop') || g.includes('cut') || g.includes('lean')) && !g.includes('bench') && !g.includes('squat') && !g.includes('dead')) {
-      if (!startWeight || !currentWeight) return { goal, progress: 0, label: t.progress.inProgress };
-      const target = parseTarget(goal);
-      if (!target) return { goal, progress: 0, label: `${currentWeight}kg` };
-      if (startWeight === target) return { goal, progress: 100, label: `${currentWeight}kg → ${target}kg` };
-      const pct = Math.min(100, Math.round(((startWeight - currentWeight) / (startWeight - target)) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${currentWeight}kg → ${target}kg` };
+  // Weight target (from goalTargets)
+  if (targets.targetWeight && currentWeight) {
+    const target = targets.targetWeight;
+    if (startWeight) {
+      if (startWeight === target) {
+        goalProgress.push({ goal: t.onboarding?.targetWeight ?? 'Target Weight', progress: 100, label: `${currentWeight}kg → ${target}kg` });
+      } else {
+        const pct = Math.min(100, Math.round(Math.abs((startWeight - currentWeight) / (startWeight - target)) * 100));
+        goalProgress.push({ goal: t.onboarding?.targetWeight ?? 'Target Weight', progress: Math.max(0, pct), label: `${currentWeight}kg → ${target}kg` });
+      }
+    } else {
+      goalProgress.push({ goal: t.onboarding?.targetWeight ?? 'Target Weight', progress: 0, label: `${currentWeight}kg → ${target}kg` });
     }
-    // Lift goals
-    if (g.includes('bench') && metrics.benchPress.length > 0) {
+  }
+
+  // Body fat target (from goalTargets)
+  if (targets.targetBodyFat && metrics.bodyFat.length > 0) {
+    const target = targets.targetBodyFat;
+    const startBf = metrics.bodyFat[0];
+    const currentBf = metrics.bodyFat[metrics.bodyFat.length - 1];
+    if (startBf === target) {
+      goalProgress.push({ goal: t.onboarding?.targetBodyFat ?? 'Target Body Fat', progress: 100, label: `${currentBf}% → ${target}%` });
+    } else {
+      const pct = Math.min(100, Math.round(((startBf - currentBf) / (startBf - target)) * 100));
+      goalProgress.push({ goal: t.onboarding?.targetBodyFat ?? 'Target Body Fat', progress: Math.max(0, pct), label: `${currentBf}% → ${target}%` });
+    }
+  }
+
+  // Bench press target (from goalTargets)
+  if (targets.targetBenchPress && metrics.benchPress.length > 0) {
+    const target = targets.targetBenchPress;
+    const current = metrics.benchPress[metrics.benchPress.length - 1];
+    goalProgress.push({ goal: t.onboarding?.targetBenchPress ?? 'Bench Press', progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` });
+  }
+
+  // Squat target (from goalTargets)
+  if (targets.targetSquat && metrics.squat.length > 0) {
+    const target = targets.targetSquat;
+    const current = metrics.squat[metrics.squat.length - 1];
+    goalProgress.push({ goal: t.onboarding?.targetSquat ?? 'Squat', progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` });
+  }
+
+  // Deadlift target (from goalTargets)
+  if (targets.targetDeadlift && metrics.deadlift.length > 0) {
+    const target = targets.targetDeadlift;
+    const current = metrics.deadlift[metrics.deadlift.length - 1];
+    goalProgress.push({ goal: t.onboarding?.targetDeadlift ?? 'Deadlift', progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` });
+  }
+
+  // Fallback: also handle old-style free-text goals that have parseable targets
+  for (const goal of client.goals) {
+    const g = goal.toLowerCase();
+    // Skip goal keys (handled above via goalTargets)
+    if (g.startsWith('goal')) continue;
+    // Try parsing free-text goals with numbers (backwards compatibility)
+    if (g.includes('bench') && metrics.benchPress.length > 0 && !targets.targetBenchPress) {
       const target = parseTarget(goal) ?? 100;
       const current = metrics.benchPress[metrics.benchPress.length - 1];
-      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` };
-    }
-    if (g.includes('squat') && metrics.squat.length > 0) {
+      goalProgress.push({ goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` });
+    } else if (g.includes('squat') && metrics.squat.length > 0 && !targets.targetSquat) {
       const target = parseTarget(goal) ?? 140;
       const current = metrics.squat[metrics.squat.length - 1];
-      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` };
-    }
-    if ((g.includes('deadlift') || g.includes('dead lift')) && metrics.deadlift.length > 0) {
+      goalProgress.push({ goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` });
+    } else if ((g.includes('deadlift') || g.includes('dead lift')) && metrics.deadlift.length > 0 && !targets.targetDeadlift) {
       const target = parseTarget(goal) ?? 180;
       const current = metrics.deadlift[metrics.deadlift.length - 1];
-      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` };
+      goalProgress.push({ goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current}kg / ${target}kg` });
+    } else if ((g.includes('weight') || g.includes('drop') || g.includes('cut')) && !g.includes('bench') && !g.includes('squat') && !g.includes('dead') && !targets.targetWeight) {
+      const target = parseTarget(goal);
+      if (target && startWeight && currentWeight) {
+        const pct = Math.min(100, Math.round(((startWeight - currentWeight) / (startWeight - target)) * 100));
+        goalProgress.push({ goal, progress: Math.max(0, pct), label: `${currentWeight}kg → ${target}kg` });
+      }
     }
-    // Body fat goals
-    if ((g.includes('body fat') || g.includes('bodyfat') || g.includes('bf')) && metrics.bodyFat.length > 0) {
-      const targetMatch = goal.match(/(\d+(?:\.\d+)?)\s*%/);
-      const target = targetMatch ? parseFloat(targetMatch[1]) : 15;
-      const startBf = metrics.bodyFat[0];
-      const currentBf = metrics.bodyFat[metrics.bodyFat.length - 1];
-      if (startBf === target) return { goal, progress: 100, label: `${currentBf}% → ${target}%` };
-      const pct = Math.min(100, Math.round(((startBf - currentBf) / (startBf - target)) * 100));
-      return { goal, progress: Math.max(0, pct), label: `${currentBf}% → ${target}%` };
-    }
-    // Step goals
-    if (g.includes('step')) {
-      const target = parseTarget(goal) ?? 10000;
-      const latestCI = checkIns.filter(ci => ci.steps !== null).sort((a, b) => b.date.localeCompare(a.date))[0];
-      const current = latestCI?.steps ?? 0;
-      return { goal, progress: Math.max(0, Math.min(100, Math.round((current / target) * 100))), label: `${current.toLocaleString()} / ${target.toLocaleString()}` };
-    }
-    // Generic goals (Lose Weight, Build Muscle, etc.) - show as in progress
-    return { goal, progress: 0, label: t.progress.inProgress };
-  });
+  }
 
   const [uploading, setUploading] = useState(false);
 

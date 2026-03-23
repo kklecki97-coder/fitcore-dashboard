@@ -22,13 +22,16 @@ const GOAL_KEYS = [
 
 const GOAL_ICONS = ['🔥', '💪', '🏋️', '🏃', '🧘', '❤️'];
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
+
+// Goals that have measurable target fields
+const MEASURABLE_GOALS = ['goalLoseWeight', 'goalBuildMuscle', 'goalGetStronger'];
 
 export default function OnboardingPage({ client, coachName, onComplete }: OnboardingPageProps) {
   const { t } = useLang();
   const ob = t.onboarding;
 
-  const [step, setStep] = useState(0); // 0=welcome, 1=stats, 2=PRs, 3=goals, 4=summary
+  const [step, setStep] = useState(0); // 0=welcome, 1=stats, 2=PRs, 3=goals, 4=targets, 5=summary
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
@@ -36,6 +39,11 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
   const [squatPR, setSquatPR] = useState('');
   const [deadliftPR, setDeadliftPR] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [targetWeight, setTargetWeight] = useState('');
+  const [targetBodyFat, setTargetBodyFat] = useState('');
+  const [targetBench, setTargetBench] = useState('');
+  const [targetSquat, setTargetSquat] = useState('');
+  const [targetDeadlift, setTargetDeadlift] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -65,12 +73,21 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
     const squatNum = squatPR ? Number(squatPR) : null;
     const deadliftNum = deadliftPR ? Number(deadliftPR) : null;
 
+    // Build goal targets
+    const goalTargets: Record<string, number> = {};
+    if (targetWeight) goalTargets.targetWeight = Number(targetWeight);
+    if (targetBodyFat) goalTargets.targetBodyFat = Number(targetBodyFat);
+    if (targetBench) goalTargets.targetBenchPress = Number(targetBench);
+    if (targetSquat) goalTargets.targetSquat = Number(targetSquat);
+    if (targetDeadlift) goalTargets.targetDeadlift = Number(targetDeadlift);
+
     // Update client row
     const { error: updateError } = await supabase
       .from('clients')
       .update({
         height: heightNum,
         goals: selectedGoals,
+        goal_targets: Object.keys(goalTargets).length > 0 ? goalTargets : {},
         onboarded: true,
       })
       .eq('id', client.id);
@@ -97,6 +114,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
     onComplete({
       height: heightNum,
       goals: selectedGoals,
+      goalTargets: Object.keys(goalTargets).length > 0 ? goalTargets : {},
       onboarded: true,
       metrics: {
         weight: weightNum ? [weightNum] : client.metrics?.weight ?? [],
@@ -114,7 +132,7 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
     exit: { opacity: 0, x: -60 },
   };
 
-  // Summary data for step 4
+  // Summary data for step 5
   const summaryItems = [
     ...(height ? [{ label: ob.heightCm, value: `${height} cm` }] : []),
     ...(weight ? [{ label: ob.weightKg, value: `${weight} kg` }] : []),
@@ -122,6 +140,14 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
     ...(benchPR ? [{ label: ob.benchPress, value: `${benchPR} kg` }] : []),
     ...(squatPR ? [{ label: ob.squat, value: `${squatPR} kg` }] : []),
     ...(deadliftPR ? [{ label: ob.deadlift, value: `${deadliftPR} kg` }] : []),
+  ];
+
+  const targetItems = [
+    ...(targetWeight ? [{ label: ob.targetWeight, value: `${targetWeight} kg` }] : []),
+    ...(targetBodyFat ? [{ label: ob.targetBodyFat, value: `${targetBodyFat}%` }] : []),
+    ...(targetBench ? [{ label: ob.targetBenchPress, value: `${targetBench} kg` }] : []),
+    ...(targetSquat ? [{ label: ob.targetSquat, value: `${targetSquat} kg` }] : []),
+    ...(targetDeadlift ? [{ label: ob.targetDeadlift, value: `${targetDeadlift} kg` }] : []),
   ];
 
   return (
@@ -376,7 +402,9 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
                     return;
                   }
                   setError('');
-                  setStep(4);
+                  // Skip targets step if no measurable goals selected
+                  const hasM = selectedGoals.some(g => MEASURABLE_GOALS.includes(g));
+                  setStep(hasM ? 4 : 5);
                 }}
                 style={styles.btn}
               >
@@ -386,8 +414,136 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
             </motion.div>
           )}
 
-          {/* ── Step 4: Summary ── */}
+          {/* ── Step 4: Targets ── */}
           {step === 4 && (
+            <motion.div
+              key="targets"
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              style={styles.card}
+            >
+              <div style={styles.iconWrap}>
+                <Target size={36} color="var(--accent-primary)" />
+              </div>
+              <h2 style={styles.title}>{ob.targetsTitle}</h2>
+              <p style={styles.subtitle}>{ob.targetsSub}</p>
+
+              <div style={styles.prGrid}>
+                {/* Weight target - for Lose Weight or Build Muscle */}
+                {(selectedGoals.includes('goalLoseWeight') || selectedGoals.includes('goalBuildMuscle')) && (
+                  <div style={styles.prCard}>
+                    <span style={styles.prEmoji}>⚖️</span>
+                    <label style={styles.prLabel}>{ob.targetWeight}</label>
+                    <div style={styles.prInputWrap}>
+                      <input
+                        type="number" inputMode="decimal"
+                        value={targetWeight}
+                        onChange={e => setTargetWeight(e.target.value)}
+                        placeholder="—"
+                        style={styles.prInput}
+                        min={30}
+                        max={300}
+                      />
+                      <span style={styles.prUnit}>kg</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Body fat target - for Lose Weight */}
+                {selectedGoals.includes('goalLoseWeight') && (
+                  <div style={styles.prCard}>
+                    <span style={styles.prEmoji}>📉</span>
+                    <label style={styles.prLabel}>{ob.targetBodyFat}</label>
+                    <div style={styles.prInputWrap}>
+                      <input
+                        type="number" inputMode="decimal"
+                        value={targetBodyFat}
+                        onChange={e => setTargetBodyFat(e.target.value)}
+                        placeholder="—"
+                        style={styles.prInput}
+                        min={3}
+                        max={60}
+                        step={0.1}
+                      />
+                      <span style={styles.prUnit}>%</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Strength targets - for Get Stronger */}
+                {selectedGoals.includes('goalGetStronger') && (
+                  <>
+                    <div style={styles.prCard}>
+                      <span style={styles.prEmoji}>🏋️</span>
+                      <label style={styles.prLabel}>{ob.targetBenchPress}</label>
+                      <div style={styles.prInputWrap}>
+                        <input
+                          type="number" inputMode="decimal"
+                          value={targetBench}
+                          onChange={e => setTargetBench(e.target.value)}
+                          placeholder="—"
+                          style={styles.prInput}
+                          min={0}
+                          max={500}
+                        />
+                        <span style={styles.prUnit}>kg</span>
+                      </div>
+                    </div>
+                    <div style={styles.prCard}>
+                      <span style={styles.prEmoji}>🦵</span>
+                      <label style={styles.prLabel}>{ob.targetSquat}</label>
+                      <div style={styles.prInputWrap}>
+                        <input
+                          type="number" inputMode="decimal"
+                          value={targetSquat}
+                          onChange={e => setTargetSquat(e.target.value)}
+                          placeholder="—"
+                          style={styles.prInput}
+                          min={0}
+                          max={500}
+                        />
+                        <span style={styles.prUnit}>kg</span>
+                      </div>
+                    </div>
+                    <div style={styles.prCard}>
+                      <span style={styles.prEmoji}>💀</span>
+                      <label style={styles.prLabel}>{ob.targetDeadlift}</label>
+                      <div style={styles.prInputWrap}>
+                        <input
+                          type="number" inputMode="decimal"
+                          value={targetDeadlift}
+                          onChange={e => setTargetDeadlift(e.target.value)}
+                          placeholder="—"
+                          style={styles.prInput}
+                          min={0}
+                          max={500}
+                        />
+                        <span style={styles.prUnit}>kg</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div style={styles.optionalHint}>{ob.targetsSkipHint}</div>
+
+              <div style={styles.btnRow}>
+                <button onClick={() => setStep(5)} style={styles.btnSecondary}>
+                  {ob.skip}
+                </button>
+                <button onClick={() => setStep(5)} style={{ ...styles.btn, flex: 1 }}>
+                  {ob.next}
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Step 5: Summary ── */}
+          {step === 5 && (
             <motion.div
               key="summary"
               variants={slideVariants}
@@ -438,9 +594,24 @@ export default function OnboardingPage({ client, coachName, onComplete }: Onboar
                     ))}
                   </div>
                 </div>
+
+                {/* Targets */}
+                {targetItems.length > 0 && (
+                  <div style={styles.summaryGoals}>
+                    <div style={styles.summaryGoalsLabel}>{ob.targetsTitle}</div>
+                    <div style={styles.summaryGrid}>
+                      {targetItems.map((item, i) => (
+                        <div key={i} style={styles.summaryStatItem}>
+                          <div style={styles.summaryStatValue}>{item.value}</div>
+                          <div style={styles.summaryStatLabel}>{item.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {error && step === 4 && (
+              {error && step === 5 && (
                 <div style={{ color: 'var(--accent-danger)', fontSize: '13px', fontWeight: 500, textAlign: 'center' }}>
                   {error}
                 </div>

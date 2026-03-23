@@ -242,6 +242,7 @@ function App() {
       metrics,
       height: clientRow.height ?? null,
       goals: clientRow.goals ?? [],
+      goalTargets: clientRow.goal_targets ?? {},
       notes: clientRow.notes ?? '',
       lastActive: clientRow.last_active ?? '',
       streak: clientRow.streak ?? 0,

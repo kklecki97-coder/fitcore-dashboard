@@ -8,6 +8,7 @@ import {
 import GlassCard from './GlassCard';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { formatCurrency } from '../lib/locale';
 import type { Client } from '../types';
 
 interface AddClientPageProps {
@@ -100,7 +101,7 @@ const planRates: Record<Client['plan'], number> = {
 };
 
 export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const isMobile = useIsMobile();
 
   const [name, setName] = useState('');
@@ -110,6 +111,11 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
   const [weight, setWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
   const [goals, setGoals] = useState('');
+  const [targetWeight, setTargetWeight] = useState('');
+  const [targetBodyFat, setTargetBodyFat] = useState('');
+  const [targetBench, setTargetBench] = useState('');
+  const [targetSquat, setTargetSquat] = useState('');
+  const [targetDeadlift, setTargetDeadlift] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -170,6 +176,13 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
         deadlift: [],
       },
       goals: goals.trim() ? goals.split(',').map(g => g.trim()).filter(Boolean) : [],
+      goalTargets: {
+        ...(targetWeight ? { targetWeight: Number(targetWeight) } : {}),
+        ...(targetBodyFat ? { targetBodyFat: Number(targetBodyFat) } : {}),
+        ...(targetBench ? { targetBenchPress: Number(targetBench) } : {}),
+        ...(targetSquat ? { targetSquat: Number(targetSquat) } : {}),
+        ...(targetDeadlift ? { targetDeadlift: Number(targetDeadlift) } : {}),
+      },
       notes: notes.trim(),
       notesHistory: notes.trim() ? [{ text: notes.trim(), date: today }] : [],
       activityLog: [{ type: 'plan', description: 'Client created', date: new Date().toISOString() }],
@@ -324,6 +337,32 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
             </div>
             <span style={styles.hint}>{t.addClient.goalsHint}</span>
           </div>
+
+          {/* Goal Targets */}
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>{t.clientDetail.goalTargets}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '8px' }}>
+              {[
+                { val: targetWeight, set: setTargetWeight, label: t.clientDetail.targetWeight },
+                { val: targetBodyFat, set: setTargetBodyFat, label: t.clientDetail.targetBodyFat },
+                { val: targetBench, set: setTargetBench, label: t.clientDetail.targetBenchPress },
+                { val: targetSquat, set: setTargetSquat, label: t.clientDetail.targetSquat },
+                { val: targetDeadlift, set: setTargetDeadlift, label: t.clientDetail.targetDeadlift },
+              ].map(({ val, set, label }) => (
+                <div key={label}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '3px', display: 'block' }}>{label}</label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={val}
+                    onChange={e => set(e.target.value)}
+                    placeholder="—"
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </GlassCard>
 
         {/* Notes */}
@@ -357,7 +396,7 @@ export default function AddClientPage({ onBack, onSave }: AddClientPageProps) {
             <div style={styles.summaryDivider} />
             <div style={styles.summaryItem}>
               <span style={styles.summaryLabel}>{t.addClient.monthlyRate}</span>
-              <span style={{ ...styles.summaryValue, color: 'var(--accent-success)' }}>${planRates[plan]}</span>
+              <span style={{ ...styles.summaryValue, color: 'var(--accent-success)' }}>{formatCurrency(planRates[plan], lang)}</span>
             </div>
             <div style={styles.summaryDivider} />
             <div style={styles.summaryItem}>

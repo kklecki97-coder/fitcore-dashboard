@@ -1,3 +1,11 @@
+export interface GoalTargets {
+  targetWeight?: number;
+  targetBodyFat?: number;
+  targetBenchPress?: number;
+  targetSquat?: number;
+  targetDeadlift?: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -18,6 +26,7 @@ export interface Client {
     deadlift: number[];
   };
   goals: string[];
+  goalTargets?: GoalTargets;
   notes: string;
   notesHistory: { text: string; date: string; isKey?: boolean }[];
   activityLog: { type: string; description: string; date: string }[];
