@@ -1,3 +1,4 @@
+declare function gtag(...args: unknown[]): void;
 import { useRef, useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
@@ -508,7 +509,7 @@ export default function App() {
             className="hero-cta-buttons"
             style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}
           >
-            <a href="#contact" style={{
+            <a href="#contact" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_get_started', { section: 'hero' }); }} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '16px 36px', borderRadius: 'var(--radius-md)',
@@ -521,7 +522,7 @@ export default function App() {
             >
               {t.hero.ctaPrimary} <ArrowRight size={18} />
             </a>
-            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_book_demo', { section: 'hero' }); }} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'transparent', border: '1px solid var(--glass-border)',
               color: 'var(--text-secondary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
