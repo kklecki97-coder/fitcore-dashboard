@@ -383,7 +383,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
   const engagementAction = getSuggestedAction(engagementScore, lang as 'en' | 'pl');
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
       {/* Back Button + Client Header */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -411,7 +411,7 @@ export default function ClientDetailPage({ clientId, clients, programs, plans, w
       </AnimatePresence>
 
       {/* Profile Header */}
-      <GlassCard delay={0.05} style={isMobile ? { padding: '14px 16px' } : undefined}>
+      <GlassCard delay={0.05} style={isMobile ? { padding: '14px 16px' } : { padding: '24px 28px' }}>
         <div style={{ ...styles.profileHeader, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '12px' : undefined }}>
           <div style={{ ...styles.profileLeft, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '10px' : '20px' }}>
             <div style={{ ...styles.bigAvatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '42px', height: '42px', fontSize: '18px', borderRadius: '12px' } : {}) }}>
@@ -830,7 +830,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-success-dim)',
     border: '1px solid rgba(34,197,94,0.2)',
     color: 'var(--accent-success)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
     textAlign: 'center',
   },
@@ -845,7 +845,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     border: 'none',
     color: 'var(--text-secondary)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     padding: '6px 12px',
@@ -863,18 +863,18 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '20px',
   },
   bigAvatar: {
-    width: '64px',
-    height: '64px',
-    borderRadius: '16px',
+    width: '52px',
+    height: '52px',
+    borderRadius: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '31px',
+    fontSize: '20px',
     fontWeight: 700,
     color: 'var(--text-on-accent)',
   },
   profileName: {
-    fontSize: '31px',
+    fontSize: '22px',
     fontWeight: 700,
     letterSpacing: '-0.5px',
   },
@@ -882,8 +882,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    fontSize: '18px',
-    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
     marginTop: '4px',
   },
   dot: {
@@ -899,7 +899,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: '10px',
   },
   planTag: {
-    fontSize: '15px',
+    fontSize: '12px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -909,7 +909,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '17px',
+    fontSize: '12px',
     color: 'var(--text-secondary)',
     background: 'var(--bg-subtle)',
     padding: '3px 10px',
@@ -919,7 +919,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '17px',
+    fontSize: '12px',
     color: 'var(--accent-warm)',
     background: 'var(--accent-warm-dim)',
     padding: '3px 10px',
@@ -938,7 +938,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-elevated)',
     border: '1px solid var(--glass-border)',
     color: 'var(--text-secondary)',
-    fontSize: '18px',
+    fontSize: '13px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     transition: 'border-color 0.15s, color 0.15s',
@@ -948,29 +948,30 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
   },
   metricLabel: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
     marginBottom: '4px',
+    fontWeight: 500,
   },
   metricValue: {
-    fontSize: '39px',
+    fontSize: '28px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
-    letterSpacing: '-1px',
+    letterSpacing: '-0.75px',
     display: 'flex',
     alignItems: 'baseline',
     gap: '2px',
   },
   metricUnit: {
-    fontSize: '20px',
+    fontSize: '15px',
     fontWeight: 400,
-    color: 'var(--text-secondary)',
+    color: 'var(--text-tertiary)',
   },
   metricChange: {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 500,
     marginTop: '4px',
   },
@@ -987,7 +988,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '3px',
   },
   chartTitle: {
-    fontSize: '21px',
+    fontSize: '16px',
     fontWeight: 600,
   },
   bottomGrid: {
@@ -1005,8 +1006,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    fontSize: '20px',
-    padding: '10px 12px',
+    fontSize: '14px',
+    padding: '10px 14px',
     borderRadius: 'var(--radius-sm)',
     background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
@@ -1027,16 +1028,16 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '16px 0 0',
   },
   notes: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
-    lineHeight: 1.6,
+    lineHeight: 1.7,
     marginTop: '8px',
   },
   programTag: {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '15px',
+    fontSize: '12px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',

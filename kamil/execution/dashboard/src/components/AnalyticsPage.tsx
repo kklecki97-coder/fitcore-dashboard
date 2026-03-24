@@ -202,189 +202,81 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   }
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
       {/* Revenue Stats */}
-      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '12px' }}>
+      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           const BadgeIcon = stat.positive ? ArrowUpRight : ArrowDownRight;
           return (
-            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
-              {isMobile ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ ...styles.statIcon, width: '34px', height: '34px', borderRadius: '10px', background: stat.dim, flexShrink: 0 }}>
-                    <Icon size={15} color={stat.color} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                <div style={{
+                  ...styles.statIcon,
+                  width: isMobile ? '34px' : '38px',
+                  height: isMobile ? '34px' : '38px',
+                  borderRadius: '10px',
+                  background: stat.dim,
+                  boxShadow: `0 0 12px ${stat.dim}`,
+                  flexShrink: 0,
+                }}>
+                  <Icon size={isMobile ? 15 : 17} color={stat.color} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {stat.value}
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px', lineHeight: 1.2 }}>
-                      {stat.label}
-                    </div>
+                    </span>
                     <span style={{
-                      fontSize: '10px', fontWeight: 600, marginTop: '2px',
+                      fontSize: '11px', fontWeight: 600,
                       color: stat.positive ? 'var(--accent-success)' : 'var(--accent-danger)',
-                      display: 'flex', alignItems: 'center', gap: '1px',
+                      display: 'inline-flex', alignItems: 'center', gap: '1px',
                     }}>
-                      <BadgeIcon size={9} />
+                      <BadgeIcon size={10} />
                       {stat.changeLabel}
                     </span>
                   </div>
-                </div>
-              ) : (
-                <>
-                  <div style={styles.statTop}>
-                    <div style={{ ...styles.statIcon, background: stat.dim }}>
-                      <Icon size={18} color={stat.color} />
-                    </div>
-                    <div style={{
-                      ...styles.changeBadge,
-                      color: stat.positive ? 'var(--accent-success)' : 'var(--accent-danger)',
-                      background: stat.positive ? 'var(--accent-success-dim)' : 'rgba(239,68,68,0.1)',
-                    }}>
-                      <BadgeIcon size={12} />
-                      {stat.changeLabel}
-                    </div>
+                  <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-tertiary)', marginTop: '3px', lineHeight: 1.2 }}>
+                    {stat.label}
                   </div>
-                  <div style={styles.statValue}>{stat.value}</div>
-                  <div style={styles.statLabel}>{stat.label}</div>
-                </>
-              )}
+                </div>
+              </div>
             </GlassCard>
           );
         })}
       </div>
 
       {/* Engagement Stats Row */}
-      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '12px' }}>
-        <GlassCard delay={0.15} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
-          {isMobile ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.1)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
-                <Dumbbell size={15} color="var(--accent-secondary)" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{completedWorkouts.length}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{t.analytics.workouts30d}</div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: '10px', fontWeight: 500 }}>
-                  <span style={{ color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{t.analytics.pctCompleted(workoutCompletionRate)}</span>
-                  <span style={{ color: 'var(--text-tertiary)' }}>{t.analytics.perWeekPerClient(avgWorkoutsPerWeek)}</span>
+      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
+        {[
+          { icon: Dumbbell, iconColor: 'var(--accent-secondary)', dim: 'rgba(99,102,241,0.1)', value: String(completedWorkouts.length), label: t.analytics.workouts30d, meta1: { text: t.analytics.pctCompleted(workoutCompletionRate), color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }, meta2: { text: t.analytics.perWeekPerClient(avgWorkoutsPerWeek), color: 'var(--text-tertiary)' }, delay: 0.15 },
+          { icon: ClipboardCheck, iconColor: 'var(--accent-primary)', dim: 'rgba(0,229,200,0.1)', value: `${checkInRate}%`, label: t.analytics.checkInRate, meta1: { text: `${completedCheckIns.length} ${lang === 'pl' ? 'ukończonych' : 'completed'}`, color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }, meta2: { text: `${checkIns.filter(ci => ci.status === 'missed').length} ${lang === 'pl' ? 'pominiętych' : 'missed'}`, color: 'var(--accent-danger)' }, delay: 0.2 },
+          { icon: Activity, iconColor: 'var(--accent-success)', dim: 'rgba(34,197,94,0.1)', value: fmtMoney(totalCollected), label: t.payments.allTimeRevenue, meta1: { text: t.payments.invoicesPaid(paidInvoices.length), color: 'var(--text-secondary)' }, meta2: { text: `${invoices.filter(inv => inv.status === 'overdue').length} ${lang === 'pl' ? 'zaległych' : 'overdue'}`, color: 'var(--accent-warm)' }, delay: 0.25 },
+          { icon: UserPlus, iconColor: '#6366f1', dim: 'rgba(99,102,241,0.15)', value: String(newClientsThisMonth.length), label: lang === 'pl' ? 'Nowi klienci w tym miesiącu' : 'New Clients This Month', meta1: { text: lang === 'pl' ? 'w tym miesiącu' : 'this month', color: newClientsThisMonth.length > 0 ? 'var(--accent-success)' : 'var(--text-tertiary)' }, meta2: null, delay: 0.3 },
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <GlassCard key={i} delay={card.delay} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                <div style={{
+                  width: isMobile ? '34px' : '38px', height: isMobile ? '34px' : '38px',
+                  borderRadius: '10px', background: card.dim, boxShadow: `0 0 12px ${card.dim}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <Icon size={isMobile ? 15 : 17} color={card.iconColor} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{card.value}</div>
+                  <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-tertiary)', marginTop: '3px' }}>{card.label}</div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: isMobile ? '10px' : '11px', fontWeight: 500 }}>
+                    <span style={{ color: card.meta1.color }}>{card.meta1.text}</span>
+                    {card.meta2 && <span style={{ color: card.meta2.color }}>{card.meta2.text}</span>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div style={styles.engagementCard}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.1)' }}>
-                <Dumbbell size={18} color="var(--accent-secondary)" />
-              </div>
-              <div>
-                <div style={styles.engagementValue}>{completedWorkouts.length}</div>
-                <div style={styles.engagementLabel}>{t.analytics.workouts30d}</div>
-              </div>
-              <div style={styles.engagementMeta}>
-                <span style={{ color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{t.analytics.pctCompleted(workoutCompletionRate)}</span>
-                <span style={{ color: 'var(--text-tertiary)' }}>{t.analytics.perWeekPerClient(avgWorkoutsPerWeek)}</span>
-              </div>
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.2} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
-          {isMobile ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(0,229,200,0.1)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
-                <ClipboardCheck size={15} color="var(--accent-primary)" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{checkInRate}%</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{t.analytics.checkInRate}</div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: '10px', fontWeight: 500 }}>
-                  <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{completedCheckIns.length} {lang === 'pl' ? 'ukończonych' : 'completed'}</span>
-                  <span style={{ color: 'var(--accent-danger)' }}>{checkIns.filter(ci => ci.status === 'missed').length} {lang === 'pl' ? 'pom.' : 'missed'}</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={styles.engagementCard}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(0,229,200,0.1)' }}>
-                <ClipboardCheck size={18} color="var(--accent-primary)" />
-              </div>
-              <div>
-                <div style={styles.engagementValue}>{checkInRate}%</div>
-                <div style={styles.engagementLabel}>{t.analytics.checkInRate}</div>
-              </div>
-              <div style={styles.engagementMeta}>
-                <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>{completedCheckIns.length} {lang === 'pl' ? 'ukończonych' : 'completed'}</span>
-                <span style={{ color: 'var(--accent-danger)' }}>{checkIns.filter(ci => ci.status === 'missed').length} {lang === 'pl' ? 'pominiętych' : 'missed'}</span>
-              </div>
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.25} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
-          {isMobile ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(34,197,94,0.1)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
-                <Activity size={15} color="var(--accent-success)" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{fmtMoney(totalCollected)}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{t.payments.allTimeRevenue}</div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: '10px', fontWeight: 500 }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{t.payments.invoicesPaid(paidInvoices.length)}</span>
-                  <span style={{ color: 'var(--accent-warm)' }}>{invoices.filter(inv => inv.status === 'overdue').length} {lang === 'pl' ? 'zaległych' : 'overdue'}</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div style={styles.engagementCard}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(34,197,94,0.1)' }}>
-                <Activity size={18} color="var(--accent-success)" />
-              </div>
-              <div>
-                <div style={styles.engagementValue}>{fmtMoney(totalCollected)}</div>
-                <div style={styles.engagementLabel}>{t.payments.allTimeRevenue}</div>
-              </div>
-              <div style={styles.engagementMeta}>
-                <span style={{ color: 'var(--text-secondary)' }}>{t.payments.invoicesPaid(paidInvoices.length)}</span>
-                <span style={{ color: 'var(--accent-warm)' }}>{invoices.filter(inv => inv.status === 'overdue').length} {lang === 'pl' ? 'zaległych' : 'overdue'}</span>
-              </div>
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.3} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
-          {isMobile ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.15)', width: '34px', height: '34px', borderRadius: '10px', flexShrink: 0 }}>
-                <UserPlus size={15} color="#6366f1" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{newClientsThisMonth.length}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>{lang === 'pl' ? 'Nowi klienci' : 'New Clients'}</div>
-                <span style={{ fontSize: '10px', fontWeight: 500, color: newClientsThisMonth.length > 0 ? 'var(--accent-success)' : 'var(--text-tertiary)', marginTop: '2px' }}>
-                  {lang === 'pl' ? 'w tym miesiącu' : 'this month'}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div style={styles.engagementCard}>
-              <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.15)' }}>
-                <UserPlus size={18} color="#6366f1" />
-              </div>
-              <div>
-                <div style={styles.engagementValue}>{newClientsThisMonth.length}</div>
-                <div style={styles.engagementLabel}>{lang === 'pl' ? 'Nowi klienci w tym miesiącu' : 'New Clients This Month'}</div>
-              </div>
-              <div style={styles.engagementMeta}>
-                <span style={{ color: newClientsThisMonth.length > 0 ? 'var(--accent-success)' : 'var(--text-tertiary)' }}>
-                  {lang === 'pl' ? 'w tym miesiącu' : 'this month'}
-                </span>
-              </div>
-            </div>
-          )}
-        </GlassCard>
+            </GlassCard>
+          );
+        })}
       </div>
 
       {/* Revenue by Plan */}
@@ -674,14 +566,14 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'background 0.1s',
   },
   tableHead: {
-    fontSize: '15px',
+    fontSize: '11px',
     color: 'var(--text-tertiary)',
     fontWeight: 600,
     letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
   },
   tableCell: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-primary)',
     display: 'flex',
     alignItems: 'center',
@@ -699,7 +591,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   clientNameLink: {
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 500,
     color: 'var(--accent-primary)',
     cursor: 'pointer',

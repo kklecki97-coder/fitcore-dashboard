@@ -1,5 +1,4 @@
-[project]
-id = "vawghpnaoimtplfimjrw"
+project_id = "vawghpnaoimtplfimjrw"
 
 [functions.anthropic-proxy]
 verify_jwt = false

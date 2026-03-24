@@ -1,52 +1,12 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Zap, ChevronDown, ChevronUp, Send, RefreshCw, Loader2 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import SmartCoachCard from './SmartCoachCard';
 import SmartCoachModal from './SmartCoachModal';
-import { generateTriggers } from '../utils/smart-coach-engine';
-import { resolveAllDrafts } from '../utils/smart-coach-drafts';
 import type { SmartCoachTrigger } from '../utils/smart-coach-engine';
+import type { MessageDraft } from '../utils/autopilot-types';
 import type { Client, Message, CheckIn, Invoice, WorkoutLog, WorkoutProgram } from '../types';
-
-// ── Dismissed triggers (localStorage) ──────────────────────────
-
-interface DismissedEntry {
-  id: string;
-  expiry: number; // timestamp
-}
-
-const STORAGE_KEY = 'fitcore-smartcoach-dismissed';
-
-function loadDismissed(): string[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const entries: DismissedEntry[] = JSON.parse(raw);
-    const now = Date.now();
-    const valid = entries.filter((e) => e.expiry > now);
-    // Clean up expired
-    if (valid.length !== entries.length) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(valid));
-    }
-    return valid.map((e) => e.id);
-  } catch {
-    return [];
-  }
-}
-
-function addDismissed(triggerId: string, priority: string) {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const entries: DismissedEntry[] = raw ? JSON.parse(raw) : [];
-    const now = Date.now();
-    const expiryMs = priority === 'high' ? 24 * 60 * 60 * 1000 : 72 * 60 * 60 * 1000;
-    entries.push({ id: triggerId, expiry: now + expiryMs });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  } catch {
-    // silently fail
-  }
-}
 
 // ── Styles ─────────────────────────────────────────────────────
 
@@ -132,6 +92,53 @@ const styles = {
     textAlign: 'center' as const,
     padding: '8px 0',
   },
+  actionBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 14px',
+    marginTop: '8px',
+    marginBottom: '4px',
+    borderRadius: '10px',
+    background: 'rgba(0,229,200,0.06)',
+    border: '1px solid rgba(0,229,200,0.12)',
+  },
+  actionBarInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    fontWeight: 500,
+    color: 'var(--text-secondary, #94a3b8)',
+    flex: 1,
+  },
+  actionBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    padding: '6px 12px',
+    borderRadius: '7px',
+    fontSize: '12px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    border: '1px solid transparent',
+    transition: 'all 0.15s ease',
+    fontFamily: 'inherit',
+    flexShrink: 0,
+  },
+  actionBtnPrimary: {
+    background: 'var(--accent, #00e5c8)',
+    color: '#000',
+  },
+  actionBtnConfirm: {
+    background: '#ef4444',
+    color: '#fff',
+  },
+  actionBtnSecondary: {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    color: 'var(--text-secondary, #94a3b8)',
+  },
 };
 
 // ── Component ──────────────────────────────────────────────────
@@ -143,6 +150,16 @@ interface SmartCoachWidgetProps {
   invoices: Invoice[];
   workoutLogs: WorkoutLog[];
   programs: WorkoutProgram[];
+  // Autopilot state (from useAutopilot hook)
+  triggers: SmartCoachTrigger[];
+  draftsMap: Map<string, MessageDraft>;
+  drafts: MessageDraft[];
+  draftsLoading: boolean;
+  onDismissTrigger: (triggerId: string) => void;
+  onEditDraft: (draftId: string, text: string) => void;
+  onRegenerate: () => void;
+  onApproveAll: () => void;
+  // Messaging
   onSendMessage: (msg: Message) => void;
   onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
   lang: 'en' | 'pl';
@@ -155,23 +172,22 @@ export default function SmartCoachWidget({
   checkIns,
   invoices,
   workoutLogs,
-  programs,
+  triggers,
+  draftsMap,
+  drafts,
+  draftsLoading,
+  onDismissTrigger,
+  onEditDraft,
+  onRegenerate,
+  onApproveAll,
   onSendMessage,
   onUpdateCheckIn,
   lang,
   isMobile = false,
 }: SmartCoachWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [dismissedIds, setDismissedIds] = useState<string[]>(loadDismissed);
   const [modalTrigger, setModalTrigger] = useState<SmartCoachTrigger | null>(null);
-
-  // Generate and resolve triggers
-  const triggers = useMemo(() => {
-    const raw = generateTriggers(
-      clients, messages, checkIns, invoices, workoutLogs, programs, dismissedIds, lang,
-    );
-    return resolveAllDrafts(raw, lang);
-  }, [clients, messages, checkIns, invoices, workoutLogs, programs, dismissedIds, lang]);
+  const [confirmSendAll, setConfirmSendAll] = useState(false);
 
   // Counts
   const highCount = triggers.filter((t) => t.priority === 'high').length;
@@ -189,13 +205,10 @@ export default function SmartCoachWidget({
   // Is the only trigger "all-clear"?
   const isAllClear = triggers.length <= 1 && triggers[0]?.type === 'all-clear';
 
-  // ── Handlers ──
+  // Count sendable drafts (medium + low priority)
+  const sendableCount = drafts.filter(d => d.priority !== 'high').length;
 
-  const handleDismiss = useCallback((triggerId: string) => {
-    const trigger = triggers.find((t) => t.id === triggerId);
-    addDismissed(triggerId, trigger?.priority || 'medium');
-    setDismissedIds((prev) => [...prev, triggerId]);
-  }, [triggers]);
+  // ── Handlers ──
 
   const handleSend = useCallback((trigger: SmartCoachTrigger, text: string) => {
     if (!trigger.clientId) return;
@@ -211,14 +224,37 @@ export default function SmartCoachWidget({
       deliveryStatus: 'sent',
     };
     onSendMessage(msg);
-    handleDismiss(trigger.id);
-  }, [onSendMessage, handleDismiss]);
+    onDismissTrigger(trigger.id);
+  }, [onSendMessage, onDismissTrigger]);
 
   const handleOpenModal = useCallback((trigger: SmartCoachTrigger) => {
     if (trigger.type !== 'all-clear') {
       setModalTrigger(trigger);
     }
   }, []);
+
+  const handleSendAll = useCallback(() => {
+    if (!confirmSendAll) {
+      setConfirmSendAll(true);
+      setTimeout(() => setConfirmSendAll(false), 3000);
+      return;
+    }
+    // Send all medium + low priority drafts
+    drafts.filter(d => d.priority !== 'high').forEach(draft => {
+      onSendMessage({
+        id: crypto.randomUUID(),
+        clientId: draft.clientId,
+        clientName: draft.clientName,
+        clientAvatar: '',
+        text: draft.text,
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        isFromCoach: true,
+      });
+    });
+    onApproveAll();
+    setConfirmSendAll(false);
+  }, [confirmSendAll, drafts, onSendMessage, onApproveAll]);
 
   const modalClient = modalTrigger?.clientId
     ? clients.find((c) => c.id === modalTrigger.clientId) || null
@@ -242,6 +278,11 @@ export default function SmartCoachWidget({
     reviewCheckIn: 'Review check-in',
     nUrgent: (n: number) => `${n} piln${n === 1 ? 'e' : 'ych'}`,
     nThisWeek: (n: number) => `${n} na ten tydzień`,
+    sendAll: (n: number) => `Wyślij wszystkie (${n})`,
+    confirm: (n: number) => `Potwierdź (${n})`,
+    regenerate: 'Odśwież',
+    generating: 'Generuję AI drafty...',
+    messagesReady: (n: number) => `${n} ${n === 1 ? 'wiadomość gotowa' : 'wiadomości gotowych'}`,
   } : {
     title: 'Smart Coach',
     urgent: 'URGENT',
@@ -258,6 +299,11 @@ export default function SmartCoachWidget({
     reviewCheckIn: 'Review check-in',
     nUrgent: (n: number) => `${n} urgent`,
     nThisWeek: (n: number) => `${n} this week`,
+    sendAll: (n: number) => `Send All (${n})`,
+    confirm: (n: number) => `Confirm (${n})`,
+    regenerate: 'Regenerate',
+    generating: 'Generating AI drafts...',
+    messagesReady: (n: number) => `${n} ${n === 1 ? 'message' : 'messages'} ready`,
   };
 
   const cardTranslations = {
@@ -292,9 +338,12 @@ export default function SmartCoachWidget({
               <SmartCoachCard
                 key={trigger.id}
                 trigger={trigger}
+                draft={draftsMap.get(trigger.id)}
+                draftsLoading={draftsLoading}
                 onSend={handleSend}
-                onDismiss={handleDismiss}
+                onDismiss={onDismissTrigger}
                 onOpenModal={handleOpenModal}
+                onEditDraft={onEditDraft}
                 index={i}
                 t={cardTranslations}
               />
@@ -302,6 +351,49 @@ export default function SmartCoachWidget({
           </AnimatePresence>
         </div>
       </>
+    );
+  };
+
+  const renderActionBar = () => {
+    const hasDrafts = drafts.length > 0;
+    if (!hasDrafts && !draftsLoading) return null;
+    if (isAllClear) return null;
+
+    return (
+      <div style={styles.actionBar}>
+        <div style={styles.actionBarInfo}>
+          {draftsLoading ? (
+            <>
+              <Loader2 size={13} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent, #00e5c8)' }} />
+              {labels.generating}
+            </>
+          ) : (
+            <>
+              <Send size={13} style={{ color: 'var(--accent, #00e5c8)' }} />
+              {labels.messagesReady(drafts.length)}
+            </>
+          )}
+        </div>
+        {sendableCount > 0 && (
+          <button
+            onClick={handleSendAll}
+            style={{
+              ...styles.actionBtn,
+              ...(confirmSendAll ? styles.actionBtnConfirm : styles.actionBtnPrimary),
+            }}
+          >
+            <Send size={12} />
+            {confirmSendAll ? labels.confirm(sendableCount) : labels.sendAll(sendableCount)}
+          </button>
+        )}
+        <button
+          onClick={onRegenerate}
+          style={{ ...styles.actionBtn, ...styles.actionBtnSecondary }}
+        >
+          <RefreshCw size={12} />
+          {labels.regenerate}
+        </button>
+      </div>
     );
   };
 
@@ -348,6 +440,9 @@ export default function SmartCoachWidget({
         )}
       </div>
 
+      {/* Action bar: Send All + Regenerate — always visible when drafts exist */}
+      {renderActionBar()}
+
       {/* All clear state */}
       {isAllClear && (
         <div style={styles.emptyText}>
@@ -366,9 +461,12 @@ export default function SmartCoachWidget({
               <SmartCoachCard
                 key={trigger.id}
                 trigger={trigger}
+                draft={draftsMap.get(trigger.id)}
+                draftsLoading={draftsLoading}
                 onSend={handleSend}
-                onDismiss={handleDismiss}
+                onDismiss={onDismissTrigger}
                 onOpenModal={handleOpenModal}
+                onEditDraft={onEditDraft}
                 compact
                 index={i}
                 t={cardTranslations}
@@ -407,6 +505,7 @@ export default function SmartCoachWidget({
           </button>
         </motion.div>
       )}
+
     </GlassCard>
 
       {/* Smart Coach Modal */}
@@ -421,7 +520,7 @@ export default function SmartCoachWidget({
           onClose={() => setModalTrigger(null)}
           onSendMessage={onSendMessage}
           onUpdateCheckIn={onUpdateCheckIn}
-          onDismiss={handleDismiss}
+          onDismiss={onDismissTrigger}
           lang={lang}
           isMobile={isMobile}
         />

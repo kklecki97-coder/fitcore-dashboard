@@ -4,10 +4,11 @@ import {
   CalendarCheck, Moon, MessageCircleWarning, TrendingDown, AlertTriangle,
   Calendar, Dumbbell, Clock, Receipt, UserPlus, PauseCircle,
   Trophy, Flame, Target, CheckCircle2, HeartPulse,
-  Send, Pencil, X, ExternalLink,
+  Send, Pencil, X, ExternalLink, Bot,
 } from 'lucide-react';
 import { getInitials, getAvatarColor } from '../data';
 import type { SmartCoachTrigger } from '../utils/smart-coach-engine';
+import type { MessageDraft } from '../utils/autopilot-types';
 
 // ── Icon map ───────────────────────────────────────────────────
 
@@ -83,17 +84,47 @@ const styles = {
     marginTop: '2px',
     lineHeight: 1.4,
   },
-  draftBlock: {
-    marginTop: '8px',
-    padding: '10px 12px',
+  draftWrap: {
+    marginTop: '10px',
+    padding: '10px 12px 10px 14px',
     borderRadius: '8px',
-    background: 'rgba(0,0,0,0.25)',
-    border: '1px solid rgba(255,255,255,0.06)',
+    background: 'rgba(0,229,200,0.04)',
+    borderLeft: '3px solid var(--accent, #00e5c8)',
+    position: 'relative' as const,
+  },
+  draftLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    fontSize: '10px',
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase' as const,
+    color: 'var(--accent, #00e5c8)',
+    marginBottom: '6px',
+    opacity: 0.8,
+  },
+  draftText: {
     fontSize: '13px',
     color: 'var(--text-secondary, #94a3b8)',
     lineHeight: 1.5,
     fontStyle: 'italic' as const,
   },
+  skeleton: {
+    marginTop: '10px',
+    padding: '10px 12px 10px 14px',
+    borderRadius: '8px',
+    background: 'rgba(0,229,200,0.04)',
+    borderLeft: '3px solid rgba(0,229,200,0.3)',
+  },
+  skeletonLine: (width: string) => ({
+    height: '10px',
+    borderRadius: '4px',
+    background: 'rgba(255,255,255,0.06)',
+    width,
+    marginBottom: '6px',
+    animation: 'pulse 1.5s ease-in-out infinite',
+  }),
   textarea: {
     width: '100%',
     background: 'rgba(0,0,0,0.35)',
@@ -142,9 +173,14 @@ const styles = {
 
 interface SmartCoachCardProps {
   trigger: SmartCoachTrigger;
+  /** AI-enhanced draft (from useAutopilot). Shown instead of trigger.draftText when available. */
+  draft?: MessageDraft;
+  /** True while AI is generating drafts — shows skeleton placeholder */
+  draftsLoading?: boolean;
   onSend: (trigger: SmartCoachTrigger, text: string) => void;
   onDismiss: (triggerId: string) => void;
   onOpenModal: (trigger: SmartCoachTrigger) => void;
+  onEditDraft?: (draftId: string, text: string) => void;
   compact?: boolean;
   index?: number;
   t: {
@@ -160,27 +196,39 @@ interface SmartCoachCardProps {
 
 export default function SmartCoachCard({
   trigger,
+  draft,
+  draftsLoading = false,
   onSend,
   onDismiss,
   onOpenModal,
+  onEditDraft,
   compact = false,
   index = 0,
   t,
 }: SmartCoachCardProps) {
+  // Use AI draft text if available, otherwise fall back to trigger's template draft
+  const draftText = draft?.text || trigger.draftText;
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(trigger.draftText || '');
+  const [editText, setEditText] = useState(draftText || '');
   const IconComp = ICON_MAP[trigger.icon];
 
   const handleSend = () => {
-    const text = isEditing ? editText : trigger.draftText;
+    const text = isEditing ? editText : draftText;
     if (text) {
       onSend(trigger, text);
     }
   };
 
   const handleEdit = () => {
-    setEditText(trigger.draftText || '');
+    setEditText(draftText || '');
     setIsEditing(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (draft && onEditDraft) {
+      onEditDraft(draft.id, editText);
+    }
+    setIsEditing(false);
   };
 
   // ── Compact mode (collapsed widget) ──
@@ -294,9 +342,27 @@ export default function SmartCoachCard({
             : trigger.insightText}
         </div>
 
-        {/* Draft block */}
-        {trigger.draftText && !isEditing && (
-          <div style={styles.draftBlock}>"{trigger.draftText}"</div>
+        {/* Draft block — AI draft or template fallback */}
+        {draftText && !isEditing && (
+          <div style={styles.draftWrap}>
+            <div style={styles.draftLabel}>
+              <Bot size={10} />
+              {draft ? 'AI Draft' : 'Draft'}
+            </div>
+            <div style={styles.draftText}>"{draftText}"</div>
+          </div>
+        )}
+
+        {/* Skeleton — AI is generating draft for this trigger */}
+        {!draftText && !isEditing && draftsLoading && trigger.clientId && trigger.actionType === 'message' && (
+          <div style={styles.skeleton}>
+            <div style={styles.draftLabel}>
+              <Bot size={10} />
+              Generating...
+            </div>
+            <div style={styles.skeletonLine('85%')} />
+            <div style={styles.skeletonLine('60%')} />
+          </div>
         )}
 
         {/* Edit textarea */}
@@ -321,7 +387,7 @@ export default function SmartCoachCard({
             </button>
           )}
 
-          {trigger.actionType === 'message' && !trigger.draftText && (
+          {trigger.actionType === 'message' && !draftText && (
             <button
               style={styles.btn('link')}
               onClick={() => onOpenModal(trigger)}
@@ -342,7 +408,7 @@ export default function SmartCoachCard({
             </button>
           )}
 
-          {trigger.draftText && (
+          {draftText && (
             <>
               {!isEditing && (
                 <button style={styles.btn('edit')} onClick={handleEdit}>
@@ -351,7 +417,7 @@ export default function SmartCoachCard({
                 </button>
               )}
               {isEditing && (
-                <button style={styles.btn('edit')} onClick={() => setIsEditing(false)}>
+                <button style={styles.btn('edit')} onClick={handleSaveEdit}>
                   <X size={12} />
                   {t.cancel || 'Cancel'}
                 </button>

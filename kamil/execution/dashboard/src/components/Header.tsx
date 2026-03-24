@@ -258,9 +258,10 @@ const styles: Record<string, React.CSSProperties> = {
     color: 'var(--text-primary)',
   },
   subtitle: {
-    fontSize: '18px',
-    color: 'var(--text-secondary)',
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
     fontWeight: 400,
+    marginTop: '1px',
   },
   right: {
     display: 'flex',
@@ -268,7 +269,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
   },
   date: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-tertiary)',
     fontWeight: 400,
   },

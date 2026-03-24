@@ -83,15 +83,12 @@ Deno.serve(async (req) => {
       apiVersion: "2024-12-18.acacia",
     });
 
-    const setupFeePrice = Deno.env.get("STRIPE_SETUP_FEE_PRICE_ID")!;
     const subscriptionPrice = Deno.env.get("STRIPE_SUBSCRIPTION_PRICE_ID")!;
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: "subscription",
       line_items: [
-        // One-time $100 setup fee (added to first invoice)
-        { price: setupFeePrice, quantity: 1 },
-        // Recurring $49/month subscription
+        // Recurring 250 PLN/month subscription
         { price: subscriptionPrice, quantity: 1 },
       ],
       metadata: { coach_id: coachUser.id },

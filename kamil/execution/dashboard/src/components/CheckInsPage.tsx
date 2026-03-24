@@ -60,11 +60,11 @@ function DeltaBadge({ current, previous, unit, inverse }: { current: number; pre
   const diff = current - previous;
   const isGood = inverse ? diff < 0 : diff > 0;
   const isBad = inverse ? diff > 0 : diff < 0;
-  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>-</span>;
+  if (Math.abs(diff) < 0.01) return <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>-</span>;
   const color = isGood ? 'var(--accent-success)' : isBad ? 'var(--accent-danger)' : 'var(--text-tertiary)';
   const Icon = diff > 0 ? TrendingUp : TrendingDown;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '14px', fontWeight: 600, color }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontSize: '12px', fontWeight: 600, color }}>
       <Icon size={10} />
       {diff > 0 ? '+' : ''}{diff.toFixed(1)}{unit}
     </span>
@@ -78,7 +78,7 @@ function ScoreBar({ value, max = 10, color, compact }: { value: number; max?: nu
       <div style={{ flex: 1, height: compact ? '3px' : '4px', borderRadius: '2px', background: 'var(--score-bar-track)' }}>
         <div style={{ width: `${pct}%`, height: '100%', borderRadius: '2px', background: color, transition: 'width 0.3s' }} />
       </div>
-      <span style={{ fontSize: compact ? '12px' : '15px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
+      <span style={{ fontSize: compact ? '12px' : '13px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
     </div>
   );
 }
@@ -222,14 +222,14 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   ];
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
       {/* Main Queue */}
       <GlassCard delay={0.2} style={isMobile ? { padding: '16px' } : undefined}>
         {/* Header with tabs */}
         <div style={{ ...styles.queueHeader, marginBottom: isMobile ? '12px' : '16px' }}>
           <div style={styles.queueTitleRow}>
             <ClipboardCheck size={isMobile ? 15 : 18} color="var(--accent-primary)" />
-            <h3 style={{ ...styles.queueTitle, fontSize: isMobile ? '15px' : '22px' }}>{t.checkIns.reviewQueue}</h3>
+            <h3 style={{ ...styles.queueTitle, fontSize: isMobile ? '15px' : '18px' }}>{t.checkIns.reviewQueue}</h3>
           </div>
           <div style={{ ...styles.tabRow, gap: isMobile ? '4px' : '6px' }}>
             {tabs.map(tab => (
@@ -262,7 +262,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={t.checkIns.searchClients}
-              style={{ ...styles.searchInput, fontSize: isMobile ? '13px' : '18px' }}
+              style={{ ...styles.searchInput, fontSize: isMobile ? '13px' : '14px' }}
             />
           </div>
         </div>
@@ -311,8 +311,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         {getInitials(ci.clientName)}
                       </div>
                       <div>
-                        <div style={{ ...styles.queueClientName, fontSize: isMobile ? '14px' : '20px' }}>{ci.clientName}</div>
-                        <div style={{ ...styles.queueDate, fontSize: isMobile ? '11px' : '17px' }}>
+                        <div style={{ ...styles.queueClientName, fontSize: isMobile ? '14px' : '15px' }}>{ci.clientName}</div>
+                        <div style={{ ...styles.queueDate, fontSize: isMobile ? '11px' : '13px' }}>
                           {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
                           {client && <span style={{ marginLeft: '8px', color: 'var(--text-tertiary)' }}>{client.plan}</span>}
                           {(() => {
@@ -1008,7 +1008,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   queueTitle: {
-    fontSize: '22px',
+    fontSize: '18px',
     fontWeight: 700,
     color: 'var(--text-primary)',
     margin: 0,
@@ -1027,14 +1027,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid transparent',
     background: 'transparent',
     color: 'var(--text-tertiary)',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     transition: 'all 0.15s',
   },
   tabBadge: {
-    fontSize: '14px',
+    fontSize: '11px',
     fontWeight: 700,
     padding: '1px 6px',
     borderRadius: '10px',
@@ -1058,7 +1058,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
   },
   queueList: {
@@ -1073,7 +1073,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
     padding: '40px 20px',
     color: 'var(--text-secondary)',
-    fontSize: '18px',
+    fontSize: '14px',
   },
   queueItem: {
     borderRadius: 'var(--radius-sm)',
@@ -1097,25 +1097,25 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0,
   },
   avatar: {
-    width: '36px',
-    height: '36px',
+    width: '34px',
+    height: '34px',
     borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 700,
     color: '#fff',
     flexShrink: 0,
   },
   queueClientName: {
-    fontSize: '20px',
+    fontSize: '15px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
   queueDate: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
   },
   queueMetrics: {
     display: 'flex',
@@ -1131,12 +1131,12 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '3px 8px',
     borderRadius: '8px',
     background: 'var(--bg-subtle)',
-    fontSize: '17px',
+    fontSize: '13px',
   },
   metricChipValue: {
     fontWeight: 600,
     color: 'var(--text-primary)',
-    fontSize: '17px',
+    fontSize: '13px',
   },
   queueItemRight: {
     display: 'flex',
@@ -1169,7 +1169,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   comparisonLabel: {
-    fontSize: '15px',
+    fontSize: '11px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
@@ -1191,14 +1191,14 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-subtle-strong)',
   },
   metricCellLabel: {
-    fontSize: '14px',
+    fontSize: '11px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
     letterSpacing: '0.3px',
   },
   metricCellValue: {
-    fontSize: '22px',
+    fontSize: '18px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     color: 'var(--text-primary)',
@@ -1210,7 +1210,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   wellnessLabel: {
-    fontSize: '15px',
+    fontSize: '13px',
     fontWeight: 500,
     color: 'var(--text-secondary)',
   },
@@ -1224,7 +1224,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-subtle-strong)',
   },
   trendLabel: {
-    fontSize: '15px',
+    fontSize: '13px',
     fontWeight: 500,
     color: 'var(--text-secondary)',
     minWidth: '60px',
@@ -1249,9 +1249,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '4px',
   },
   noteText: {
-    fontSize: '17px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
-    lineHeight: 1.5,
+    lineHeight: 1.6,
     margin: 0,
     padding: '8px 10px',
     borderRadius: 'var(--radius-sm)',
@@ -1272,7 +1272,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(239,68,68,0.08)',
     border: '1px solid rgba(239,68,68,0.15)',
     color: 'var(--accent-danger)',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 500,
   },
   missedBanner: {
@@ -1296,7 +1296,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
     resize: 'vertical',
     outline: 'none',
@@ -1316,7 +1316,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'var(--accent-primary)',
     color: 'var(--text-on-accent)',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1330,7 +1330,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1344,7 +1344,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(239,68,68,0.2)',
     background: 'rgba(239,68,68,0.08)',
     color: 'var(--accent-danger)',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -1366,7 +1366,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(239,68,68,0.15)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '15px',
+    fontSize: '13px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
   },
@@ -1450,9 +1450,9 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: '50px',
   },
   followUpText: {
-    fontSize: '15px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
-    lineHeight: 1.4,
+    lineHeight: 1.5,
   },
   followUpInput: {
     display: 'flex',
@@ -1466,7 +1466,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-elevated)',
     color: 'var(--text-primary)',
-    fontSize: '15px',
+    fontSize: '13px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
   },

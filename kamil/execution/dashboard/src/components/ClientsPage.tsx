@@ -255,7 +255,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
   };
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
       {/* Top Bar */}
       <div style={{ ...styles.topBar, flexWrap: isMobile ? 'wrap' : undefined, gap: isMobile ? '8px' : '12px' }}>
         <div style={{ ...styles.searchBox, maxWidth: isMobile ? '100%' : '360px', order: isMobile ? -1 : undefined, ...(isMobile ? { padding: '8px 12px', gap: '8px' } : {}) }}>
@@ -681,7 +681,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
                 </button>
               </div>
               <div style={styles.modalBody}>
-                <p style={{ fontSize: '20px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   {t.clients.deleteConfirmMsg(allClients.find(c => c.id === deleteConfirm)?.name || '')}{' '}
                   {t.clients.cannotBeUndone}
                 </p>
@@ -905,7 +905,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '20px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
     flex: 1,
   },
@@ -928,7 +928,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-secondary)',
-    fontSize: '18px',
+    fontSize: '13px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
@@ -941,7 +941,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: 'var(--text-on-accent)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -955,7 +955,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0 4px',
   },
   miniStat: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
     display: 'flex',
     gap: '4px',
@@ -963,7 +963,7 @@ const styles: Record<string, React.CSSProperties> = {
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '16px',
+    gap: '18px',
   },
   cardTop: {
     display: 'flex',
@@ -977,23 +977,23 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '12px',
   },
   avatar: {
-    width: '40px',
-    height: '40px',
+    width: '38px',
+    height: '38px',
     borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '20px',
+    fontSize: '14px',
     fontWeight: 700,
     color: 'var(--text-on-accent)',
   },
   clientName: {
-    fontSize: '21px',
+    fontSize: '15px',
     fontWeight: 600,
   },
   clientEmail: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
   },
   moreBtn: {
     background: 'transparent',
@@ -1010,7 +1010,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
   },
   planBadge: {
-    fontSize: '15px',
+    fontSize: '12px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -1020,7 +1020,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '17px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
   },
   cardStats: {
@@ -1043,7 +1043,7 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap' as const,
   },
   cardStatValue: {
-    fontSize: '18px',
+    fontSize: '15px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
   },
@@ -1064,7 +1064,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
   },
   footerText: {
-    fontSize: '15px',
+    fontSize: '12px',
     color: 'var(--text-tertiary)',
   },
   dropdownMenu: {
@@ -1089,7 +1089,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '18px',
+    fontSize: '13px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     textAlign: 'left',
@@ -1112,7 +1112,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-sm)',
     padding: '10px 14px',
-    fontSize: '17px',
+    fontSize: '13px',
     color: 'var(--text-secondary)',
     lineHeight: 1.5,
     width: '220px',
@@ -1157,7 +1157,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--glass-border)',
   },
   modalTitle: {
-    fontSize: '22px',
+    fontSize: '18px',
     fontWeight: 600,
   },
   closeBtn: {
@@ -1183,7 +1183,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   modalLabel: {
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -1216,7 +1216,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
@@ -1229,7 +1229,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: 'var(--text-on-accent)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',

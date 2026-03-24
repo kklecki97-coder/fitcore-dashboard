@@ -61,7 +61,7 @@ export default function ActivityFeed({
   void _onViewClient; void _onNavigate;
   const { t, lang } = useLang();
   const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [expanded, setExpanded] = useState(!isMobile);
+  const [expanded, setExpanded] = useState(false);
   const [, setTick] = useState(0);
   const [modalEvent, setModalEvent] = useState<FeedEvent | null>(null);
 
@@ -85,7 +85,7 @@ export default function ActivityFeed({
     buildFeed(
       clients, messages, checkIns, workoutLogs, workoutSetLogs, invoices, lang as 'en' | 'pl',
       {
-        limit: expanded ? 50 : (isMobile ? 5 : 8),
+        limit: expanded ? 50 : (isMobile ? 5 : 4),
         filter: currentFilter?.types ?? undefined,
       },
     ),
@@ -192,7 +192,7 @@ export default function ActivityFeed({
       )}
 
       {/* Show more / collapse */}
-      {(hasMore || (expanded && isMobile)) && events.length > 0 && (
+      {(hasMore || expanded) && events.length > 0 && (
         <button
           onClick={() => setExpanded(prev => !prev)}
           style={styles.showMoreBtn}

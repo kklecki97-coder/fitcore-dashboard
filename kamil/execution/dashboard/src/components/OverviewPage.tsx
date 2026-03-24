@@ -19,7 +19,6 @@ import GlassCard from './GlassCard';
 import ActivityFeed from './ActivityFeed';
 import AnimatedNumber from './AnimatedNumber';
 import SmartCoachWidget from './SmartCoachWidget';
-import AutopilotQueue from './AutopilotQueue';
 
 import useIsMobile from '../hooks/useIsMobile';
 import { useAutopilot } from '../hooks/useAutopilot';
@@ -31,6 +30,7 @@ import { filterAtRiskClients } from '../utils/client-analysis';
 import { getDailyQuote } from '../utils/formatting';
 import { computeWeeklyReport } from '../utils/weekly-report';
 import WeeklyReport from './WeeklyReport';
+import { generatePreviewData } from '../utils/smart-coach-preview';
 import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, WorkoutSetLog, CheckIn } from '../types';
 
 const QUOTE_AUTHORS = [
@@ -77,6 +77,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const autopilot = useAutopilot(clients, messages, checkIns, invoices, workoutLogs, programs, lang as 'en' | 'pl');
+  const [scPreview, setScPreview] = useState(false);
+  const previewData = useMemo(() => scPreview ? generatePreviewData() : null, [scPreview]);
   // messagesExpanded removed — Recent Messages replaced by ActivityFeed
   const reportData = useMemo(() => computeWeeklyReport(clients, messages, invoices, workoutLogs, checkIns), [clients, messages, invoices, workoutLogs, checkIns]);
 
@@ -242,7 +244,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
   if (!ready) {
     return (
-      <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+      <div style={{ ...styles.page, padding: isMobile ? '16px' : '32px 40px' }}>
         {/* Quote skeleton */}
         <div style={{ ...styles.quoteBar, padding: '24px 20px' }}>
           <div style={skeletonStyles.line200} />
@@ -286,7 +288,7 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
   }
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
       {/* Personalized Greeting + Weekly Report Button */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
         {greeting && (
@@ -296,16 +298,16 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
-            <h1 style={{ ...styles.greetingText, fontSize: isMobile ? '22px' : '28px' }}>{greeting}</h1>
-            <p style={styles.greetingDate}>{todayFormatted}</p>
+            <h1 style={{ ...styles.greetingText, fontSize: isMobile ? '22px' : '32px' }}>{greeting}</h1>
+            <p style={{ ...styles.greetingDate, fontSize: isMobile ? '14px' : '15px' }}>{todayFormatted}</p>
           </motion.div>
         )}
         {clients.length > 0 && (
           <motion.button
             onClick={() => setReportOpen(true)}
             style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: isMobile ? '8px 12px' : '10px 16px',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: isMobile ? '8px 12px' : '10px 18px',
               borderRadius: 'var(--radius-sm)',
               border: '1px solid var(--glass-border)',
               background: 'var(--bg-elevated)',
@@ -328,92 +330,83 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
 
       {/* Daily Motivation */}
       <motion.div
-        style={{ ...styles.quoteBar, ...(isMobile ? { padding: '8px 14px' } : {}) }}
+        style={{ ...styles.quoteBar, ...(isMobile ? { padding: '8px 14px' } : { padding: '14px 28px' }) }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: greeting ? 0.15 : 0 }}
       >
-        <span style={{ ...styles.quoteText, ...(isMobile ? { fontSize: '12px' } : {}) }}>"{dailyQuote.text}"</span>
-        <span style={{ ...styles.quoteAuthor, ...(isMobile ? { fontSize: '11px' } : {}) }}> - {dailyQuote.author}</span>
+        <span style={{ ...styles.quoteText, ...(isMobile ? { fontSize: '12px' } : { fontSize: '15px' }) }}>"{dailyQuote.text}"</span>
+        <span style={{ ...styles.quoteAuthor, ...(isMobile ? { fontSize: '11px' } : { fontSize: '13px' }) }}> - {dailyQuote.author}</span>
       </motion.div>
 
       {/* Stat Cards Row */}
-      <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '16px' }}>
+      <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : undefined}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '0', ...(isMobile ? {} : { flexDirection: 'column' as const }) }}>
-                {isMobile ? (
-                  <>
-                    {/* Mobile: compact horizontal layout */}
-                    <div style={{
-                      ...styles.statIcon,
-                      background: stat.dimColor,
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '10px',
-                      flexShrink: 0,
-                    }}>
-                      <Icon size={16} color={stat.color} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                        <span style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
-                          <AnimatedNumber value={stat.numericValue} format={stat.format} />
-                        </span>
-                        {stat.trend !== 'neutral' && (
-                          <span style={{
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1px',
-                          }}>
-                            {stat.trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                            {stat.change}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.2 }}>
-                        {stat.label}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Desktop: original vertical layout */}
-                    <div style={{ width: '100%' }}>
-                      <div style={styles.statTop}>
-                        <div style={{ ...styles.statIcon, background: stat.dimColor }}>
-                          <Icon size={18} color={stat.color} />
-                        </div>
-                        {stat.trend !== 'neutral' && (
-                          <div style={{
-                            ...styles.changeBadge,
-                            color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
-                            background: stat.trend === 'up' ? 'var(--accent-success-dim)' : 'var(--accent-danger-dim)',
-                          }}>
-                            {stat.trend === 'up' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                            {stat.change}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ ...styles.statValue, fontSize: '28px' }}>
-                        <AnimatedNumber value={stat.numericValue} format={stat.format} />
-                      </div>
-                      <div style={styles.statLabel}>{stat.label}</div>
-                    </div>
-                  </>
-                )}
+            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                <div style={{
+                  ...styles.statIcon,
+                  background: stat.dimColor,
+                  boxShadow: `0 0 12px ${stat.dimColor}`,
+                  width: isMobile ? '36px' : '38px',
+                  height: isMobile ? '36px' : '38px',
+                  borderRadius: '10px',
+                  flexShrink: 0,
+                }}>
+                  <Icon size={isMobile ? 16 : 17} color={stat.color} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: isMobile ? '20px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                      <AnimatedNumber value={stat.numericValue} format={stat.format} />
+                    </span>
+                    {stat.trend !== 'neutral' && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '1px',
+                      }}>
+                        {stat.trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                        {stat.change}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '12px' : '12px', color: 'var(--text-tertiary)', marginTop: '3px', lineHeight: 1.2 }}>
+                    {stat.label}
+                  </div>
+                </div>
               </div>
             </GlassCard>
           );
         })}
       </div>
 
-      {/* Smart Coach Widget */}
+      {/* Smart Coach — unified insights + AI drafts */}
+      {/* DEV: Preview toggle */}
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => setScPreview(p => !p)}
+          style={{
+            background: scPreview ? '#00e5c8' : 'rgba(255,255,255,0.06)',
+            color: scPreview ? '#000' : '#94a3b8',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '8px',
+            padding: '6px 14px',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            marginBottom: '8px',
+          }}
+        >
+          {scPreview ? '✦ Smart Coach Preview ON — click to disable' : '✦ Enable Smart Coach Preview (all trigger types)'}
+        </button>
+      )}
       <SmartCoachWidget
         clients={clients}
         messages={messages}
@@ -421,21 +414,14 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
         invoices={invoices}
         workoutLogs={workoutLogs}
         programs={programs}
-        onSendMessage={onSendMessage}
-        onUpdateCheckIn={onUpdateCheckIn}
-        lang={lang as 'en' | 'pl'}
-        isMobile={isMobile}
-      />
-
-      {/* Autopilot Queue — AI-generated message drafts for coach review */}
-      <AutopilotQueue
-        drafts={autopilot.drafts}
-        loading={autopilot.loading}
-        onApprove={(id) => autopilot.approveDraft(id)}
-        onSkip={(id) => autopilot.skipDraft(id)}
-        onEdit={(id, text) => autopilot.updateDraftText(id, text)}
-        onSendMessage={onSendMessage}
-        onApproveAll={() => {
+        triggers={previewData?.triggers ?? autopilot.triggers}
+        draftsMap={previewData?.draftsMap ?? autopilot.draftsMap}
+        drafts={previewData?.drafts ?? autopilot.drafts}
+        draftsLoading={scPreview ? false : autopilot.loading}
+        onDismissTrigger={scPreview ? () => {} : autopilot.dismissTrigger}
+        onEditDraft={scPreview ? () => {} : autopilot.updateDraftText}
+        onRegenerate={scPreview ? () => setScPreview(false) : autopilot.regenerate}
+        onApproveAll={scPreview ? () => {} : () => {
           const approved = autopilot.approveAll();
           approved.forEach(draft => {
             onSendMessage({
@@ -450,16 +436,18 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
             });
           });
         }}
-        onRegenerate={autopilot.regenerate}
+        onSendMessage={onSendMessage}
+        onUpdateCheckIn={onUpdateCheckIn}
+        lang={lang as 'en' | 'pl'}
         isMobile={isMobile}
       />
 
       {/* AI Dashboard Summary */}
-      <GlassCard delay={0.15} style={isMobile ? { padding: '16px' } : undefined}>
+      <GlassCard delay={0.15} style={isMobile ? { padding: '16px' } : { padding: '28px 32px' }}>
         <div style={styles.cardHeader}>
           <div style={styles.insightTitleRow}>
-            <Sparkles size={isMobile ? 13 : 15} color="var(--accent-primary)" />
-            <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '21px' }}>{t.overview.dashboardSummary}</h3>
+            <Sparkles size={isMobile ? 13 : 17} color="var(--accent-primary)" />
+            <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '18px' }}>{t.overview.dashboardSummary}</h3>
           </div>
           {!briefingLoading && briefing && (
             <button onClick={refreshBriefing} style={styles.viewAllBtn} title={lang === 'pl' ? 'Odswiez' : 'Refresh'}>
@@ -481,8 +469,8 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
               style={{
-                fontSize: isMobile ? '14px' : '18px', color: 'var(--text-primary)', lineHeight: 1.7,
-                padding: '8px 10px', margin: 0, fontWeight: 400,
+                fontSize: isMobile ? '14px' : '15px', color: 'var(--text-primary)', lineHeight: 1.75,
+                padding: isMobile ? '8px 10px' : '12px 4px', margin: 0, fontWeight: 400,
                 ...(isMobile && !summaryExpanded ? {
                   maxHeight: '120px',
                   overflow: 'hidden',
@@ -517,9 +505,9 @@ export default function OverviewPage({ clients, messages, programs, invoices, wo
             )}
           </div>
         ) : (
-          <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ padding: isMobile ? '8px 10px' : '12px 4px', display: 'flex', flexDirection: 'column', gap: isMobile ? '6px' : '10px' }}>
             {fallbackStats.map((stat, i) => (
-              <div key={i} style={{ fontSize: '14px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div key={i} style={{ fontSize: isMobile ? '14px' : '15px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '10px', lineHeight: 1.5 }}>
                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-primary)', flexShrink: 0 }} />
                 {stat}
               </div>
@@ -623,22 +611,24 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: '3px',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 600,
-    padding: '3px 8px',
+    padding: '4px 10px',
     borderRadius: '20px',
   },
   statValue: {
-    fontSize: '39px',
+    fontSize: '32px',
     fontWeight: 700,
-    letterSpacing: '-1px',
+    letterSpacing: '-0.75px',
     fontFamily: 'var(--font-display)',
     lineHeight: 1.1,
+    color: 'var(--text-primary)',
   },
   statLabel: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
-    marginTop: '4px',
+    marginTop: '6px',
+    fontWeight: 500,
   },
   cardHeader: {
     display: 'flex',
@@ -646,7 +636,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'space-between',
   },
   cardTitle: {
-    fontSize: '21px',
+    fontSize: '18px',
     fontWeight: 600,
     color: 'var(--text-primary)',
   },
@@ -672,9 +662,9 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
   },
   riskTag: {
-    fontSize: '14px',
+    fontSize: '12px',
     fontWeight: 600,
-    padding: '1px 6px',
+    padding: '2px 8px',
     borderRadius: '8px',
     background: 'var(--accent-danger-dim)',
     color: 'var(--accent-danger)',
@@ -705,7 +695,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '6px',
   },
   msgText: {
-    fontSize: '17px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
     marginTop: '2px',
     lineHeight: 1.5,
@@ -720,7 +710,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'transparent',
     border: 'none',
     color: 'var(--accent-primary)',
-    fontSize: '17px',
+    fontSize: '14px',
     fontWeight: 500,
     cursor: 'pointer',
     fontFamily: 'var(--font-display)',
@@ -755,7 +745,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   insightText: {
-    fontSize: '18px',
+    fontSize: '15px',
     color: 'var(--text-primary)',
     fontWeight: 500,
   },

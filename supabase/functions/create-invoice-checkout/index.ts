@@ -130,7 +130,6 @@ Deno.serve(async (req) => {
     });
 
     const amountCents = Math.round(invoice.amount * 100);
-    const feeCents = Math.round(amountCents * 0.05); // 5% platform fee
 
     const session = await stripe.checkout.sessions.create(
       {
@@ -138,7 +137,7 @@ Deno.serve(async (req) => {
         line_items: [
           {
             price_data: {
-              currency: "usd",
+              currency: "pln",
               product_data: {
                 name: `${invoice.plan || "Coaching"} Plan - ${invoice.period || "Monthly"}`,
               },
@@ -147,9 +146,6 @@ Deno.serve(async (req) => {
             quantity: 1,
           },
         ],
-        payment_intent_data: {
-          application_fee_amount: feeCents,
-        },
         metadata: {
           invoice_id: invoiceId,
           coach_id: invoice.coach_id,

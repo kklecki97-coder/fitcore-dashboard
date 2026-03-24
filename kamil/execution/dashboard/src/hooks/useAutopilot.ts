@@ -1,38 +1,73 @@
 /**
- * useAutopilot — Orchestrates: triggers → drafts → state management.
- * Connects Smart Coach Engine triggers with AI draft generation.
+ * useAutopilot — Single source of truth for Smart Coach triggers + AI drafts.
+ * Generates triggers, resolves drafts, and manages dismiss/approve state.
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { generateTriggers } from '../utils/smart-coach-engine';
+import { resolveAllDrafts } from '../utils/smart-coach-drafts';
 import { generateDrafts, generateTemplateDraft } from '../utils/autopilot-drafts';
 import type { SmartCoachTrigger } from '../utils/smart-coach-engine';
 import type { MessageDraft, CoachAutopilotSettings } from '../utils/autopilot-types';
 import { DEFAULT_AUTOPILOT_SETTINGS } from '../utils/autopilot-types';
 import type { Client, Message, CheckIn, Invoice, WorkoutLog, WorkoutProgram } from '../types';
 
-const DISMISSED_KEY = 'fitcore-autopilot-dismissed';
+// ── Unified dismissed storage (with TTL per priority) ──────────
+
+interface DismissedEntry {
+  id: string;
+  expiry: number; // timestamp
+}
+
+const STORAGE_KEY = 'fitcore-smartcoach-dismissed';
 
 function loadDismissed(): string[] {
   try {
-    return JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]');
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const entries: DismissedEntry[] = JSON.parse(raw);
+    const now = Date.now();
+    const valid = entries.filter((e) => e.expiry > now);
+    if (valid.length !== entries.length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(valid));
+    }
+    return valid.map((e) => e.id);
   } catch {
     return [];
   }
 }
 
-function saveDismissed(ids: string[]) {
+function addDismissed(triggerId: string, priority: string) {
   try {
-    // Keep only last 200 dismissed IDs to prevent localStorage bloat
-    localStorage.setItem(DISMISSED_KEY, JSON.stringify(ids.slice(-200)));
-  } catch { /* ignore */ }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const entries: DismissedEntry[] = raw ? JSON.parse(raw) : [];
+    const now = Date.now();
+    const expiryMs = priority === 'high' ? 24 * 60 * 60 * 1000 : 72 * 60 * 60 * 1000;
+    entries.push({ id: triggerId, expiry: now + expiryMs });
+    // Keep last 200 to prevent bloat
+    const trimmed = entries.slice(-200);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+  } catch {
+    // silently fail
+  }
 }
 
+// ── Clean up old autopilot dismissed key on first load ──
+try { localStorage.removeItem('fitcore-autopilot-dismissed'); } catch { /* ignore */ }
+
+// ── Hook ────────────────────────────────────────────────────────
+
 export interface AutopilotState {
+  /** All triggers with resolved template drafts (for SmartCoachWidget cards) */
+  triggers: SmartCoachTrigger[];
+  /** AI-enhanced drafts keyed by triggerId */
+  draftsMap: Map<string, MessageDraft>;
+  /** Flat list of pending/edited drafts */
   drafts: MessageDraft[];
   loading: boolean;
   settings: CoachAutopilotSettings;
-  triggers: SmartCoachTrigger[];
+  dismissedIds: string[];
   // Actions
+  dismissTrigger: (triggerId: string) => void;
   approveDraft: (draftId: string) => MessageDraft | null;
   skipDraft: (draftId: string) => void;
   updateDraftText: (draftId: string, text: string) => void;
@@ -52,24 +87,30 @@ export function useAutopilot(
   const [drafts, setDrafts] = useState<MessageDraft[]>([]);
   const [loading, setLoading] = useState(false);
   const [settings] = useState<CoachAutopilotSettings>(DEFAULT_AUTOPILOT_SETTINGS);
-  const [triggers, setTriggers] = useState<SmartCoachTrigger[]>([]);
+  const [rawTriggers, setRawTriggers] = useState<SmartCoachTrigger[]>([]);
   const generatedRef = useRef(false);
   const [dismissedIds, setDismissedIds] = useState<string[]>(loadDismissed);
 
-  // ── Step 1: Compute triggers from Smart Coach Engine ──
+  // ── Step 1: Compute triggers ──
   useEffect(() => {
     if (clients.length === 0) return;
     const result = generateTriggers(
       clients, messages, checkIns, invoices, workoutLogs, programs, dismissedIds, lang,
     );
-    setTriggers(result);
+    setRawTriggers(result);
   }, [clients, messages, checkIns, invoices, workoutLogs, programs, dismissedIds, lang]);
 
-  // ── Step 2: Generate drafts from triggers ──
-  useEffect(() => {
-    if (triggers.length === 0 || generatedRef.current) return;
+  // ── Step 1b: Resolve __TEMPLATE__ drafts for card display ──
+  const triggers = useMemo(
+    () => resolveAllDrafts(rawTriggers, lang),
+    [rawTriggers, lang],
+  );
 
-    const draftableTriggers = triggers.filter(t =>
+  // ── Step 2: Generate AI drafts from draftable triggers ──
+  useEffect(() => {
+    if (rawTriggers.length === 0 || generatedRef.current) return;
+
+    const draftableTriggers = rawTriggers.filter(t =>
       t.clientId && t.draftText === '__TEMPLATE__'
     );
 
@@ -94,7 +135,6 @@ export function useAutopilot(
       .then(aiDrafts => {
         if (aiDrafts.length > 0) {
           setDrafts(prev => {
-            // Replace template drafts with AI drafts where available
             const aiMap = new Map(aiDrafts.map(d => [d.triggerId, d]));
             return prev.map(d => aiMap.get(d.triggerId) || d);
           });
@@ -104,9 +144,28 @@ export function useAutopilot(
         console.error('AI draft generation failed, keeping template drafts:', err);
       })
       .finally(() => setLoading(false));
-  }, [triggers, clients, settings, lang]);
+  }, [rawTriggers, clients, settings, lang]);
+
+  // ── Drafts map for quick lookup by triggerId ──
+  const activeDrafts = useMemo(
+    () => drafts.filter(d => d.status === 'pending' || d.status === 'edited'),
+    [drafts],
+  );
+
+  const draftsMap = useMemo(
+    () => new Map(activeDrafts.map(d => [d.triggerId, d])),
+    [activeDrafts],
+  );
 
   // ── Actions ──
+
+  const dismissTrigger = useCallback((triggerId: string) => {
+    const trigger = rawTriggers.find((t) => t.id === triggerId);
+    addDismissed(triggerId, trigger?.priority || 'medium');
+    setDismissedIds((prev) => [...prev, triggerId]);
+    // Also remove any draft for this trigger
+    setDrafts(prev => prev.filter(d => d.triggerId !== triggerId));
+  }, [rawTriggers]);
 
   const approveDraft = useCallback((draftId: string): MessageDraft | null => {
     let approved: MessageDraft | null = null;
@@ -124,13 +183,12 @@ export function useAutopilot(
     setDrafts(prev => {
       const draft = prev.find(d => d.id === draftId);
       if (draft) {
-        const newDismissed = [...dismissedIds, draft.triggerId];
-        setDismissedIds(newDismissed);
-        saveDismissed(newDismissed);
+        addDismissed(draft.triggerId, draft.priority);
+        setDismissedIds(ids => [...ids, draft.triggerId]);
       }
       return prev.filter(d => d.id !== draftId);
     });
-  }, [dismissedIds]);
+  }, []);
 
   const updateDraftText = useCallback((draftId: string, text: string) => {
     setDrafts(prev => prev.map(d =>
@@ -141,17 +199,15 @@ export function useAutopilot(
   const regenerate = useCallback(() => {
     generatedRef.current = false;
     setDrafts([]);
-    // Trigger re-computation by re-running triggers
     const result = generateTriggers(
       clients, messages, checkIns, invoices, workoutLogs, programs, dismissedIds, lang,
     );
-    setTriggers(result);
+    setRawTriggers(result);
   }, [clients, messages, checkIns, invoices, workoutLogs, programs, dismissedIds, lang]);
 
   const approveAll = useCallback((): MessageDraft[] => {
     const toApprove: MessageDraft[] = [];
     setDrafts(prev => prev.map(d => {
-      // Only auto-approve medium and low priority
       if (d.status === 'pending' && d.priority !== 'high') {
         const approved = { ...d, status: 'approved' as const };
         toApprove.push(approved);
@@ -163,10 +219,13 @@ export function useAutopilot(
   }, []);
 
   return {
-    drafts: drafts.filter(d => d.status === 'pending' || d.status === 'edited'),
+    triggers,
+    draftsMap,
+    drafts: activeDrafts,
     loading,
     settings,
-    triggers,
+    dismissedIds,
+    dismissTrigger,
     approveDraft,
     skipDraft,
     updateDraftText,

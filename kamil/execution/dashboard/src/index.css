@@ -299,3 +299,8 @@ body::after {
   to { transform: rotate(360deg); }
 }
 .spin { animation: spin 1s linear infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.15; }
+}
