@@ -889,6 +889,7 @@ export const en = {
     checkInSubmitted: (name: string) => `${name} submitted a check-in`,
     paymentReceived: (amount: string) => `Payment received - ${amount}`,
     programStarts: (name: string) => `${name}'s program starts tomorrow`,
+    programEnding: (name: string, days: number) => `${name}'s program ends in ${days} day${days === 1 ? '' : 's'}`,
     missedCheckIn: (name: string) => `${name} missed check-in`,
     paymentOverdue: (amount: string) => `Payment overdue - ${amount}`,
     welcomeTitle: 'Welcome to FitCore!',

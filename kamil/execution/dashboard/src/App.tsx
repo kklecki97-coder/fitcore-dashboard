@@ -270,8 +270,6 @@ function AppInner() {
                 await supabase.from('coaches').update({ avatar_url: url }).eq('id', user.id);
                 data.setProfilePhoto(url);
               }}
-              notifications={data.notifications}
-              onNotificationsChange={data.setNotifications}
               plans={data.plans}
               onAddPlan={data.addPlan}
               onUpdatePlan={data.updatePlan}

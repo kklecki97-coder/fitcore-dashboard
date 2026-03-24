@@ -902,6 +902,24 @@ function App() {
       showToast(t.toasts?.workoutCelebration ?? 'Beast mode! 💪', 'success');
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 100);
+
+      // ── Update streak ──
+      const today = new Date().toISOString().split('T')[0];
+      const lastActive = clientUser.lastActive;
+      let newStreak = 1;
+      if (lastActive) {
+        const lastDate = new Date(lastActive);
+        const todayDate = new Date(today);
+        const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / 86_400_000);
+        if (diffDays === 0) {
+          newStreak = clientUser.streak; // already trained today, keep streak
+        } else if (diffDays === 1) {
+          newStreak = clientUser.streak + 1; // consecutive day
+        }
+        // diffDays > 1 → streak resets to 1
+      }
+      await supabase.from('clients').update({ streak: newStreak, last_active: today }).eq('id', clientUser.id);
+      setClientUser(prev => prev ? { ...prev, streak: newStreak, lastActive: today } : prev);
     }
   };
 

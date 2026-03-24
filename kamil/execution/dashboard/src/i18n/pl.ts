@@ -891,6 +891,7 @@ export const pl: Translations = {
     checkInSubmitted: (name: string) => `${name} przesłał(a) raport`,
     paymentReceived: (amount: string) => `Otrzymano płatność - ${amount}`,
     programStarts: (name: string) => `Program ${name} zaczyna się jutro`,
+    programEnding: (name: string, days: number) => `Program ${name} kończy się za ${days} dni`,
     missedCheckIn: (name: string) => `${name} pominął(a) raport`,
     paymentOverdue: (amount: string) => `Zaległa płatność - ${amount}`,
     welcomeTitle: 'Witaj w FitCore!',

@@ -333,57 +333,23 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
         </div>
       </GlassCard>
 
-      {/* Share Progress Button */}
-      <button
-        onClick={() => setShowShareCard(true)}
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          width: '100%', padding: isMobile ? '10px' : '12px', borderRadius: '10px',
-          background: 'rgba(0,229,200,0.06)', border: '1px solid rgba(0,229,200,0.2)',
-          color: 'var(--accent-primary)', fontSize: isMobile ? '13px' : '14px', fontWeight: 600,
-          fontFamily: 'var(--font-display)', cursor: 'pointer',
-          transition: 'all 0.15s', marginBottom: '4px',
-        }}
-      >
-        <Share2 size={16} />
-        {lang === 'pl' ? 'Udostępnij swoje postępy' : 'Share My Progress'}
-      </button>
-
-      {/* Share Card Modal */}
-      {showShareCard && (
-        <ShareProgressCard
-          clientName={client.name}
-          coachName={coachName || 'Coach'}
-          weeksIn={weeksIn}
-          weightChange={weightChange}
-          currentWeight={currentWeight}
-          benchPR={getBestLift('bench')}
-          squatPR={getBestLift('squat')}
-          deadliftPR={getBestLift('deadlift')}
-          workoutsCompleted={totalWorkoutsCompleted}
-          completionRate={completionRate}
-          streak={0}
-          onClose={() => setShowShareCard(false)}
-        />
-      )}
-
-      {/* ── 1. STRENGTH ── */}
-      <div style={{ ...styles.strengthSection, gap: isMobile ? '8px' : undefined }}>
-        <div style={{ ...styles.strengthLabel, fontSize: isMobile ? '15px' : undefined }}>{t.progress.strength}</div>
-        <div style={{ ...styles.liftRow, gridTemplateColumns: `repeat(${allLifts.length}, 1fr)`, gap: isMobile ? '8px' : undefined }}>
+      {/* ── STATS: Strength + Body Composition ── */}
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: isMobile ? '6px' : '10px' }}>
+        <div style={{ ...styles.strengthLabel, fontSize: isMobile ? '13px' : undefined }}>{t.progress.strength}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${allLifts.length}, 1fr)`, gap: isMobile ? '6px' : '10px' }}>
           {allLifts.map((lift, i) => {
             const current = lift.values.length > 0 ? lift.values[lift.values.length - 1] : null;
             const startVal = lift.values.length > 0 ? lift.values[0] : null;
             const totalGain = current !== null && startVal !== null ? current - startVal : 0;
             return (
-              <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={{ ...styles.liftCard, padding: isMobile ? '10px 6px' : undefined }}>
-                <div style={{ ...styles.liftName, fontSize: isMobile ? '9px' : undefined, marginBottom: isMobile ? '3px' : undefined }}>{lift.name}</div>
-                <div style={{ ...styles.liftValue, fontSize: isMobile ? '18px' : undefined }}>
-                  {current !== null ? <AnimatedNumber value={current} duration={1200} /> : '-'}<span style={{ ...styles.liftUnit, fontSize: isMobile ? '10px' : undefined }}>{lift.unit}</span>
+              <GlassCard key={lift.name} delay={0.05 + i * 0.05} style={{ ...styles.statCard, padding: isMobile ? '12px 6px' : undefined }}>
+                <div style={styles.statLabel}>{lift.name}</div>
+                <div style={styles.statValue}>
+                  {current !== null ? <AnimatedNumber value={current} duration={1200} /> : '-'}<span style={styles.statUnit}>{lift.unit}</span>
                 </div>
                 {totalGain > 0 && (
-                  <div style={{ ...styles.liftGain, fontSize: isMobile ? '10px' : undefined, marginTop: isMobile ? '3px' : undefined }}>
-                    <TrendingUp size={isMobile ? 9 : 11} />
+                  <div style={{ ...styles.statChange, color: 'var(--accent-success)' }}>
+                    <TrendingUp size={isMobile ? 9 : 10} />
                     +{totalGain}{lift.unit}
                   </div>
                 )}
@@ -391,37 +357,32 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
             );
           })}
         </div>
-      </div>
 
-      {/* ── 2. BODY COMPOSITION — compact horizontal cards on mobile ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: client.height ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: isMobile ? '6px' : '10px' }}>
+        {/* Body Composition */}
+        <div style={{ display: 'grid', gridTemplateColumns: client.height ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)', gap: isMobile ? '6px' : '10px' }}>
         {/* Weight */}
-        <GlassCard delay={0.2} style={{ padding: isMobile ? '10px' : '20px 16px', textAlign: 'center' as const }}>
-          <Scale size={isMobile ? 14 : 20} color="var(--accent-primary)" style={{ marginBottom: isMobile ? 3 : 8 }} />
-          <div style={{ fontSize: isMobile ? '9px' : '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.3px', marginBottom: isMobile ? 2 : 4 }}>
-            {t.progress.weight}
-          </div>
-          <div style={{ fontSize: isMobile ? '18px' : '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {currentWeight !== null ? <><AnimatedNumber value={currentWeight} duration={1200} /><span style={{ fontSize: isMobile ? '10px' : '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>kg</span></> : '—'}
+        <GlassCard delay={0.2} style={{ ...styles.statCard, padding: isMobile ? '12px 6px' : undefined }}>
+          <Scale size={isMobile ? 14 : 16} color="var(--accent-primary)" style={{ marginBottom: isMobile ? 2 : 4 }} />
+          <div style={styles.statLabel}>{t.progress.weight}</div>
+          <div style={styles.statValue}>
+            {currentWeight !== null ? <><AnimatedNumber value={currentWeight} duration={1200} /><span style={styles.statUnit}>kg</span></> : '—'}
           </div>
           {startWeight !== null && currentWeight !== null && weights.length > 1 && (
-            <div style={{ fontSize: isMobile ? '10px' : '12px', color: currentWeight <= startWeight ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: isMobile ? 2 : 4 }}>
+            <div style={{ ...styles.statChange, color: currentWeight <= startWeight ? 'var(--accent-primary)' : 'var(--accent-warm)' }}>
               {currentWeight <= startWeight ? '' : '+'}{(currentWeight - startWeight).toFixed(1)} kg
             </div>
           )}
         </GlassCard>
 
         {/* Body Fat */}
-        <GlassCard delay={0.25} style={{ padding: isMobile ? '10px' : '20px 16px', textAlign: 'center' as const }}>
-          <Droplets size={isMobile ? 14 : 20} color="var(--accent-secondary)" style={{ marginBottom: isMobile ? 3 : 8 }} />
-          <div style={{ fontSize: isMobile ? '9px' : '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.3px', marginBottom: isMobile ? 2 : 4 }}>
-            {t.progress.bodyFat}
-          </div>
-          <div style={{ fontSize: isMobile ? '18px' : '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-            {metrics.bodyFat.length > 0 ? <><AnimatedNumber value={metrics.bodyFat[metrics.bodyFat.length - 1]} duration={1200} /><span style={{ fontSize: isMobile ? '10px' : '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>%</span></> : '—'}
+        <GlassCard delay={0.25} style={{ ...styles.statCard, padding: isMobile ? '12px 6px' : undefined }}>
+          <Droplets size={isMobile ? 14 : 16} color="var(--accent-secondary)" style={{ marginBottom: isMobile ? 2 : 4 }} />
+          <div style={styles.statLabel}>{t.progress.bodyFat}</div>
+          <div style={styles.statValue}>
+            {metrics.bodyFat.length > 0 ? <><AnimatedNumber value={metrics.bodyFat[metrics.bodyFat.length - 1]} duration={1200} /><span style={styles.statUnit}>%</span></> : '—'}
           </div>
           {metrics.bodyFat.length > 1 && (
-            <div style={{ fontSize: isMobile ? '10px' : '12px', color: metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? 'var(--accent-primary)' : 'var(--accent-warm)', fontWeight: 600, marginTop: isMobile ? 2 : 4 }}>
+            <div style={{ ...styles.statChange, color: metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? 'var(--accent-primary)' : 'var(--accent-warm)' }}>
               {metrics.bodyFat[metrics.bodyFat.length - 1] <= metrics.bodyFat[0] ? '' : '+'}{(metrics.bodyFat[metrics.bodyFat.length - 1] - metrics.bodyFat[0]).toFixed(1)}%
             </div>
           )}
@@ -429,16 +390,15 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
 
         {/* Height */}
         {client.height && (
-          <GlassCard delay={0.3} style={{ padding: isMobile ? '10px' : '20px 16px', textAlign: 'center' as const }}>
-            <TrendingUp size={isMobile ? 14 : 20} color="var(--accent-warm)" style={{ marginBottom: isMobile ? 3 : 8 }} />
-            <div style={{ fontSize: isMobile ? '9px' : '12px', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.3px', marginBottom: isMobile ? 2 : 4 }}>
-              {t.progress.height || 'Height'}
-            </div>
-            <div style={{ fontSize: isMobile ? '18px' : '28px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
-              {client.height}<span style={{ fontSize: isMobile ? '10px' : '14px', color: 'var(--text-secondary)', fontWeight: 500, marginLeft: 2 }}>cm</span>
+          <GlassCard delay={0.3} style={{ ...styles.statCard, padding: isMobile ? '12px 6px' : undefined }}>
+            <TrendingUp size={isMobile ? 14 : 16} color="var(--accent-warm)" style={{ marginBottom: isMobile ? 2 : 4 }} />
+            <div style={styles.statLabel}>{t.progress.height || 'Height'}</div>
+            <div style={styles.statValue}>
+              {client.height}<span style={styles.statUnit}>cm</span>
             </div>
           </GlassCard>
         )}
+        </div>
       </div>
 
       {/* ── BODY MEASUREMENTS TABLE ── */}
@@ -454,7 +414,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
         const hasMeasurements = measurementKeys.some(k => metrics[k] && metrics[k].length > 0);
 
         return hasMeasurements ? (
-          <GlassCard delay={0.32} style={isMobile ? { padding: '14px' } : undefined}>
+          <GlassCard delay={0.32} style={{ marginTop: '14px', ...(isMobile ? { padding: '14px' } : {}) }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '12px' : '16px' }}>
               <Ruler size={isMobile ? 14 : 16} color="var(--accent-primary)" />
               <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -512,7 +472,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
 
       {/* ── 3. GOALS ── */}
       {goalProgress.length > 0 && (
-        <GlassCard delay={0.3} style={isMobile ? { padding: '14px' } : undefined}>
+        <GlassCard delay={0.3} style={{ marginTop: '14px', ...(isMobile ? { padding: '14px' } : {}) }}>
           <div style={{ ...styles.goalsHeader, marginBottom: isMobile ? '12px' : undefined }}>
             <Target size={isMobile ? 14 : 16} color="var(--accent-primary)" />
             <span style={{ ...styles.goalsTitle, fontSize: isMobile ? '14px' : undefined }}>{t.progress.goals}</span>
@@ -547,7 +507,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
       )}
 
       {/* ── 4. PROGRESS PHOTOS - Before / Current ── */}
-      <GlassCard delay={0.35} style={isMobile ? { padding: '14px' } : undefined}>
+      <GlassCard delay={0.35} style={{ marginTop: '14px', ...(isMobile ? { padding: '14px' } : {}) }}>
         <div style={{ ...styles.photosHeader, marginBottom: isMobile ? '12px' : undefined }}>
           <Camera size={isMobile ? 14 : 16} color="var(--accent-primary)" />
           <span style={{ ...styles.photosTitle, fontSize: isMobile ? '14px' : undefined }}>{t.progress.progressPhotos}</span>
@@ -644,6 +604,40 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
         </button>
       </GlassCard>
 
+      {/* Share Progress Button */}
+      <button
+        onClick={() => setShowShareCard(true)}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          width: '100%', padding: isMobile ? '10px' : '12px', borderRadius: '10px',
+          background: 'rgba(0,229,200,0.06)', border: '1px solid rgba(0,229,200,0.2)',
+          color: 'var(--accent-primary)', fontSize: isMobile ? '13px' : '14px', fontWeight: 600,
+          fontFamily: 'var(--font-display)', cursor: 'pointer',
+          transition: 'all 0.15s', marginTop: '14px',
+        }}
+      >
+        <Share2 size={16} />
+        {lang === 'pl' ? 'Udostępnij swoje postępy' : 'Share My Progress'}
+      </button>
+
+      {/* Share Card Modal */}
+      {showShareCard && (
+        <ShareProgressCard
+          clientName={client.name}
+          coachName={coachName || 'Coach'}
+          weeksIn={weeksIn}
+          weightChange={weightChange}
+          currentWeight={currentWeight}
+          benchPR={getBestLift('bench')}
+          squatPR={getBestLift('squat')}
+          deadliftPR={getBestLift('deadlift')}
+          workoutsCompleted={totalWorkoutsCompleted}
+          completionRate={completionRate}
+          streak={0}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
+
       {/* ── LIGHTBOX ── */}
       {lightboxSrc && (
         <div style={styles.lightboxOverlay} onClick={() => setLightboxSrc(null)}>
@@ -667,64 +661,55 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '10px',
     minHeight: '100%',
   },
 
-  // ── Strength ──
-  strengthSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
+  // ── Shared stat card styles (strength + body composition) ──
   strengthLabel: {
-    fontSize: '20px',
-    fontWeight: 700,
+    fontSize: '15px',
+    fontWeight: 600,
     color: 'var(--text-primary)',
-    letterSpacing: '-0.3px',
+    letterSpacing: '-0.2px',
   },
-  liftRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '10px',
-  },
-  liftCard: {
+  statCard: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '20px 8px',
+    padding: '18px 12px',
     textAlign: 'center',
+    minHeight: '90px',
   },
-  liftName: {
+  statLabel: {
     fontSize: '11px',
     fontWeight: 600,
     color: 'var(--text-tertiary)',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    marginBottom: '8px',
+    marginBottom: '6px',
   },
-  liftValue: {
-    fontSize: '28px',
+  statValue: {
+    fontSize: '20px',
     fontWeight: 700,
     fontFamily: 'var(--font-mono)',
     color: 'var(--text-primary)',
-    lineHeight: 1,
+    lineHeight: 1.2,
   },
-  liftUnit: {
-    fontSize: '13px',
+  statUnit: {
+    fontSize: '12px',
     fontWeight: 400,
     color: 'var(--text-secondary)',
+    marginLeft: 2,
   },
-  liftGain: {
+  statChange: {
     display: 'flex',
     alignItems: 'center',
     gap: '3px',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: 600,
     fontFamily: 'var(--font-mono)',
-    color: 'var(--accent-success)',
-    marginTop: '8px',
+    marginTop: '6px',
   },
 
   // ── Time period cycle button ──

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, User, Bell, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Package, Plus, Edit3 } from 'lucide-react';
+import { Sun, Moon, User, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Package, Plus, Edit3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useToast } from './Toast';
 import GlassCard from './GlassCard';
@@ -8,13 +8,6 @@ import SettingsSecurityModals from './SettingsSecurityModals';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { Theme, CoachingPlan } from '../types';
-
-interface Notifications {
-  messages: boolean;
-  checkins: boolean;
-  payments: boolean;
-  weekly: boolean;
-}
 
 interface SettingsPageProps {
   theme: Theme;
@@ -24,17 +17,15 @@ interface SettingsPageProps {
   onProfileChange: (name: string, email: string) => void;
   profilePhoto: string | null;
   onPhotoChange: (file: File) => void;
-  notifications: Notifications;
-  onNotificationsChange: (n: Notifications) => void;
   plans: CoachingPlan[];
   onAddPlan: (plan: CoachingPlan) => void;
   onUpdatePlan: (id: string, updates: Partial<CoachingPlan>) => void;
   onDeletePlan: (id: string) => void;
 }
 
-type SettingsTab = 'profile' | 'payments' | 'notifications' | 'security' | 'appearance' | 'danger';
+type SettingsTab = 'profile' | 'payments' | 'security' | 'appearance' | 'danger';
 
-export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, notifications, onNotificationsChange, plans, onAddPlan, onUpdatePlan, onDeletePlan }: SettingsPageProps) {
+export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, plans, onAddPlan, onUpdatePlan, onDeletePlan }: SettingsPageProps) {
   const { t } = useLang();
   const isMobile = useIsMobile();
   const { showToast } = useToast();
@@ -149,21 +140,9 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
     setIsEditingProfile(false);
   };
 
-  const toggleNotification = (key: keyof Notifications) => {
-    onNotificationsChange({ ...notifications, [key]: !notifications[key] });
-  };
-
-  const notifItems = [
-    { key: 'messages' as const, label: t.settings.newClientMessages, desc: t.settings.newClientMessagesSub },
-    { key: 'checkins' as const, label: t.settings.checkInReminders, desc: t.settings.checkInRemindersSub },
-    { key: 'payments' as const, label: t.settings.paymentAlerts, desc: t.settings.paymentAlertsSub },
-    { key: 'weekly' as const, label: t.settings.weeklySummary, desc: t.settings.weeklySummarySub },
-  ];
-
   const tabs: { id: SettingsTab; label: string; icon: typeof User; color?: string; iconBg?: string }[] = [
     { id: 'profile', label: t.settings.profile, icon: User },
     { id: 'payments', label: t.settings.payments, icon: CreditCard, color: '#635bff', iconBg: 'rgba(99, 91, 255, 0.08)' },
-    { id: 'notifications', label: t.settings.notifications, icon: Bell, color: 'var(--accent-warm)', iconBg: 'var(--accent-warm-dim)' },
     { id: 'security', label: t.settings.security, icon: Shield },
     { id: 'appearance', label: t.settings.appearance, icon: Palette, color: 'var(--accent-primary)', iconBg: 'var(--accent-primary-dim)' },
     { id: 'danger', label: t.settings.deleteAccount || 'Danger Zone', icon: AlertTriangle, color: 'var(--accent-danger)', iconBg: 'rgba(239,68,68,0.08)' },
@@ -434,43 +413,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             </button>
           </GlassCard>
           </>
-        );
-
-      case 'notifications':
-        return (
-          <GlassCard delay={0.05}>
-            <div style={styles.sectionHeader}>
-              <div style={{ ...styles.sectionIcon, background: 'var(--accent-warm-dim)' }}>
-                <Bell size={18} color="var(--accent-warm)" />
-              </div>
-              <div>
-                <h3 style={styles.sectionTitle}>{t.settings.notifications}</h3>
-                <p style={styles.sectionSub}>{t.settings.notificationsSubAlt}</p>
-              </div>
-            </div>
-            <div style={styles.divider} />
-            {notifItems.map((notif) => (
-              <div key={notif.key} style={styles.toggleRow}>
-                <div>
-                  <div style={styles.settingLabel}>{notif.label}</div>
-                  <div style={styles.settingDesc}>{notif.desc}</div>
-                </div>
-                <div
-                  style={{
-                    ...styles.toggle,
-                    background: notifications[notif.key] ? 'var(--accent-primary)' : 'var(--glass-border)',
-                  }}
-                  onClick={() => toggleNotification(notif.key)}
-                >
-                  <motion.div
-                    style={styles.toggleKnob}
-                    animate={{ x: notifications[notif.key] ? 18 : 2 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  />
-                </div>
-              </div>
-            ))}
-          </GlassCard>
         );
 
       case 'security':

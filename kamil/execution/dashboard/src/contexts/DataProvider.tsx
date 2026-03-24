@@ -37,8 +37,6 @@ interface DataContextValue {
   // Notifications
   appNotifications: AppNotification[];
   setAppNotifications: React.Dispatch<React.SetStateAction<AppNotification[]>>;
-  notifications: { messages: boolean; checkins: boolean; payments: boolean; weekly: boolean };
-  setNotifications: React.Dispatch<React.SetStateAction<{ messages: boolean; checkins: boolean; payments: boolean; weekly: boolean }>>;
 
   // Client handlers
   updateClient: (id: string, updates: Partial<Client>) => Promise<void>;
@@ -118,15 +116,24 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
   const [profileName, setProfileName] = useState('');
   const [profileEmail, setProfileEmail] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState({
-    messages: true,
-    checkins: true,
-    payments: true,
-    weekly: false,
+
+  // ── App notifications (bell icon) — persisted in localStorage ──
+  const NOTIF_STORAGE_KEY = 'fitcore-notifications';
+  const [appNotifications, setAppNotifications] = useState<AppNotification[]>(() => {
+    try {
+      const saved = localStorage.getItem(NOTIF_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
-  // ── App notifications (bell icon) ──
-  const [appNotifications, setAppNotifications] = useState<AppNotification[]>([]);
+  // Persist notifications to localStorage on change
+  useEffect(() => {
+    try {
+      // Keep max 50 notifications to avoid bloating localStorage
+      const toSave = appNotifications.slice(0, 50);
+      localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(toSave));
+    } catch { /* quota exceeded — silently ignore */ }
+  }, [appNotifications]);
 
   // Track data counts to detect new items for notifications
   const prevMessageCount = useRef(allMessages.length);
@@ -192,6 +199,48 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
       setAppNotifications(prev => [...newNotifs, ...prev]);
     }
   }, [allMessages, allCheckIns, allInvoices, allClients, t]);
+
+  // ── Program ending soon notifications (check once when programs load) ──
+  const programEndingChecked = useRef(false);
+  useEffect(() => {
+    if (programEndingChecked.current || allPrograms.length === 0 || allClients.length === 0) return;
+    programEndingChecked.current = true;
+
+    const now = new Date();
+    const MS_PER_DAY = 86_400_000;
+    const newNotifs: AppNotification[] = [];
+
+    for (const prog of allPrograms) {
+      if (prog.status !== 'active') continue;
+      const startDate = new Date(prog.createdAt);
+      const endDate = new Date(startDate.getTime() + prog.durationWeeks * 7 * MS_PER_DAY);
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / MS_PER_DAY);
+
+      if (daysLeft > 0 && daysLeft <= 7) {
+        for (const clientId of prog.clientIds) {
+          const notifId = `notif-prog-ending-${prog.id}-${clientId}`;
+          // Skip if already in stored notifications
+          if (appNotifications.some(n => n.id === notifId)) continue;
+
+          const client = allClients.find(c => c.id === clientId);
+          newNotifs.push({
+            id: notifId,
+            type: 'program',
+            title: t.notifications.programEnding(client?.name || 'Client', daysLeft),
+            description: prog.name,
+            timestamp: new Date().toISOString(),
+            isRead: false,
+            clientId,
+            targetPage: 'programs',
+          });
+        }
+      }
+    }
+
+    if (newNotifs.length > 0) {
+      setAppNotifications(prev => [...newNotifs, ...prev]);
+    }
+  }, [allPrograms, allClients, t]);
 
   // ── Realtime refs ──
   const clientsRef = useRef<Client[]>([]);
@@ -1085,9 +1134,6 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
 
     appNotifications,
     setAppNotifications,
-    notifications,
-    setNotifications,
-
     updateClient: handleUpdateClient,
     deleteClient: handleDeleteClient,
 
@@ -1112,7 +1158,7 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
     allClients, allMessages, allPrograms, allInvoices, allCheckIns,
     allWorkoutLogs, allSetLogs, allPlans, dataLoading, showOnboarding,
     confettiKey, profileName, profileEmail, profilePhoto,
-    appNotifications, notifications,
+    appNotifications,
   ]);
 
   return (
