@@ -912,9 +912,9 @@ function App() {
         const todayDate = new Date(today);
         const diffDays = Math.round((todayDate.getTime() - lastDate.getTime()) / 86_400_000);
         if (diffDays === 0) {
-          newStreak = clientUser.streak; // already trained today, keep streak
+          newStreak = clientUser.streak || 1; // already trained today, keep streak
         } else if (diffDays === 1) {
-          newStreak = clientUser.streak + 1; // consecutive day
+          newStreak = (clientUser.streak || 0) + 1; // consecutive day
         }
         // diffDays > 1 → streak resets to 1
       }

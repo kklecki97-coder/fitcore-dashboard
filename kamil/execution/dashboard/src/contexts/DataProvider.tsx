@@ -8,6 +8,8 @@ import type {
 } from '../types';
 import { calculateOverallProgress } from '../utils/calculateProgress';
 
+const NOTIF_STORAGE_KEY = 'fitcore-notifications';
+
 // ── Context shape ──
 
 interface DataContextValue {
@@ -118,7 +120,6 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   // ── App notifications (bell icon) — persisted in localStorage ──
-  const NOTIF_STORAGE_KEY = 'fitcore-notifications';
   const [appNotifications, setAppNotifications] = useState<AppNotification[]>(() => {
     try {
       const saved = localStorage.getItem(NOTIF_STORAGE_KEY);
@@ -219,9 +220,6 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
       if (daysLeft > 0 && daysLeft <= 7) {
         for (const clientId of prog.clientIds) {
           const notifId = `notif-prog-ending-${prog.id}-${clientId}`;
-          // Skip if already in stored notifications
-          if (appNotifications.some(n => n.id === notifId)) continue;
-
           const client = allClients.find(c => c.id === clientId);
           newNotifs.push({
             id: notifId,
@@ -238,7 +236,11 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
     }
 
     if (newNotifs.length > 0) {
-      setAppNotifications(prev => [...newNotifs, ...prev]);
+      setAppNotifications(prev => {
+        const existingIds = new Set(prev.map(n => n.id));
+        const fresh = newNotifs.filter(n => !existingIds.has(n.id));
+        return fresh.length > 0 ? [...fresh, ...prev] : prev;
+      });
     }
   }, [allPrograms, allClients, t]);
 
