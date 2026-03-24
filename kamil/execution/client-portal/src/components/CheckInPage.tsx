@@ -574,29 +574,127 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      style={{ ...styles.historyDetail, ...(isMobile ? { marginTop: '10px', paddingTop: '10px', gap: '8px' } : {}) }}
+                      style={{ ...styles.historyDetail, ...(isMobile ? { marginTop: '10px', paddingTop: '10px', gap: '10px' } : {}) }}
                     >
-                      <div style={{ ...styles.detailGrid, ...(isMobile ? { gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' } : {}) }}>
-                        {ci.energy != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.energyLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.energy}/10</span></div>}
-                        {ci.stress != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.stressLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.stress}/10</span></div>}
-                        {ci.sleepHours != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.sleepLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.sleepHours}h</span></div>}
-                        {ci.nutritionScore != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.nutritionLabel}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.nutritionScore}/10</span></div>}
-                      </div>
-                      {(ci.waist != null || ci.hips != null || ci.chest != null || ci.bicep != null || ci.thigh != null) && (
-                        <div style={{ ...styles.detailGrid, ...(isMobile ? { gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))' } : {}) }}>
-                          {ci.waist != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.waistCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.waist}cm</span></div>}
-                          {ci.hips != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.hipsCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.hips}cm</span></div>}
-                          {ci.chest != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.chestCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.chest}cm</span></div>}
-                          {ci.bicep != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.bicepCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.bicep}cm</span></div>}
-                          {ci.thigh != null && <div style={styles.detailItem}><span style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.thighCm}</span><span style={{ ...styles.detailValue, ...(isMobile ? { fontSize: '14px' } : {}) }}>{ci.thigh}cm</span></div>}
+                      {/* Wellness scores - emoji pill cards */}
+                      {(() => {
+                        const wellness = [
+                          ci.energy != null && {
+                            label: t.checkIn.energyLabel, value: ci.energy, max: 10,
+                            emoji: ci.energy >= 7 ? '⚡' : ci.energy >= 4 ? '🔋' : '🪫',
+                            color: ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                            dimColor: ci.energy >= 7 ? 'rgba(34,197,94,0.12)' : ci.energy >= 4 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                          },
+                          ci.stress != null && {
+                            label: t.checkIn.stressLabel, value: ci.stress, max: 10,
+                            emoji: ci.stress <= 3 ? '😌' : ci.stress <= 6 ? '😐' : '😰',
+                            color: ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                            dimColor: ci.stress <= 3 ? 'rgba(34,197,94,0.12)' : ci.stress <= 6 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                          },
+                          ci.sleepHours != null && {
+                            label: t.checkIn.sleepLabel, value: ci.sleepHours, max: 10,
+                            emoji: '😴',
+                            color: 'var(--accent-secondary, #818cf8)',
+                            dimColor: 'rgba(129,140,248,0.12)',
+                          },
+                          ci.nutritionScore != null && {
+                            label: t.checkIn.nutritionLabel, value: ci.nutritionScore, max: 10,
+                            emoji: ci.nutritionScore >= 7 ? '🥗' : ci.nutritionScore >= 4 ? '🍳' : '🍔',
+                            color: ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                            dimColor: ci.nutritionScore >= 7 ? 'rgba(34,197,94,0.12)' : ci.nutritionScore >= 4 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)',
+                          },
+                        ].filter(Boolean) as { label: string; value: number; max: number; emoji: string; color: string; dimColor: string }[];
+
+                        return wellness.length > 0 && (
+                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${Math.min(wellness.length, 4)}, 1fr)`, gap: isMobile ? '6px' : '8px' }}>
+                            {wellness.map(w => {
+                              const pct = (w.value / w.max) * 100;
+                              return (
+                                <div key={w.label} style={{
+                                  padding: isMobile ? '8px 10px' : '10px 14px', borderRadius: '10px',
+                                  background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)',
+                                  position: 'relative', overflow: 'hidden',
+                                }}>
+                                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${w.dimColor} 0%, transparent 100%)`, opacity: 0.5 }} />
+                                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: isMobile ? '16px' : '18px', lineHeight: 1 }}>{w.emoji}</span>
+                                    <div>
+                                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                                        <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: w.color, lineHeight: 1.1 }}>{w.value}</span>
+                                        <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)' }}>/{w.max}</span>
+                                      </div>
+                                      <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', marginTop: '1px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{w.label}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+
+                      {/* Body measurements */}
+                      {(() => {
+                        const meas = [
+                          ci.waist != null && { label: t.checkIn.waistCm, value: ci.waist, prev: prevCi?.waist },
+                          ci.hips != null && { label: t.checkIn.hipsCm, value: ci.hips, prev: prevCi?.hips },
+                          ci.chest != null && { label: t.checkIn.chestCm, value: ci.chest, prev: prevCi?.chest },
+                          ci.bicep != null && { label: t.checkIn.bicepCm, value: ci.bicep, prev: prevCi?.bicep },
+                          ci.thigh != null && { label: t.checkIn.thighCm, value: ci.thigh, prev: prevCi?.thigh },
+                        ].filter(Boolean) as { label: string; value: number; prev: number | null | undefined }[];
+
+                        return meas.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>📏 {t.checkIn.bodyMeasurements}</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : `repeat(${Math.min(meas.length, 5)}, 1fr)`, gap: isMobile ? '6px' : '8px' }}>
+                              {meas.map(m => {
+                                const diff = m.prev != null ? m.value - m.prev : null;
+                                return (
+                                  <div key={m.label} style={{
+                                    padding: isMobile ? '6px 8px' : '8px 12px', borderRadius: '10px',
+                                    background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', textAlign: 'center',
+                                  }}>
+                                    <div style={{ fontSize: isMobile ? '15px' : '17px', fontWeight: 700, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                                      {m.value}<span style={{ fontSize: '10px', fontWeight: 500, opacity: 0.6 }}>cm</span>
+                                    </div>
+                                    {diff != null && Math.abs(diff) >= 0.1 && (
+                                      <div style={{ fontSize: '10px', fontWeight: 600, marginTop: '1px', color: diff <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                                        {diff <= 0 ? '↓' : '↑'}{Math.abs(diff).toFixed(1)}cm
+                                      </div>
+                                    )}
+                                    <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', marginTop: '2px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px' }}>{m.label}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Notes / Wins / Challenges */}
+                      {ci.notes && (
+                        <div style={{ padding: isMobile ? '8px 10px' : '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)' }}>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>📝 {t.checkIn.notesLabel}</div>
+                          <p style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', color: 'var(--text-primary)', lineHeight: 1.5 }}>{ci.notes}</p>
                         </div>
                       )}
-                      {ci.notes && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}) }}><strong>{t.checkIn.notesLabel}</strong> {ci.notes}</div>}
-                      {ci.wins && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}), color: 'var(--accent-success)' }}><strong>{t.checkIn.winsLabel}</strong> {ci.wins}</div>}
-                      {ci.challenges && <div style={{ ...styles.detailText, ...(isMobile ? { fontSize: '13px' } : {}), color: 'var(--accent-warm)' }}><strong>{t.checkIn.challengesLabel}</strong> {ci.challenges}</div>}
+                      {ci.wins && (
+                        <div style={{ padding: isMobile ? '8px 10px' : '10px 14px', borderRadius: '10px', background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)' }}>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent-success)', marginBottom: '4px' }}>🏆 {t.checkIn.winsLabel}</div>
+                          <p style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', color: 'var(--accent-success)', lineHeight: 1.5 }}>{ci.wins}</p>
+                        </div>
+                      )}
+                      {ci.challenges && (
+                        <div style={{ padding: isMobile ? '8px 10px' : '10px 14px', borderRadius: '10px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.12)' }}>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent-warm)', marginBottom: '4px' }}>💪 {t.checkIn.challengesLabel}</div>
+                          <p style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', color: 'var(--accent-warm)', lineHeight: 1.5 }}>{ci.challenges}</p>
+                        </div>
+                      )}
+
+                      {/* Progress Photos */}
                       {ci.photos?.length > 0 && (
                         <div>
-                          <div style={{ ...styles.detailLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>{t.checkIn.progressPhotos}</div>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>📸 {t.checkIn.progressPhotos}</div>
                           <div style={{ ...styles.historyPhotos, ...(isMobile ? { gap: '6px' } : {}) }}>
                             {ci.photos.map((photo, pi) => (
                               <div key={pi} style={{ ...styles.historyPhotoCard, cursor: 'pointer' }} onClick={() => setLightboxSrc(photo.url)}>
@@ -607,10 +705,12 @@ export default function CheckInPage({ checkIns, onSubmitCheckIn, clientId, clien
                           </div>
                         </div>
                       )}
+
+                      {/* Coach Feedback */}
                       {ci.coachFeedback && (
-                        <div style={{ ...styles.feedbackBox, ...(isMobile ? { padding: '10px' } : {}) }}>
-                          <div style={{ ...styles.feedbackLabel, ...(isMobile ? { fontSize: '10px', marginBottom: '4px' } : {}) }}>{t.checkIn.coachFeedback}</div>
-                          <p style={{ ...styles.feedbackText, ...(isMobile ? { fontSize: '13px' } : {}) }}>{ci.coachFeedback}</p>
+                        <div style={{ padding: isMobile ? '10px' : '12px 16px', borderRadius: '10px', background: 'rgba(0,229,200,0.05)', border: '1px solid rgba(0,229,200,0.12)' }}>
+                          <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--accent-primary)', marginBottom: '4px' }}>💬 {t.checkIn.coachFeedback}</div>
+                          <p style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', color: 'var(--text-primary)', lineHeight: 1.5 }}>{ci.coachFeedback}</p>
                         </div>
                       )}
                     </motion.div>

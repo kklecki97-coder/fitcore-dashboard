@@ -3,10 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ClipboardCheck, Search, ChevronDown, ChevronUp,
   AlertTriangle, CheckCircle2, Clock, Flag,
-  TrendingUp, TrendingDown, Moon,
+  TrendingUp, TrendingDown, Moon, ArrowUpRight, ArrowDownRight,
   Smile, Frown, Meh, SmilePlus, Angry,
   Award, Target, MessageSquare, Camera, Plus, X, Send,
   Image as ImageIcon,
+  Scale, Footprints, BedDouble, Percent,
+  Zap, Brain, Utensils, Heart, Ruler,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
@@ -68,17 +70,6 @@ function DeltaBadge({ current, previous, unit, inverse }: { current: number; pre
   );
 }
 
-function ScoreBar({ value, max = 10, color, compact }: { value: number; max?: number; color: string; compact?: boolean }) {
-  const pct = (value / max) * 100;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '4px' : '6px' }}>
-      <div style={{ flex: 1, height: compact ? '3px' : '4px', borderRadius: '2px', background: 'var(--score-bar-track)' }}>
-        <div style={{ width: `${pct}%`, height: '100%', borderRadius: '2px', background: color, transition: 'width 0.3s' }} />
-      </div>
-      <span style={{ fontSize: compact ? '12px' : '13px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
-    </div>
-  );
-}
 
 export default function CheckInsPage({ onViewClient, onNavigate: _onNavigate, onConfetti }: CheckInsPageProps) {
   const isMobile = useIsMobile();
@@ -425,123 +416,213 @@ export default function CheckInsPage({ onViewClient, onNavigate: _onNavigate, on
                             </>
                           ) : (
                           <>
-                          {/* Side-by-side comparison */}
-                          <div style={{ ...styles.comparisonGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
-                            {/* This Week */}
-                            <div style={styles.comparisonCol}>
-                              <div style={{ ...styles.comparisonLabel, fontSize: isMobile ? '11px' : '15px' }}>{t.checkIns.thisWeek} - {new Date(ci.date).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</div>
-                              <div style={{ ...styles.metricsGrid, gap: isMobile ? '6px' : '8px' }}>
-                                {ci.weight != null && (
-                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
-                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.weight}</span>
-                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px' }}>{ci.weight}kg</span>
-                                    {prev?.weight != null && <DeltaBadge current={ci.weight} previous={prev.weight} unit="kg" inverse />}
-                                  </div>
-                                )}
-                                {ci.bodyFat != null && (
-                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
-                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.bodyFat}</span>
-                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px' }}>{ci.bodyFat}%</span>
-                                    {prev?.bodyFat != null && <DeltaBadge current={ci.bodyFat} previous={prev.bodyFat} unit="%" inverse />}
-                                  </div>
-                                )}
-                                {ci.steps != null && (
-                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
-                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.steps}</span>
-                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px', color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.steps.toLocaleString()}</span>
-                                    {prev?.steps != null && <DeltaBadge current={ci.steps} previous={prev.steps} unit="" />}
-                                  </div>
-                                )}
-                                {ci.sleepHours != null && (
-                                  <div style={{ ...styles.metricCell, padding: isMobile ? '8px 10px' : '10px 12px' }}>
-                                    <span style={{ ...styles.metricCellLabel, fontSize: isMobile ? '10px' : '14px' }}>{t.checkIns.sleepHours}</span>
-                                    <span style={{ ...styles.metricCellValue, fontSize: isMobile ? '18px' : '22px' }}>{ci.sleepHours}h</span>
-                                    {prev?.sleepHours != null && <DeltaBadge current={ci.sleepHours} previous={prev.sleepHours} unit="h" />}
-                                  </div>
-                                )}
-                              </div>
+                          {/* ── Body Metrics: Overview-style cards ── */}
+                          {(() => {
+                            const bodyMetrics = [
+                              ci.weight != null && {
+                                label: t.checkIns.weight, value: `${ci.weight}`, unit: 'kg',
+                                icon: Scale, color: 'var(--accent-primary)', dimColor: 'var(--accent-primary-dim)',
+                                trend: prev?.weight != null ? (ci.weight <= prev.weight ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.weight != null ? `${Math.abs(ci.weight - prev.weight).toFixed(1)} kg` : null,
+                                sparkData: getTrend(ci.clientId, 'weight'),
+                              },
+                              ci.bodyFat != null && {
+                                label: t.checkIns.bodyFat, value: `${ci.bodyFat}`, unit: '%',
+                                icon: Percent, color: 'var(--accent-warm)', dimColor: 'var(--accent-warm-dim)',
+                                trend: prev?.bodyFat != null ? (ci.bodyFat <= prev.bodyFat ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.bodyFat != null ? `${Math.abs(ci.bodyFat - prev.bodyFat).toFixed(1)}%` : null,
+                                sparkData: getTrend(ci.clientId, 'bodyFat'),
+                              },
+                              ci.steps != null && {
+                                label: t.checkIns.steps, value: ci.steps.toLocaleString(), unit: '',
+                                icon: Footprints,
+                                color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.steps >= 8000 ? 'var(--accent-success-dim)' : ci.steps >= 5000 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                                trend: prev?.steps != null ? (ci.steps >= prev.steps ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.steps != null ? `${Math.abs(ci.steps - prev.steps).toLocaleString()}` : null,
+                                sparkData: getTrend(ci.clientId, 'steps'),
+                              },
+                              ci.sleepHours != null && {
+                                label: t.checkIns.sleepHours, value: `${ci.sleepHours}`, unit: 'h',
+                                icon: BedDouble, color: 'var(--accent-secondary)', dimColor: 'rgba(139,92,246,0.12)',
+                                trend: prev?.sleepHours != null ? (ci.sleepHours >= prev.sleepHours ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.sleepHours != null ? `${Math.abs(ci.sleepHours - prev.sleepHours).toFixed(1)}h` : null,
+                                sparkData: getTrend(ci.clientId, 'sleepHours'),
+                              },
+                            ].filter(Boolean) as { label: string; value: string; unit: string; icon: typeof Scale; color: string; dimColor: string; trend: 'up' | 'down' | 'neutral'; change: string | null; sparkData: number[] }[];
 
-                              {/* Wellness bars */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '4px' : '6px', marginTop: isMobile ? '8px' : '12px' }}>
-                                {ci.mood && (
-                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
-                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.mood}</span>
-                                    <ScoreBar value={ci.mood} max={5} color={moodIcons[ci.mood]?.color || 'var(--text-secondary)'} compact={isMobile} />
-                                  </div>
-                                )}
-                                {ci.energy != null && (
-                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
-                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.energy}</span>
-                                    <ScoreBar value={ci.energy} color={ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} compact={isMobile} />
-                                  </div>
-                                )}
-                                {ci.stress != null && (
-                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
-                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.stress}</span>
-                                    <ScoreBar value={ci.stress} color={ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)'} compact={isMobile} />
-                                  </div>
-                                )}
-                                {ci.nutritionScore != null && (
-                                  <div style={{ ...styles.wellnessRow, gridTemplateColumns: isMobile ? '55px 1fr' : '70px 1fr' }}>
-                                    <span style={{ ...styles.wellnessLabel, fontSize: isMobile ? '12px' : '15px' }}>{t.checkIns.nutritionScore}</span>
-                                    <ScoreBar value={ci.nutritionScore} color={ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} compact={isMobile} />
-                                  </div>
-                                )}
+                            return bodyMetrics.length > 0 && (
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${Math.min(bodyMetrics.length, 4)}, 1fr)`, gap: isMobile ? '6px' : '8px' }}>
+                                {bodyMetrics.map((stat) => {
+                                  const Icon = stat.icon;
+                                  return (
+                                    <div key={stat.label} style={{
+                                      padding: isMobile ? '8px 10px' : '10px 14px',
+                                      borderRadius: '10px',
+                                      background: 'var(--bg-subtle)',
+                                      border: '1px solid var(--glass-border)',
+                                    }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{
+                                          background: stat.dimColor,
+                                          boxShadow: `0 0 8px ${stat.dimColor}`,
+                                          width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                          <Icon size={13} color={stat.color} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+                                            <span style={{ fontSize: isMobile ? '15px' : '17px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                                              {stat.value}<span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.6 }}>{stat.unit}</span>
+                                            </span>
+                                            {stat.change && stat.trend !== 'neutral' && (
+                                              <span style={{
+                                                fontSize: '10px', fontWeight: 600,
+                                                color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                                                display: 'inline-flex', alignItems: 'center', gap: '1px',
+                                              }}>
+                                                {stat.trend === 'up' ? <ArrowUpRight size={9} /> : <ArrowDownRight size={9} />}
+                                                {stat.change}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '1px' }}>{stat.label}</div>
+                                        </div>
+                                      </div>
+                                      {stat.sparkData.length >= 2 && (
+                                        <div style={{ marginTop: '5px', opacity: 0.7 }}>
+                                          <Sparkline data={stat.sparkData} color={stat.color} width={isMobile ? 100 : 130} height={18} />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            </div>
+                            );
+                          })()}
 
-                            {/* Trends */}
-                            <div style={styles.comparisonCol}>
-                              <div style={{ ...styles.comparisonLabel, fontSize: isMobile ? '11px' : '15px' }}>{t.checkIns.weekTrends}</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '8px' : '12px' }}>
-                                {(() => {
-                                  const weightTrend = getTrend(ci.clientId, 'weight');
-                                  return weightTrend.length >= 2 && (
-                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
-                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.weight}</span>
-                                      <Sparkline data={weightTrend} color="var(--accent-primary)" />
+                          {/* ── Wellness Scores: premium pill cards ── */}
+                          {(() => {
+                            const wellnessItems = [
+                              ci.mood != null && {
+                                label: t.checkIns.mood, value: ci.mood, max: 5,
+                                icon: Heart, emoji: ci.mood >= 5 ? '😁' : ci.mood >= 4 ? '😊' : ci.mood >= 3 ? '😐' : ci.mood >= 2 ? '😞' : '😡',
+                                color: moodIcons[ci.mood]?.color || 'var(--text-secondary)',
+                                dimColor: `${moodIcons[ci.mood]?.color || 'var(--text-secondary)'}20`,
+                              },
+                              ci.energy != null && {
+                                label: t.checkIns.energy, value: ci.energy, max: 10,
+                                icon: Zap, emoji: ci.energy >= 7 ? '⚡' : ci.energy >= 4 ? '🔋' : '🪫',
+                                color: ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.energy >= 7 ? 'var(--accent-success-dim)' : ci.energy >= 4 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                              },
+                              ci.stress != null && {
+                                label: t.checkIns.stress, value: ci.stress, max: 10,
+                                icon: Brain, emoji: ci.stress <= 3 ? '😌' : ci.stress <= 6 ? '😐' : '😰',
+                                color: ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.stress <= 3 ? 'var(--accent-success-dim)' : ci.stress <= 6 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                              },
+                              ci.nutritionScore != null && {
+                                label: t.checkIns.nutritionScore, value: ci.nutritionScore, max: 10,
+                                icon: Utensils, emoji: ci.nutritionScore >= 7 ? '🥗' : ci.nutritionScore >= 4 ? '🍳' : '🍔',
+                                color: ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.nutritionScore >= 7 ? 'var(--accent-success-dim)' : ci.nutritionScore >= 4 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                              },
+                            ].filter(Boolean) as { label: string; value: number; max: number; icon: typeof Zap; emoji: string; color: string; dimColor: string }[];
+
+                            return wellnessItems.length > 0 && (
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${Math.min(wellnessItems.length, 4)}, 1fr)`, gap: isMobile ? '6px' : '8px' }}>
+                                {wellnessItems.map((w) => {
+                                  const pct = (w.value / w.max) * 100;
+                                  return (
+                                    <div key={w.label} style={{
+                                      padding: isMobile ? '8px 10px' : '10px 14px',
+                                      borderRadius: '10px',
+                                      background: 'var(--bg-subtle)',
+                                      border: '1px solid var(--glass-border)',
+                                      position: 'relative',
+                                      overflow: 'hidden',
+                                    }}>
+                                      <div style={{
+                                        position: 'absolute', left: 0, top: 0, bottom: 0,
+                                        width: `${pct}%`,
+                                        background: `linear-gradient(90deg, ${w.dimColor} 0%, transparent 100%)`,
+                                        opacity: 0.5,
+                                        transition: 'width 0.4s ease',
+                                      }} />
+                                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ fontSize: isMobile ? '16px' : '18px', lineHeight: 1 }}>{w.emoji}</div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                                            <span style={{ fontSize: isMobile ? '16px' : '18px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: w.color, lineHeight: 1.1 }}>
+                                              {w.value}
+                                            </span>
+                                            <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)' }}>/{w.max}</span>
+                                          </div>
+                                          <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '1px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                            {w.label}
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
                                   );
-                                })()}
-                                {(() => {
-                                  const stepsTrend = getTrend(ci.clientId, 'steps');
-                                  return stepsTrend.length >= 2 && (
-                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
-                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.steps}</span>
-                                      <Sparkline data={stepsTrend} color="var(--accent-success)" />
-                                    </div>
-                                  );
-                                })()}
-                                {(() => {
-                                  const moodTrend = getTrend(ci.clientId, 'mood');
-                                  return moodTrend.length >= 2 && (
-                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
-                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.mood}</span>
-                                      <Sparkline data={moodTrend} color="var(--accent-warm)" />
-                                    </div>
-                                  );
-                                })()}
-                                {(() => {
-                                  const sleepTrend = getTrend(ci.clientId, 'sleepHours');
-                                  return sleepTrend.length >= 2 && (
-                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
-                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.sleepHours}</span>
-                                      <Sparkline data={sleepTrend} color="var(--accent-secondary)" />
-                                    </div>
-                                  );
-                                })()}
-                                {(() => {
-                                  const energyTrend = getTrend(ci.clientId, 'energy');
-                                  return energyTrend.length >= 2 && (
-                                    <div style={{ ...styles.trendRow, padding: isMobile ? '6px 10px' : '8px 12px' }}>
-                                      <span style={{ ...styles.trendLabel, fontSize: isMobile ? '12px' : '15px', minWidth: isMobile ? '45px' : '60px' }}>{t.checkIns.energy}</span>
-                                      <Sparkline data={energyTrend} color="#f59e0b" />
-                                    </div>
-                                  );
-                                })()}
+                                })}
                               </div>
-                            </div>
-                          </div>
+                            );
+                          })()}
+
+                          {/* ── Body Measurements ── */}
+                          {(() => {
+                            const measurements = [
+                              ci.waist != null && { label: t.clientDetail.waist, value: ci.waist, prev: prev?.waist },
+                              ci.hips != null && { label: t.clientDetail.hips, value: ci.hips, prev: prev?.hips },
+                              ci.chest != null && { label: t.clientDetail.chest, value: ci.chest, prev: prev?.chest },
+                              ci.bicep != null && { label: t.clientDetail.bicep, value: ci.bicep, prev: prev?.bicep },
+                              ci.thigh != null && { label: t.clientDetail.thigh, value: ci.thigh, prev: prev?.thigh },
+                            ].filter(Boolean) as { label: string; value: number; prev: number | null | undefined }[];
+
+                            return measurements.length > 0 && (
+                              <div>
+                                <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-tertiary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Ruler size={12} color="var(--accent-primary)" />
+                                  {t.clientDetail.measurements}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : `repeat(${Math.min(measurements.length, 5)}, 1fr)`, gap: isMobile ? '6px' : '8px' }}>
+                                  {measurements.map((m) => {
+                                    const diff = m.prev != null ? m.value - m.prev : null;
+                                    const trend = diff != null ? (diff <= 0 ? 'up' as const : 'down' as const) : 'neutral' as const;
+                                    return (
+                                      <div key={m.label} style={{
+                                        padding: isMobile ? '8px 10px' : '8px 12px',
+                                        borderRadius: '10px',
+                                        background: 'var(--bg-subtle)',
+                                        border: '1px solid var(--glass-border)',
+                                        textAlign: 'center',
+                                      }}>
+                                        <div style={{ fontSize: isMobile ? '15px' : '17px', fontWeight: 700, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                                          {m.value}<span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.6 }}>cm</span>
+                                        </div>
+                                        {diff != null && Math.abs(diff) >= 0.1 && (
+                                          <div style={{
+                                            fontSize: '10px', fontWeight: 600, marginTop: '1px',
+                                            color: trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                                            display: 'inline-flex', alignItems: 'center', gap: '1px',
+                                          }}>
+                                            {trend === 'up' ? <ArrowUpRight size={9} /> : <ArrowDownRight size={9} />}
+                                            {Math.abs(diff).toFixed(1)}cm
+                                          </div>
+                                        )}
+                                        <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', marginTop: '2px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                          {m.label}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* Client notes / wins / challenges */}
                           <div style={{ ...styles.notesGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: isMobile ? '8px' : '12px' }}>

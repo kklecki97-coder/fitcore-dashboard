@@ -25,7 +25,7 @@ interface ClientsPageProps {
 export default function ClientsPage({ onViewClient, onNavigate }: ClientsPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
-  const { clients: allClients, programs, plans, workoutLogs, checkIns, messages, updateClient: onUpdateClient, deleteClient: onDeleteClient } = useData();
+  const { clients: allClients, programs, plans, workoutLogs, checkIns, messages, invoices, updateClient: onUpdateClient, deleteClient: onDeleteClient, addInvoice: onAddInvoice } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -226,8 +226,37 @@ export default function ClientsPage({ onViewClient, onNavigate }: ClientsPagePro
 
   const handleTogglePause = (clientId: string) => {
     const client = allClients.find(c => c.id === clientId);
-    if (client) {
-      onUpdateClient(clientId, { status: client.status === 'paused' ? 'active' : 'paused' });
+    if (!client) return;
+
+    if (client.status === 'paused') {
+      // Reactivating: reset start_date to today and auto-generate invoice
+      const today = new Date().toISOString().split('T')[0];
+      onUpdateClient(clientId, { status: 'active', startDate: today });
+
+      // Auto-generate invoice if client has a plan
+      const matchedPlan = plans.find(p => p.name === client.plan && p.isActive);
+      if (matchedPlan && matchedPlan.billingCycle !== 'one-time') {
+        const period = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        // Check if invoice for this period already exists
+        const alreadyExists = invoices.some(
+          inv => inv.clientId === clientId && inv.period === period && inv.plan === client.plan
+        );
+        if (!alreadyExists) {
+          onAddInvoice({
+            id: crypto.randomUUID(),
+            clientId,
+            clientName: client.name,
+            amount: matchedPlan.price,
+            status: 'pending',
+            dueDate: today,
+            paidDate: null,
+            period,
+            plan: client.plan,
+          });
+        }
+      }
+    } else {
+      onUpdateClient(clientId, { status: 'paused' });
     }
   };
 

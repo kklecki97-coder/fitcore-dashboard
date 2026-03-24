@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Mail, Calendar, Flame, Target,
-  TrendingUp, TrendingDown, Minus,
+  ArrowUpRight, ArrowDownRight,
   Edit3, MessageSquare, FileText,
   Dumbbell, ChevronDown, Sparkles,
-  Download, Ruler,
+  Download, Ruler, Scale, Percent, DollarSign, Trophy,
 } from 'lucide-react';
 // recharts radar removed — no longer used
 import jsPDF from 'jspdf';
@@ -36,7 +36,7 @@ interface ClientDetailPageProps {
 export default function ClientDetailPage({ clientId, onBack, backLabel }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
-  const { clients, programs, plans, workoutLogs, setLogs, checkIns, messages, updateClient: onUpdateClient, sendMessage: onSendMessage, updateProgram: onUpdateProgram, updateCheckIn: onUpdateCheckIn, addCheckIn: _onAddCheckIn } = useData();
+  const { clients, programs, plans, invoices, workoutLogs, setLogs, checkIns, messages, updateClient: onUpdateClient, sendMessage: onSendMessage, updateProgram: onUpdateProgram, updateCheckIn: onUpdateCheckIn, addCheckIn: _onAddCheckIn, addInvoice: onAddInvoice } = useData();
   const client = clients.find(c => c.id === clientId);
 
   // NOTE: All hooks must be called before any early return (React rules of hooks).
@@ -165,10 +165,38 @@ export default function ClientDetailPage({ clientId, onBack, backLabel }: Client
     if (editPlan !== client.plan) changes.push(t.clientDetail.planChanged(planLabelMap[client.plan] || client.plan, planLabelMap[editPlan] || editPlan));
     if (editStatus !== client.status) changes.push(t.clientDetail.statusChanged(statusLabelMap[client.status], statusLabelMap[editStatus]));
     const desc = changes.length > 0 ? changes.join(', ') : t.clientDetail.planSaved;
+
+    // If reactivating from paused, reset start_date and auto-generate invoice
+    const isReactivating = client.status === 'paused' && editStatus === 'active';
+    const today = new Date().toISOString().split('T')[0];
+
     onUpdateClient(client.id, {
       plan: editPlan, status: editStatus, monthlyRate: rate,
+      ...(isReactivating ? { startDate: today } : {}),
       activityLog: [{ type: 'plan', description: desc, date: new Date().toISOString() }, ...(client.activityLog || [])],
     });
+
+    // Auto-generate invoice on reactivation
+    if (isReactivating && matchedPlan && matchedPlan.billingCycle !== 'one-time') {
+      const period = new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      const alreadyExists = invoices.some(
+        inv => inv.clientId === client.id && inv.period === period && inv.plan === editPlan
+      );
+      if (!alreadyExists) {
+        onAddInvoice({
+          id: crypto.randomUUID(),
+          clientId: client.id,
+          clientName: client.name,
+          amount: matchedPlan.price,
+          status: 'pending',
+          dueDate: today,
+          paidDate: null,
+          period,
+          plan: editPlan,
+        });
+      }
+    }
+
     flashSaved(t.clientDetail.planUpdated);
   };
 
@@ -465,59 +493,115 @@ export default function ClientDetailPage({ clientId, onBack, backLabel }: Client
         </div>
       </GlassCard>
 
-      {/* Key Metrics */}
-      <div style={{ ...styles.metricsRow, ...(isMobile ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' } : {}) }}>
-        <GlassCard delay={0.1} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
-          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.weight}</div>
-          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>
-            {latestWeight != null ? latestWeight : '-'} <span style={{ ...styles.metricUnit, ...(isMobile ? { fontSize: '13px' } : {}) }}>kg</span>
+      {/* Key Metrics — Overview-style cards */}
+      {(() => {
+        const progressColor = client.progress > 80 ? 'var(--accent-success)' : client.progress > 50 ? 'var(--accent-primary)' : 'var(--accent-warm)';
+        const progressDim = client.progress > 80 ? 'var(--accent-success-dim)' : client.progress > 50 ? 'var(--accent-primary-dim)' : 'var(--accent-warm-dim)';
+        const metricCards = [
+          {
+            label: t.clientDetail.weight,
+            value: latestWeight != null ? `${latestWeight}` : '-',
+            unit: 'kg',
+            change: hasWeight ? `${Math.abs(weightChange).toFixed(1)} kg` : null,
+            trend: hasWeight ? (weightChange <= 0 ? 'up' as const : 'down' as const) : 'neutral' as const,
+            icon: Scale,
+            color: 'var(--accent-primary)',
+            dimColor: 'var(--accent-primary-dim)',
+          },
+          {
+            label: t.clientDetail.bodyFat,
+            value: latestBF != null ? `${latestBF}` : '-',
+            unit: '%',
+            change: hasBF ? `${Math.abs(bfChange).toFixed(1)}%` : null,
+            trend: hasBF ? (bfChange <= 0 ? 'up' as const : 'down' as const) : 'neutral' as const,
+            icon: Percent,
+            color: 'var(--accent-warm)',
+            dimColor: 'var(--accent-warm-dim)',
+          },
+          {
+            label: t.clientDetail.monthlyRate,
+            value: formatCurrency(client.monthlyRate, lang),
+            unit: '',
+            change: t.clientDetail.perMonth,
+            trend: 'neutral' as const,
+            icon: DollarSign,
+            color: 'var(--accent-success)',
+            dimColor: 'var(--accent-success-dim)',
+          },
+          {
+            label: t.clientDetail.overallProgress,
+            value: `${client.progress}%`,
+            unit: '',
+            change: null,
+            trend: client.progress > 50 ? 'up' as const : 'down' as const,
+            icon: Trophy,
+            color: progressColor,
+            dimColor: progressDim,
+            showProgressBar: true,
+          },
+        ];
+
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
+            {metricCards.map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                    <div style={{
+                      background: stat.dimColor,
+                      boxShadow: `0 0 12px ${stat.dimColor}`,
+                      width: isMobile ? '36px' : '38px',
+                      height: isMobile ? '36px' : '38px',
+                      borderRadius: '10px',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Icon size={isMobile ? 16 : 17} color={stat.color} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                        <span style={{ fontSize: isMobile ? '20px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                          {stat.value}{stat.unit && <span style={{ fontSize: '13px', fontWeight: 500, opacity: 0.6 }}>{stat.unit}</span>}
+                        </span>
+                        {stat.change && stat.trend !== 'neutral' && (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '1px',
+                          }}>
+                            {stat.trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                            {stat.change}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '3px', lineHeight: 1.2 }}>
+                        {stat.label}
+                        {stat.trend === 'neutral' && stat.change && <span style={{ marginLeft: '6px', opacity: 0.7 }}>— {stat.change}</span>}
+                      </div>
+                      {stat.showProgressBar && (
+                        <div style={{ ...styles.bigProgressBar, marginTop: '6px' }}>
+                          <motion.div
+                            style={{ ...styles.bigProgressFill, background: stat.color }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${client.progress}%` }}
+                            transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </GlassCard>
+              );
+            })}
           </div>
-          {hasWeight && (
-          <div style={{ ...styles.metricChange, ...(isMobile ? { fontSize: '11px', marginTop: '2px' } : {}), color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-            {weightChange <= 0 ? <TrendingDown size={isMobile ? 11 : 14} /> : <TrendingUp size={isMobile ? 11 : 14} />}
-            {Math.abs(weightChange).toFixed(1)} kg
-          </div>
-          )}
-        </GlassCard>
-        <GlassCard delay={0.12} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
-          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.bodyFat}</div>
-          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>
-            {latestBF != null ? latestBF : '-'} <span style={{ ...styles.metricUnit, ...(isMobile ? { fontSize: '13px' } : {}) }}>%</span>
-          </div>
-          {hasBF && (
-          <div style={{ ...styles.metricChange, ...(isMobile ? { fontSize: '11px', marginTop: '2px' } : {}), color: bfChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-            {bfChange <= 0 ? <TrendingDown size={isMobile ? 11 : 14} /> : <TrendingUp size={isMobile ? 11 : 14} />}
-            {Math.abs(bfChange).toFixed(1)}%
-          </div>
-          )}
-        </GlassCard>
-        <GlassCard delay={0.14} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
-          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.monthlyRate}</div>
-          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>
-            {formatCurrency(client.monthlyRate, lang)}
-          </div>
-          <div style={{ ...styles.metricChange, ...(isMobile ? { fontSize: '11px', marginTop: '2px' } : {}), color: 'var(--text-tertiary)' }}>
-            <Minus size={isMobile ? 11 : 14} />
-            {t.clientDetail.perMonth}
-          </div>
-        </GlassCard>
-        <GlassCard delay={0.16} style={{ flex: 1, ...(isMobile ? { padding: '10px 12px' } : {}) }}>
-          <div style={{ ...styles.metricLabel, ...(isMobile ? { fontSize: '11px', marginBottom: '2px' } : {}) }}>{t.clientDetail.overallProgress}</div>
-          <div style={{ ...styles.metricValue, ...(isMobile ? { fontSize: '20px', letterSpacing: '-0.5px' } : {}) }}>{client.progress}%</div>
-          <div style={styles.bigProgressBar}>
-            <motion.div
-              style={{
-                ...styles.bigProgressFill,
-                background: client.progress > 80 ? 'var(--accent-success)' :
-                            client.progress > 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-              }}
-              initial={{ width: 0 }}
-              animate={{ width: `${client.progress}%` }}
-              transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
-            />
-          </div>
-        </GlassCard>
-      </div>
+        );
+      })()}
 
       {/* Body Measurements */}
       {(() => {
