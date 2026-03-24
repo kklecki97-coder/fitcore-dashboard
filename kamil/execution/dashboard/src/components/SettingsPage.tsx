@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, User, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Package, Plus, Edit3 } from 'lucide-react';
+import { Sun, Moon, User, Shield, Palette, X, Save, CheckCircle, CreditCard, Camera, Trash2, AlertTriangle, Mail, Loader2, Package, Plus, Edit3, Bell, Smartphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useToast } from './Toast';
 import GlassCard from './GlassCard';
@@ -8,6 +8,7 @@ import SettingsSecurityModals from './SettingsSecurityModals';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import type { Theme, CoachingPlan } from '../types';
+import { isPushSupported, getPushPermission, isSubscribed, subscribeToPush, unsubscribeFromPush } from '../lib/pushNotifications';
 
 interface SettingsPageProps {
   theme: Theme;
@@ -23,7 +24,7 @@ interface SettingsPageProps {
   onDeletePlan: (id: string) => void;
 }
 
-type SettingsTab = 'profile' | 'payments' | 'security' | 'appearance' | 'danger';
+type SettingsTab = 'profile' | 'payments' | 'notifications' | 'security' | 'appearance' | 'danger';
 
 export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, plans, onAddPlan, onUpdatePlan, onDeletePlan }: SettingsPageProps) {
   const { t } = useLang();
@@ -45,6 +46,38 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
       if (data?.totp?.some(f => f.status === 'verified')) setTwoFactorEnabled(true);
     });
   }, [securityModal]); // re-check after modal closes
+
+  // Push notification state
+  const pushSupported = isPushSupported();
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+
+  useEffect(() => {
+    if (!pushSupported) return;
+    setPushPermission(getPushPermission());
+    isSubscribed().then(setPushEnabled).catch(() => {});
+  }, [pushSupported]);
+
+  const handleTogglePush = async () => {
+    setPushLoading(true);
+    try {
+      if (pushEnabled) {
+        const ok = await unsubscribeFromPush();
+        if (ok) setPushEnabled(false);
+      } else {
+        const ok = await subscribeToPush();
+        if (ok) {
+          setPushEnabled(true);
+          setPushPermission('granted');
+        } else {
+          setPushPermission(getPushPermission());
+        }
+      }
+    } finally {
+      setPushLoading(false);
+    }
+  };
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
@@ -143,6 +176,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const tabs: { id: SettingsTab; label: string; icon: typeof User; color?: string; iconBg?: string }[] = [
     { id: 'profile', label: t.settings.profile, icon: User },
     { id: 'payments', label: t.settings.payments, icon: CreditCard, color: '#635bff', iconBg: 'rgba(99, 91, 255, 0.08)' },
+    { id: 'notifications', label: t.settings.notifications, icon: Bell, color: '#f59e0b', iconBg: 'rgba(245,158,11,0.08)' },
     { id: 'security', label: t.settings.security, icon: Shield },
     { id: 'appearance', label: t.settings.appearance, icon: Palette, color: 'var(--accent-primary)', iconBg: 'var(--accent-primary-dim)' },
     { id: 'danger', label: t.settings.deleteAccount || 'Danger Zone', icon: AlertTriangle, color: 'var(--accent-danger)', iconBg: 'rgba(239,68,68,0.08)' },
@@ -539,6 +573,95 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                   </motion.button>
                 );
               })}
+            </div>
+          </GlassCard>
+        );
+
+      case 'notifications':
+        return (
+          <GlassCard delay={0.05}>
+            <div style={styles.sectionHeader}>
+              <div style={{ ...styles.sectionIcon, background: 'rgba(245,158,11,0.08)' }}>
+                <Bell size={18} color="#f59e0b" />
+              </div>
+              <div>
+                <h3 style={styles.sectionTitle}>{t.settings.notifications}</h3>
+                <p style={styles.sectionSub}>{t.settings.notificationsSub}</p>
+              </div>
+            </div>
+            <div style={styles.divider} />
+
+            {/* Push Notifications Toggle */}
+            <div style={styles.pushSection}>
+              <div style={styles.pushRow}>
+                <div style={styles.pushInfo}>
+                  <div style={styles.pushIcon}>
+                    <Smartphone size={18} color="var(--accent-primary)" />
+                  </div>
+                  <div>
+                    <div style={styles.pushLabel}>{t.settings.pushNotifications || 'Push Notifications'}</div>
+                    <div style={styles.pushDesc}>{t.settings.pushNotificationsSub || 'Receive alerts even when the app is closed'}</div>
+                  </div>
+                </div>
+                <button
+                  style={{
+                    ...styles.pushToggle,
+                    background: pushEnabled ? 'var(--accent-primary)' : 'var(--glass-border)',
+                    opacity: pushLoading ? 0.6 : 1,
+                    cursor: !pushSupported || pushPermission === 'denied' ? 'not-allowed' : 'pointer',
+                  }}
+                  onClick={handleTogglePush}
+                  disabled={pushLoading || !pushSupported || pushPermission === 'denied'}
+                  aria-label={pushEnabled ? 'Disable push notifications' : 'Enable push notifications'}
+                >
+                  <div style={{
+                    ...styles.pushToggleKnob,
+                    transform: pushEnabled ? 'translateX(20px)' : 'translateX(0)',
+                  }} />
+                </button>
+              </div>
+
+              {/* Status messages */}
+              {!pushSupported && (
+                <div style={styles.pushWarning}>
+                  {t.settings.pushNotSupported || 'Push notifications are not supported in this browser.'}
+                </div>
+              )}
+              {pushPermission === 'denied' && pushSupported && (
+                <div style={styles.pushWarning}>
+                  {t.settings.pushBlocked || 'Notifications are blocked. Please enable them in your browser settings.'}
+                </div>
+              )}
+              {pushEnabled && (
+                <div style={styles.pushSuccess}>
+                  <CheckCircle size={14} />
+                  {t.settings.pushActive || 'Push notifications are active on this device.'}
+                </div>
+              )}
+            </div>
+
+            <div style={styles.divider} />
+
+            {/* In-app notification preferences */}
+            <div style={{ marginTop: '8px' }}>
+              <div style={styles.pushLabel}>{t.settings.notificationsSubAlt || 'In-app Alerts'}</div>
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {[
+                  { label: t.settings.newClientMessages, sub: t.settings.newClientMessagesSub },
+                  { label: t.settings.checkInReminders, sub: t.settings.checkInRemindersSub },
+                  { label: t.settings.paymentAlerts, sub: t.settings.paymentAlertsSub },
+                ].map((item, i) => (
+                  <div key={i} style={styles.pushRow}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{item.label}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>{item.sub}</div>
+                    </div>
+                    <div style={{ ...styles.pushToggle, background: 'var(--accent-primary)', cursor: 'default' }}>
+                      <div style={{ ...styles.pushToggleKnob, transform: 'translateX(20px)' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </GlassCard>
         );
@@ -1501,5 +1624,79 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     padding: '4px',
+  },
+  // ── Push Notifications ──
+  pushSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+  },
+  pushRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '16px',
+  },
+  pushInfo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+  },
+  pushIcon: {
+    width: '36px',
+    height: '36px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-primary-dim)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  pushLabel: {
+    fontSize: '15px',
+    fontWeight: 600,
+    color: 'var(--text-primary)',
+  },
+  pushDesc: {
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    marginTop: '2px',
+  },
+  pushToggle: {
+    width: '44px',
+    height: '24px',
+    borderRadius: '12px',
+    border: 'none',
+    padding: '2px',
+    transition: 'background 0.2s',
+    flexShrink: 0,
+    position: 'relative',
+  },
+  pushToggleKnob: {
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    background: '#fff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+    transition: 'transform 0.2s',
+  },
+  pushWarning: {
+    fontSize: '13px',
+    color: '#f59e0b',
+    padding: '8px 12px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'rgba(245,158,11,0.08)',
+    border: '1px solid rgba(245,158,11,0.15)',
+  },
+  pushSuccess: {
+    fontSize: '13px',
+    color: 'var(--accent-primary)',
+    padding: '8px 12px',
+    borderRadius: 'var(--radius-sm)',
+    background: 'var(--accent-primary-dim)',
+    border: '1px solid rgba(0,229,200,0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
 };

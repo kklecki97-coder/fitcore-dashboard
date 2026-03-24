@@ -3,8 +3,16 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { I18nProvider, useLang } from './i18n'
 import { ToastProvider } from './components/Toast'
+import { registerServiceWorker } from './lib/pushNotifications'
 import './index.css'
 import App from './App.tsx'
+
+// Register service worker for push notifications
+if ('serviceWorker' in navigator) {
+  registerServiceWorker().catch((err) =>
+    console.warn('[SW] Registration failed:', err)
+  );
+}
 
 function LangUrlSync() {
   const { pathname } = useLocation();
