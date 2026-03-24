@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore - Instagram Reels Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07090e; color: #f0f2f5; font-family: 'Outfit', sans-serif;
+      padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 48px;
+    }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    h1 span { color: #00e5c8; }
+    .subtitle { color: #8b92a5; font-size: 14px; margin-top: 8px; }
+    .reel-section { max-width: 1400px; width: 100%; margin-bottom: 48px; }
+    .reel-title {
+      font-size: 20px; font-weight: 700; margin-bottom: 16px; padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .reel-title span { color: #00e5c8; }
+    .frames-row {
+      display: flex; gap: 20px; overflow-x: auto; padding-bottom: 16px;
+    }
+    .frame-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
+    .frame-label { font-size: 12px; color: #8b92a5; font-weight: 500; }
+    .frame-box {
+      width: 270px; height: 480px; border-radius: 12px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    canvas { width: 270px; height: 480px; display: block; }
+    button {
+      background: linear-gradient(135deg, #00e5c8, #00c4aa);
+      color: #07090e; border: none; padding: 8px 20px; border-radius: 10px;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12px;
+      cursor: pointer; transition: transform 0.2s;
+    }
+    button:hover { transform: translateY(-2px); }
+    .dl-reel {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      padding: 10px 28px; font-size: 13px; border-radius: 10px; margin-bottom: 16px;
+    }
+    .dl-all-top {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      padding: 14px 36px; font-size: 15px; border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div style="text-align:center">
+    <h1>Fit<span>Core</span> - Reels Generator</h1>
+    <p class="subtitle">Klatki 1080x1920 (9:16) — pobierz i złóż w CapCut jako slideshow</p>
+  </div>
+
+  <button class="dl-all-top" onclick="downloadAllReels()">Pobierz wszystkie klatki</button>
+
+  <div id="reels"></div>
+
+  <script>
+    const W = 1080, H = 1920;
+    const ACCENT = '#00e5c8';
+    const ACCENT2 = '#6366f1';
+    const BG = '#07090e';
+    const TEXT = '#f0f2f5';
+    const TEXT2 = '#8b92a5';
+    const TEXT3 = '#525a6e';
+    const RED = '#ef4444';
+    const GREEN = '#22c55e';
+    const AMBER = '#f59e0b';
+
+    // ── Helpers ──
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+    function fillRR(ctx, x, y, w, h, r, c) { roundRect(ctx, x, y, w, h, r); ctx.fillStyle = c; ctx.fill(); }
+    function strokeRR(ctx, x, y, w, h, r, c, lw) { roundRect(ctx, x, y, w, h, r); ctx.strokeStyle = c; ctx.lineWidth = lw || 1; ctx.stroke(); }
+
+    function drawBG(ctx) {
+      ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+      const g1 = ctx.createRadialGradient(W * 0.8, H * 0.1, 0, W * 0.8, H * 0.1, W);
+      g1.addColorStop(0, 'rgba(0,229,200,0.06)'); g1.addColorStop(1, 'transparent');
+      ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
+      const g2 = ctx.createRadialGradient(W * 0.2, H * 0.85, 0, W * 0.2, H * 0.85, W * 0.8);
+      g2.addColorStop(0, 'rgba(99,102,241,0.04)'); g2.addColorStop(1, 'transparent');
+      ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawLogo(ctx, x, y, size) {
+      const half = size / 2, cx = x + half, cy = y + half;
+      const bg = ctx.createLinearGradient(x, y, x + size, y + size);
+      bg.addColorStop(0, '#0c1017'); bg.addColorStop(1, BG);
+      ctx.beginPath(); ctx.arc(cx, cy, half, 0, Math.PI * 2); ctx.fillStyle = bg; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, half - 1, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0,229,200,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+      const fs = size * 0.39;
+      ctx.font = `800 ${fs}px 'Outfit',sans-serif`; ctx.textBaseline = 'middle';
+      const fW = ctx.measureText('F').width, cW = ctx.measureText('C').width;
+      const sx = cx - (fW + cW) / 2;
+      ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText('F', sx, cy + fs * 0.04);
+      const tg = ctx.createLinearGradient(cx - size * 0.2, 0, cx + size * 0.2, y + size);
+      tg.addColorStop(0, '#00e5c8'); tg.addColorStop(1, '#00c4aa');
+      ctx.fillStyle = tg; ctx.fillText('C', sx + fW, cy + fs * 0.04);
+    }
+
+    function drawBrand(ctx, x, y, fs) {
+      ctx.font = `700 ${fs}px 'Outfit',sans-serif`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = TEXT; const fw = ctx.measureText('Fit').width;
+      ctx.fillText('Fit', x, y); ctx.fillStyle = ACCENT; ctx.fillText('Core', x + fw, y);
+    }
+
+    function glassCard(ctx, x, y, w, h, r) {
+      fillRR(ctx, x, y, w, h, r || 24, 'rgba(14,18,27,0.85)');
+      strokeRR(ctx, x, y, w, h, r || 24, 'rgba(255,255,255,0.06)', 1.5);
+    }
+
+    function accentLine(ctx, y) {
+      const g = ctx.createLinearGradient(W / 2 - 160, 0, W / 2 + 160, 0);
+      g.addColorStop(0, 'transparent'); g.addColorStop(0.5, ACCENT); g.addColorStop(1, 'transparent');
+      ctx.strokeStyle = g; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W / 2 - 160, y); ctx.lineTo(W / 2 + 160, y); ctx.stroke();
+    }
+
+    function wrapText(ctx, text, x, y, maxW, lh) {
+      const words = text.split(' '); let line = '', ty = y;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (ctx.measureText(test).width > maxW && i > 0) {
+          ctx.fillText(line.trim(), x, ty); line = words[i] + ' '; ty += lh;
+        } else { line = test; }
+      }
+      ctx.fillText(line.trim(), x, ty); return ty;
+    }
+
+    function footer(ctx) {
+      drawLogo(ctx, W / 2 - 32, H - 160, 64);
+      ctx.fillStyle = TEXT3; ctx.font = '500 28px "Outfit",sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText('fitcore.tech', W / 2, H - 75);
+    }
+
+    // ═══════════════════════════════════════
+    //  REEL 1: Klient zapomniał o treningu
+    // ═══════════════════════════════════════
+    const reel1 = {
+      name: 'Reel 1 — Klient zapomniał o treningu',
+      frames: [
+        // Frame 1: Hook
+        function(ctx) {
+          drawBG(ctx);
+          drawLogo(ctx, W / 2 - 60, 280, 120);
+          ctx.fillStyle = RED;
+          ctx.font = '700 32px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('RETENCJA KLIENTÓW', W / 2, 480);
+
+          accentLine(ctx, 530);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 72px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          wrapText(ctx, 'Twój klient znów zapomniał o treningu.', W / 2, 650, W - 120, 90);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 36px "Outfit",sans-serif';
+          ctx.fillText('To nie jego wina.', W / 2, 880);
+
+          footer(ctx);
+        },
+        // Frame 2: Problem - PDF na WhatsApp
+        function(ctx) {
+          drawBG(ctx);
+
+          ctx.fillStyle = RED;
+          ctx.font = '700 28px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('TAK ROBI WIĘKSZOŚĆ TRENERÓW', W / 2, 340);
+
+          accentLine(ctx, 380);
+
+          // Big card
+          glassCard(ctx, 60, 430, W - 120, 950, 28);
+          fillRR(ctx, 60, 430, W - 120, 6, 3, RED);
+
+          ctx.fillStyle = RED;
+          ctx.font = '800 52px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('❌  PDF na WhatsApp', W / 2, 530);
+
+          accentLine(ctx, 580);
+
+          const problems = [
+            { icon: '💬', text: 'Plan ginie w czacie' },
+            { icon: '🔕', text: 'Brak przypomnień' },
+            { icon: '📉', text: 'Brak śledzenia postępów' },
+            { icon: '😐', text: 'Nieprofesjonalne wrażenie' },
+            { icon: '🗑️', text: 'Klient kasuje by zrobić miejsce' },
+          ];
+
+          problems.forEach((p, i) => {
+            const y = 640 + i * 120;
+            glassCard(ctx, 100, y, W - 200, 100, 20);
+            ctx.font = '40px sans-serif'; ctx.textAlign = 'left';
+            ctx.fillText(p.icon, 140, y + 58);
+            ctx.fillStyle = TEXT;
+            ctx.font = '500 36px "Outfit",sans-serif';
+            ctx.fillText(p.text, 210, y + 58);
+          });
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 30px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Brzmi znajomo?', W / 2, 1310);
+
+          footer(ctx);
+        },
+        // Frame 3: Solution - Portal Klienta
+        function(ctx) {
+          drawBG(ctx);
+
+          ctx.fillStyle = GREEN;
+          ctx.font = '700 28px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('A TAK MOŻE WYGLĄDAĆ U CIEBIE', W / 2, 340);
+
+          accentLine(ctx, 380);
+
+          // Big card
+          glassCard(ctx, 60, 430, W - 120, 950, 28);
+          fillRR(ctx, 60, 430, W - 120, 6, 3, GREEN);
+
+          ctx.fillStyle = GREEN;
+          ctx.font = '800 52px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('✅  Portal Klienta', W / 2, 530);
+
+          accentLine(ctx, 580);
+
+          const solutions = [
+            { icon: '📱', text: 'Plan zawsze pod ręką' },
+            { icon: '👁️', text: 'Widzi postępy na żywo' },
+            { icon: '💬', text: 'Czat z trenerem' },
+            { icon: '⭐', text: 'Premium doświadczenie' },
+            { icon: '🔒', text: 'Bezpieczne i profesjonalne' },
+          ];
+
+          solutions.forEach((s, i) => {
+            const y = 640 + i * 120;
+            glassCard(ctx, 100, y, W - 200, 100, 20);
+            ctx.font = '40px sans-serif'; ctx.textAlign = 'left';
+            ctx.fillText(s.icon, 140, y + 58);
+            ctx.fillStyle = TEXT;
+            ctx.font = '500 36px "Outfit",sans-serif';
+            ctx.fillText(s.text, 210, y + 58);
+          });
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 30px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Twój klient zasługuje na to.', W / 2, 1310);
+
+          footer(ctx);
+        },
+        // Frame 4: Punchline
+        function(ctx) {
+          drawBG(ctx);
+
+          drawLogo(ctx, W / 2 - 50, 400, 100);
+
+          accentLine(ctx, 560);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 64px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Problem nie jest', W / 2, 700);
+          ctx.fillText('w kliencie.', W / 2, 780);
+
+          accentLine(ctx, 840);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '800 64px "Outfit",sans-serif';
+          ctx.fillText('Problem jest', W / 2, 950);
+          ctx.fillText('w narzędziach.', W / 2, 1030);
+
+          accentLine(ctx, 1090);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 32px "Outfit",sans-serif';
+          ctx.fillText('Zmień narzędzia. Zmień wyniki.', W / 2, 1180);
+
+          footer(ctx);
+        }
+      ]
+    };
+
+    // ═══════════════════════════════════════
+    //  REEL 2: Dzień trenera z 20+ klientami
+    // ═══════════════════════════════════════
+    const reel2 = {
+      name: 'Reel 2 — Dzień trenera z 20+ klientami',
+      frames: [
+        // Frame 1: Hook
+        function(ctx) {
+          drawBG(ctx);
+          drawLogo(ctx, W / 2 - 60, 280, 120);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '700 32px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('DZIEŃ TRENERA', W / 2, 480);
+
+          accentLine(ctx, 530);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 72px "Outfit",sans-serif';
+          wrapText(ctx, '6:00 rano. Pobudka. 20+ klientów do ogarnięcia.', W / 2, 660, W - 120, 90);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 36px "Outfit",sans-serif';
+          ctx.fillText('Jak wygląda Twój dzień?', W / 2, 920);
+
+          footer(ctx);
+        },
+        // Frame 2: Harmonogram — treningi
+        function(ctx) {
+          drawBG(ctx);
+
+          ctx.fillStyle = GREEN;
+          ctx.font = '700 28px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('TO JEST OK ✅', W / 2, 360);
+
+          accentLine(ctx, 400);
+
+          const ok = [
+            { time: '06:00', task: 'Pobudka' },
+            { time: '07:00', task: 'Pierwszy klient' },
+            { time: '08:00', task: 'Drugi klient' },
+            { time: '09:00', task: 'Trzeci klient' },
+            { time: '10:00', task: 'Czwarty klient' },
+            { time: '11:00', task: 'Piąty klient' },
+          ];
+
+          ok.forEach((item, i) => {
+            const y = 460 + i * 110;
+            glassCard(ctx, 80, y, W - 160, 90, 18);
+            fillRR(ctx, 80, y, 6, 90, 3, GREEN);
+            ctx.fillStyle = GREEN;
+            ctx.font = '700 30px "JetBrains Mono",monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(item.time, 120, y + 52);
+            ctx.fillStyle = TEXT;
+            ctx.font = '500 32px "Outfit",sans-serif';
+            ctx.fillText(item.task, 320, y + 52);
+          });
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 30px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('5 treningów rano. Bez problemu.', W / 2, 1170);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '700 36px "Outfit",sans-serif';
+          ctx.fillText('Ale potem...', W / 2, 1240);
+
+          footer(ctx);
+        },
+        // Frame 3: Harmonogram — admin (problem)
+        function(ctx) {
+          drawBG(ctx);
+
+          ctx.fillStyle = RED;
+          ctx.font = '700 28px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🚨  A TO ZABIERA CAŁY DZIEŃ', W / 2, 340);
+
+          accentLine(ctx, 380);
+
+          const bad = [
+            { time: '12:30', task: 'Odpisanie na 23 wiadomości', dur: '45 min' },
+            { time: '13:00', task: 'Napisanie 2 planów', dur: '60 min' },
+            { time: '14:00', task: 'Sprawdzenie płatności', dur: '30 min' },
+            { time: '14:30', task: 'Aktualizacja postępów', dur: '45 min' },
+            { time: '21:00', task: 'Wciąż odpisuje...', dur: '???' },
+          ];
+
+          bad.forEach((item, i) => {
+            const y = 440 + i * 130;
+            fillRR(ctx, 80, y, W - 160, 105, 18, 'rgba(239,68,68,0.08)');
+            strokeRR(ctx, 80, y, W - 160, 105, 18, 'rgba(239,68,68,0.2)', 1.5);
+            fillRR(ctx, 80, y, 6, 105, 3, RED);
+            ctx.fillStyle = AMBER;
+            ctx.font = '700 28px "JetBrains Mono",monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(item.time, 120, y + 42);
+            ctx.fillStyle = TEXT;
+            ctx.font = '500 30px "Outfit",sans-serif';
+            ctx.fillText(item.task, 120, y + 80);
+            ctx.fillStyle = RED;
+            ctx.font = '700 26px "Outfit",sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(item.dur, W - 110, y + 52);
+          });
+
+          // Total
+          fillRR(ctx, 80, 1120, W - 160, 90, 18, 'rgba(239,68,68,0.15)');
+          strokeRR(ctx, 80, 1120, W - 160, 90, 18, 'rgba(239,68,68,0.3)', 2);
+          ctx.fillStyle = RED;
+          ctx.font = '800 38px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('8-12 GODZIN / TYDZIEŃ', W / 2, 1175);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 30px "Outfit",sans-serif';
+          ctx.fillText('To jest cały dzień roboczy.', W / 2, 1270);
+
+          footer(ctx);
+        },
+        // Frame 4: Solution
+        function(ctx) {
+          drawBG(ctx);
+
+          drawLogo(ctx, W / 2 - 50, 350, 100);
+
+          accentLine(ctx, 510);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 60px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('A gdyby te', W / 2, 620);
+
+          ctx.fillStyle = RED;
+          ctx.fillText('8-12 godzin', W / 2, 700);
+
+          ctx.fillStyle = TEXT;
+          ctx.fillText('zajęło', W / 2, 780);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '800 96px "Outfit",sans-serif';
+          ctx.fillText('15 minut?', W / 2, 910);
+
+          accentLine(ctx, 980);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 32px "Outfit",sans-serif';
+          ctx.fillText('Jeden dashboard. Zero chaosu.', W / 2, 1060);
+
+          footer(ctx);
+        }
+      ]
+    };
+
+    // ═══════════════════════════════════════
+    //  REEL 3: Tak to wygląda u nas
+    // ═══════════════════════════════════════
+    const reel3 = {
+      name: 'Reel 3 — Tak to wygląda u nas (intro + outro)',
+      frames: [
+        // Frame 1: Hook/Intro
+        function(ctx) {
+          drawBG(ctx);
+          drawLogo(ctx, W / 2 - 60, 280, 120);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '700 32px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('FITCORE DASHBOARD', W / 2, 480);
+
+          accentLine(ctx, 530);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 68px "Outfit",sans-serif';
+          wrapText(ctx, 'Tak wygląda zarządzanie klientami w 2026.', W / 2, 660, W - 120, 85);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 34px "Outfit",sans-serif';
+          ctx.fillText('Screen recording za 3... 2... 1...', W / 2, 920);
+
+          footer(ctx);
+        },
+        // Frame 2: Outro / CTA (po screen recordingu)
+        function(ctx) {
+          drawBG(ctx);
+
+          drawLogo(ctx, W / 2 - 60, 300, 120);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 60px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Jeden dashboard.', W / 2, 540);
+          ctx.fillText('Wszyscy klienci.', W / 2, 620);
+          ctx.fillStyle = ACCENT;
+          ctx.fillText('Zero chaosu.', W / 2, 700);
+
+          accentLine(ctx, 760);
+
+          // Feature pills
+          const pills = ['Klienci', 'Programy', 'Wiadomości', 'Płatności', 'Postępy'];
+          const pillY = 830;
+          pills.forEach((p, i) => {
+            const pw = 180, ph = 56;
+            const cols = 3;
+            const row = Math.floor(i / cols);
+            const col = i % cols;
+            const totalW = cols * pw + (cols - 1) * 16;
+            const startX = (W - totalW) / 2;
+            const px = startX + col * (pw + 16);
+            const py = pillY + row * (ph + 16);
+            fillRR(ctx, px, py, pw, ph, ph / 2, 'rgba(0,229,200,0.1)');
+            strokeRR(ctx, px, py, pw, ph, ph / 2, 'rgba(0,229,200,0.2)', 1);
+            ctx.fillStyle = ACCENT;
+            ctx.font = '600 22px "Outfit",sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(p, px + pw / 2, py + ph / 2);
+          });
+
+          ctx.textBaseline = 'alphabetic';
+
+          accentLine(ctx, 1020);
+
+          // CTA
+          fillRR(ctx, W / 2 - 240, 1080, 480, 80, 20, 'rgba(0,229,200,0.15)');
+          strokeRR(ctx, W / 2 - 240, 1080, 480, 80, 20, 'rgba(0,229,200,0.3)', 2);
+          ctx.fillStyle = ACCENT;
+          ctx.font = '700 30px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Darmowe testy → fitcore.tech', W / 2, 1130);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 28px "Outfit",sans-serif';
+          ctx.fillText('Link w bio 👆', W / 2, 1220);
+
+          footer(ctx);
+        }
+      ]
+    };
+
+    // ═══════════════════════════════════════
+    //  REEL 4: Darmowe testy — Post 7
+    // ═══════════════════════════════════════
+    const reel4 = {
+      name: 'Reel 4 — Darmowe testy (Post 7)',
+      frames: [
+        // Frame 1: Hook — "Szukamy trenerów"
+        function(ctx) {
+          drawBG(ctx);
+          drawLogo(ctx, W / 2 - 60, 220, 120);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '700 30px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('BETA TESTY', W / 2, 420);
+
+          accentLine(ctx, 465);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 74px "Outfit",sans-serif';
+          wrapText(ctx, 'Szukamy trenerów do darmowych testów.', W / 2, 580, W - 120, 92);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 36px "Outfit",sans-serif';
+          ctx.fillText('Bez haczyka. Serio.', W / 2, 870);
+
+          // Small trust badges
+          const badges = ['Bez karty', 'Bez zobowiązań', 'Pełny dostęp'];
+          badges.forEach((b, i) => {
+            const bw = 250, bh = 56;
+            const bx = W / 2 - bw / 2;
+            const by = 950 + i * 76;
+            fillRR(ctx, bx, by, bw, bh, bh / 2, 'rgba(0,229,200,0.08)');
+            strokeRR(ctx, bx, by, bw, bh, bh / 2, 'rgba(0,229,200,0.15)', 1);
+            ctx.fillStyle = ACCENT;
+            ctx.font = '600 24px "Outfit",sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(b, bx + bw / 2, by + bh / 2);
+          });
+          ctx.textBaseline = 'alphabetic';
+
+          footer(ctx);
+        },
+        // Frame 2: Co dostajesz — feature list
+        function(ctx) {
+          drawBG(ctx);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '700 28px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('CO DOSTAJESZ ZA DARMO?', W / 2, 300);
+
+          accentLine(ctx, 345);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 56px "Outfit",sans-serif';
+          ctx.fillText('Wszystko.', W / 2, 430);
+
+          const features = [
+            { icon: '📊', text: 'Dashboard trenera', desc: 'Klienci, statusy, aktywność' },
+            { icon: '🏋️', text: 'Programy treningowe', desc: 'Baza ćwiczeń, serie, RPE' },
+            { icon: '📱', text: 'Portal klienta', desc: 'Plan, postępy, czat' },
+            { icon: '💬', text: 'Wbudowany czat', desc: 'Zero WhatsAppa' },
+            { icon: '📋', text: 'Check-iny', desc: 'Waga, sen, stres, zdjęcia' },
+            { icon: '🧠', text: 'Smart Coach', desc: 'AI alerty — 16 typów' },
+            { icon: '🤖', text: 'Autopilot', desc: 'Gotowe wiadomości AI' },
+          ];
+
+          features.forEach((f, i) => {
+            const y = 500 + i * 130;
+            glassCard(ctx, 80, y, W - 160, 110, 20);
+            fillRR(ctx, 80, y, 6, 110, 3, ACCENT);
+            ctx.font = '38px sans-serif'; ctx.textAlign = 'left';
+            ctx.fillText(f.icon, 120, y + 48);
+            ctx.fillStyle = TEXT;
+            ctx.font = '700 32px "Outfit",sans-serif';
+            ctx.fillText(f.text, 190, y + 44);
+            ctx.fillStyle = TEXT2;
+            ctx.font = '400 26px "Outfit",sans-serif';
+            ctx.fillText(f.desc, 190, y + 84);
+          });
+
+          footer(ctx);
+        },
+        // Frame 3: Dlaczego za darmo?
+        function(ctx) {
+          drawBG(ctx);
+
+          drawLogo(ctx, W / 2 - 50, 280, 100);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '700 28px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('DLACZEGO ZA DARMO?', W / 2, 460);
+
+          accentLine(ctx, 505);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 58px "Outfit",sans-serif';
+          wrapText(ctx, 'Bo budujemy to z trenerami.', W / 2, 610, W - 120, 75);
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 36px "Outfit",sans-serif';
+          wrapText(ctx, 'Nie w korporacji. Nie w oderwaniu.', W / 2, 800, W - 120, 50);
+
+          accentLine(ctx, 900);
+
+          // What we need from you
+          glassCard(ctx, 80, 960, W - 160, 340, 24);
+          fillRR(ctx, 80, 960, W - 160, 6, 3, ACCENT);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '700 30px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('W zamian potrzebujemy:', W / 2, 1020);
+
+          const needs = [
+            '→  Wrzuć kilku klientów',
+            '→  Stwórz im plany',
+            '→  Powiedz co działa, co nie',
+          ];
+          needs.forEach((n, i) => {
+            ctx.fillStyle = TEXT;
+            ctx.font = '500 34px "Outfit",sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(n, W / 2, 1090 + i * 60);
+          });
+
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 28px "Outfit",sans-serif';
+          ctx.fillText('Szczery feedback. Tyle.', W / 2, 1330);
+
+          footer(ctx);
+        },
+        // Frame 4: CTA — Napisz DM
+        function(ctx) {
+          drawBG(ctx);
+
+          drawLogo(ctx, W / 2 - 60, 300, 120);
+
+          accentLine(ctx, 480);
+
+          ctx.fillStyle = TEXT;
+          ctx.font = '800 64px "Outfit",sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Dołącz do', W / 2, 600);
+
+          ctx.fillStyle = ACCENT;
+          ctx.font = '800 80px "Outfit",sans-serif';
+          ctx.fillText('darmowych testów', W / 2, 700);
+
+          accentLine(ctx, 760);
+
+          // Big CTA button
+          const btnW = 640, btnH = 100, btnX = W / 2 - btnW / 2, btnY = 840;
+          const btnG = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY + btnH);
+          btnG.addColorStop(0, '#00e5c8'); btnG.addColorStop(1, '#00c4aa');
+          fillRR(ctx, btnX, btnY, btnW, btnH, btnH / 2, btnG);
+          ctx.fillStyle = '#07090e';
+          ctx.font = '800 38px "Outfit",sans-serif';
+          ctx.fillText('NAPISZ DM', W / 2, btnY + btnH / 2 + 14);
+
+          // Or link
+          ctx.fillStyle = TEXT2;
+          ctx.font = '400 30px "Outfit",sans-serif';
+          ctx.fillText('lub', W / 2, 1010);
+
+          // Link button
+          fillRR(ctx, W / 2 - 280, 1050, 560, 80, 40, 'rgba(0,229,200,0.1)');
+          strokeRR(ctx, W / 2 - 280, 1050, 560, 80, 40, 'rgba(0,229,200,0.25)', 2);
+          ctx.fillStyle = ACCENT;
+          ctx.font = '700 32px "Outfit",sans-serif';
+          ctx.fillText('fitcore.tech — link w bio', W / 2, 1100);
+
+          // Trust line
+          accentLine(ctx, 1200);
+          ctx.fillStyle = TEXT3;
+          ctx.font = '400 26px "Outfit",sans-serif';
+          ctx.fillText('Bez karty  •  Bez zobowiązań  •  Pełny dostęp', W / 2, 1260);
+
+          footer(ctx);
+        }
+      ]
+    };
+
+    // ═══════════════════════════════════════
+    //  Render everything
+    // ═══════════════════════════════════════
+    const allReels = [reel1, reel2, reel3, reel4];
+
+    function renderReels() {
+      const container = document.getElementById('reels');
+
+      allReels.forEach((reel, ri) => {
+        const section = document.createElement('div');
+        section.className = 'reel-section';
+
+        const title = document.createElement('div');
+        title.className = 'reel-title';
+        title.innerHTML = `<span>${reel.name}</span> — ${reel.frames.length} klatek`;
+
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'dl-reel';
+        dlBtn.textContent = `Pobierz wszystkie klatki Reel ${ri + 1}`;
+        dlBtn.onclick = () => downloadReel(ri);
+
+        const row = document.createElement('div');
+        row.className = 'frames-row';
+
+        reel.frames.forEach((drawFn, fi) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'frame-wrap';
+
+          const label = document.createElement('div');
+          label.className = 'frame-label';
+          label.textContent = `Klatka ${fi + 1}`;
+
+          const box = document.createElement('div');
+          box.className = 'frame-box';
+
+          const canvas = document.createElement('canvas');
+          canvas.width = W; canvas.height = H;
+          canvas.id = `reel${ri}-frame${fi}`;
+
+          box.appendChild(canvas);
+
+          const btn = document.createElement('button');
+          btn.textContent = 'Pobierz PNG';
+          btn.onclick = () => downloadFrame(ri, fi);
+
+          wrap.appendChild(label);
+          wrap.appendChild(box);
+          wrap.appendChild(btn);
+          row.appendChild(wrap);
+
+          const ctx = canvas.getContext('2d');
+          drawFn(ctx);
+        });
+
+        section.appendChild(title);
+        section.appendChild(dlBtn);
+        section.appendChild(row);
+        container.appendChild(section);
+      });
+    }
+
+    function downloadFrame(ri, fi) {
+      const canvas = document.getElementById(`reel${ri}-frame${fi}`);
+      const link = document.createElement('a');
+      link.download = `fitcore-reel${ri + 1}-klatka${fi + 1}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadReel(ri) {
+      allReels[ri].frames.forEach((_, fi) => {
+        setTimeout(() => downloadFrame(ri, fi), fi * 300);
+      });
+    }
+
+    function downloadAllReels() {
+      let delay = 0;
+      allReels.forEach((reel, ri) => {
+        reel.frames.forEach((_, fi) => {
+          setTimeout(() => downloadFrame(ri, fi), delay);
+          delay += 300;
+        });
+      });
+    }
+
+    document.fonts.ready.then(() => renderReels());
+  </script>
+</body>
+</html>

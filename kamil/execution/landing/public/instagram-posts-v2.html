@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore - Instagram Posts V2 (Marketing)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07090e; color: #f0f2f5; font-family: 'Outfit', sans-serif;
+      padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 48px;
+    }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    h1 span { color: #00e5c8; }
+    .subtitle { color: #8b92a5; font-size: 14px; margin-top: 8px; }
+    .posts-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 32px; max-width: 1200px; width: 100%;
+    }
+    .post-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .post-label { font-size: 13px; color: #8b92a5; font-weight: 500; }
+    .post-frame {
+      width: 540px; height: 540px; border-radius: 16px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4); position: relative;
+    }
+    canvas { width: 540px; height: 540px; display: block; }
+    button {
+      background: linear-gradient(135deg, #00e5c8, #00c4aa);
+      color: #07090e; border: none; padding: 10px 24px; border-radius: 10px;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px;
+      cursor: pointer; transition: transform 0.2s;
+    }
+    button:hover { transform: translateY(-2px); }
+    .dl-all {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      padding: 14px 36px; font-size: 15px; border-radius: 12px;
+    }
+    .caption-box {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 14px 18px; font-size: 12px; color: #8b92a5;
+      max-width: 540px; width: 100%; line-height: 1.6; white-space: pre-wrap;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .caption-box:hover { border-color: rgba(255,255,255,0.12); }
+    .caption-box .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #525a6e; margin-bottom: 6px; }
+    .copied { color: #00e5c8; font-size: 11px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div style="text-align:center">
+    <h1>Fit<span>Core</span> - Marketing Posts V2</h1>
+    <p class="subtitle">9 branded posts ready to download. Click each button or download all at once.</p>
+  </div>
+
+  <button class="dl-all" onclick="downloadAll()">Download All 9 Posts</button>
+
+  <div class="posts-grid" id="grid"></div>
+
+  <script>
+    const S = 1080;
+    const ACCENT = '#00e5c8';
+    const ACCENT2 = '#6366f1';
+    const BG = '#07090e';
+    const BG2 = '#0c1017';
+    const TEXT = '#f0f2f5';
+    const TEXT2 = '#8b92a5';
+    const TEXT3 = '#525a6e';
+    const RED = '#ef4444';
+    const GREEN = '#22c55e';
+    const AMBER = '#f59e0b';
+
+    const posts = [
+      {
+        id: 'post1', label: 'Post 1 — 5 Things You Lose with Excel',
+        caption: `5 rzeczy które tracisz zarządzając klientami przez Excela 📉\n\n1. Czas — kopiujesz te same dane w kółko\n2. Profesjonalny wizerunek — klient dostaje PDF z komórki\n3. Komunikację — wiadomości giną między WhatsApp, SMS i mailem\n4. Kontrolę nad postępami — "gdzieś to miałem zapisane…"\n5. Klientów — bo ktoś inny robi to lepiej\n\nExcel jest dobry. Ale nie do prowadzenia biznesu coachingowego.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #fitnessbusiness #trenerOnline #zarządzanieklientami #coachingtools #fitcore`,
+        draw: drawPost1
+      },
+      {
+        id: 'post2', label: 'Post 2 — Hours Wasted on Admin',
+        caption: `Ile godzin tygodniowo tracisz na administrację? ⏰\n\nWiększość trenerów mówi: "może 2-3 godziny"\n\nPotem liczysz:\n→ Odpisywanie na wiadomości: 45 min/dzień\n→ Pisanie planów treningowych: 2h/tydzień\n→ Śledzenie płatności: 1h/tydzień\n→ Aktualizacja postępów: 1h/tydzień\n→ Szukanie informacji o kliencie: 30 min/dzień\n\nRealna liczba? 8-12 godzin tygodniowo.\n\nIle u Ciebie? Napisz w komentarzu 👇\n\n#trenerpersonalny #fitnessbiznes #produktywność #trenerOnline #fitcore`,
+        draw: drawPost2
+      },
+      {
+        id: 'post3', label: 'Post 3 — Client Forgot Workout',
+        caption: `Twój klient znów zapomniał o treningu? 🤦‍♂️\n\nNie, on nie jest leniwy. On po prostu nie ma systemu.\n\nKiedy plan treningowy jest w PDF na WhatsAppie — ginie między memami i zdjęciami jedzenia.\n\nKiedy plan jest w dedykowanym portalu klienta:\n✅ Widzi go od razu po zalogowaniu\n✅ Śledzi swoje postępy\n✅ Czuje się profesjonalnie obsługiwany\n\nProblem nie jest w kliencie. Problem jest w narzędziach.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #klient #plantreningowy #fitnesscoach #fitcore`,
+        draw: drawPost3
+      },
+      {
+        id: 'post4', label: 'Post 4 — 3 Signs Losing Client',
+        caption: `3 sygnały że tracisz klienta (zanim sam Ci powie) 🚨\n\n1. Przestaje odpisywać na wiadomości\n→ Nie jest zajęty. Stracił motywację.\n\n2. Nie loguje wyników treningów\n→ Nie trenuje. Albo trenuje sam.\n\n3. Pyta "ile jeszcze zostało w pakiecie?"\n→ Liczy dni do końca.\n\nKiedy widzisz te sygnały — reaguj.\nAle żeby je zobaczyć, potrzebujesz danych. Nie intuicji.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #retencja #fitnessbiznes #coachingbusiness #fitcore`,
+        draw: drawPost4
+      },
+      {
+        id: 'post5', label: 'Post 5 — Day in Life of Coach',
+        caption: `Jak wygląda dzień trenera który ma 20+ klientów 📋\n\n6:00 — Pobudka\n7:00-12:00 — Treningi (5 klientów)\n12:30 — Odpisanie na 23 wiadomości\n13:00 — Napisanie 2 planów treningowych\n14:00 — Sprawdzenie kto zapłacił\n14:30 — Aktualizacja postępów\n16:00-20:00 — Kolejne treningi\n21:00 — Jeszcze odpisuje na wiadomości...\n\nA gdyby punkty 12:30-14:30 zajęły Ci 15 minut?\n\n🔗 fitcore.tech\n\n#trenerpersonalny #dzieńtrenera #fitnessbiznes #produktywność #fitcore`,
+        draw: drawPost5
+      },
+      {
+        id: 'post6', label: 'Post 6 — Managing 30 Clients',
+        caption: `Tak wygląda zarządzanie 30 klientami z jednego panelu 🖥️\n\nJeden dashboard. Zero chaosu.\n\n→ Lista klientów z ich statusem\n→ Plany treningowe — tworzysz raz, przypisujesz jednym klikiem\n→ Wiadomości — bez WhatsAppa, bez Messengera\n→ Płatności — widzisz kto zapłacił, kto nie\n→ Postępy — wykresy, zdjęcia, pomiary\n\nTo nie jest przyszłość. To jest teraz.\n\n🔗 fitcore.tech — darmowe testy.\n\n#trenerpersonalny #dashboard #zarządzanieklientami #fitnesstech #fitcore`,
+        draw: drawPost6
+      },
+      {
+        id: 'post7', label: 'Post 7 — Excel vs FitCore',
+        caption: `Excel vs FitCore ⚔️\n\nSzukanie klienta:\n❌ Excel: Ctrl+F, scrollujesz 200 wierszy\n✅ FitCore: Klikasz imię, masz wszystko\n\nPlan treningowy:\n❌ Excel: Kopiuj-wklej, zmień 3 rzeczy, wyślij PDF\n✅ FitCore: Wybierz ćwiczenia, przypisz, klient widzi od razu\n\nKomunikacja:\n❌ Excel: WhatsApp + mail + SMS + notatki\n✅ FitCore: Wbudowany czat, jedno miejsce\n\nNic złego w Excelu. Ale nie do tego został stworzony.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #excelvssoftware #fitnessbiznes #coachingtools #fitcore`,
+        draw: drawPost7
+      },
+      {
+        id: 'post8', label: 'Post 8 — Client Portal View',
+        caption: `Twój klient widzi to po zalogowaniu 👀\n\nSwój plan treningowy na dziś.\nHistorię wszystkich treningów.\nSwoje postępy — wykresy, pomiary, zdjęcia.\nWiadomości od Ciebie.\n\nNie PDF. Nie screenshot. Nie "zaraz Ci wyślę".\n\nProfesjonalny portal, Twoje logo, Twoje kolory.\n\nKlient czuje się jak w premium usłudze.\nBo jest w premium usłudze.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #portalklienta #fitnesstech #premiumservice #fitcore`,
+        draw: drawPost8
+      },
+      {
+        id: 'post9', label: 'Post 9 — Coach Autopilot',
+        caption: `🚀 Nowość w FitCore: Coach Autopilot\n\nTwój dashboard teraz sam pilnuje klientów.\n\n→ Klient nie trenował 3 dni? Dostajesz alert.\n→ Płatność przeterminowana? Dashboard Ci przypomni.\n→ Klient osiągnął nowy rekord? Zobaczysz od razu.\n\nZero ręcznego sprawdzania. Zero zgubionych klientów.\n\nTy trenujesz ludzi. Dashboard ogarnia resztę.\n\n🔗 fitcore.tech — darmowe testy\n\n#trenerpersonalny #nowafunkcja #fitnesstech #automatyzacja #fitcore`,
+        draw: drawPost9
+      }
+    ];
+
+    // ── Helper Functions ──
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function fillRoundRect(ctx, x, y, w, h, r, color) {
+      roundRect(ctx, x, y, w, h, r); ctx.fillStyle = color; ctx.fill();
+    }
+
+    function strokeRoundRect(ctx, x, y, w, h, r, color, lw) {
+      roundRect(ctx, x, y, w, h, r); ctx.strokeStyle = color; ctx.lineWidth = lw || 1; ctx.stroke();
+    }
+
+    function drawLogo(ctx, x, y, size) {
+      const half = size / 2, cx = x + half, cy = y + half;
+      const bgGrad = ctx.createLinearGradient(x, y, x + size, y + size);
+      bgGrad.addColorStop(0, '#0c1017'); bgGrad.addColorStop(1, BG);
+      ctx.beginPath(); ctx.arc(cx, cy, half, 0, Math.PI * 2); ctx.fillStyle = bgGrad; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, half - size * 0.012, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 229, 200, 0.2)'; ctx.lineWidth = size * 0.005; ctx.stroke();
+      const fontSize = size * 0.39;
+      ctx.font = `800 ${fontSize}px 'Outfit', sans-serif`;
+      ctx.textBaseline = 'middle';
+      const fW = ctx.measureText('F').width;
+      const cW = ctx.measureText('C').width;
+      const startX = cx - (fW + cW) / 2;
+      const textY = cy + fontSize * 0.04;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF'; ctx.fillText('F', startX, textY);
+      const tGrad = ctx.createLinearGradient(cx - size * 0.2, 0, cx + size * 0.2, y + size);
+      tGrad.addColorStop(0, '#00e5c8'); tGrad.addColorStop(1, '#00c4aa');
+      ctx.fillStyle = tGrad; ctx.fillText('C', startX + fW, textY);
+    }
+
+    function drawBrandName(ctx, x, y, fontSize) {
+      ctx.font = `700 ${fontSize}px 'Outfit', sans-serif`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = TEXT;
+      const fitW = ctx.measureText('Fit').width;
+      ctx.fillText('Fit', x, y);
+      ctx.fillStyle = ACCENT; ctx.fillText('Core', x + fitW, y);
+    }
+
+    function drawBackground(ctx) {
+      ctx.fillStyle = BG; ctx.fillRect(0, 0, S, S);
+      const grad = ctx.createRadialGradient(S * 0.8, S * 0.1, 0, S * 0.8, S * 0.1, S * 0.7);
+      grad.addColorStop(0, 'rgba(0, 229, 200, 0.06)'); grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, S, S);
+      const grad2 = ctx.createRadialGradient(S * 0.1, S * 0.9, 0, S * 0.1, S * 0.9, S * 0.5);
+      grad2.addColorStop(0, 'rgba(99, 102, 241, 0.04)'); grad2.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad2; ctx.fillRect(0, 0, S, S);
+    }
+
+    function drawGlassCard(ctx, x, y, w, h, r) {
+      fillRoundRect(ctx, x, y, w, h, r || 20, 'rgba(14, 18, 27, 0.85)');
+      strokeRoundRect(ctx, x, y, w, h, r || 20, 'rgba(255,255,255,0.06)', 1.5);
+    }
+
+    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '', ty = y;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (ctx.measureText(test).width > maxWidth && i > 0) {
+          ctx.fillText(line.trim(), x, ty); line = words[i] + ' '; ty += lineHeight;
+        } else { line = test; }
+      }
+      ctx.fillText(line.trim(), x, ty);
+      return ty;
+    }
+
+    function drawFooter(ctx, text) {
+      ctx.fillStyle = TEXT3;
+      ctx.font = '500 16px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(text || 'fitcore.tech', S / 2, S - 50);
+    }
+
+    function drawHeader(ctx) {
+      drawLogo(ctx, 60, 50, 48);
+      drawBrandName(ctx, 120, 74, 22);
+    }
+
+    function drawAccentLine(ctx, y) {
+      const grad = ctx.createLinearGradient(S / 2 - 120, 0, S / 2 + 120, 0);
+      grad.addColorStop(0, 'transparent'); grad.addColorStop(0.5, ACCENT); grad.addColorStop(1, 'transparent');
+      ctx.strokeStyle = grad; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(S / 2 - 120, y); ctx.lineTo(S / 2 + 120, y); ctx.stroke();
+    }
+
+    // ── POST 1: 5 Things You Lose with Excel ──
+    function drawPost1(ctx) {
+      drawBackground(ctx);
+      drawHeader(ctx);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('PRZESTAŃ UŻYWAĆ ARKUSZY', 60, 145);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 42px "Outfit", sans-serif';
+      wrapText(ctx, '5 rzeczy które tracisz zarządzając klientami w Excelu', 60, 210, S - 120, 52);
+
+      drawAccentLine(ctx, 330);
+
+      const items = [
+        { icon: '⏱', text: 'Czas', sub: 'Kopiujesz te same dane w kółko' },
+        { icon: '💼', text: 'Wizerunek', sub: 'Klient dostaje PDF z komórki arkusza' },
+        { icon: '💬', text: 'Komunikację', sub: 'Wiadomości giną między apkami' },
+        { icon: '📊', text: 'Kontrolę', sub: '"Gdzieś to miałem zapisane..."' },
+        { icon: '👤', text: 'Klientów', sub: 'Bo ktoś inny robi to lepiej' },
+      ];
+
+      items.forEach((item, i) => {
+        const y = 370 + i * 110;
+        drawGlassCard(ctx, 60, y, S - 120, 90, 16);
+        ctx.font = '32px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(item.icon, 90, y + 48);
+        ctx.fillStyle = TEXT;
+        ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.fillText(item.text, 140, y + 38);
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 16px "Outfit", sans-serif';
+        ctx.fillText(item.sub, 140, y + 66);
+      });
+
+      drawFooter(ctx);
+    }
+
+    // ── POST 2: Hours Wasted on Admin ──
+    function drawPost2(ctx) {
+      drawBackground(ctx);
+      drawHeader(ctx);
+
+      ctx.fillStyle = AMBER;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('AUDYT CZASU', 60, 145);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 44px "Outfit", sans-serif';
+      wrapText(ctx, 'Ile godzin tygodniowo tracisz na administrację?', 60, 210, S - 120, 54);
+
+      drawAccentLine(ctx, 340);
+
+      const tasks = [
+        { task: 'Odpisywanie na wiadomości', time: '45 min/dzień' },
+        { task: 'Pisanie planów treningowych', time: '2h/tydzień' },
+        { task: 'Śledzenie płatności', time: '1h/tydzień' },
+        { task: 'Aktualizacja postępów', time: '1h/tydzień' },
+        { task: 'Szukanie info o kliencie', time: '30 min/dzień' },
+      ];
+
+      tasks.forEach((t, i) => {
+        const y = 375 + i * 72;
+        drawGlassCard(ctx, 60, y, S - 120, 58, 12);
+        ctx.fillStyle = TEXT;
+        ctx.font = '500 18px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('→  ' + t.task, 90, y + 33);
+        ctx.fillStyle = AMBER;
+        ctx.font = '700 18px "Outfit", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(t.time, S - 90, y + 33);
+      });
+
+      // Total
+      const totalY = 375 + 5 * 72 + 20;
+      fillRoundRect(ctx, 60, totalY, S - 120, 70, 16, 'rgba(239, 68, 68, 0.15)');
+      strokeRoundRect(ctx, 60, totalY, S - 120, 70, 16, 'rgba(239, 68, 68, 0.3)', 1.5);
+      ctx.fillStyle = RED;
+      ctx.font = '800 28px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('REALNIE: 8-12 GODZIN / TYDZIEŃ', S / 2, totalY + 42);
+
+      drawFooter(ctx, 'A gdyby to zajęło 15 minut? → fitcore.tech');
+    }
+
+    // ── POST 3: Client Forgot Workout ──
+    function drawPost3(ctx) {
+      drawBackground(ctx);
+      drawHeader(ctx);
+
+      ctx.fillStyle = RED;
+      ctx.font = '700 18px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('RETENCJA KLIENTÓW', 60, 150);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 50px "Outfit", sans-serif';
+      wrapText(ctx, 'Twój klient znów zapomniał o treningu.', 60, 220, S - 120, 60);
+
+      drawAccentLine(ctx, 360);
+
+      // WhatsApp vs Portal comparison
+      // Left side - problem
+      drawGlassCard(ctx, 50, 395, S / 2 - 70, 370, 16);
+      ctx.fillStyle = RED;
+      ctx.font = '700 20px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('❌  PDF na WhatsApp', S / 4 - 10, 440);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 19px "Outfit", sans-serif';
+      const problems = ['Ginie w czacie', 'Brak przypomnień', 'Brak śledzenia', 'Nieprofesjonalnie'];
+      problems.forEach((p, i) => {
+        ctx.fillText(p, S / 4 - 10, 510 + i * 50);
+      });
+
+      // Right side - solution
+      drawGlassCard(ctx, S / 2 + 20, 395, S / 2 - 70, 370, 16);
+      ctx.fillStyle = GREEN;
+      ctx.font = '700 20px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✅  Portal Klienta', S * 3 / 4 + 10, 440);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 19px "Outfit", sans-serif';
+      const solutions = ['Plan zawsze pod ręką', 'Widzi postępy na żywo', 'Czat z trenerem', 'Premium doświadczenie'];
+      solutions.forEach((s, i) => {
+        ctx.fillText(s, S * 3 / 4 + 10, 510 + i * 50);
+      });
+
+      drawAccentLine(ctx, 800);
+
+      // Bottom message
+      ctx.fillStyle = TEXT;
+      ctx.font = '700 24px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Problem nie jest w kliencie.', S / 2, 840);
+      ctx.fillStyle = ACCENT;
+      ctx.fillText('Problem jest w narzędziach.', S / 2, 875);
+
+      drawFooter(ctx);
+    }
+
+    // ── POST 4: 3 Signs You're Losing a Client ──
+    function drawPost4(ctx) {
+      drawBackground(ctx);
+      drawHeader(ctx);
+
+      ctx.fillStyle = RED;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('🚨  SYGNAŁY OSTRZEGAWCZE', 60, 145);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 42px "Outfit", sans-serif';
+      wrapText(ctx, '3 sygnały że tracisz klienta', 60, 210, S - 120, 52);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 20px "Outfit", sans-serif';
+      ctx.fillText('(zanim sam Ci powie)', 60, 275);
+
+      drawAccentLine(ctx, 315);
+
+      const signs = [
+        {
+          num: '01', title: 'Przestaje odpisywać na wiadomości',
+          sub: 'Nie jest zajęty. Stracił motywację.'
+        },
+        {
+          num: '02', title: 'Nie loguje wyników treningów',
+          sub: 'Trenuje sam, bez Twojego planu.'
+        },
+        {
+          num: '03', title: '"Ile zostało w pakiecie?"',
+          sub: 'Liczy dni do końca. Nie przedłuży.'
+        },
+      ];
+
+      signs.forEach((s, i) => {
+        const y = 350 + i * 175;
+        drawGlassCard(ctx, 60, y, S - 120, 150, 16);
+
+        // Number circle
+        ctx.beginPath();
+        ctx.arc(120, y + 75, 32, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+        ctx.fill();
+        ctx.fillStyle = RED;
+        ctx.font = '800 24px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(s.num, 120, y + 78);
+
+        ctx.fillStyle = TEXT;
+        ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(s.title, 175, y + 60);
+
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 17px "Outfit", sans-serif';
+        ctx.fillText(s.sub, 175, y + 95);
+      });
+
+      // Bottom
+      ctx.fillStyle = TEXT;
+      ctx.font = '600 18px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Potrzebujesz danych. Nie intuicji.', S / 2, S - 90);
+      drawFooter(ctx);
+    }
+
+    // ── POST 5: Day in Life of a Coach ──
+    function drawPost5(ctx) {
+      drawBackground(ctx);
+      drawHeader(ctx);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('DZIEŃ TRENERA', 60, 145);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 40px "Outfit", sans-serif';
+      wrapText(ctx, 'Dzień z 20+ klientami', 60, 200, S - 120, 48);
+
+      drawAccentLine(ctx, 270);
+
+      const schedule = [
+        { time: '06:00', task: 'Pobudka', type: 'neutral' },
+        { time: '07-12', task: '5 treningów z klientami', type: 'neutral' },
+        { time: '12:30', task: 'Odpisanie na 23 wiadomości', type: 'bad' },
+        { time: '13:00', task: 'Napisanie 2 planów treningowych', type: 'bad' },
+        { time: '14:00', task: 'Sprawdzenie kto zapłacił', type: 'bad' },
+        { time: '14:30', task: 'Aktualizacja postępów', type: 'bad' },
+        { time: '16-20', task: 'Kolejne 4 treningi', type: 'neutral' },
+        { time: '21:00', task: 'Wciąż odpisuje na wiadomości...', type: 'bad' },
+      ];
+
+      schedule.forEach((s, i) => {
+        const y = 300 + i * 72;
+        const isBad = s.type === 'bad';
+
+        if (isBad) {
+          fillRoundRect(ctx, 60, y, S - 120, 58, 12, 'rgba(239, 68, 68, 0.08)');
+          strokeRoundRect(ctx, 60, y, S - 120, 58, 12, 'rgba(239, 68, 68, 0.15)', 1);
+        } else {
+          drawGlassCard(ctx, 60, y, S - 120, 58, 12);
+        }
+
+        ctx.fillStyle = isBad ? AMBER : TEXT3;
+        ctx.font = '700 16px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(s.time, 90, y + 34);
+
+        ctx.fillStyle = isBad ? RED : TEXT2;
+        ctx.font = '500 17px "Outfit", sans-serif';
+        ctx.fillText(s.task, 220, y + 34);
+      });
+
+      // Bottom highlight
+      fillRoundRect(ctx, 60, S - 120, S - 120, 60, 16, 'rgba(0, 229, 200, 0.12)');
+      strokeRoundRect(ctx, 60, S - 120, S - 120, 60, 16, 'rgba(0, 229, 200, 0.25)', 1.5);
+      ctx.fillStyle = ACCENT;
+      ctx.font = '700 20px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('A gdyby czerwone wiersze zajęły 15 minut? → fitcore.tech', S / 2, S - 86);
+    }
+
+    // ── POST 6: Managing 30 Clients ──
+    function drawPost6(ctx) {
+      drawBackground(ctx);
+      drawHeader(ctx);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('JEDEN DASHBOARD', 60, 145);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 44px "Outfit", sans-serif';
+      wrapText(ctx, '30 klientów. Jeden panel. Zero chaosu.', 60, 210, S - 120, 54);
+
+      drawAccentLine(ctx, 340);
+
+      const features = [
+        { icon: '👥', title: 'Lista klientów', desc: 'Status, plany, ostatnia aktywność — jedno spojrzenie' },
+        { icon: '🏋️', title: 'Plany treningowe', desc: 'Tworzysz raz, przypisujesz jednym klikiem' },
+        { icon: '💬', title: 'Wiadomości', desc: 'Wbudowany czat, bez WhatsAppa' },
+        { icon: '💳', title: 'Płatności', desc: 'Widzisz kto zapłacił, kto nie' },
+        { icon: '📈', title: 'Postępy', desc: 'Wykresy, zdjęcia, pomiary' },
+      ];
+
+      features.forEach((f, i) => {
+        const y = 370 + i * 105;
+        drawGlassCard(ctx, 60, y, S - 120, 85, 16);
+        ctx.font = '28px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(f.icon, 90, y + 46);
+        ctx.fillStyle = TEXT;
+        ctx.font = '700 20px "Outfit", sans-serif';
+        ctx.fillText(f.title, 140, y + 38);
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 16px "Outfit", sans-serif';
+        ctx.fillText(f.desc, 140, y + 64);
+      });
+
+      // Bottom CTA
+      fillRoundRect(ctx, S / 2 - 180, S - 100, 360, 52, 14, 'rgba(0, 229, 200, 0.15)');
+      strokeRoundRect(ctx, S / 2 - 180, S - 100, 360, 52, 14, 'rgba(0, 229, 200, 0.3)', 1.5);
+      ctx.fillStyle = ACCENT;
+      ctx.font = '700 18px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Darmowe testy → fitcore.tech', S / 2, S - 70);
+    }
+
+    // ── POST 7: Excel vs FitCore ──
+    function drawPost7(ctx) {
+      drawBackground(ctx);
+
+      // Title centered
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 52px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Excel  vs  FitCore', S / 2, 90);
+
+      ctx.fillStyle = TEXT3;
+      ctx.font = '300 18px "Outfit", sans-serif';
+      ctx.fillText('⚔️', S / 2, 130);
+
+      drawAccentLine(ctx, 160);
+
+      const comparisons = [
+        {
+          category: 'Szukanie klienta',
+          bad: 'Ctrl+F, scrollujesz 200 wierszy',
+          good: 'Klikasz imię, masz wszystko'
+        },
+        {
+          category: 'Plan treningowy',
+          bad: 'Kopiuj-wklej, edytuj, wyślij PDF',
+          good: 'Wybierz ćwiczenia, przypisz, gotowe'
+        },
+        {
+          category: 'Komunikacja',
+          bad: 'WhatsApp + mail + SMS + notatki',
+          good: 'Wbudowany czat, jedno miejsce'
+        },
+        {
+          category: 'Płatności',
+          bad: '"Hej, przelew miał być do piątku..."',
+          good: 'Dashboard pokazuje wszystko'
+        },
+      ];
+
+      comparisons.forEach((c, i) => {
+        const y = 190 + i * 200;
+
+        // Category label
+        ctx.fillStyle = TEXT3;
+        ctx.font = '600 14px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(c.category.toUpperCase(), S / 2, y);
+
+        // Bad card (left)
+        fillRoundRect(ctx, 50, y + 15, S / 2 - 70, 70, 14, 'rgba(239, 68, 68, 0.08)');
+        strokeRoundRect(ctx, 50, y + 15, S / 2 - 70, 70, 14, 'rgba(239, 68, 68, 0.15)', 1);
+        ctx.fillStyle = RED;
+        ctx.font = '600 14px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('❌  Excel', 75, y + 40);
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 14px "Outfit", sans-serif';
+        ctx.fillText(c.bad, 75, y + 65);
+
+        // Good card (right)
+        fillRoundRect(ctx, S / 2 + 20, y + 15, S / 2 - 70, 70, 14, 'rgba(0, 229, 200, 0.08)');
+        strokeRoundRect(ctx, S / 2 + 20, y + 15, S / 2 - 70, 70, 14, 'rgba(0, 229, 200, 0.15)', 1);
+        ctx.fillStyle = GREEN;
+        ctx.font = '600 14px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('✅  FitCore', S / 2 + 45, y + 40);
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 14px "Outfit", sans-serif';
+        ctx.fillText(c.good, S / 2 + 45, y + 65);
+      });
+
+      // Bottom
+      ctx.fillStyle = TEXT2;
+      ctx.font = '500 18px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Nic złego w Excelu. Ale nie do tego został stworzony.', S / 2, S - 80);
+      drawFooter(ctx);
+    }
+
+    // ── POST 8: Client Portal View ──
+    function drawPost8(ctx) {
+      drawBackground(ctx);
+      drawHeader(ctx);
+
+      ctx.fillStyle = ACCENT2;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('PORTAL KLIENTA', 60, 145);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 42px "Outfit", sans-serif';
+      wrapText(ctx, 'Co widzi Twój klient po zalogowaniu', 60, 210, S - 120, 52);
+
+      drawAccentLine(ctx, 310);
+
+      // Mock portal cards
+      const sections = [
+        { icon: '🏋️', title: 'Dzisiejszy trening', desc: 'Wyciskanie 4x8, Przysiady 4x10, Wiosłowanie 3x12...', color: ACCENT },
+        { icon: '📊', title: 'Moje postępy', desc: 'Waga: ↓2.3kg | Wyciskanie: ↑15kg | Tkanka: ↓2%', color: GREEN },
+        { icon: '💬', title: 'Wiadomości od trenera', desc: 'Świetna robota w tym tygodniu! Ciśniemy dalej...', color: ACCENT2 },
+        { icon: '📋', title: 'Historia treningów', desc: '47 sesji ukończonych | 12-tygodniowa seria 🔥', color: AMBER },
+      ];
+
+      sections.forEach((s, i) => {
+        const y = 340 + i * 130;
+        drawGlassCard(ctx, 60, y, S - 120, 110, 16);
+
+        // Color accent line on left
+        fillRoundRect(ctx, 60, y, 5, 110, 3, s.color);
+
+        ctx.font = '32px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(s.icon, 95, y + 48);
+
+        ctx.fillStyle = TEXT;
+        ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.fillText(s.title, 145, y + 42);
+
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 16px "Outfit", sans-serif';
+        ctx.fillText(s.desc, 145, y + 74);
+      });
+
+      // Bottom
+      ctx.fillStyle = TEXT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Nie PDF. Nie screenshot. Prawdziwa platforma.', S / 2, S - 80);
+      drawFooter(ctx);
+    }
+
+    // ── POST 9: Coach Autopilot ──
+    function drawPost9(ctx) {
+      drawBackground(ctx);
+
+      // Special header for feature announcement
+      drawLogo(ctx, S / 2 - 40, 50, 80);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🚀  NOWA FUNKCJA', S / 2, 165);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 52px "Outfit", sans-serif';
+      ctx.fillText('Coach Autopilot', S / 2, 230);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 20px "Outfit", sans-serif';
+      ctx.fillText('Twój dashboard teraz sam pilnuje klientów.', S / 2, 280);
+
+      drawAccentLine(ctx, 320);
+
+      const alerts = [
+        {
+          icon: '⚠️',
+          title: 'Alert nieaktywności',
+          desc: 'Klient nie trenował od 3 dni',
+          action: 'Powiadomienie wysłane',
+          color: AMBER
+        },
+        {
+          icon: '💳',
+          title: 'Zaległa płatność',
+          desc: 'Faktura #127 — 5 dni po terminie',
+          action: 'Przypomnienie zaplanowane',
+          color: RED
+        },
+        {
+          icon: '🏆',
+          title: 'Nowy rekord!',
+          desc: 'Klient wyciskał 120kg na ławce',
+          action: 'Osiągnięcie odblokowane',
+          color: GREEN
+        },
+      ];
+
+      alerts.forEach((a, i) => {
+        const y = 355 + i * 165;
+        drawGlassCard(ctx, 70, y, S - 140, 140, 16);
+
+        // Color dot
+        ctx.beginPath();
+        ctx.arc(105, y + 40, 8, 0, Math.PI * 2);
+        ctx.fillStyle = a.color;
+        ctx.fill();
+
+        // Glow
+        ctx.beginPath();
+        ctx.arc(105, y + 40, 14, 0, Math.PI * 2);
+        ctx.fillStyle = a.color.replace(')', ', 0.15)').replace('rgb', 'rgba');
+        ctx.fillStyle = a.color + '26'; // 15% opacity
+        ctx.fill();
+
+        ctx.font = '30px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(a.icon, 135, y + 48);
+
+        ctx.fillStyle = TEXT;
+        ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.fillText(a.title, 180, y + 42);
+
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 16px "Outfit", sans-serif';
+        ctx.fillText(a.desc, 105, y + 82);
+
+        // Action pill
+        fillRoundRect(ctx, 105, y + 100, ctx.measureText(a.action).width + 24, 28, 14, a.color + '1A');
+        ctx.fillStyle = a.color;
+        ctx.font = '500 13px "Outfit", sans-serif';
+        ctx.fillText(a.action, 117, y + 118);
+      });
+
+      // Bottom
+      ctx.fillStyle = TEXT;
+      ctx.font = '600 18px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Ty trenujesz ludzi. Dashboard ogarnia resztę.', S / 2, S - 75);
+      drawFooter(ctx);
+    }
+
+    // ── Render & Download Logic ──
+    function renderAll() {
+      const grid = document.getElementById('grid');
+      posts.forEach(p => {
+        const wrap = document.createElement('div');
+        wrap.className = 'post-wrap';
+
+        const label = document.createElement('div');
+        label.className = 'post-label';
+        label.textContent = p.label;
+
+        const frame = document.createElement('div');
+        frame.className = 'post-frame';
+
+        const canvas = document.createElement('canvas');
+        canvas.width = S;
+        canvas.height = S;
+        canvas.id = p.id;
+
+        frame.appendChild(canvas);
+
+        const btn = document.createElement('button');
+        btn.textContent = 'Download PNG';
+        btn.onclick = () => downloadPost(p.id, p.label);
+
+        const captionBox = document.createElement('div');
+        captionBox.className = 'caption-box';
+        captionBox.innerHTML = `<div class="label">Caption (click to copy)</div>${p.caption}`;
+        captionBox.onclick = () => {
+          navigator.clipboard.writeText(p.caption);
+          let c = captionBox.querySelector('.copied');
+          if (!c) { c = document.createElement('div'); c.className = 'copied'; captionBox.appendChild(c); }
+          c.textContent = '✓ Copied!';
+          setTimeout(() => c.textContent = '', 2000);
+        };
+
+        wrap.appendChild(label);
+        wrap.appendChild(frame);
+        wrap.appendChild(btn);
+        wrap.appendChild(captionBox);
+        grid.appendChild(wrap);
+
+        const ctx = canvas.getContext('2d');
+        p.draw(ctx);
+      });
+    }
+
+    function downloadPost(id, label) {
+      const canvas = document.getElementById(id);
+      const link = document.createElement('a');
+      link.download = `fitcore-${label.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadAll() {
+      posts.forEach((p, i) => {
+        setTimeout(() => downloadPost(p.id, p.label), i * 300);
+      });
+    }
+
+    // Wait for fonts
+    document.fonts.ready.then(() => renderAll());
+  </script>
+</body>
+</html>
