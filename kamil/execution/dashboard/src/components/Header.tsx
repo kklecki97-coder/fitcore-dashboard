@@ -74,7 +74,7 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
     }}>
       <div style={styles.left}>
         {isMobile && (
-          <button onClick={onMenuToggle} style={styles.menuBtn}>
+          <button onClick={onMenuToggle} style={styles.menuBtn} aria-label="Toggle menu">
             <Menu size={20} />
           </button>
         )}
@@ -109,10 +109,13 @@ export default function Header({ currentPage, isMobile, onMenuToggle, notificati
           {lang === 'en' ? 'PL' : 'EN'}
         </button>
 
+        {/* Accessibility: lang toggle has visible text, no extra label needed */}
+
         {/* Notification Bell */}
         <div ref={dropdownRef} style={{ position: 'relative' }}>
           <button
             onClick={() => setIsOpen(o => !o)}
+            aria-label="Notifications"
             style={{
               ...styles.bellBtn,
               borderColor: isOpen ? 'var(--accent-primary)' : 'var(--glass-border)',
@@ -293,8 +296,8 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: '18px',
     height: '18px',
     borderRadius: '9px',
-    background: '#ef4444',
-    color: '#fff',
+    background: 'var(--accent-danger)',
+    color: 'var(--text-primary)',
     fontSize: '11px',
     fontWeight: 700,
     display: 'flex',

@@ -157,6 +157,15 @@ Deno.serve(async (req) => {
   }
 });
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function buildEmailHtml({
   clientName,
   checkInDate,
@@ -164,6 +173,8 @@ function buildEmailHtml({
   clientName: string;
   checkInDate: string;
 }) {
+  const safeName = escapeHtml(clientName);
+  const safeDate = escapeHtml(checkInDate);
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -176,7 +187,7 @@ function buildEmailHtml({
     <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:32px 24px;text-align:center;">
       <h2 style="color:#ffffff;font-size:20px;font-weight:600;margin:0 0 8px;">New Check-in</h2>
       <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 24px;">
-        <strong style="color:#ffffff;">${clientName}</strong> submitted a check-in${checkInDate ? ` for <strong style="color:#00e5c8;">${checkInDate}</strong>` : ""}.
+        <strong style="color:#ffffff;">${safeName}</strong> submitted a check-in${safeDate ? ` for <strong style="color:#00e5c8;">${safeDate}</strong>` : ""}.
         Log in to review it.
       </p>
       <a href="https://app.fitcore.tech"

@@ -25,7 +25,7 @@ export default function EngagementRing({
   const offset = circumference - (progress / 100) * circumference;
   const center = size / 2;
 
-  const trendColor = trend === 'up' ? '#22c55e' : trend === 'down' ? '#ef4444' : 'var(--text-tertiary)';
+  const trendColor = trend === 'up' ? 'var(--accent-success)' : trend === 'down' ? 'var(--accent-danger)' : 'var(--text-tertiary)';
 
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>

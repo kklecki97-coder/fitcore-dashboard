@@ -12,19 +12,16 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { getLocale } from '../lib/locale';
-import type { Client, Invoice, WorkoutLog, CheckIn } from '../types';
+import { useData } from '../contexts/DataProvider';
 
 interface AnalyticsPageProps {
-  clients: Client[];
-  invoices: Invoice[];
-  workoutLogs: WorkoutLog[];
-  checkIns: CheckIn[];
   onViewClient: (id: string) => void;
 }
 
-export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns, onViewClient }: AnalyticsPageProps) {
+export default function AnalyticsPage({ onViewClient }: AnalyticsPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
+  const { clients, invoices, workoutLogs, checkIns } = useData();
 
   const locale = getLocale(lang);
 
@@ -328,8 +325,8 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
                   <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e' }} />
-              <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }} />
+              <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
               <Tooltip contentStyle={tooltipStyle} formatter={(value) => [fmtMoney(value as number), t.overview.revenue]} />
               <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
             </AreaChart>

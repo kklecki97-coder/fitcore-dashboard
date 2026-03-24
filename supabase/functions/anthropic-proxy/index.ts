@@ -1,5 +1,22 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ── Simple in-memory rate limiter (per user, resets on cold start) ──
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 30; // max requests per window per user
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const bucket = rateBuckets.get(userId);
+  if (!bucket || now > bucket.resetAt) {
+    rateBuckets.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (bucket.count >= RATE_LIMIT_MAX) return false;
+  bucket.count++;
+  return true;
+}
+
 const ALLOWED_ORIGINS = [
   "https://app.fitcore.tech",
   "https://client.fitcore.tech",
@@ -53,6 +70,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } }
+      );
+    }
+
+    // 1b. Rate limit per user
+    if (!checkRateLimit(user.id)) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please wait a moment." }),
+        { status: 429, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "Retry-After": "60" } }
       );
     }
 

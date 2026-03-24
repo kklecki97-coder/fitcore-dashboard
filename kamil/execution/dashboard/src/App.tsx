@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
@@ -8,12 +8,8 @@ import ClientsPage from './components/ClientsPage';
 import ClientDetailPage from './components/ClientDetailPage';
 import MessagesPage from './components/MessagesPage';
 import AnalyticsPage from './components/AnalyticsPage';
-import SettingsPage from './components/SettingsPage';
 import WorkoutProgramsPage from './components/WorkoutProgramsPage';
-import ProgramBuilderPage from './components/ProgramBuilderPage';
 import ProgramCreateChooser from './components/ProgramCreateChooser';
-import AIProgramCreator from './components/AIProgramCreator';
-import ProgramImporter from './components/ProgramImporter';
 import PaymentsPage from './components/PaymentsPage';
 import CheckInsPage from './components/CheckInsPage';
 import LoginPage from './components/LoginPage';
@@ -21,6 +17,12 @@ import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import { useToast } from './components/Toast';
 import CommandPalette from './components/CommandPalette';
 import Confetti from './components/Confetti';
+
+// ── Lazy-loaded heavy pages (code splitting) ──
+const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const ProgramBuilderPage = lazy(() => import('./components/ProgramBuilderPage'));
+const AIProgramCreator = lazy(() => import('./components/AIProgramCreator'));
+const ProgramImporter = lazy(() => import('./components/ProgramImporter'));
 import {
   ClientsPageSkeleton, MessagesPageSkeleton, AnalyticsPageSkeleton,
   ProgramsPageSkeleton, PaymentsPageSkeleton, CheckInsPageSkeleton,
@@ -125,50 +127,23 @@ function AppInner() {
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <ErrorBoundary><OverviewPage clients={data.clients} messages={data.messages} programs={data.programs} invoices={data.invoices} workoutLogs={data.workoutLogs} checkIns={data.checkIns} workoutSetLogs={data.setLogs} onViewClient={handleViewClient} onNavigate={handleNavigate} onSendMessage={data.sendMessage} onUpdateCheckIn={data.updateCheckIn} profileName={data.profileName} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
       case 'clients':
-        return (
-          <ErrorBoundary>
-            <ClientsPage
-              clients={data.clients}
-              programs={data.programs}
-              plans={data.plans}
-              workoutLogs={data.workoutLogs}
-              checkIns={data.checkIns}
-              messages={data.messages}
-              onViewClient={handleViewClient}
-              onNavigate={handleNavigate}
-              onUpdateClient={data.updateClient}
-              onDeleteClient={data.deleteClient}
-            />
-          </ErrorBoundary>
-        );
+        return <ErrorBoundary><ClientsPage onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
       case 'client-detail':
         return (
           <ErrorBoundary>
             <ClientDetailPage
               clientId={selectedClientId}
-              clients={data.clients}
-              programs={data.programs}
-              plans={data.plans}
-              workoutLogs={data.workoutLogs}
-              setLogs={data.setLogs}
-              checkIns={data.checkIns}
-              messages={data.messages}
               onBack={handleBackFromClient}
               backLabel={t.clientDetail.backTo(getPageLabel(previousPage))}
-              onUpdateClient={data.updateClient}
-              onSendMessage={data.sendMessage}
-              onUpdateProgram={data.updateProgram}
-              onUpdateCheckIn={data.updateCheckIn}
-              onAddCheckIn={data.addCheckIn}
             />
           </ErrorBoundary>
         );
       case 'messages':
-        return <ErrorBoundary><MessagesPage isMobile={isMobile} clients={data.clients} messages={data.messages} onSendMessage={data.sendMessage} /></ErrorBoundary>;
+        return <ErrorBoundary><MessagesPage isMobile={isMobile} /></ErrorBoundary>;
       case 'analytics':
-        return <ErrorBoundary><AnalyticsPage clients={data.clients} invoices={data.invoices} workoutLogs={data.workoutLogs} checkIns={data.checkIns} onViewClient={handleViewClient} /></ErrorBoundary>;
+        return <ErrorBoundary><AnalyticsPage onViewClient={handleViewClient} /></ErrorBoundary>;
       case 'programs':
         return (
           <ErrorBoundary>
@@ -196,6 +171,7 @@ function AppInner() {
       case 'ai-program-creator':
         return (
           <ErrorBoundary>
+            <Suspense fallback={<ProgramsPageSkeleton isMobile={isMobile} />}>
             <AIProgramCreator
               clients={data.clients}
               onGenerated={(program: WorkoutProgram) => {
@@ -205,11 +181,13 @@ function AppInner() {
               }}
               onBack={() => setCurrentPage('program-create-chooser')}
             />
+            </Suspense>
           </ErrorBoundary>
         );
       case 'program-import':
         return (
           <ErrorBoundary>
+            <Suspense fallback={<ProgramsPageSkeleton isMobile={isMobile} />}>
             <ProgramImporter
               onImported={(program: WorkoutProgram) => {
                 setPendingProgram(program);
@@ -218,11 +196,13 @@ function AppInner() {
               }}
               onBack={() => setCurrentPage('program-create-chooser')}
             />
+            </Suspense>
           </ErrorBoundary>
         );
       case 'program-builder':
         return (
           <ErrorBoundary>
+            <Suspense fallback={<ProgramsPageSkeleton isMobile={isMobile} />}>
             <ProgramBuilderPage
               program={selectedProgramId ? data.programs.find(p => p.id === selectedProgramId) || null : pendingProgram}
               exerciseLibrary={exerciseLibrary}
@@ -245,31 +225,16 @@ function AppInner() {
               }}
               backLabel={lang === 'pl' ? 'Powrót' : 'Back'}
             />
+            </Suspense>
           </ErrorBoundary>
         );
       case 'payments':
-        return (
-          <ErrorBoundary>
-            <PaymentsPage
-              clients={data.clients}
-              invoices={data.invoices}
-              plans={data.plans}
-              onUpdateInvoice={data.updateInvoice}
-              onAddInvoice={data.addInvoice}
-              onDeleteInvoice={data.deleteInvoice}
-              onViewClient={handleViewClient}
-            />
-          </ErrorBoundary>
-        );
+        return <ErrorBoundary><PaymentsPage onViewClient={handleViewClient} /></ErrorBoundary>;
       case 'check-ins':
         return (
           <ErrorBoundary>
             <CheckInsPage
-              clients={data.clients}
-              checkIns={data.checkIns}
-              onUpdateCheckIn={data.updateCheckIn}
               onViewClient={handleViewClient}
-              onSendMessage={data.sendMessage}
               onNavigate={handleNavigate}
               onConfetti={() => showToast(t.notifications.checkInReviewed, 'success')}
             />
@@ -278,6 +243,7 @@ function AppInner() {
       case 'settings':
         return (
           <ErrorBoundary>
+            <Suspense fallback={<StatCardSkeleton />}>
             <SettingsPage
               theme={theme}
               onThemeChange={setTheme}
@@ -311,10 +277,11 @@ function AppInner() {
               onUpdatePlan={data.updatePlan}
               onDeletePlan={data.deletePlan}
             />
+            </Suspense>
           </ErrorBoundary>
         );
       default:
-        return <ErrorBoundary><OverviewPage clients={data.clients} messages={data.messages} programs={data.programs} invoices={data.invoices} workoutLogs={data.workoutLogs} checkIns={data.checkIns} workoutSetLogs={data.setLogs} onViewClient={handleViewClient} onNavigate={handleNavigate} onSendMessage={data.sendMessage} onUpdateCheckIn={data.updateCheckIn} profileName={data.profileName} /></ErrorBoundary>;
+        return <ErrorBoundary><OverviewPage onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
     }
   };
 

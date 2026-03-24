@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../components/Toast';
 import { useLang } from '../i18n';
@@ -1059,8 +1059,9 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
     }
   };
 
-  // ── Build context value ──
-  const value: DataContextValue = {
+  // ── Build context value (memoized on data deps to reduce re-renders) ──
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const value: DataContextValue = useMemo(() => ({
     clients: allClients,
     messages: allMessages,
     programs: allPrograms,
@@ -1107,7 +1108,12 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
 
     updateCheckIn: handleUpdateCheckIn,
     addCheckIn: handleAddCheckIn,
-  };
+  }), [
+    allClients, allMessages, allPrograms, allInvoices, allCheckIns,
+    allWorkoutLogs, allSetLogs, allPlans, dataLoading, showOnboarding,
+    confettiKey, profileName, profileEmail, profilePhoto,
+    appNotifications, notifications,
+  ]);
 
   return (
     <DataContext.Provider value={value}>

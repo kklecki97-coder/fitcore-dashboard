@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import {
   X, Send, CheckCircle2, AlertTriangle, Clock,
   Dumbbell, Flame, Target, RefreshCw, Sparkles, Loader2,
@@ -332,6 +333,7 @@ export default function SmartCoachModal({
   lang,
   isMobile = false,
 }: SmartCoachModalProps) {
+  const focusTrapRef = useFocusTrap(onClose);
   const [draftText, setDraftText] = useState(trigger.draftText || '');
   const [feedbackText, setFeedbackText] = useState('');
   const [sent, setSent] = useState(false);
@@ -1081,6 +1083,9 @@ export default function SmartCoachModal({
     <AnimatePresence>
       <div style={s.overlay} onClick={onClose}>
         <motion.div
+          ref={focusTrapRef}
+          role="dialog"
+          aria-modal="true"
           style={s.modal(isMobile)}
           onClick={(e) => e.stopPropagation()}
           initial={{ opacity: 0, scale: 0.95, y: 10 }}

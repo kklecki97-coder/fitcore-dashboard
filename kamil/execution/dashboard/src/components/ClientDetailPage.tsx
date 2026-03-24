@@ -23,30 +23,20 @@ import { supabase } from '../lib/supabase';
 import { calculateMetricChange } from '../utils/client-metrics';
 import { calculateEngagement, generateEngagementInsight, getSuggestedAction } from '../utils/engagement';
 import { getLocale, formatCurrency } from '../lib/locale';
-import type { Client, GoalTargets, Message, WorkoutProgram, WorkoutLog, WorkoutSetLog, CheckIn, CoachingPlan } from '../types';
+import type { GoalTargets, Message, CheckIn } from '../types';
 import { Check, X } from 'lucide-react';
+import { useData } from '../contexts/DataProvider';
 
 interface ClientDetailPageProps {
   clientId: string;
-  clients: Client[];
-  programs: WorkoutProgram[];
-  plans: CoachingPlan[];
-  workoutLogs: WorkoutLog[];
-  setLogs: WorkoutSetLog[];
-  checkIns: CheckIn[];
-  messages: Message[];
   onBack: () => void;
   backLabel?: string;
-  onUpdateClient: (id: string, updates: Partial<Client>) => void;
-  onSendMessage: (msg: Message) => void;
-  onUpdateProgram: (programId: string, updates: Partial<WorkoutProgram>) => void;
-  onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
-  onAddCheckIn: (checkIn: CheckIn) => void;
 }
 
-export default function ClientDetailPage({ clientId, clients, programs, plans, workoutLogs, setLogs, checkIns, messages, onBack, backLabel, onUpdateClient, onSendMessage, onUpdateProgram, onUpdateCheckIn, onAddCheckIn: _onAddCheckIn }: ClientDetailPageProps) {
+export default function ClientDetailPage({ clientId, onBack, backLabel }: ClientDetailPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
+  const { clients, programs, plans, workoutLogs, setLogs, checkIns, messages, updateClient: onUpdateClient, sendMessage: onSendMessage, updateProgram: onUpdateProgram, updateCheckIn: onUpdateCheckIn, addCheckIn: _onAddCheckIn } = useData();
   const client = clients.find(c => c.id === clientId);
 
   // NOTE: All hooks must be called before any early return (React rules of hooks).

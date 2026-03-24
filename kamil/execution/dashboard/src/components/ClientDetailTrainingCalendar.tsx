@@ -190,7 +190,7 @@ export default function ClientDetailTrainingCalendar({
                     : entries && !isFuture && hasMissed ? '#e8637a'
                     : isPlanned && !isFuture && !entries ? '#e8637a'
                     : isToday ? 'var(--accent-primary)'
-                    : isPlanned && isFuture ? '#3b82f6'
+                    : isPlanned && isFuture ? 'var(--accent-info)'
                     : 'transparent',
                 }} />
                 <span style={{
@@ -213,7 +213,7 @@ export default function ClientDetailTrainingCalendar({
                 ) : isPlanned && plannedDayName ? (
                   <span style={{
                     ...styles.calSessionType,
-                    color: isFuture ? '#3b82f6' : '#e8637a',
+                    color: isFuture ? 'var(--accent-info)' : '#e8637a',
                     fontSize: isMobile ? '6px' : '8px',
                   }}>
                     {plannedDayName.toUpperCase()}
@@ -235,7 +235,7 @@ export default function ClientDetailTrainingCalendar({
             <span>{t.clientDetail.missedLegend}</span>
           </div>
           <div style={styles.calLegendItem}>
-            <div style={{ ...styles.calLegendDot, background: '#3b82f6' }} />
+            <div style={{ ...styles.calLegendDot, background: 'var(--accent-info)' }} />
             <span>{t.clientDetail.plannedLegend}</span>
           </div>
           <div style={styles.calLegendItem}>

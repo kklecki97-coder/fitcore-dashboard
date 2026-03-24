@@ -14,24 +14,18 @@ import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/locale';
 import { calculateEngagementScore, getScoreColor } from '../utils/engagement-score';
-import type { Client, WorkoutProgram, CoachingPlan, WorkoutLog, CheckIn, Message } from '../types';
+import { useData } from '../contexts/DataProvider';
+import type { Client } from '../types';
 
 interface ClientsPageProps {
-  clients: Client[];
-  programs: WorkoutProgram[];
-  plans: CoachingPlan[];
-  workoutLogs: WorkoutLog[];
-  checkIns: CheckIn[];
-  messages: Message[];
   onViewClient: (id: string) => void;
   onNavigate?: (page: 'messages') => void;
-  onUpdateClient: (id: string, updates: Partial<Client>) => void;
-  onDeleteClient: (id: string) => void;
 }
 
-export default function ClientsPage({ clients: allClients, programs, plans, workoutLogs, checkIns, messages, onViewClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
+export default function ClientsPage({ onViewClient, onNavigate }: ClientsPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
+  const { clients: allClients, programs, plans, workoutLogs, checkIns, messages, updateClient: onUpdateClient, deleteClient: onDeleteClient } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -322,9 +316,9 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
               flexShrink: 0,
               ...(isMobile ? { fontSize: '12px', padding: '6px 8px' } : {}),
               ...(filterEngagement === 'at-risk' ? {
-                background: 'rgba(239, 68, 68, 0.12)',
+                background: 'var(--accent-danger-dim)',
                 borderColor: 'rgba(239, 68, 68, 0.4)',
-                color: '#ef4444',
+                color: 'var(--accent-danger)',
               } : {}),
             }}
           >
@@ -583,7 +577,7 @@ export default function ClientsPage({ clients: allClients, programs, plans, work
             >
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>{t.clients.editPlanStatus}</h3>
-                <button style={styles.closeBtn} onClick={() => setEditModal(null)}>
+                <button style={styles.closeBtn} onClick={() => setEditModal(null)} aria-label="Close">
                   <X size={18} />
                 </button>
               </div>

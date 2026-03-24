@@ -14,14 +14,11 @@ import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { getLocale } from '../lib/locale';
 import { sparklinePoints } from '../utils/sparklines';
-import type { Client, CheckIn, Message, Page } from '../types';
+import type { CheckIn, Message, Page } from '../types';
+import { useData } from '../contexts/DataProvider';
 
 interface CheckInsPageProps {
-  clients: Client[];
-  checkIns: CheckIn[];
-  onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
   onViewClient: (id: string) => void;
-  onSendMessage: (msg: Message) => void;
   onNavigate?: (page: Page) => void; // kept for future use
   onConfetti?: () => void;
 }
@@ -83,9 +80,10 @@ function ScoreBar({ value, max = 10, color, compact }: { value: number; max?: nu
   );
 }
 
-export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onSendMessage, onNavigate: _onNavigate, onConfetti }: CheckInsPageProps) {
+export default function CheckInsPage({ onViewClient, onNavigate: _onNavigate, onConfetti }: CheckInsPageProps) {
   const isMobile = useIsMobile();
   const { lang, t } = useLang();
+  const { clients, checkIns, updateCheckIn: onUpdateCheckIn, sendMessage: onSendMessage } = useData();
   const [filter, setFilter] = useState<FilterTab>('pending');
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);

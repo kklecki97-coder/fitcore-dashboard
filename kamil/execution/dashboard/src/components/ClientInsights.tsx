@@ -545,10 +545,10 @@ function generateInsights(
 // ── Severity colors ──
 
 const severityColors: Record<InsightSeverity, { color: string; bg: string; border: string }> = {
-  positive: { color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' },
-  warning: { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' },
-  alert: { color: '#ef4444', bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.2)' },
-  info: { color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)' },
+  positive: { color: 'var(--accent-success)', bg: 'var(--accent-success-dim)', border: 'rgba(34,197,94,0.2)' },
+  warning: { color: 'var(--accent-warm)', bg: 'var(--accent-warm-dim)', border: 'rgba(245,158,11,0.2)' },
+  alert: { color: 'var(--accent-danger)', bg: 'var(--accent-danger-dim)', border: 'rgba(239,68,68,0.2)' },
+  info: { color: 'var(--accent-info)', bg: 'var(--accent-info-dim)', border: 'rgba(59,130,246,0.2)' },
 };
 
 // ── Component ──

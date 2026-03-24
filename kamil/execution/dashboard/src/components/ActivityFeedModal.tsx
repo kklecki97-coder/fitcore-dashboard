@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { X, Dumbbell, Clock, Calendar, CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
 import { getInitials, getAvatarColor } from '../data';
 import { FEED_EVENT_CONFIG } from '../utils/activity-feed';
@@ -38,6 +39,7 @@ export default function ActivityFeedModal({
   event, client, messages, checkIns, invoices, workoutLogs,
   onClose, lang, isMobile = false,
 }: ActivityFeedModalProps) {
+  const focusTrapRef = useFocusTrap(onClose);
   if (!client) return null;
 
   const config = FEED_EVENT_CONFIG[event.type];
@@ -121,7 +123,7 @@ export default function ActivityFeedModal({
     const logId = event.id.replace('workout_completed-', '').replace('workout_missed-', '');
     const log = workoutLogs.find(w => w.id === logId);
     const isCompleted = event.type === 'workout_completed';
-    const statusColor = isCompleted ? '#22c55e' : '#ef4444';
+    const statusColor = isCompleted ? 'var(--accent-success)' : 'var(--accent-danger)';
 
     return (
       <>
@@ -177,7 +179,7 @@ export default function ActivityFeedModal({
               }}
             >
               <div style={{ marginBottom: '8px' }}>{m.icon}</div>
-              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{m.label}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{m.label}</div>
               <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary, #fff)' }}>{m.value}</div>
             </motion.div>
           ))}
@@ -218,14 +220,14 @@ export default function ActivityFeedModal({
                   transition={{ delay: 0.1 }}
                   style={heroMetricCard}
                 >
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>{t.weight}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>{t.weight}</div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span style={{ fontSize: '28px', fontWeight: 800, color: '#fff' }}>{ci.weight}</span>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>kg</span>
+                    <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)' }}>{ci.weight}</span>
+                    <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>kg</span>
                     {prevCi?.weight != null && (
                       <span style={{
                         fontSize: '13px', fontWeight: 600, marginLeft: '4px',
-                        color: ci.weight <= prevCi.weight ? '#22c55e' : '#ef4444',
+                        color: ci.weight <= prevCi.weight ? 'var(--accent-success)' : 'var(--accent-danger)',
                       }}>
                         {ci.weight > prevCi.weight ? '+' : ''}{(ci.weight - prevCi.weight).toFixed(1)}
                       </span>
@@ -240,14 +242,14 @@ export default function ActivityFeedModal({
                   transition={{ delay: 0.15 }}
                   style={heroMetricCard}
                 >
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>{t.bodyFat}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '6px' }}>{t.bodyFat}</div>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span style={{ fontSize: '28px', fontWeight: 800, color: '#fff' }}>{ci.bodyFat}</span>
-                    <span style={{ fontSize: '14px', color: '#64748b' }}>%</span>
+                    <span style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)' }}>{ci.bodyFat}</span>
+                    <span style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>%</span>
                     {prevCi?.bodyFat != null && (
                       <span style={{
                         fontSize: '13px', fontWeight: 600, marginLeft: '4px',
-                        color: ci.bodyFat <= prevCi.bodyFat ? '#22c55e' : '#ef4444',
+                        color: ci.bodyFat <= prevCi.bodyFat ? 'var(--accent-success)' : 'var(--accent-danger)',
                       }}>
                         {ci.bodyFat > prevCi.bodyFat ? '+' : ''}{(ci.bodyFat - prevCi.bodyFat).toFixed(1)}
                       </span>
@@ -265,7 +267,7 @@ export default function ActivityFeedModal({
             <div style={sectionTitle}>{t.wellness}</div>
             {wellnessItems.map((item, i) => {
               const ratio = item.value / item.max;
-              const barColor = ratio > 0.6 ? '#22c55e' : ratio > 0.3 ? '#f59e0b' : '#ef4444';
+              const barColor = ratio > 0.6 ? 'var(--accent-success)' : ratio > 0.3 ? 'var(--accent-warm)' : 'var(--accent-danger)';
               return (
                 <motion.div
                   key={item.label}
@@ -274,7 +276,7 @@ export default function ActivityFeedModal({
                   transition={{ delay: 0.1 + i * 0.04 }}
                   style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}
                 >
-                  <span style={{ fontSize: '12px', color: '#94a3b8', width: '70px', flexShrink: 0 }}>{item.label}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', width: '70px', flexShrink: 0 }}>{item.label}</span>
                   <div style={{ flex: 1, height: '8px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
                     <motion.div
                       initial={{ width: 0 }}
@@ -283,7 +285,7 @@ export default function ActivityFeedModal({
                       style={{ height: '100%', borderRadius: '4px', background: `linear-gradient(90deg, ${barColor}cc, ${barColor})` }}
                     />
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#fff', width: '40px', textAlign: 'right' }}>{item.display}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', width: '40px', textAlign: 'right' }}>{item.display}</span>
                 </motion.div>
               );
             })}
@@ -324,7 +326,7 @@ export default function ActivityFeedModal({
       <div>
         <div style={sectionTitle}>{t.recentMessages}</div>
         {clientMsgs.length === 0 ? (
-          <div style={{ fontSize: '13px', color: '#64748b', textAlign: 'center', padding: '24px 0' }}>{t.noMessages}</div>
+          <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>{t.noMessages}</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', overflowY: 'auto', padding: '4px 0' }}>
             {clientMsgs.map((msg, i) => (
@@ -346,7 +348,7 @@ export default function ActivityFeedModal({
                     ? 'linear-gradient(135deg, rgba(0,229,200,0.12), rgba(0,229,200,0.06))'
                     : 'rgba(255,255,255,0.04)',
                   border: `1px solid ${msg.isFromCoach ? 'rgba(0,229,200,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                  color: '#fff',
+                  color: 'var(--text-primary)',
                   wordBreak: 'break-word',
                 }}>
                   {msg.text}
@@ -373,7 +375,7 @@ export default function ActivityFeedModal({
     if (!inv) return null;
 
     const isPaid = inv.status === 'paid';
-    const statusColor = isPaid ? '#22c55e' : inv.status === 'overdue' ? '#ef4444' : '#f59e0b';
+    const statusColor = isPaid ? 'var(--accent-success)' : inv.status === 'overdue' ? 'var(--accent-danger)' : 'var(--accent-warm)';
     const statusLabel = isPaid ? t.paid : inv.status === 'overdue' ? t.overdue : t.pending;
     const amount = lang === 'pl' ? `${inv.amount} zł` : `$${inv.amount}`;
 
@@ -393,7 +395,7 @@ export default function ActivityFeedModal({
             marginBottom: '20px',
           }}
         >
-          <div style={{ fontSize: '36px', fontWeight: 800, color: '#fff', letterSpacing: '-1px' }}>
+          <div style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-1px' }}>
             {amount}
           </div>
           <div style={{
@@ -426,8 +428,8 @@ export default function ActivityFeedModal({
                 border: '1px solid rgba(255,255,255,0.06)',
               }}
             >
-              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{item.label}</div>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>{item.value}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{item.label}</div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.value}</div>
             </motion.div>
           ))}
         </div>
@@ -467,15 +469,15 @@ export default function ActivityFeedModal({
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
                   {liftNames[lift]}
                 </div>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#fff' }}>{current}<span style={{ fontSize: '13px', color: '#64748b' }}>kg</span></div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>{current}<span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>kg</span></div>
                 {prev !== null && (
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: '3px',
                     marginTop: '6px', fontSize: '12px', fontWeight: 600,
-                    color: isUp ? '#22c55e' : '#ef4444',
+                    color: isUp ? 'var(--accent-success)' : 'var(--accent-danger)',
                   }}>
                     <TrendingUp size={12} />
                     {current > prev ? '+' : ''}{current - prev}kg
@@ -505,8 +507,8 @@ export default function ActivityFeedModal({
             transition={{ delay: 0.1 + i * 0.05 }}
             style={heroMetricCard}
           >
-            <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{item.label}</div>
-            <div style={{ fontSize: '20px', fontWeight: 700, color: '#fff' }}>{item.value}</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>{item.label}</div>
+            <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>{item.value}</div>
           </motion.div>
         ))}
       </div>
@@ -552,6 +554,9 @@ export default function ActivityFeedModal({
         onClick={onClose}
       >
         <motion.div
+          ref={focusTrapRef}
+          role="dialog"
+          aria-modal="true"
           style={{
             background: 'var(--bg-card, #0d1117)',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -586,14 +591,14 @@ export default function ActivityFeedModal({
                 <div style={{
                   width: '100%', height: '100%', borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '15px', fontWeight: 700, color: '#fff',
+                  fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)',
                   background: getAvatarColor(client.id),
                 }}>
                   {getInitials(client.name)}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: '17px', fontWeight: 700, color: '#fff', letterSpacing: '-0.3px' }}>
+                <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
                   {client.name}
                 </div>
                 <div style={{ fontSize: '12px', color: accentColor, marginTop: '2px', fontWeight: 500 }}>
@@ -603,10 +608,11 @@ export default function ActivityFeedModal({
             </div>
             <button
               onClick={onClose}
+              aria-label="Close"
               style={{
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '10px', padding: '6px', cursor: 'pointer',
-                color: '#64748b', display: 'flex', alignItems: 'center',
+                color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center',
                 transition: 'all 0.15s',
               }}
             >
@@ -632,7 +638,7 @@ export default function ActivityFeedModal({
                 fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                 border: '1px solid rgba(255,255,255,0.1)',
                 background: 'rgba(255,255,255,0.04)',
-                color: '#94a3b8', fontFamily: 'var(--font-display)',
+                color: 'var(--text-secondary)', fontFamily: 'var(--font-display)',
                 transition: 'all 0.15s',
               }}
             >
@@ -652,7 +658,7 @@ const sectionTitle: React.CSSProperties = {
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
-  color: '#64748b',
+  color: 'var(--text-tertiary)',
   marginBottom: '12px',
 };
 

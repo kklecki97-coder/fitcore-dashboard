@@ -31,7 +31,7 @@ import { getDailyQuote } from '../utils/formatting';
 import { computeWeeklyReport } from '../utils/weekly-report';
 import WeeklyReport from './WeeklyReport';
 import { generatePreviewData } from '../utils/smart-coach-preview';
-import type { Client, Message, WorkoutProgram, Invoice, WorkoutLog, WorkoutSetLog, CheckIn } from '../types';
+import { useData } from '../contexts/DataProvider';
 
 const QUOTE_AUTHORS = [
   'Unknown',
@@ -47,18 +47,8 @@ const QUOTE_AUTHORS = [
 ];
 
 interface OverviewPageProps {
-  clients: Client[];
-  messages: Message[];
-  programs: WorkoutProgram[];
-  invoices: Invoice[];
-  workoutLogs: WorkoutLog[];
-  checkIns: CheckIn[];
-  workoutSetLogs: WorkoutSetLog[];
   onViewClient: (id: string) => void;
   onNavigate: (page: 'messages' | 'clients' | 'check-ins') => void;
-  onSendMessage: (msg: Message) => void;
-  onUpdateCheckIn: (id: string, updates: Partial<CheckIn>) => void;
-  profileName?: string;
 }
 
 function getTimeGreeting(t: { overview: { greetingMorning: (n: string) => string; greetingAfternoon: (n: string) => string; greetingEvening: (n: string) => string; greetingNight: (n: string) => string } }, name: string): string {
@@ -69,9 +59,10 @@ function getTimeGreeting(t: { overview: { greetingMorning: (n: string) => string
   return t.overview.greetingNight(name);
 }
 
-export default function OverviewPage({ clients, messages, programs, invoices, workoutLogs, checkIns, workoutSetLogs, onViewClient, onNavigate, onSendMessage, onUpdateCheckIn, profileName }: OverviewPageProps) {
+export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
+  const { clients, messages, programs, invoices, workoutLogs, checkIns, setLogs: workoutSetLogs, sendMessage: onSendMessage, updateCheckIn: onUpdateCheckIn, profileName } = useData();
   const { briefing, loading: briefingLoading, refresh: refreshBriefing } = useAIBriefing(clients, invoices, workoutLogs, checkIns, messages, programs, lang);
   const [ready, setReady] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);

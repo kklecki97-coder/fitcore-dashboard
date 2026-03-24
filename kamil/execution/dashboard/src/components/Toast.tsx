@@ -52,15 +52,15 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   }, [toast.id, toast.duration, onRemove]);
 
   const icons = {
-    success: <CheckCircle size={18} color="#20dba4" />,
-    error: <AlertTriangle size={18} color="#e8637a" />,
-    info: <Info size={18} color="#3b82f6" />,
+    success: <CheckCircle size={18} color="var(--accent-success)" />,
+    error: <AlertTriangle size={18} color="var(--accent-danger)" />,
+    info: <Info size={18} color="var(--accent-info)" />,
   };
 
   const borderColors = {
-    success: 'rgba(32,219,164,0.3)',
-    error: 'rgba(232,99,122,0.3)',
-    info: 'rgba(59,130,246,0.3)',
+    success: 'var(--accent-success-dim)',
+    error: 'var(--accent-danger-dim)',
+    info: 'var(--accent-info-dim)',
   };
 
   return (

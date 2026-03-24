@@ -326,7 +326,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
 
               {stripeLoadError ? (
                 <div style={{ ...styles.stripeBadge, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                  <span style={{ ...styles.stripeBadgeText, color: '#ef4444' }}>
+                  <span style={{ ...styles.stripeBadgeText, color: 'var(--accent-danger)' }}>
                     <AlertTriangle size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                     Error loading Stripe status
                   </span>
@@ -432,9 +432,9 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             {/* Delete confirmation */}
             {deletePlanId && (
               <div style={{ padding: '8px 12px', marginBottom: '8px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', color: '#ef4444' }}>{t.settings.deletePlanConfirm || 'Delete this plan?'}</span>
+                <span style={{ fontSize: '13px', color: 'var(--accent-danger)' }}>{t.settings.deletePlanConfirm || 'Delete this plan?'}</span>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => { onDeletePlan(deletePlanId); setDeletePlanId(null); }} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: '#ef4444', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                  <button onClick={() => { onDeletePlan(deletePlanId); setDeletePlanId(null); }} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: 'var(--accent-danger)', color: '#fff', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
                     {t.settings.deleteAccount ? 'Delete' : 'Delete'}
                   </button>
                   <button onClick={() => setDeletePlanId(null)} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border-glass)', background: 'none', color: 'var(--text-secondary)', fontSize: '12px', cursor: 'pointer' }}>

@@ -11,24 +11,19 @@ import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
 import { getLocale, formatCurrency } from '../lib/locale';
-import type { Client, Invoice, CoachingPlan } from '../types';
+import { useData } from '../contexts/DataProvider';
+import type { Invoice } from '../types';
 
 interface PaymentsPageProps {
-  clients: Client[];
-  invoices: Invoice[];
-  plans: CoachingPlan[];
-  onUpdateInvoice: (id: string, updates: Partial<Invoice>) => void;
-  onAddInvoice: (invoice: Invoice) => void;
-  onDeleteInvoice: (id: string) => void;
   onViewClient: (id: string) => void;
 }
 
 type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
-// onUpdateInvoice reserved for future manual payment marking
-export default function PaymentsPage({ clients, invoices, plans, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onDeleteInvoice, onViewClient }: PaymentsPageProps) {
+export default function PaymentsPage({ onViewClient }: PaymentsPageProps) {
   const { lang, t } = useLang();
+  const { clients, invoices, plans, updateInvoice: _onUpdateInvoice, addInvoice: onAddInvoice, deleteInvoice: onDeleteInvoice } = useData();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');

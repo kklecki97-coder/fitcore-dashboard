@@ -6,7 +6,8 @@ import { getInitials, getAvatarColor } from '../data';
 import { useLang } from '../i18n';
 import { getLocale } from '../lib/locale';
 import { supabase } from '../lib/supabase';
-import type { Client, Message } from '../types';
+import { useData } from '../contexts/DataProvider';
+import type { Message } from '../types';
 
 // ── Delivery status checkmarks ──
 const DeliveryCheck = ({ status }: { status?: Message['deliveryStatus'] }) => {
@@ -55,13 +56,11 @@ interface MessageTemplate {
 // ── Component ──
 interface MessagesPageProps {
   isMobile?: boolean;
-  clients: Client[];
-  messages: Message[];
-  onSendMessage: (msg: Message) => void;
 }
 
-export default function MessagesPage({ isMobile = false, clients, messages, onSendMessage }: MessagesPageProps) {
+export default function MessagesPage({ isMobile = false }: MessagesPageProps) {
   const { lang, t } = useLang();
+  const { clients, messages, sendMessage: onSendMessage } = useData();
 
   const [selectedClient, setSelectedClient] = useState<string>(clients[0]?.id ?? '');
   const [newMessage, setNewMessage] = useState('');
