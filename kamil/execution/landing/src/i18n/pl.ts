@@ -27,7 +27,6 @@ export const pl: Translations = {
     ctaPrimary: 'Zobacz co dostajesz',
     ctaDemo: 'Sprawdź demo',
     ctaSecondary: 'Umów rozmowę',
-    ctaDemo: 'Wypróbuj Demo',
   },
 
   pain: {

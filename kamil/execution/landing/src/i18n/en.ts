@@ -25,7 +25,6 @@ export const en = {
     ctaPrimary: 'See What You Get',
     ctaDemo: 'Try Demo',
     ctaSecondary: 'Book a Call',
-    ctaDemo: 'Try Live Demo',
   },
 
   pain: {
