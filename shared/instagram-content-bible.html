@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore — Instagram Content Bible</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #07090e;
+      --bg2: #0c1017;
+      --bg3: #0e1219;
+      --accent: #00e5c8;
+      --accent2: #00c4aa;
+      --indigo: #6366f1;
+      --text: #f0f2f5;
+      --text2: #8b92a5;
+      --text3: #525a6e;
+      --red: #ef4444;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --blue: #3b82f6;
+      --glass: rgba(14,18,27,0.7);
+      --border: rgba(255,255,255,0.06);
+      --border-hover: rgba(255,255,255,0.12);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 80px 24px 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,229,200,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(0,229,200,0.1);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(0,229,200,0.2);
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      color: var(--text2);
+      font-size: 17px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ── Navigation ── */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7,9,14,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    .nav a {
+      color: var(--text2);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 14px 16px;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav a:hover, .nav a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Container ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Section ── */
+    .section {
+      padding: 64px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .section:last-child { border-bottom: none; }
+
+    .section-number {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .section h2 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 24px;
+    }
+    .section h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 32px 0 16px;
+    }
+    .section p {
+      color: var(--text2);
+      margin-bottom: 16px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 16px;
+      transition: border-color 0.3s;
+    }
+    .card:hover { border-color: var(--border-hover); }
+
+    .card-accent-red { border-left: 3px solid var(--red); }
+    .card-accent-green { border-left: 3px solid var(--green); }
+    .card-accent-amber { border-left: 3px solid var(--amber); }
+    .card-accent-blue { border-left: 3px solid var(--blue); }
+    .card-accent-cyan { border-left: 3px solid var(--accent); }
+    .card-accent-indigo { border-left: 3px solid var(--indigo); }
+
+    .card h4 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card p { font-size: 14px; color: var(--text2); margin-bottom: 10px; }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+    .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+    .tag-amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+    .tag-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+    /* ── Topic List ── */
+    .topic-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .topic-list li {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      color: var(--text);
+      transition: all 0.2s;
+      cursor: default;
+    }
+    .topic-list li:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--border-hover);
+    }
+    .topic-list li::before {
+      content: '→';
+      color: var(--text3);
+      margin-right: 10px;
+    }
+
+    /* ── Tone Examples ── */
+    .tone-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    @media (max-width: 600px) { .tone-grid { grid-template-columns: 1fr; } }
+    .tone-good, .tone-bad {
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .tone-good {
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      color: var(--green);
+    }
+    .tone-bad {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: var(--red);
+    }
+    .tone-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      opacity: 0.7;
+    }
+
+    /* ── Schedule Table ── */
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    .schedule-table th, .schedule-table td {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .schedule-table th {
+      color: var(--text3);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .schedule-table td { color: var(--text2); }
+    .schedule-table td:first-child { color: var(--text); font-weight: 600; }
+
+    /* ── Template Box (copyable) ── */
+    .template-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 12px 0;
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.8;
+      white-space: pre-wrap;
+      position: relative;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .template-box:hover { border-color: var(--border-hover); }
+    .template-box .copy-hint {
+      position: absolute;
+      top: 10px; right: 14px;
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .template-box:hover .copy-hint { opacity: 1; }
+    .template-box.copied-box { border-color: var(--accent); }
+    .template-box.copied-box .copy-hint { opacity: 1; color: var(--accent); }
+
+    /* ── Hashtag Chips ── */
+    .hashtag-group { margin: 12px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .hashtag {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: all;
+    }
+    .hashtag:hover {
+      background: rgba(0,229,200,0.08);
+      border-color: rgba(0,229,200,0.2);
+    }
+
+    /* ── Rules ── */
+    .rules-list {
+      list-style: none;
+      counter-reset: rules;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .rules-list li {
+      counter-increment: rules;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+    .rules-list li::before {
+      content: counter(rules);
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(0,229,200,0.1);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .rules-list li strong { color: var(--text); }
+
+    /* ── Checklist ── */
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .checklist li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text2);
+      cursor: pointer;
+      padding: 10px 14px;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+    .checklist li:hover { background: rgba(255,255,255,0.03); }
+    .checklist li .check-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid var(--text3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .checklist li.checked .check-icon {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .checklist li.checked .check-icon::after {
+      content: '✓';
+      color: var(--bg);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .checklist li.checked { color: var(--text3); text-decoration: line-through; }
+
+    /* ── Visual Identity Colors ── */
+    .color-swatches {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .swatch-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .swatch-label {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Bio Box ── */
+    .bio-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .bio-box p { color: var(--text); font-size: 15px; margin-bottom: 4px; }
+    .bio-box .bio-link { color: var(--accent); font-weight: 600; }
+
+    /* ── Integration Flow ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 20px 0;
+    }
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 0;
+    }
+    .flow-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-top: 6px;
+      position: relative;
+    }
+    .flow-step:not(:last-child) .flow-dot::after {
+      content: '';
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 40px;
+      background: rgba(0,229,200,0.2);
+    }
+    .flow-step p { font-size: 14px; color: var(--text2); }
+    .flow-step strong { color: var(--text); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text3);
+      font-size: 13px;
+    }
+    .footer span { color: var(--accent); font-weight: 600; }
+
+    /* ── Pillar Visual Week ── */
+    .week-visual {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 24px 0;
+    }
+    @media (max-width: 600px) { .week-visual { grid-template-columns: repeat(2, 1fr); } }
+    .week-day {
+      border-radius: 14px;
+      padding: 20px 16px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    .week-day .day-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .week-day .day-pillar { font-size: 22px; margin-bottom: 6px; }
+    .week-day .day-label { font-size: 13px; font-weight: 600; }
+    .week-day .day-format { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+    .wd-red { background: rgba(239,68,68,0.06); }
+    .wd-red .day-name { color: var(--red); }
+    .wd-red .day-label { color: var(--red); }
+    .wd-green { background: rgba(34,197,94,0.06); }
+    .wd-green .day-name { color: var(--green); }
+    .wd-green .day-label { color: var(--green); }
+    .wd-amber { background: rgba(245,158,11,0.06); }
+    .wd-amber .day-name { color: var(--amber); }
+    .wd-amber .day-label { color: var(--amber); }
+    .wd-blue { background: rgba(59,130,246,0.06); }
+    .wd-blue .day-name { color: var(--blue); }
+    .wd-blue .day-label { color: var(--blue); }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ HERO ═══ -->
+  <div class="hero">
+    <div class="hero-badge">Instagram Strategy 2026</div>
+    <h1>Fit<span>Core</span> — Content Bible</h1>
+    <p>Jeden dokument, jeden styl, jeden plan. Otwierasz, czytasz, robisz.</p>
+  </div>
+
+  <!-- ═══ NAV ═══ -->
+  <nav class="nav">
+    <a href="#profil">Profil</a>
+    <a href="#wizualna">Wizualna</a>
+    <a href="#filary">Filary</a>
+    <a href="#harmonogram">Harmonogram</a>
+    <a href="#szablony">Szablony</a>
+    <a href="#hashtagi">Hashtagi</a>
+    <a href="#prompts">AI Prompts</a>
+    <a href="#zasady">Zasady</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#integracja">Integracja</a>
+    <a href="#checklisty">Checklisty</a>
+    <a href="#scenariusze">Scenariusze</a>
+  </nav>
+
+  <div class="container">
+
+    <!-- ═══ 1. PROFIL ═══ -->
+    <section class="section" id="profil">
+      <div class="section-number">01</div>
+      <h2>Profil — Fundament</h2>
+
+      <div class="card card-accent-cyan">
+        <h4>Ton głosu</h4>
+        <p>Profesjonalny, konkretny, ludzki. Mówisz jak kumpel-ekspert — nie sprzedajesz, tylko pokazujesz. Zero korpo-mowy, zero luzackiego. Prosto, z pewnością siebie.</p>
+      </div>
+
+      <div class="tone-grid">
+        <div class="tone-good">
+          <div class="tone-label">✓ Tak</div>
+          "Trener z 30 klientami nie powinien spędzać 2h dziennie na Excelu."
+        </div>
+        <div class="tone-good">
+          <div class="tone-label">✓ Tak</div>
+          "Jeden panel. Treningi, płatności, czat, postępy. To tyle."
+        </div>
+        <div class="tone-bad">
+          <div class="tone-label">✗ Nie</div>
+          "Nasze innowacyjne rozwiązanie SaaS zmienia paradygmat zarządzania klientami."
+        </div>
+        <div class="tone-bad">
+          <div class="tone-label">✗ Nie</div>
+          "Hejka! Mamy mega apkę dla trenerów 🔥🔥🔥"
+        </div>
+      </div>
+
+      <h3>Bio</h3>
+      <div class="bio-box">
+        <p>Zarządzaj klientami z jednego panelu</p>
+        <p>Treningi · Płatności · Czat · Postępy — wszystko w jednym</p>
+        <p>🚀 Darmowe demo → <span class="bio-link">fitcore.tech</span></p>
+      </div>
+
+      <p><strong style="color:var(--text)">Kontakt:</strong> contact@fitcore.tech · <strong style="color:var(--text)">Język:</strong> Polski (100%)</p>
+    </section>
+
+    <!-- ═══ 2. WIZUALNA ═══ -->
+    <section class="section" id="wizualna">
+      <div class="section-number">02</div>
+      <h2>Identyfikacja wizualna</h2>
+      <p>Każdy post musi wyglądać jak część tej samej marki. Ktoś scrolluje feed — od razu widzi że to FitCore.</p>
+
+      <h3>Paleta kolorów</h3>
+      <div class="color-swatches">
+        <div class="swatch">
+          <div class="swatch-circle" style="background:#07090e"></div>
+          <div class="swatch-label">#07090e</div>
+          <div class="swatch-label" style="color:var(--text2)">Tło</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-circle" style="background:#0c1017"></div>
+          <div class="swatch-label">#0c1017</div>
+          <div class="swatch-label" style="color:var(--text2)">Tło alt</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-circle" style="background:linear-gradient(135deg,#00e5c8,#00c4aa)"></div>
+          <div class="swatch-label">#00e5c8</div>
+          <div class="swatch-label" style="color:var(--text2)">Akcent</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-circle" style="background:#6366f1"></div>
+          <div class="swatch-label">#6366f1</div>
+          <div class="swatch-label" style="color:var(--text2)">Indigo</div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-circle" style="background:#f0f2f5"></div>
+          <div class="swatch-label">#f0f2f5</div>
+          <div class="swatch-label" style="color:var(--text2)">Tekst</div>
+        </div>
+      </div>
+
+      <h3>Fonty</h3>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;margin:12px 0">
+        <div class="card" style="flex:1;min-width:200px">
+          <h4 style="font-family:'Outfit',sans-serif;font-size:24px">Outfit</h4>
+          <p>Nagłówki, UI, opisy postów</p>
+        </div>
+        <div class="card" style="flex:1;min-width:200px">
+          <h4 style="font-family:'JetBrains Mono',monospace;font-size:20px">JetBrains Mono</h4>
+          <p>Dane, statystyki, kod</p>
+        </div>
+      </div>
+
+      <h3>Zasady wizualne</h3>
+      <div class="card">
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="color:var(--text2);font-size:14px"><span style="color:var(--green);margin-right:8px">✓</span> Ciemne tło + cyan akcenty + białe/jasne teksty</li>
+          <li style="color:var(--text2);font-size:14px"><span style="color:var(--green);margin-right:8px">✓</span> Screeny dashboardu w "ramce przeglądarki"</li>
+          <li style="color:var(--text2);font-size:14px"><span style="color:var(--green);margin-right:8px">✓</span> Rolki: naturalne, bez filtrów, FitCore intro/outro</li>
+          <li style="color:var(--text2);font-size:14px"><span style="color:var(--green);margin-right:8px">✓</span> Logo FC monogram — zawsze w rogu posta</li>
+          <li style="color:var(--text2);font-size:14px"><span style="color:var(--red);margin-right:8px">✗</span> NIGDY: jasne tła, stockowe grafiki, Comic Sans energie</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══ 3. FILARY ═══ -->
+    <section class="section" id="filary">
+      <div class="section-number">03</div>
+      <h2>Filary treści (Content Pillars)</h2>
+      <p>Cały content opiera się na 4 filarach. Każdy post MUSI należeć do jednego z nich. To eliminuje chaos — wiesz dokładnie co wrzucasz i dlaczego.</p>
+
+      <!-- BÓL -->
+      <div class="card card-accent-red" style="margin-top:24px">
+        <h4><span class="tag tag-red">BÓL</span> Filar 1 — Problem trenerów</h4>
+        <p><strong style="color:var(--text)">Cel:</strong> Trener czyta i myśli "kurde, to ja"</p>
+        <p><strong style="color:var(--text)">Format:</strong> Karuzela lub pojedyncza grafika z tekstem</p>
+        <ul class="topic-list">
+          <li>"5 rzeczy które tracisz zarządzając klientami w Excelu"</li>
+          <li>"Ile godzin tygodniowo marnujesz na administrację?"</li>
+          <li>"Klient zapomniał treningu? To nie jego wina."</li>
+          <li>"3 sygnały że zaraz stracisz klienta"</li>
+          <li>"Dzień z życia trenera z 30+ klientami"</li>
+          <li>"Wysyłasz treningi PDF-em na WhatsApp? Porozmawiajmy."</li>
+          <li>"Ile razy w tym tygodniu szukałeś czegoś w arkuszu?"</li>
+        </ul>
+      </div>
+
+      <!-- ROZWIĄZANIE -->
+      <div class="card card-accent-green">
+        <h4><span class="tag tag-green">ROZWIĄZANIE</span> Filar 2 — Demo produktu</h4>
+        <p><strong style="color:var(--text)">Cel:</strong> Pokazujesz co FitCore robi — bez wciskania, po prostu demonstracja</p>
+        <p><strong style="color:var(--text)">Format:</strong> Karuzela (screeny), screen-recording, grafika z feature'em</p>
+        <ul class="topic-list">
+          <li>"Jeden panel — wszyscy klienci, wszystkie dane"</li>
+          <li>"Zbuduj program treningowy 12-tygodniowy w 10 minut"</li>
+          <li>"Jedna skrzynka: Telegram, WhatsApp, Email, Instagram"</li>
+          <li>"Analityka: przychody, retencja, rozkład klientów"</li>
+          <li>"Portal klienta — co widzi twój klient"</li>
+          <li>"Smart Coach — AI podpowiada ci co robić z klientem"</li>
+          <li>"Autopilot — alerty, przypomnienia, automatyczne wykrywanie"</li>
+        </ul>
+      </div>
+
+      <!-- TWARZ -->
+      <div class="card card-accent-amber">
+        <h4><span class="tag tag-amber">TWARZ</span> Filar 3 — Za kulisami</h4>
+        <p><strong style="color:var(--text)">Cel:</strong> Budowanie zaufania. Ludzie kupują od ludzi, nie od logo.</p>
+        <p><strong style="color:var(--text)">Format:</strong> Rolka z twarzą, stories, karuzela behind the scenes</p>
+        <ul class="topic-list">
+          <li>"Dlaczego budujemy FitCore" (historia, motywacja)</li>
+          <li>"Jak wygląda budowanie apki dla trenerów" (behind the scenes)</li>
+          <li>"Co mówią trenerzy kiedy widzą FitCore po raz pierwszy"</li>
+          <li>"Nowa funkcja — właśnie skończyłem ją kodować"</li>
+          <li>"Błąd który popełniłem budując ten produkt"</li>
+          <li>"Tydzień z życia twórcy fitness SaaS"</li>
+          <li>"Pytanie od trenera — odpowiadam na żywo"</li>
+        </ul>
+        <div class="card" style="margin-top:12px;background:rgba(245,158,11,0.05)">
+          <p style="font-size:13px;margin:0"><strong style="color:var(--amber)">Zasady rolek:</strong> 30-90s max · Hook w 3 sekundy · Napisy PL zawsze · Mów do kamery jak do kumpla · FitCore logo w rogu/na końcu</p>
+        </div>
+      </div>
+
+      <!-- WARTOŚĆ -->
+      <div class="card card-accent-blue">
+        <h4><span class="tag tag-blue">WARTOŚĆ</span> Filar 4 — Porady dla trenerów</h4>
+        <p><strong style="color:var(--text)">Cel:</strong> Dawaj wartość za darmo — trener obserwuje bo się uczy, a przy okazji widzi że FitCore ogarnia.</p>
+        <p><strong style="color:var(--text)">Format:</strong> Karuzela (lista tipów), grafika z cytatem, rolka-porada</p>
+        <ul class="topic-list">
+          <li>"3 sposoby na lepszą retencję klientów"</li>
+          <li>"Jak wycenić swój coaching online"</li>
+          <li>"Onboarding klienta — checklist dla trenera"</li>
+          <li>"Kiedy powiedzieć klientowi NIE"</li>
+          <li>"Jak ogarnąć 50 klientów i nie zwariować"</li>
+          <li>"Najczęstszy błąd trenerów przy skalowaniu"</li>
+          <li>"Co robić gdy klient nie odpisuje 5 dni"</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══ 4. HARMONOGRAM ═══ -->
+    <section class="section" id="harmonogram">
+      <div class="section-number">04</div>
+      <h2>Harmonogram tygodniowy</h2>
+      <p>4 posty w tygodniu, rotacja filarów. Każdy dzień ma swój typ.</p>
+
+      <div class="week-visual">
+        <div class="week-day wd-red">
+          <div class="day-name">Poniedziałek</div>
+          <div class="day-pillar">🔴</div>
+          <div class="day-label">BÓL</div>
+          <div class="day-format">Grafika / Karuzela</div>
+        </div>
+        <div class="week-day wd-green">
+          <div class="day-name">Środa</div>
+          <div class="day-pillar">🟢</div>
+          <div class="day-label">ROZWIĄZANIE</div>
+          <div class="day-format">Karuzela / Screen-rec</div>
+        </div>
+        <div class="week-day wd-amber">
+          <div class="day-name">Piątek</div>
+          <div class="day-pillar">🟡</div>
+          <div class="day-label">TWARZ</div>
+          <div class="day-format">Rolka z kamerą</div>
+        </div>
+        <div class="week-day wd-blue">
+          <div class="day-name">Niedziela</div>
+          <div class="day-pillar">🔵</div>
+          <div class="day-label">WARTOŚĆ</div>
+          <div class="day-format">Karuzela / Grafika</div>
+        </div>
+      </div>
+
+      <h3>Godziny publikacji</h3>
+      <table class="schedule-table">
+        <thead>
+          <tr><th>Typ</th><th>Okno 1</th><th>Okno 2</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Posty (pn, śr, nd)</td><td>11:00 – 13:00</td><td>18:00 – 20:00</td></tr>
+          <tr><td>Rolki (pt)</td><td>12:00 – 14:00</td><td>19:00 – 21:00</td></tr>
+          <tr><td>Stories</td><td colspan="2">Minimum 2-3 w tygodniu (repost, behind the scenes, ankieta)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═══ 5. SZABLONY ═══ -->
+    <section class="section" id="szablony">
+      <div class="section-number">05</div>
+      <h2>Szablony opisów — Copy & Paste</h2>
+      <p>Kliknij szablon żeby skopiować. Uzupełnij pola w nawiasach kwadratowych.</p>
+
+      <h3><span class="tag tag-red">BÓL</span> Szablon posta</h3>
+      <div class="template-box" onclick="copyTemplate(this)">[Jedno zdanie — uderza w konkretny problem]
+
+[Sytuacja: opisz moment który trener zna z życia, 2-3 zdania]
+
+[Konsekwencja: co traci przez ten problem]
+
+A co gdyby to wyglądało inaczej?
+
+---
+#trenerpersonalny #fitnessbiznes #zarzadzanieklientami
+#treneronline #coachingfitness<span class="copy-hint">Kliknij → kopiuj</span></div>
+
+      <h3><span class="tag tag-green">ROZWIĄZANIE</span> Szablon posta</h3>
+      <div class="template-box" onclick="copyTemplate(this)">[Nazwa feature'a / co to robi — jedno zdanie]
+
+[Jak to działa — 2-3 zdania, konkrety]
+
+[Efekt: co zyskuje trener]
+
+🚀 Darmowe demo → link w bio
+
+---
+#fitcore #dashboarddlatrenera #fitnesstechnologia
+#automatyzacja #treneronline<span class="copy-hint">Kliknij → kopiuj</span></div>
+
+      <h3><span class="tag tag-amber">TWARZ</span> Szablon rolki</h3>
+      <div class="template-box" onclick="copyTemplate(this)">[Hook z rolki powtórzony tekstem — max 1 zdanie]
+
+[Kontekst — 1-2 zdania co zobaczą w rolce]
+
+Daj znać w komentarzu [pytanie angażujące]
+
+→ Obserwuj @fitcore po więcej
+
+---
+#fitcore #buildinpublic #startuppolska
+#fitnesstech #saas #kulisy<span class="copy-hint">Kliknij → kopiuj</span></div>
+
+      <h3><span class="tag tag-blue">WARTOŚĆ</span> Szablon posta</h3>
+      <div class="template-box" onclick="copyTemplate(this)">[Porada / tip — jasne, konkretne]
+
+[Dlaczego to działa — 2-3 zdania]
+
+[Jak wdrożyć — prosty krok]
+
+💾 Zapisz na później | 📩 Wyślij trenerowi który tego potrzebuje
+
+---
+#poradydlatrenera #treneronline #coachingbiznes
+#fitnesscoach #trenerpersonalny<span class="copy-hint">Kliknij → kopiuj</span></div>
+    </section>
+
+    <!-- ═══ 6. HASHTAGI ═══ -->
+    <section class="section" id="hashtagi">
+      <div class="section-number">06</div>
+      <h2>Hashtagi — Stałe zestawy</h2>
+      <p>Nie wymyślaj nowych za każdym razem. Kliknij zestaw żeby skopiować wszystkie.</p>
+
+      <h3>Bazowy <span style="color:var(--text3);font-weight:400;font-size:14px">— używaj zawsze</span></h3>
+      <div class="hashtag-group" onclick="copyHashtags(this)">
+        <span class="hashtag">#trenerpersonalny</span>
+        <span class="hashtag">#treneronline</span>
+        <span class="hashtag">#fitnessbiznes</span>
+      </div>
+
+      <h3>Produktowy <span style="color:var(--text3);font-weight:400;font-size:14px">— posty ROZWIĄZANIE</span></h3>
+      <div class="hashtag-group" onclick="copyHashtags(this)">
+        <span class="hashtag">#fitcore</span>
+        <span class="hashtag">#dashboarddlatrenera</span>
+        <span class="hashtag">#fitnesstechnologia</span>
+        <span class="hashtag">#automatyzacja</span>
+        <span class="hashtag">#fitnesssoftware</span>
+      </div>
+
+      <h3>Edukacyjny <span style="color:var(--text3);font-weight:400;font-size:14px">— posty WARTOŚĆ</span></h3>
+      <div class="hashtag-group" onclick="copyHashtags(this)">
+        <span class="hashtag">#poradydlatrenera</span>
+        <span class="hashtag">#coachingbiznes</span>
+        <span class="hashtag">#skalowaniebiznesu</span>
+        <span class="hashtag">#fitnesscoach</span>
+        <span class="hashtag">#onlinecoaching</span>
+      </div>
+
+      <h3>Personal brand <span style="color:var(--text3);font-weight:400;font-size:14px">— rolki TWARZ</span></h3>
+      <div class="hashtag-group" onclick="copyHashtags(this)">
+        <span class="hashtag">#buildinpublic</span>
+        <span class="hashtag">#startuppolska</span>
+        <span class="hashtag">#fitnesstech</span>
+        <span class="hashtag">#saas</span>
+        <span class="hashtag">#kulisy</span>
+        <span class="hashtag">#motywacja</span>
+      </div>
+
+      <h3>Engagement <span style="color:var(--text3);font-weight:400;font-size:14px">— posty BÓL</span></h3>
+      <div class="hashtag-group" onclick="copyHashtags(this)">
+        <span class="hashtag">#zarzadzanieklientami</span>
+        <span class="hashtag">#coachingfitness</span>
+        <span class="hashtag">#problemytrenera</span>
+        <span class="hashtag">#exceladieu</span>
+        <span class="hashtag">#fitnessmanagement</span>
+      </div>
+    </section>
+
+    <!-- ═══ 7. AI PROMPTS ═══ -->
+    <section class="section" id="prompts">
+      <div class="section-number">07</div>
+      <h2>Techniki generowania treści (AI Prompts)</h2>
+      <p>3 sprawdzone techniki które Claude stosuje automatycznie przy generowaniu postów. Możesz też użyć ich ręcznie — kliknij prompt żeby skopiować.</p>
+
+      <!-- Pain → Hook -->
+      <div class="card card-accent-red" style="margin-top:24px">
+        <h4><span class="tag tag-red">PAIN → HOOK</span> Filary BÓL + TWARZ</h4>
+        <p>Zamienia bóle trenerów w krótkie, mocne hooki (max 10 słów) które zatrzymują scroll.</p>
+        <p><strong style="color:var(--text)">Kiedy:</strong> Poniedziałkowy post BÓL + hooki do piątkowych rolek.</p>
+        <div class="template-box" onclick="copyTemplate(this)">Wypisz 10 największych bolączek polskich trenerów personalnych związanych z zarządzaniem klientami. Zamień każdą bolączkę w hook max 10 słów — gotowy do użycia w Reels lub jako pierwszy wiersz posta. Bez kliszów, bądź bezpośredni i prowokacyjny. Język PL.<span class="copy-hint">Kliknij → kopiuj</span></div>
+      </div>
+
+      <!-- Reels Script -->
+      <div class="card card-accent-amber">
+        <h4><span class="tag tag-amber">REELS SCRIPT</span> Filar TWARZ</h4>
+        <p>Generuje gotowy scenariusz rolki 30-60s z hookiem, historią i CTA.</p>
+        <p><strong style="color:var(--text)">Kiedy:</strong> Planowanie piątkowej rolki z kamerą.</p>
+        <div class="template-box" onclick="copyTemplate(this)">Stwórz scenariusz rolki 30-60 sekund o [temat].
+Struktura:
+1) Hook nie do pominięcia (3 sekundy, tekst na ekranie + mówisz od razu)
+2) Krótka historia / problem / insight (konkretny, bez lania wody)
+3) CTA — zachęta do komentarza lub zapisania
+Krótkie zdania. Zero wypełniaczy. Język PL, ton: kumpel-ekspert.<span class="copy-hint">Kliknij → kopiuj</span></div>
+      </div>
+
+      <!-- Tips That Get Saved -->
+      <div class="card card-accent-blue">
+        <h4><span class="tag tag-blue">TIPS THAT GET SAVED</span> Filar WARTOŚĆ</h4>
+        <p>Praktyczne porady które ludzie zapisują — zapisy to sygnał nr 1 dla algorytmu Instagrama.</p>
+        <p><strong style="color:var(--text)">Kiedy:</strong> Niedzielny post WARTOŚĆ i karuzele z poradami.</p>
+        <div class="template-box" onclick="copyTemplate(this)">Wypisz 5 praktycznych i mało znanych porad o [temat dla trenerów personalnych]. Każda porada max 12 słów — jasna, konkretna, łatwa do wdrożenia. Cel: karuzela której nie da się nie zapisać. Język PL.<span class="copy-hint">Kliknij → kopiuj</span></div>
+      </div>
+    </section>
+
+    <!-- ═══ 8. ZASADY ═══ -->
+    <section class="section" id="zasady">
+      <div class="section-number">08</div>
+      <h2>Zasady które NIGDY nie łamiesz</h2>
+
+      <ul class="rules-list">
+        <li><strong>Jeden post = jeden przekaz.</strong> Nie mieszaj bólu z demo z poradą w jednym poście.</li>
+        <li><strong>Zawsze CTA.</strong> Każdy post kończy się jasną akcją — link w bio, DM, zapisz, obserwuj.</li>
+        <li><strong>Wizualnie spójnie.</strong> Ciemne tło, cyan akcenty, FC logo. Zawsze.</li>
+        <li><strong>Nie sprzedawaj w każdym poście.</strong> 3 wartościowe → 1 sprzedażowy. BÓL i WARTOŚĆ budują zaufanie, ROZWIĄZANIE sprzedaje, TWARZ łączy.</li>
+        <li><strong>Napisy na rolkach — ZAWSZE.</strong> 80% ludzi ogląda bez dźwięku.</li>
+        <li><strong>Język PL.</strong> Cały content po polsku. Hashtagi mogą mieć mix PL/EN.</li>
+        <li><strong>Odpowiadaj na komentarze i DM-y.</strong> Instagram nagradza zaangażowanie. W ciągu 1h jeśli możesz.</li>
+        <li><strong>Nie wrzucaj byle czego żeby było.</strong> Lepiej 3 dobre posty niż 5 słabych. Brak pomysłu? Otwórz listę tematów z filarów.</li>
+      </ul>
+    </section>
+
+    <!-- ═══ 9. WORKFLOW ═══ -->
+    <section class="section" id="workflow">
+      <div class="section-number">09</div>
+      <h2>Workflow — Jak to wygląda w praktyce</h2>
+
+      <h3>📅 Planowanie <span style="color:var(--text3);font-weight:400;font-size:14px">— niedziela wieczór / poniedziałek rano</span></h3>
+      <div class="card">
+        <ol style="list-style:none;counter-reset:steps;display:flex;flex-direction:column;gap:10px">
+          <li style="counter-increment:steps;color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">01</span> Otwórz ten dokument</li>
+          <li style="counter-increment:steps;color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">02</span> Wybierz 4 tematy (po jednym z każdego filaru)</li>
+          <li style="counter-increment:steps;color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">03</span> Napisz opisy (użyj szablonów z sekcji 5)</li>
+          <li style="counter-increment:steps;color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">04</span> Przygotuj grafiki: <code style="background:var(--bg2);padding:2px 6px;border-radius:4px;font-size:12px">make-posts.mjs</code> lub Canva z ciemnym motywem</li>
+          <li style="counter-increment:steps;color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">05</span> Rolki — nagraj w ciągu tygodnia</li>
+        </ol>
+      </div>
+
+      <h3>📤 Publikacja</h3>
+      <div class="card">
+        <ol style="list-style:none;display:flex;flex-direction:column;gap:10px">
+          <li style="color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">01</span> Wrzuć zgodnie z harmonogramem (sekcja 4)</li>
+          <li style="color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">02</span> Dodaj opis z szablonu + hashtagi z zestawu</li>
+          <li style="color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">03</span> Dodaj na stories (repost + ankieta/pytanie)</li>
+        </ol>
+      </div>
+
+      <h3>📊 Po publikacji</h3>
+      <div class="card">
+        <ol style="list-style:none;display:flex;flex-direction:column;gap:10px">
+          <li style="color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">01</span> Odpowiedz na komentarze — <strong style="color:var(--text)">pierwsze 30 min najważniejsze!</strong></li>
+          <li style="color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">02</span> Sprawdź Insights po 24h — co działa, co nie</li>
+          <li style="color:var(--text2);font-size:14px;display:flex;gap:10px"><span style="color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px">03</span> Na koniec miesiąca → oceń: które filary dają najlepsze wyniki</li>
+        </ol>
+      </div>
+
+      <h3>💡 Brak inspiracji?</h3>
+      <div class="card card-accent-indigo">
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">
+          <li style="color:var(--text2);font-size:14px">→ Otwórz listę tematów z filarów — jest ich ~28, starczy na 7 tygodni</li>
+          <li style="color:var(--text2);font-size:14px">→ Sprawdź komentarze i DM-y — pytania od trenerów = gotowe tematy</li>
+          <li style="color:var(--text2);font-size:14px">→ Nowa funkcja w dashboardzie? Post ROZWIĄZANIE + rolka behind the scenes</li>
+          <li style="color:var(--text2);font-size:14px">→ Zapytaj Claude'a: <em>"Daj mi 5 tematów z filaru BÓL, po polsku, dla trenerów"</em></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ═══ 10. INTEGRACJA ═══ -->
+    <section class="section" id="integracja">
+      <div class="section-number">10</div>
+      <h2>Integracja z Pipeline'm Kuby</h2>
+      <p>Kuba ogarnia outreach DM-owy przez pipeline (Supabase + pipeline-dashboard). Twój content to fundament pod jego konwersję.</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="flow-dot"></div>
+          <p><strong>Twoje posty</strong> przyciągają ruch organiczny → ludzie odwiedzają profil</p>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot"></div>
+          <p><strong>Kuba szuka leadów</strong> i robi warm-up (follow, like, komentarz)</p>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot"></div>
+          <p><strong>Twój content</strong> sprawia że profil wygląda profesjonalnie gdy lead go sprawdza</p>
+        </div>
+        <div class="flow-step">
+          <div class="flow-dot"></div>
+          <p><strong>Kuba wysyła DM</strong> → lead klika profil → widzi spójny content → wyższa konwersja</p>
+        </div>
+      </div>
+
+      <div class="card card-accent-cyan">
+        <p style="margin:0"><strong style="color:var(--accent)">Dlatego spójność jest kluczowa.</strong> Kiedy lead od Kuby wchodzi na profil i widzi chaos — odpada. Kiedy widzi profesjonalny, uporządkowany feed — zostaje.</p>
+      </div>
+    </section>
+
+    <!-- ═══ 11. CHECKLISTY ═══ -->
+    <section class="section" id="checklisty">
+      <div class="section-number">11</div>
+      <h2>Checklisty</h2>
+      <p>Kliknij element żeby oznaczyć jako gotowe. Reset po odświeżeniu strony.</p>
+
+      <h3>Przed publikacją posta</h3>
+      <ul class="checklist" id="checklist-post">
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Należy do jednego z 4 filarów?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Opis ma hook + treść + CTA?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Hashtagi z odpowiedniego zestawu?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Grafika: ciemne tło, cyan akcent, logo FC?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Język PL?</li>
+      </ul>
+
+      <h3>Przed publikacją rolki</h3>
+      <ul class="checklist" id="checklist-reel">
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Hook w pierwszych 3 sekundach?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Napisy dodane?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> 30-90 sekund?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> FitCore branding (logo/intro/outro)?</li>
+        <li onclick="toggleCheck(this)"><span class="check-icon"></span> Opis z szablonu TWARZ?</li>
+      </ul>
+    </section>
+
+    <!-- ═══ 12. SCENARIUSZE ROLEK ═══ -->
+    <section class="section" id="scenariusze">
+      <div class="section-number">12</div>
+      <h2>Scenariusze Rolek — Haki</h2>
+      <p>10 gotowych scenariuszy rolek (po 2 na każdy hak). Każdy 30-60 sekund, hook w pierwszych 3 sekundach, napisy obowiązkowe. Ton: kumpel-ekspert.</p>
+
+      <!-- ── HAK 1 ── -->
+      <h3>Hak 1: „Nikt o tym nie mówi"</h3>
+
+      <div class="card card-accent-red">
+        <h4><span class="tag tag-red">BÓL</span> 1A — Nikt nie mówi trenerom TEGO</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Nikt nie mówi trenerom TEGO"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Nikt ci tego nie powie, więc ja powiem. Jako trener online tracisz średnio 5-8 godzin tygodniowo na rzeczy, które nie zarabiają ci ani złotówki. Odpisywanie na WhatsAppie, szukanie danych w Excelu, ręczne wysyłanie planów PDF-em. I nikt o tym nie mówi, bo to nie jest sexy temat. Ale to jest dokładnie ten powód, dla którego nie możesz wejść powyżej 20 klientów — bo admin cię dusi. Jeden system zamiast pięciu aplikacji. Link w bio."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Napisz "SYSTEM" w komentarzu, wyślę ci demo.</p>
+      </div>
+
+      <div class="card card-accent-green">
+        <h4><span class="tag tag-green">ROZWIĄZANIE</span> 1B — Nikt nie mówi o tej funkcji</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Nikt nie mówi o tej funkcji"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Jest jedna rzecz w naszym dashboardzie, o której nikt nie mówi, a oszczędza trenerom kilkadziesiąt minut dziennie. Smart Coach — system patrzy na wszystkich twoich klientów i mówi ci: ten nie zrobił check-inu od 3 dni, tamtemu kończy się plan za tydzień, ta osoba nie odpisała. I pisze za ciebie draft wiadomości — ty tylko klikasz wyślij. Żaden trener nie powinien sam pamiętać o 30 osobach. Link w bio, sam zobacz."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Zapisz tę rolkę, przyda ci się.</p>
+      </div>
+
+      <!-- ── HAK 2 ── -->
+      <h3>Hak 2: „Unikaj tego błędu, gdy..."</h3>
+
+      <div class="card card-accent-red">
+        <h4><span class="tag tag-red">BÓL</span> 2A — Unikaj tego błędu gdy masz 15+ klientów</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Unikaj tego błędu gdy masz 15+ klientów"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Jeśli prowadzisz więcej niż 15 klientów online i dalej ogarniasz wszystko ręcznie — w Excelu, na WhatsAppie, w notatkach — to popełniasz błąd, który kosztuje cię klientów. Bo przy 15 osobach jeszcze dasz radę. Przy 25 zaczniesz zapominać. Przy 30 ktoś odejdzie, bo poczuł się ignorowany. I nie dlatego, że jesteś złym trenerem. Dlatego, że nie masz systemu. A system to nie luksus — to konieczność."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Znasz to uczucie? Napisz w komentarzu.</p>
+      </div>
+
+      <div class="card card-accent-blue">
+        <h4><span class="tag tag-blue">WARTOŚĆ</span> 2B — Unikaj tego błędu przy onboardingu klienta</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Unikaj tego błędu przy onboardingu klienta"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Największy błąd który widzę u trenerów online? Pierwszy kontakt z klientem po opłaceniu to... cisza. Klient płaci, i czeka. Dzień, dwa, trzy. Ty tworzysz plan. Ale on w tym czasie myśli: czy ja dobrze wydałem te pieniądze? Rozwiązanie: automatyczny onboarding. Klient dostaje dostęp do portalu od razu, widzi swój profil, może wpisać pomiary, dostaje powitanie. Ty masz czas spokojnie przygotować plan, a on czuje się zaopiekowany od minuty zero."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Zapisz na później — to zmienia retencję.</p>
+      </div>
+
+      <!-- ── HAK 3 ── -->
+      <h3>Hak 3: „Gdybym miał zacząć od zera..."</h3>
+
+      <div class="card card-accent-amber">
+        <h4><span class="tag tag-amber">TWARZ</span> 3A — Gdybym zaczynał coaching online od zera...</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Gdybym zaczynał coaching online od zera..."</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Gdybym dzisiaj zaczynał prowadzić klientów online, to pierwsza rzecz jaką bym zrobił — zanim reklamy, zanim Instagram, zanim cokolwiek — ustawiłbym system. Jedno miejsce gdzie mam wszystkich klientów, ich postępy, treningi, płatności, wiadomości. Bo prawda jest taka — trenerzy nie upadają przez brak klientów. Upadają przez chaos, który przychodzi gdy tych klientów jest za dużo na Excela i WhatsAppa. System na starcie = spokój przy skalowaniu."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Obserwuj — pokazuję jak to budujemy od środka.</p>
+      </div>
+
+      <div class="card card-accent-green">
+        <h4><span class="tag tag-green">ROZWIĄZANIE</span> 3B — Gdybym miał jedno narzędzie na start...</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Gdybym miał jedno narzędzie na start..."</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Gdybym miał wybrać jedno narzędzie na start coaching online, to nie byłby Canva, nie Excel, nie nawet kalendarz. To byłby panel klienta. Jeden dashboard gdzie widzisz: kto zapłacił, kto trenuje, kto milczy od tygodnia, komu kończy się plan. Plus AI, który rano mówi ci: hej, zajmij się tym klientem, tu jest problem. Pokaż mi jedno inne narzędzie, które to robi. Poczekam."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Link w bio — zerknij sam.</p>
+      </div>
+
+      <!-- ── HAK 4 ── -->
+      <h3>Hak 4: „To jest prawdziwy powód, dla którego wciąż..."</h3>
+
+      <div class="card card-accent-red">
+        <h4><span class="tag tag-red">BÓL</span> 4A — Prawdziwy powód, dla którego wciąż tracisz klientów</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Prawdziwy powód, dla którego wciąż tracisz klientów"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Myślisz że klienci odchodzą bo znaleźli tańszego trenera? Nie. Prawdziwy powód jest prostszy — poczuli się zapomniani. Nie odpisałeś przez 2 dni. Nie zauważyłeś że przestali trenować. Nie pogratulowałeś im rekordu. I to nie dlatego że ci nie zależy. Dlatego że masz 25 osób i nie ogarniasz tego ręcznie. Nikt nie ogarnia. Dlatego istnieją systemy, które pilnują tego za ciebie."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Ile klientów straciłeś w tym roku? Szczerze — napisz w komentarzu.</p>
+      </div>
+
+      <div class="card card-accent-amber">
+        <h4><span class="tag tag-amber">TWARZ</span> 4B — Dlaczego wciąż budujesz w Excelu?</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Dlaczego wciąż budujesz w Excelu?"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Prawdziwy powód, dla którego trenerzy wciąż siedzą w Excelu? Bo nie widzieli alternatywy. Serio. Większość narzędzi dla trenerów wygląda jak z 2015 roku albo kosztuje 200 dolców miesięcznie. Dlatego budujemy FitCore — panel, który wygląda premium, ma AI, i jest robiony z myślą o polskich trenerach. Nie kopiujemy Trainerize. Budujemy coś, czego sami byśmy chcieli używać gdybyśmy byli trenerami. I właśnie szukamy beta testerów."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Napisz DM "BETA" — pokażę ci to na żywo.</p>
+      </div>
+
+      <!-- ── HAK 5 ── -->
+      <h3>Hak 5: „Jeśli jesteś [trenerem online], to posłuchaj uważnie"</h3>
+
+      <div class="card card-accent-red">
+        <h4><span class="tag tag-red">BÓL</span> + <span class="tag tag-green">ROZWIĄZANIE</span> 5A — Jeśli jesteś trenerem online — posłuchaj</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Jeśli jesteś trenerem online — posłuchaj"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Jeśli prowadzisz klientów online, to mam do ciebie jedno pytanie. Ile aplikacji otwierasz rano żeby ogarnąć dzień? WhatsApp, Excel, maile, kalendarz, notatki, może jeszcze jakieś rozliczenia. Pięć? Sześć? A co gdyby to był jeden ekran? Wchodzisz, widzisz: kto wymaga uwagi, kto nie zapłacił, komu zmienić plan, jakie wiadomości wysłać. AI podpowiada, ty decydujesz. To nie jest science fiction — to jest FitCore."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Link w bio — 30 sekund i widzisz sam.</p>
+      </div>
+
+      <div class="card card-accent-blue">
+        <h4><span class="tag tag-blue">WARTOŚĆ</span> 5B — Trenerze online — to jest dla ciebie</h4>
+        <p><strong style="color:var(--text)">Tekst na ekranie (hook, 3s):</strong> „Trenerze online — to jest dla ciebie"</p>
+        <p><strong style="color:var(--text)">Mówisz:</strong> „Jeśli jesteś trenerem i masz więcej niż 10 klientów online, to ta porada jest warta więcej niż jakikolwiek kurs. Przestań reagować — zacznij przewidywać. Najlepsi trenerzy nie czekają aż klient napisze że chce zrezygnować. Widzą sygnały wcześniej: spadek aktywności, brak check-inu, gorszy nastrój. I wtedy piszą pierwsi. To jest różnica między trenerem z 80% retencją a trenerem z 40%. Ty możesz to robić ręcznie. Albo mieć system, który te sygnały łapie za ciebie."</p>
+        <p><strong style="color:var(--accent)">CTA:</strong> Zapisz i wyślij trenerowi, który tego potrzebuje.</p>
+      </div>
+
+      <!-- ── Podsumowanie ── -->
+      <div class="card card-accent-cyan" style="margin-top:32px">
+        <h4>Podsumowanie scenariuszy</h4>
+        <p>10 scenariuszy, po 2 na hak · Każdy 30-60 sekund · Hook w pierwszych 3 sekundach (tekst na ekranie)</p>
+        <p>Ton: kumpel-ekspert, bez korpo-mowy · Napisy PL obowiązkowe na wszystkich</p>
+        <p><strong style="color:var(--text)">Mix filarów:</strong> BÓL (4) · ROZWIĄZANIE (3) · TWARZ (2) · WARTOŚĆ (1)</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ═══ FOOTER ═══ -->
+  <div class="footer">
+    <span>FitCore</span> — Instagram Content Bible · Ostatnia aktualizacja: 2026-03-24
+    <br><br>
+    <em>Ten dokument to twoja biblia Instagrama. Kiedy nie wiesz co wrzucić — otwórz i przeczytaj.</em>
+  </div>
+
+  <script>
+    // ── Sticky nav active state ──
+    const sections = document.querySelectorAll('.section');
+    const navLinks = document.querySelectorAll('.nav a');
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          const id = entry.target.getAttribute('id');
+          const link = document.querySelector(`.nav a[href="#${id}"]`);
+          if (link) link.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+
+    sections.forEach(s => observer.observe(s));
+
+    // ── Copy template ──
+    function copyTemplate(el) {
+      const text = el.childNodes[0].textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        el.classList.add('copied-box');
+        el.querySelector('.copy-hint').textContent = 'Skopiowano!';
+        setTimeout(() => {
+          el.classList.remove('copied-box');
+          el.querySelector('.copy-hint').textContent = 'Kliknij → kopiuj';
+        }, 2000);
+      });
+    }
+
+    // ── Copy hashtags ──
+    function copyHashtags(group) {
+      const tags = Array.from(group.querySelectorAll('.hashtag')).map(t => t.textContent).join(' ');
+      navigator.clipboard.writeText(tags).then(() => {
+        const orig = group.querySelectorAll('.hashtag');
+        orig.forEach(t => { t.style.borderColor = 'rgba(0,229,200,0.4)'; t.style.color = '#00e5c8'; });
+        setTimeout(() => {
+          orig.forEach(t => { t.style.borderColor = ''; t.style.color = ''; });
+        }, 1500);
+      });
+    }
+
+    // ── Checklist toggle ──
+    function toggleCheck(li) {
+      li.classList.toggle('checked');
+    }
+
+    // ── Smooth scroll ──
+    document.querySelectorAll('.nav a').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+  </script>
+
+</body>
+</html>

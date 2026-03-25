@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poradnik: Audyt i Testy w Claude Code</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0a0d14; color: #e2e8f0; line-height: 1.7; padding: 40px 20px; }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .subtitle { color: #64748b; font-size: 15px; margin-bottom: 40px; }
+  h2 { font-size: 20px; font-weight: 700; color: #00e5c8; margin: 36px 0 16px; display: flex; align-items: center; gap: 10px; }
+  h2 .num { background: #00e5c8; color: #000; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+  h3 { font-size: 16px; font-weight: 600; color: #fff; margin: 20px 0 8px; }
+  p { margin-bottom: 12px; color: #94a3b8; font-size: 15px; }
+  .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .card-accent { border-left: 3px solid #00e5c8; }
+  .card-warn { border-left: 3px solid #f59e0b; }
+  .card-danger { border-left: 3px solid #ef4444; }
+  .prompt-box { background: rgba(0,229,200,0.06); border: 1px solid rgba(0,229,200,0.15); border-radius: 10px; padding: 16px 20px; margin: 12px 0; font-family: 'Courier New', monospace; font-size: 13px; color: #00e5c8; white-space: pre-wrap; cursor: pointer; position: relative; }
+  .prompt-box:hover { background: rgba(0,229,200,0.1); }
+  .prompt-box::after { content: 'kliknij aby skopiowac'; position: absolute; top: 8px; right: 12px; font-size: 10px; color: rgba(0,229,200,0.4); font-family: 'Segoe UI', sans-serif; }
+  ul { margin: 8px 0 16px 20px; }
+  li { margin: 6px 0; color: #94a3b8; font-size: 14px; }
+  li strong { color: #e2e8f0; }
+  .schedule { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .schedule-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 14px; }
+  .schedule-item .when { font-size: 13px; font-weight: 700; color: #00e5c8; margin-bottom: 4px; }
+  .schedule-item .what { font-size: 13px; color: #94a3b8; }
+  .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 32px 0; }
+  @media (max-width: 600px) { .schedule { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Audyt i Testy w Claude Code</h1>
+<p class="subtitle">Krotki poradnik jak dbac o jakosc aplikacji budowanej z AI. Bez stresu, bez komplikacji.</p>
+
+<h2><span class="num">1</span> Co to jest audyt?</h2>
+<p>Audyt to przeglad Twojej aplikacji pod katem problemow, ktore nie sa widoczne na pierwszy rzut oka. Claude sprawdza kod, bezpieczenstwo, wydajnosc i UX - i mowi Ci co naprawic.</p>
+
+<div class="card card-accent">
+<h3>Co konkretnie sprawdza:</h3>
+<ul>
+  <li><strong>Kod i architektura</strong> - czy pliki nie sa za duze, czy dane plyna dobrze, czy nie ma powtorzen</li>
+  <li><strong>Wydajnosc</strong> - czy strona laduje sie szybko, czy bundle nie jest za duzy</li>
+  <li><strong>Bezpieczenstwo</strong> - czy klucze API sa bezpieczne, czy inputy sa walidowane, czy ktos nie moze zhackowac</li>
+  <li><strong>UX/Design</strong> - czy kolory sa spojne, czy na mobile dziala, czy jest accessible</li>
+  <li><strong>Funkcjonalnosci</strong> - co dziala, co jest scaffolded (przygotowane ale nie podpiete), co brakuje</li>
+</ul>
+</div>
+
+<h2><span class="num">2</span> Prompt na full audyt</h2>
+<p>Skopiuj i wklej do Claude Code kiedy chcesz zrobic przeglad:</p>
+
+<div class="prompt-box" onclick="navigator.clipboard.writeText(this.innerText.replace('kliknij aby skopiowac','').trim())">Zrob full audyt mojej aplikacji. Sprawdz:
+
+1. Architektura i jakosc kodu - duze pliki, tech debt, props drilling, brak memoizacji
+2. Wydajnosc - bundle size, code splitting, niepotrzebne re-rendery
+3. Bezpieczenstwo - klucze API, CORS, sanitization inputow, rate limiting
+4. UX/Design - spojnosc kolorow (CSS variables vs hardcoded), responsywnosc, accessibility (aria-labels, focus trap)
+5. Funkcjonalnosci - co jest complete, partial, scaffolded, missing
+6. Testy - jakie istnieja, czego brakuje
+
+Dla kazdego problemu podaj severity (critical/medium/low) i plik.
+Na koncu daj mi top 10 priorytetow posortowanych po impact/effort.
+NIE naprawiaj niczego - tylko raport.</div>
+
+<h2><span class="num">3</span> Co to sa testy?</h2>
+<p>Testy to kod ktory automatycznie sprawdza czy Twoja aplikacja dziala poprawnie. Zamiast recznie klikac po stronie, piszesz test ktory robi to za Ciebie - i mozesz go odpalac w nieskonczonosc.</p>
+
+<div class="card">
+<h3>Rodzaje testow:</h3>
+<ul>
+  <li><strong>Unit testy</strong> - testuja pojedyncze funkcje (np. "czy formatPrice(100) zwraca '$100'?")</li>
+  <li><strong>Component testy</strong> - testuja cale strony/komponenty (np. "czy LoginPage pokazuje formularz i loguje usera?")</li>
+  <li><strong>Integration testy</strong> - testuja flow end-to-end (np. "user sie loguje, widzi dashboard, wysyla wiadomosc")</li>
+</ul>
+</div>
+
+<h2><span class="num">4</span> Prompt na napisanie testow</h2>
+
+<div class="prompt-box" onclick="navigator.clipboard.writeText(this.innerText.replace('kliknij aby skopiowac','').trim())">Napisz component testy dla mojej aplikacji. Zacznij od 3 najwazniejszych stron:
+
+1. Strona logowania - czy renderuje formularz, waliduje puste pola, wywoluje auth
+2. Glowna strona z danymi - czy wyswietla dane, czy filtry dzialaja
+3. Strona z formularzem (np. tworzenie czegos) - czy modal sie otwiera, czy submit dziala
+
+Uzyj vitest + @testing-library/react. Stworz setupTests.ts z mockami (matchMedia, scrollIntoView).
+Stworz test-utils.tsx z wrapperem providers.
+Mockuj zewnetrzne serwisy (supabase, API calls).
+Na koncu odpal npm test i upewnij sie ze wszystko przechodzi.</div>
+
+<h2><span class="num">5</span> Kiedy robic co?</h2>
+
+<div class="schedule">
+  <div class="schedule-item">
+    <div class="when">Po kazdym duzym feature</div>
+    <div class="what">Mini-audyt (10 min) - sprawdz czy nie dodales duzego tech debt</div>
+  </div>
+  <div class="schedule-item">
+    <div class="when">Co 2-3 miesiace</div>
+    <div class="what">Full audyt - pelny przeglad kodu, security, wydajnosci</div>
+  </div>
+  <div class="schedule-item">
+    <div class="when">Przed waznym momentem</div>
+    <div class="what">Audyt + testy - przed demo, przed pierwszym klientem, przed launchem</div>
+  </div>
+  <div class="schedule-item">
+    <div class="when">Na biezaco</div>
+    <div class="what">Testy przy kazdym nowym feature - pisz test razem z kodem, nie po fakcie</div>
+  </div>
+</div>
+
+<h2><span class="num">6</span> Quick prompt na mini-audyt</h2>
+<p>Szybki przeglad po dodaniu feature - zajmuje 5 minut:</p>
+
+<div class="prompt-box" onclick="navigator.clipboard.writeText(this.innerText.replace('kliknij aby skopiowac','').trim())">Zrob szybki przeglad ostatnich zmian. Sprawdz:
+- Czy nowe pliki nie sa za duze (>500 linii)?
+- Czy nie ma hardcoded kolorow/wartosci?
+- Czy nowe inputy sa walidowane?
+- Czy build przechodzi?
+- Czy istniejace testy dalej przechodza?
+Daj mi max 5 rzeczy do poprawy.</div>
+
+<div class="divider"></div>
+
+<h2><span class="num">7</span> Najwazniejsze zasady</h2>
+
+<div class="card card-warn">
+<h3>Pamietaj:</h3>
+<ul>
+  <li><strong>Audyt nie znaczy "jest zle"</strong> - znaczy "tu jest nastepny level". Kazdy projekt ma tech debt, nawet Google.</li>
+  <li><strong>Nie naprawiaj wszystkiego naraz</strong> - sortuj po severity. Critical najpierw, low moze poczekac.</li>
+  <li><strong>Quick wins first</strong> - szukaj rzeczy ktore zajmuja 15 min a daja duzy efekt (np. code splitting, memoizacja).</li>
+  <li><strong>Testy to inwestycja</strong> - na poczatku spowalniaja, ale po 3 miesiacach oszczedzaja godziny debugowania.</li>
+  <li><strong>Nie kasuj kodu bez zrozumienia</strong> - Claude podczas audytu moze zaproponowac usuniecie czegos. Zawsze pytaj "po co to bylo?" zanim usuniesz.</li>
+</ul>
+</div>
+
+<div class="card card-danger">
+<h3>Typowe bledy:</h3>
+<ul>
+  <li>Nigdy nie robic audytu i zbierac tech debt miesiącami - potem jest za duzo do naprawienia</li>
+  <li>Pisac testy po fakcie zamiast razem z kodem - trudniej i mniej motywujace</li>
+  <li>Ignorowac security issues bo "to mala apka" - hackuja male apki tak samo jak duze</li>
+  <li>Pushowac na produkcje bez <code>npm run build</code> - jesli build nie przechodzi, deploy sie wysypie</li>
+</ul>
+</div>
+
+<div class="divider"></div>
+
+<p style="text-align: center; color: #525a6e; font-size: 13px; margin-top: 24px;">
+  Made with Claude Code
+</p>
+
+</div>
+</body>
+</html>

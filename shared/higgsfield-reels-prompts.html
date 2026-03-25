@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore — Higgsfield AI Reels Prompts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07090e; color: #f0f2f5; font-family: 'Outfit', sans-serif;
+      padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 48px;
+    }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    h1 span { color: #00e5c8; }
+    .subtitle { color: #8b92a5; font-size: 14px; margin-top: 8px; }
+    .version-badge {
+      display: inline-block; background: rgba(99,102,241,0.15); color: #818cf8;
+      font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 6px;
+      letter-spacing: 1px; margin-top: 12px;
+    }
+
+    .cat-chips {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 16px;
+    }
+    .cat-chip {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 8px 18px; font-size: 13px; color: #8b92a5;
+      display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;
+    }
+    .cat-chip:hover { border-color: rgba(255,255,255,0.15); }
+    .cat-chip.active { border-color: #00e5c8; color: #f0f2f5; }
+    .cat-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-green { background: #22c55e; }
+    .dot-red { background: #ef4444; }
+    .dot-amber { background: #f59e0b; }
+    .dot-blue { background: #3b82f6; }
+
+    /* How-to box */
+    .howto {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 28px 32px; max-width: 720px; width: 100%;
+      border-left: 3px solid #00e5c8;
+    }
+    .howto h3 { font-size: 16px; font-weight: 600; color: #00e5c8; margin-bottom: 16px; }
+    .howto ol { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .howto li { font-size: 13px; color: #8b92a5; line-height: 1.6; }
+    .howto li strong { color: #f0f2f5; }
+    .howto .tip {
+      margin-top: 16px; padding: 12px 16px; background: rgba(0,229,200,0.06);
+      border-radius: 8px; font-size: 12px; color: #00e5c8; line-height: 1.5;
+    }
+
+    /* Category section */
+    .category-section { max-width: 720px; width: 100%; }
+    .cat-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+    }
+    .cat-header h2 { font-size: 20px; font-weight: 700; }
+    .cat-desc { font-size: 13px; color: #525a6e; margin-bottom: 24px; }
+
+    /* Prompt card */
+    .prompt-card {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 0; margin-bottom: 24px; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .prompt-card:hover { border-color: rgba(255,255,255,0.1); }
+    .prompt-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .prompt-num {
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+      color: #525a6e;
+    }
+    .prompt-title { font-size: 15px; font-weight: 600; flex: 1; margin-left: 12px; }
+    .prompt-body { padding: 20px 24px; }
+
+    /* Prompt text (the actual prompt to copy) */
+    .prompt-text {
+      background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 16px 20px; font-size: 13px; color: #c0c5d0;
+      line-height: 1.7; cursor: pointer; position: relative; transition: border-color 0.2s;
+      font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;
+    }
+    .prompt-text:hover { border-color: #00e5c8; }
+    .prompt-text::after {
+      content: 'KLIKNIJ → KOPIUJ'; position: absolute; top: 8px; right: 12px;
+      font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #525a6e;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .prompt-text:hover::after { opacity: 1; }
+    .prompt-text.copied { border-color: #22c55e; }
+    .prompt-text.copied::after { content: '✓ SKOPIOWANO'; color: #22c55e; opacity: 1; }
+
+    /* IG caption */
+    .ig-section { margin-top: 16px; }
+    .ig-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: #525a6e; margin-bottom: 6px; display: flex; justify-content: space-between;
+    }
+    .ig-caption {
+      background: rgba(14,18,27,0.5); border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #8b92a5;
+      line-height: 1.7; white-space: pre-wrap; cursor: pointer; transition: border-color 0.2s;
+      position: relative;
+    }
+    .ig-caption:hover { border-color: rgba(255,255,255,0.12); }
+    .ig-caption::after {
+      content: 'KLIKNIJ → KOPIUJ'; position: absolute; top: 8px; right: 12px;
+      font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #525a6e;
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .ig-caption:hover::after { opacity: 1; }
+    .ig-caption.copied { border-color: #22c55e; }
+    .ig-caption.copied::after { content: '✓ SKOPIOWANO'; color: #22c55e; opacity: 1; }
+
+    /* Tips section */
+    .tips-section {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 28px 32px; max-width: 720px; width: 100%;
+      border-left: 3px solid #6366f1;
+    }
+    .tips-section h3 { font-size: 16px; font-weight: 600; color: #818cf8; margin-bottom: 16px; }
+    .tips-section ol { padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .tips-section li { font-size: 13px; color: #8b92a5; line-height: 1.6; }
+    .tips-section li strong { color: #f0f2f5; }
+
+    .footer { color: #525a6e; font-size: 12px; text-align: center; margin-top: 24px; }
+    .footer span { color: #00e5c8; font-weight: 600; }
+
+    .counter {
+      font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #525a6e;
+      margin-top: 4px;
+    }
+    .counter em { color: #00e5c8; font-style: normal; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <div style="text-align:center">
+    <h1>Fit<span>Core</span> — Reels Prompts</h1>
+    <p class="subtitle">20 promptów do Higgsfield / Hailuo AI · Gotowe do wklejenia</p>
+    <div class="version-badge">HIGGSFIELD AI · HAILUO VIDEO · IMAGE-TO-VIDEO</div>
+    <div class="counter">Darmowe generacje: <em>20</em></div>
+    <div class="cat-chips">
+      <div class="cat-chip active" onclick="filterCat('all')"><span class="dot" style="background:#00e5c8"></span> Wszystkie (20)</div>
+      <div class="cat-chip" onclick="filterCat('showcase')"><span class="dot dot-green"></span> Showcase (5)</div>
+      <div class="cat-chip" onclick="filterCat('pain')"><span class="dot dot-red"></span> Ból (5)</div>
+      <div class="cat-chip" onclick="filterCat('behind')"><span class="dot dot-amber"></span> Za kulisami (5)</div>
+      <div class="cat-chip" onclick="filterCat('value')"><span class="dot dot-blue"></span> Wartość (5)</div>
+    </div>
+  </div>
+
+  <!-- HOW TO -->
+  <div class="howto">
+    <h3>Jak używać</h3>
+    <ol>
+      <li>Wejdź na <strong>Higgsfield.ai</strong> lub <strong>Hailuo AI → Video</strong></li>
+      <li>Wybierz <strong>Text-to-Video</strong> (lub <strong>Image-to-Video</strong> jeśli wrzucasz screenshot)</li>
+      <li>Kliknij na prompt poniżej → <strong>automatycznie się skopiuje</strong></li>
+      <li>Wklej w generatorze → wygeneruj → pobierz</li>
+      <li>Dodaj <strong>napisy PL</strong> w CapCut/InShot → logo FC → trending audio → wrzuć na IG</li>
+    </ol>
+    <div class="tip">💡 Przy Image-to-Video (screenshot dashboardu) dodaj na końcu prompta: "Animate this mobile app interface with smooth scrolling and tap interactions"</div>
+  </div>
+
+  <div id="prompts-container"></div>
+
+  <!-- TIPS -->
+  <div class="tips-section">
+    <h3>Tips do generowania</h3>
+    <ol>
+      <li><strong>Aspect ratio</strong> — zawsze 9:16 (vertical) pod Reels</li>
+      <li><strong>Dodajesz screenshot?</strong> — użyj Image-to-Video + "Animate this mobile app interface with smooth, natural interactions. Dark premium aesthetic."</li>
+      <li><strong>Długość</strong> — celuj w 5-15s per wideo, potem łącz w CapCut</li>
+      <li><strong>Post-production</strong> — napisy PL (ZAWSZE), logo FC w rogu, trending audio z IG</li>
+      <li><strong>Lepsze wyniki</strong> — dodaj "cinematic", "shallow depth of field", "premium", "dark aesthetic"</li>
+      <li><strong>Format</strong> — 9:16 vertical, 2K jeśli dostępne</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    <span>FitCore</span> · Higgsfield / Hailuo AI Reels Prompts · 20 promptów
+  </div>
+
+<script>
+const prompts = [
+  // ═══ SHOWCASE ═══
+  {
+    cat: 'showcase', num: 1, title: 'Ogólny showcase',
+    prompt: `Cinematic product showcase of a premium dark-themed fitness coaching mobile app. A hand holds a modern smartphone displaying a sleek dashboard with cyan (#00e5c8) accent colors on a dark (#07090e) background. The screen shows client management panels, workout plans, and analytics charts. Camera slowly orbits the phone with shallow depth of field. Soft cyan light reflections on the screen. Dark minimalist environment. Premium tech aesthetic. 9:16 vertical format.`,
+    ig: `Jeden panel. Treningi, płatności, czat, postępy. Wszystko czego potrzebuje trener w jednym miejscu.\n\n🚀 Darmowe demo → link w bio\n\n#fitcore #dashboarddlatrenera #trenerpersonalny #treneronline #fitnessbiznes #fitnesstechnologia`
+  },
+  {
+    cat: 'showcase', num: 2, title: 'Lista klientów + profil',
+    prompt: `Close-up of a smartphone screen showing a fitness client management app. Dark premium UI with glowing cyan highlights. The screen transitions smoothly from a client list view to an individual client profile showing progress charts, body measurements, and workout history. Smooth app animations and transitions. Fingers tapping and scrolling naturally. Cinematic lighting, dark background. 9:16 vertical.`,
+    ig: `30 klientów? 50? Wszyscy w jednym miejscu. Profil, postępy, historia treningów — klik i masz. Koniec z szukaniem w Excelu.\n\n🚀 Darmowe demo → link w bio\n\n#fitcore #dashboarddlatrenera #trenerpersonalny #treneronline #fitnessbiznes #zarzadzanieklientami`
+  },
+  {
+    cat: 'showcase', num: 3, title: 'Analityka i wykresy',
+    prompt: `Smartphone displaying a dark-themed analytics dashboard for fitness coaches. Animated charts filling up — revenue graph climbing, client retention donut chart, monthly progress bars growing. Cyan (#00e5c8) and indigo (#6366f1) data visualizations glowing against a near-black background. Camera pushes in slowly. Particles of light floating. Premium data visualization aesthetic. 9:16 vertical.`,
+    ig: `Ile zarabiasz? Jaka retencja? Ilu klientów w tym miesiącu? Przestań zgadywać — miej liczby przed oczami.\n\n🚀 Darmowe demo → link w bio\n\n#fitcore #analityka #dashboarddlatrenera #trenerpersonalny #fitnessbiznes #fitnesstechnologia`
+  },
+  {
+    cat: 'showcase', num: 4, title: 'Program treningowy builder',
+    prompt: `A fitness coaching app on a smartphone showing a workout program builder. Dark sleek interface with cyan accents. Animated sequence: user taps to create a new program, selects exercises from a list, drag-and-drops sets and reps, the program populates with smooth animations. Clean micro-interactions. Professional app design showcase. Dark ambient lighting. 9:16 vertical.`,
+    ig: `12-tygodniowy program treningowy. 10 minut. Bez PDFów, bez Worda, bez chaosu. Zbuduj → przypisz → klient ma w aplikacji.\n\n🚀 Darmowe demo → link w bio\n\n#fitcore #treningi #planytreningowe #trenerpersonalny #treneronline #automatyzacja`
+  },
+  {
+    cat: 'showcase', num: 5, title: 'Powiadomienia i smart alerts',
+    prompt: `Smartphone notification sequence for a fitness coaching app. Dark background. Phone screen lights up showing push notifications with cyan glow: "Marcus hasn't logged workout in 3 days", "Payment received from Anna — 350 PLN", "New check-in from Tomek". Each notification slides in with satisfying animations. Premium dark UI. Shallow depth of field. 9:16 vertical.`,
+    ig: `Nie musisz pamiętać o wszystkim. System pamięta za ciebie. Alerty, przypomnienia, statusy — autopilot dla trenera.\n\n🚀 Darmowe demo → link w bio\n\n#fitcore #automatyzacja #smartalerts #trenerpersonalny #fitnessbiznes #fitnesstechnologia`
+  },
+
+  // ═══ BÓL ═══
+  {
+    cat: 'pain', num: 6, title: 'Excel chaos',
+    prompt: `Frustrated fitness trainer sitting at a desk late at night, laptop open showing messy Excel spreadsheets with client data. Papers scattered everywhere. Phone buzzing with WhatsApp messages from clients. Trainer rubs eyes tiredly. Dim warm lighting, slightly chaotic environment. Then the scene transforms — phone shows a clean, dark premium app with everything organized. Relief on the trainer's face. Cinematic transition. 9:16 vertical.`,
+    ig: `Poniedziałek. 21:00. Excel z 40 klientami. 12 wiadomości na WhatsApp. 3 niezapłacone faktury. Brzmi znajomo?\n\nJest na to sposób.\n\n🚀 fitcore.tech — darmowe demo\n\n#trenerpersonalny #treneronline #fitnessbiznes #zarzadzanieklientami #problemytrenera #exceladieu`
+  },
+  {
+    cat: 'pain', num: 7, title: 'Zapomniany klient',
+    prompt: `Split screen animation. Left side: a fitness client looking confused at their phone, no workout plan visible, question marks floating around. Right side: a coach overwhelmed with messages, sticky notes, multiple apps open. The scene merges into one clean dark-themed dashboard showing both sides connected — coach assigns, client sees instantly. Smooth transition with cyan light effects. 9:16 vertical.`,
+    ig: `Klient zapomniał treningu? To nie jego wina. To znaczy że twój system nie działa.\n\nDobry system = klient zawsze wie co robić.\n\n🚀 fitcore.tech — darmowe demo\n\n#trenerpersonalny #treneronline #fitnessbiznes #zarzadzanieklientami #coachingfitness`
+  },
+  {
+    cat: 'pain', num: 8, title: 'Czas ucieka',
+    prompt: `Cinematic time-lapse of a clock with hours spinning fast. A fitness trainer is shown doing admin work — typing in spreadsheets, sending PDFs via WhatsApp, writing workout plans in Word documents, checking payment screenshots. Time literally flying. Counter shows "3 hours lost daily on admin". Then everything stops. Phone with a premium dark dashboard app appears. Text overlay: "10 minutes. Done." Dramatic lighting shift from warm/chaotic to cool/organized. 9:16 vertical.`,
+    ig: `3 godziny dziennie na administrację. 15 godzin tygodniowo. 60 godzin miesięcznie.\n\nTo czas który mógłbyś spędzić z klientami. Albo z rodziną.\n\n🚀 fitcore.tech — darmowe demo\n\n#trenerpersonalny #fitnessbiznes #zarzadzanieklientami #treneronline #coachingfitness #problemytrenera`
+  },
+  {
+    cat: 'pain', num: 9, title: 'WhatsApp overload',
+    prompt: `Smartphone screen showing an overwhelming WhatsApp conversation list — dozens of unread messages from fitness clients. Messages overlapping: "Coach where is my plan?", "Did you get my check-in?", "When do I pay?". Visual chaos. Then a smooth cinematic transition to a clean, organized inbox in a dark premium app — all messages sorted by client, status indicators, everything in one place. Satisfying transformation. 9:16 vertical.`,
+    ig: `47 nieprzeczytanych wiadomości. 5 różnych apek. Klient z zeszłego tygodnia wciąż czeka na plan.\n\nJedna skrzynka zamiast pięciu — to zmienia grę.\n\n🚀 fitcore.tech — darmowe demo\n\n#trenerpersonalny #treneronline #fitnessbiznes #zarzadzanieklientami #coachingfitness`
+  },
+  {
+    cat: 'pain', num: 10, title: 'Stracony klient',
+    prompt: `Emotional cinematic sequence: A notification appears "Client Anna has cancelled her subscription". Slow motion. Then flashback showing missed check-ins, unanswered messages, outdated workout plan — all the warning signs the coach missed. Then the scene shifts to a dark premium dashboard showing "Client Risk Alert: Anna — 5 days no activity" with an early warning system. Moody lighting, 9:16 vertical.`,
+    ig: `Stracony klient to nie nagła decyzja. To seria sygnałów których nie zauważyłeś.\n\n5 dni bez aktywności? System powinien ci o tym powiedzieć — zanim będzie za późno.\n\n🚀 fitcore.tech — darmowe demo\n\n#trenerpersonalny #treneronline #fitnessbiznes #retencjaklientow #coachingfitness`
+  },
+
+  // ═══ ZA KULISAMI ═══
+  {
+    cat: 'behind', num: 11, title: 'Coding session',
+    prompt: `Over-the-shoulder view of a developer coding a fitness app. Dark room, monitor glowing with code (dark theme IDE). Multiple screens showing React components, a mobile app preview on the side. Coffee cup nearby. Focused, late-night coding session vibe. Camera slowly pulls back to reveal the full workspace. Ambient lo-fi aesthetic. Then the phone next to the keyboard lights up showing the finished feature in a sleek dark app. Satisfying payoff. 9:16 vertical.`,
+    ig: `23:00. Nowa funkcja prawie gotowa. Jeszcze jeden bug do naprawienia.\n\nTak wygląda budowanie produktu od zera — linia po linii.\n\n→ Obserwuj @fitcore po więcej\n\n#fitcore #buildinpublic #startuppolska #fitnesstech #saas #kulisy`
+  },
+  {
+    cat: 'behind', num: 12, title: 'Od pomysłu do ekranu',
+    prompt: `Creative montage sequence: A whiteboard sketch of an app feature (hand-drawn wireframe) transforms through stages — wireframe becomes a design mockup, design becomes code on screen, code becomes a working app on a smartphone. Each transition is smooth and cinematic with cyan light trails connecting the stages. Dark environment throughout. The journey from idea to product. 9:16 vertical.`,
+    ig: `Od szkicu na kartce do działającej funkcji na telefonie. Każda linia kodu to odpowiedź na problem który zgłosił trener.\n\nTak budujemy FitCore.\n\n→ Obserwuj @fitcore po więcej\n\n#fitcore #buildinpublic #startuppolska #fitnesstech #saas #kulisy`
+  },
+  {
+    cat: 'behind', num: 13, title: 'Pierwszy raz widzą dashboard',
+    prompt: `Reaction-style video: A smartphone screen showing a premium dark-themed fitness dashboard is being presented. Subtle wow-factor — the UI is sleek, animations are smooth, data is beautifully visualized. Camera captures the screen with admiring angles, slow zooms on beautiful UI details. Cyan reflections. The feeling of seeing something impressive for the first time. Premium reveal moment. 9:16 vertical.`,
+    ig: `"Ej, to naprawdę tak wygląda?"\n\nTak. Tak to wygląda. I tak to działa. Każdy trener zasługuje na narzędzia klasy premium.\n\n🚀 fitcore.tech — darmowe demo\n\n#fitcore #buildinpublic #fitnesstech #dashboarddlatrenera #trenerpersonalny`
+  },
+  {
+    cat: 'behind', num: 14, title: 'Build in public vibes',
+    prompt: `Split-screen timelapse: Left side shows a code editor with lines being written and modified over time. Right side shows a mobile app gradually taking shape — from blank screen to a fully functional premium fitness dashboard. Progress bar at the bottom growing from 0% to 100%. Dark aesthetic throughout with cyan (#00e5c8) accent highlights. Motivational, builder energy. 9:16 vertical.`,
+    ig: `Nie kupiliśmy gotowego szablonu. Nie wzięliśmy white-label. Każdy piksel, każda funkcja — od zera, dla trenerów.\n\nBudujemy na otwarto.\n\n→ Obserwuj @fitcore po więcej\n\n#fitcore #buildinpublic #startuppolska #fitnesstech #saas #motywacja`
+  },
+  {
+    cat: 'behind', num: 15, title: 'Misja',
+    prompt: `Cinematic text animation on dark background. Words appearing with impact: "Trenerzy pomagają ludziom zmienić życie." Pause. "Ale kto pomaga trenerom?" Pause. Then a sleek smartphone appears from darkness, screen illuminating with a premium cyan-accented fitness dashboard. Logo reveal at the end — "FC" monogram glowing in cyan on dark background. Inspirational, powerful. 9:16 vertical.`,
+    ig: `Trenerzy pomagają ludziom zmienić życie.\n\nKto pomaga trenerom?\n\nMy. Właśnie po to jest FitCore.\n\n🚀 fitcore.tech — darmowe demo\n\n#fitcore #fitnesstech #trenerpersonalny #misja #buildinpublic #startuppolska`
+  },
+
+  // ═══ WARTOŚĆ ═══
+  {
+    cat: 'value', num: 16, title: '5 oznak że stracisz klienta',
+    prompt: `Countdown-style animation on dark background with cyan accents. Numbers appearing dramatically: "5" — client stops logging workouts. "4" — shorter responses in chat. "3" — skips check-ins. "2" — asks about pausing subscription. "1" — silence. Each number appears with cinematic impact, text overlays explaining each sign. At the end: "Catch these early. Save your clients." Premium dark aesthetic. 9:16 vertical.`,
+    ig: `5 sygnałów że zaraz stracisz klienta. Większość trenerów zauważa dopiero przy nr 1 — kiedy jest już za późno.\n\n💾 Zapisz i sprawdzaj co tydzień.\n\n#poradydlatrenera #treneronline #coachingbiznes #fitnesscoach #trenerpersonalny #retencjaklientow`
+  },
+  {
+    cat: 'value', num: 17, title: 'Onboarding klienta',
+    prompt: `Step-by-step tutorial animation. Dark premium background. A checklist appearing item by item with satisfying check animations in cyan: "1. Ankieta wstępna", "2. Pomiary + zdjęcia", "3. Cele + timeline", "4. Plan treningowy", "5. Plan żywieniowy", "6. Zaplanuj pierwszy check-in". Each item slides in smoothly. Clean typography (Outfit-style font). At the end all items checked — "Your client is ready." 9:16 vertical.`,
+    ig: `Nowy klient? Nie improwizuj. Oto 6 kroków onboardingu które sprawiają, że klient od pierwszego dnia czuje się zaopiekowany.\n\n📩 Wyślij trenerowi który tego potrzebuje.\n\n#poradydlatrenera #treneronline #coachingbiznes #fitnesscoach #trenerpersonalny #onboarding`
+  },
+  {
+    cat: 'value', num: 18, title: 'Jak wycenić coaching',
+    prompt: `Animated infographic on dark background. Price tags floating and transforming. Three tiers appearing: "Budżetowy: 200-400 PLN" in gray, "Standard: 400-800 PLN" in white, "Premium: 800-1500+ PLN" in glowing cyan. Each tier expands to show what's included. Visual comparison. Clean data visualization style. Then a key insight appears: "It's not about the price. It's about the value per hour of your time." Dark premium design. 9:16 vertical.`,
+    ig: `"Ile brać za coaching?" Złe pytanie.\n\nDobre pytanie: ile warta jest godzina twojego czasu? Przelicz, dodaj wartość — i przestań się bać wyższych cen.\n\n💾 Zapisz na później.\n\n#poradydlatrenera #treneronline #coachingbiznes #fitnesscoach #trenerpersonalny #wycena`
+  },
+  {
+    cat: 'value', num: 19, title: 'Retencja > akwizycja',
+    prompt: `Visual metaphor animation. Dark background. Two scenarios playing side by side: Left — a funnel with new clients pouring in from the top but leaking out the bottom (red/orange tones). Right — a container with fewer clients entering but staying, growing, glowing in cyan. Counter shows lifetime value increasing on the right side. The message: keeping clients is more profitable than constantly finding new ones. Premium data-driven aesthetic. 9:16 vertical.`,
+    ig: `Zdobycie nowego klienta kosztuje 5x więcej niż utrzymanie obecnego.\n\nPrzestań łatać dziurawy lejek. Zadbaj o tych co już ci zaufali.\n\n💾 Zapisz i przemyśl.\n\n#poradydlatrenera #treneronline #coachingbiznes #fitnesscoach #retencja #skalowaniebiznesu`
+  },
+  {
+    cat: 'value', num: 20, title: 'Dzień z życia trenera z systemem',
+    prompt: `Day-in-the-life montage. A fitness trainer's perfect day enabled by technology: Morning — quick glance at phone dashboard (dark premium app) showing today's schedule. At gym — client checks in via app. Between sessions — quick reply in unified inbox. Evening — automated report generates, all payments tracked. Smooth, stress-free, organized. Cinematic transitions, warm but professional. Each scene 3-4 seconds. The message: this is what running a coaching business should feel like. 9:16 vertical.`,
+    ig: `6:30 — sprawdzasz plan dnia w apce.\n10:00 — klient robi check-in.\n14:00 — odpisujesz z jednej skrzynki.\n20:00 — raport generuje się sam.\n\nTak wygląda dzień trenera z systemem. Nie z Excelem.\n\n🚀 fitcore.tech — darmowe demo\n\n#poradydlatrenera #treneronline #fitcore #trenerpersonalny #fitnessbiznes #automatyzacja`
+  }
+];
+
+const catColors = {
+  showcase: '#22c55e',
+  pain: '#ef4444',
+  behind: '#f59e0b',
+  value: '#3b82f6'
+};
+const catNames = {
+  showcase: '🟢 SHOWCASE DASHBOARDU',
+  pain: '🔴 BÓL / PROBLEM TRENERÓW',
+  behind: '🟡 ZA KULISAMI / BUDOWANIE FITCORE',
+  value: '🔵 WARTOŚĆ / PORADY DLA TRENERÓW'
+};
+const catDescs = {
+  showcase: 'Pokazać jak wygląda i działa FitCore na telefonie. Profesjonalnie, dynamicznie, premium.',
+  pain: 'Trener ogląda i myśli "kurde, to ja". Uderzamy w bolączki, budujemy identyfikację.',
+  behind: 'Pokazać ludzką stronę. Budujemy apkę, mamy misję, jesteśmy prawdziwi.',
+  value: 'Dajemy wartość za darmo. Trener zapisze, udostępni, wróci po więcej.'
+};
+
+function render(filter) {
+  const container = document.getElementById('prompts-container');
+  container.innerHTML = '';
+  const cats = filter === 'all' ? ['showcase','pain','behind','value'] : [filter];
+
+  cats.forEach(cat => {
+    const section = document.createElement('div');
+    section.className = 'category-section';
+    section.innerHTML = `
+      <div class="cat-header">
+        <h2 style="color:${catColors[cat]}">${catNames[cat]}</h2>
+      </div>
+      <p class="cat-desc">${catDescs[cat]}</p>
+    `;
+
+    prompts.filter(p => p.cat === cat).forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'prompt-card';
+      card.style.borderLeftColor = catColors[cat];
+      card.style.borderLeftWidth = '3px';
+      card.innerHTML = `
+        <div class="prompt-top">
+          <span class="prompt-num">#${String(p.num).padStart(2,'0')}</span>
+          <span class="prompt-title">${p.title}</span>
+        </div>
+        <div class="prompt-body">
+          <div class="prompt-text" onclick="copyText(this)">${p.prompt}</div>
+          <div class="ig-section">
+            <div class="ig-label"><span>OPIS INSTAGRAM</span></div>
+            <div class="ig-caption" onclick="copyText(this)">${p.ig}</div>
+          </div>
+        </div>
+      `;
+      section.appendChild(card);
+    });
+
+    container.appendChild(section);
+  });
+}
+
+function filterCat(cat) {
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  render(cat);
+}
+
+function copyText(el) {
+  const text = el.innerText.replace('KLIKNIJ → KOPIUJ','').replace('✓ SKOPIOWANO','').trim();
+  navigator.clipboard.writeText(text);
+  el.classList.add('copied');
+  setTimeout(() => el.classList.remove('copied'), 1500);
+}
+
+// Initial render
+render('all');
+</script>
+
+</body>
+</html>
