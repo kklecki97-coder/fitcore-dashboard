@@ -1,3 +1,11 @@
+export interface GoalTargets {
+  targetWeight?: number;
+  targetBodyFat?: number;
+  targetBenchPress?: number;
+  targetSquat?: number;
+  targetDeadlift?: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -15,9 +23,15 @@ export interface Client {
     benchPress: number[];
     squat: number[];
     deadlift: number[];
+    waist: number[];
+    hips: number[];
+    chest: number[];
+    bicep: number[];
+    thigh: number[];
   };
   height: number | null;
   goals: string[];
+  goalTargets?: GoalTargets;
   notes: string;
   lastActive: string;
   streak: number;
@@ -91,6 +105,11 @@ export interface CheckIn {
   status: 'completed' | 'scheduled' | 'missed';
   weight: number | null;
   bodyFat: number | null;
+  waist: number | null;
+  hips: number | null;
+  chest: number | null;
+  bicep: number | null;
+  thigh: number | null;
   mood: 1 | 2 | 3 | 4 | 5 | null;
   energy: number | null;
   stress: number | null;
@@ -105,8 +124,6 @@ export interface CheckIn {
   reviewStatus: 'pending' | 'reviewed' | 'flagged';
   flagReason: string;
 }
-
-// ── Client Portal specific types ──
 
 export interface WorkoutSetLog {
   id: string;
@@ -123,8 +140,8 @@ export interface WorkoutSetLog {
 export interface WeeklySchedule {
   id: string;
   clientId: string;
-  weekStart: string;       // YYYY-MM-DD (Monday)
-  dayAssignments: Record<string, string>;  // { "0": "workout-day-id", "2": "workout-day-id" } - key is 0=Mon..6=Sun
+  weekStart: string;
+  dayAssignments: Record<string, string>;
 }
 
 export interface Invoice {

@@ -94,6 +94,15 @@ export default function WorkoutProgramsPage({
   const totalExercises = (p: WorkoutProgram) =>
     p.days.reduce((sum, d) => sum + d.exercises.length, 0);
 
+  const cardAccents = [
+    { from: '0, 229, 200', to: '0, 196, 170' },   // teal (brand)
+    { from: '99, 102, 241', to: '79, 70, 229' },   // indigo
+    { from: '249, 115, 22', to: '234, 88, 12' },   // orange
+    { from: '168, 85, 247', to: '139, 92, 246' },   // purple
+    { from: '236, 72, 153', to: '219, 39, 119' },   // pink
+    { from: '59, 130, 246', to: '37, 99, 235' },    // blue
+  ];
+
   return (
     <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
       {/* Top Bar */}
@@ -126,9 +135,16 @@ export default function WorkoutProgramsPage({
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))' }}>
         {filtered.map((program, i) => {
           const isExpanded = expandedId === program.id;
+          const accent = cardAccents[i % cardAccents.length];
           return (
-            <GlassCard key={program.id} delay={i * 0.04} hover>
-              <div style={styles.cardInner}>
+            <GlassCard key={program.id} delay={i * 0.04} hover style={{ padding: 0, overflow: 'visible', zIndex: openMenuId === program.id ? 50 : 'auto', position: 'relative' }}>
+              {/* Accent gradient bar */}
+              <div style={{
+                height: '3px',
+                borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+                background: `linear-gradient(90deg, rgba(${accent.from}, 0.8), rgba(${accent.to}, 0.4), transparent)`,
+              }} />
+              <div style={{ ...styles.cardInner, padding: '20px 24px' }}>
                 {/* Header */}
                 <div style={styles.cardHeader}>
                   <h3 style={{ ...styles.cardTitle, cursor: 'pointer' }} onClick={() => onViewProgram(program.id)}>{program.name}</h3>
@@ -170,10 +186,10 @@ export default function WorkoutProgramsPage({
 
                 {/* Badges */}
                 <div style={styles.badgeRow}>
-                  <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
+                  <span style={{ ...styles.badge, color: `rgb(${accent.from})`, background: `rgba(${accent.from}, 0.1)`, border: `1px solid rgba(${accent.from}, 0.15)` }}>
                     <Clock size={11} /> {t.programs.weeks(program.durationWeeks)}
                   </span>
-                  <span style={{ ...styles.badge, color: 'var(--text-secondary)', background: 'var(--bg-subtle-hover)' }}>
+                  <span style={{ ...styles.badge, color: `rgb(${accent.from})`, background: `rgba(${accent.from}, 0.1)`, border: `1px solid rgba(${accent.from}, 0.15)` }}>
                     <Dumbbell size={11} /> {t.programs.days(program.days.length)}, {t.programs.exercises(totalExercises(program))}
                   </span>
                 </div>

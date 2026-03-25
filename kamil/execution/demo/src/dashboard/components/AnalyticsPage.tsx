@@ -1,14 +1,13 @@
 import { motion } from 'framer-motion';
 import {
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight,
-  CreditCard, Target, Award, Dumbbell, ClipboardCheck, Activity,
+  CreditCard, Target, Award, Dumbbell, ClipboardCheck, Activity, UserPlus,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import GlassCard from './GlassCard';
-import { revenueData, getInitials, getAvatarColor } from '../data';
+import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
 import type { Client, Invoice, WorkoutLog, CheckIn } from '../types';
 
@@ -43,14 +42,19 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
 
   // Avg client value from actual paid invoices this month
   const activePayingClients = clients.filter(c => c.status !== 'paused');
-  const avgClientValue = activePayingClients.length > 0
-    ? Math.round(thisMonthRevenue / activePayingClients.length)
+  const clientsWhoPaidThisMonth = new Set(thisMonthInvoices.filter(inv => inv.status === 'paid').map(inv => inv.clientId)).size;
+  const avgClientValue = clientsWhoPaidThisMonth > 0
+    ? Math.round(thisMonthRevenue / clientsWhoPaidThisMonth)
     : 0;
 
   // ── Retention ──
   const retentionRate = clients.length > 0
     ? Math.round((clients.filter(c => c.status === 'active').length / clients.length) * 1000) / 10
     : 100;
+
+  // ── New clients this month ──
+  const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const newClientsThisMonth = clients.filter(c => new Date(c.startDate) >= currentMonthStart);
 
   // ── Engagement metrics ──
   const now = new Date();
@@ -70,54 +74,36 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     ? Math.round((completedCheckIns.length / scheduledOrDone.length) * 100)
     : 0;
 
-  // ── Revenue chart from invoices (aggregate by period) ──
-  const periodRevenue: Record<string, number> = {};
-  const periodClients: Record<string, Set<string>> = {};
-  paidInvoices.forEach(inv => {
-    periodRevenue[inv.period] = (periodRevenue[inv.period] || 0) + inv.amount;
-    if (!periodClients[inv.period]) periodClients[inv.period] = new Set();
-    periodClients[inv.period].add(inv.clientId);
-  });
-  // Merge invoice-derived data with revenueData (keep revenueData months for chart continuity)
-  const currentYear = new Date().getFullYear();
-  const revenueChartData = revenueData.map(rd => {
-    // Try current year first, then previous year, then fallback to mock data
-    const revKey = `${rd.month} ${currentYear}`;
-    const prevKey = `${rd.month} ${currentYear - 1}`;
+  // ── Revenue chart from invoices (last 6 months) ──
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const revenueChartData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const label = monthNames[d.getMonth()];
+    const monthPaid = paidInvoices.filter(inv => {
+      if (!inv.paidDate) return false;
+      const pd = new Date(inv.paidDate);
+      return pd.getMonth() === d.getMonth() && pd.getFullYear() === d.getFullYear();
+    });
     return {
-      month: rd.month,
-      revenue: periodRevenue[revKey] ?? periodRevenue[prevKey] ?? rd.revenue,
-      clients: periodClients[revKey]?.size ?? periodClients[prevKey]?.size ?? rd.clients,
+      month: label,
+      revenue: monthPaid.reduce((s, inv) => s + inv.amount, 0),
+      clients: new Set(monthPaid.map(inv => inv.clientId)).size,
     };
   });
 
-  // ── Plan distribution ──
-  const planDistribution = [
-    { name: 'Elite', value: clients.filter(c => c.plan === 'Elite').length, color: '#f59e0b' },
-    { name: 'Premium', value: clients.filter(c => c.plan === 'Premium').length, color: '#6366f1' },
-    { name: 'Basic', value: clients.filter(c => c.plan === 'Basic').length, color: '#525a6e' },
-  ];
+  // ── Plan distribution for Revenue by Plan ──
+  const planColors = ['#00e5c8', '#6366f1', '#f59e0b', '#e8637a', '#3b82f6', '#8b5cf6', '#10b981', '#525a6e'];
+  const uniquePlans = [...new Set(clients.map(c => c.plan).filter(Boolean))];
 
-  // Revenue by plan from actual invoices
-  const planRevenue = [
-    { name: 'Elite', revenue: paidInvoices.filter(inv => inv.plan === 'Elite').reduce((s, inv) => s + inv.amount, 0) },
-    { name: 'Premium', revenue: paidInvoices.filter(inv => inv.plan === 'Premium').reduce((s, inv) => s + inv.amount, 0) },
-    { name: 'Basic', revenue: paidInvoices.filter(inv => inv.plan === 'Basic').reduce((s, inv) => s + inv.amount, 0) },
-  ];
-
-  // ── Retention chart ──
-  const retentionData = revenueChartData.map((rd) => ({
-    month: rd.month,
-    rate: clients.length > 0 ? Math.round((rd.clients / clients.length) * 1000) / 10 : 100,
+  // Revenue by plan from actual invoices (dynamic)
+  const uniqueInvoicePlans = [...new Set(paidInvoices.map(inv => inv.plan).filter(Boolean))];
+  const planRevenue = uniqueInvoicePlans.map(plan => ({
+    name: plan,
+    revenue: paidInvoices.filter(inv => inv.plan === plan).reduce((s, inv) => s + inv.amount, 0),
   }));
 
-  // ── Progress distribution ──
-  const progressDistribution = [
-    { range: '0-25%', count: clients.filter(c => c.progress <= 25).length },
-    { range: '26-50%', count: clients.filter(c => c.progress > 25 && c.progress <= 50).length },
-    { range: '51-75%', count: clients.filter(c => c.progress > 50 && c.progress <= 75).length },
-    { range: '76-100%', count: clients.filter(c => c.progress > 75).length },
-  ];
+  // Currency helper
+  const fmtMoney = (v: number) => `$${v.toLocaleString()}`;
 
   // ── Per-client engagement data for table ──
   const clientEngagement = clients.map(client => {
@@ -140,7 +126,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   const statCards = [
     {
       label: 'Monthly Revenue',
-      value: `$${thisMonthRevenue.toLocaleString()}`,
+      value: fmtMoney(thisMonthRevenue),
       change: revenueChangePercent,
       changeLabel: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
       positive: revenueChangePercent >= 0,
@@ -150,7 +136,7 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     },
     {
       label: 'Projected Annual',
-      value: `$${projectedAnnual.toLocaleString()}`,
+      value: fmtMoney(projectedAnnual),
       change: revenueChangePercent,
       changeLabel: revenueChangePercent >= 0 ? `+${revenueChangePercent}%` : `${revenueChangePercent}%`,
       positive: revenueChangePercent >= 0,
@@ -160,9 +146,9 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
     },
     {
       label: 'Avg. Client Value',
-      value: `$${avgClientValue}`,
+      value: fmtMoney(avgClientValue),
       change: 0,
-      changeLabel: `${activePayingClients.length} clients`,
+      changeLabel: `${clientsWhoPaidThisMonth} active clients`,
       positive: true,
       icon: CreditCard,
       color: 'var(--accent-secondary)',
@@ -181,293 +167,220 @@ export default function AnalyticsPage({ clients, invoices, workoutLogs, checkIns
   ];
 
   const tooltipStyle = {
-    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle-strong)',
-    borderRadius: '10px', boxShadow: 'var(--shadow-elevated)',
-    fontSize: '18px',
+    background: '#0c1017', border: '1px solid rgba(0,229,200,0.15)',
+    borderRadius: '12px', boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 12px rgba(0,229,200,0.05)',
+    backdropFilter: 'blur(20px)',
+    fontSize: '13px', color: '#e0e0e0', padding: '10px 14px',
   };
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      {/* Revenue Stats */}
-      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
+      {/* Revenue Stats - Row 1 */}
+      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           const BadgeIcon = stat.positive ? ArrowUpRight : ArrowDownRight;
           return (
-            <GlassCard key={stat.label} delay={i * 0.05} hover>
-              <div style={styles.statTop}>
-                <div style={{ ...styles.statIcon, background: stat.dim }}>
-                  <Icon size={18} color={stat.color} />
-                </div>
+            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
                 <div style={{
-                  ...styles.changeBadge,
-                  color: stat.positive ? 'var(--accent-success)' : 'var(--accent-danger)',
-                  background: stat.positive ? 'var(--accent-success-dim)' : 'rgba(239,68,68,0.1)',
+                  ...styles.statIcon,
+                  width: isMobile ? '34px' : '38px',
+                  height: isMobile ? '34px' : '38px',
+                  borderRadius: '10px',
+                  background: stat.dim,
+                  boxShadow: `0 0 12px ${stat.dim}`,
+                  flexShrink: 0,
                 }}>
-                  <BadgeIcon size={12} />
-                  {stat.changeLabel}
+                  <Icon size={isMobile ? 15 : 17} color={stat.color} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {stat.value}
+                    </span>
+                    <span style={{
+                      fontSize: '11px', fontWeight: 600,
+                      color: stat.positive ? 'var(--accent-success)' : 'var(--accent-danger)',
+                      display: 'inline-flex', alignItems: 'center', gap: '1px',
+                    }}>
+                      <BadgeIcon size={10} />
+                      {stat.changeLabel}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-tertiary)', marginTop: '3px', lineHeight: 1.2 }}>
+                    {stat.label}
+                  </div>
                 </div>
               </div>
-              <div style={styles.statValue}>{stat.value}</div>
-              <div style={styles.statLabel}>{stat.label}</div>
             </GlassCard>
           );
         })}
       </div>
 
-      {/* Engagement Stats Row */}
-      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)' }}>
-        <GlassCard delay={0.15} hover>
-          <div style={styles.engagementCard}>
-            <div style={{ ...styles.engagementIcon, background: 'rgba(99,102,241,0.1)' }}>
-              <Dumbbell size={18} color="var(--accent-secondary)" />
-            </div>
-            <div>
-              <div style={styles.engagementValue}>{completedWorkouts.length}</div>
-              <div style={styles.engagementLabel}>Workouts (30d)</div>
-            </div>
-            <div style={styles.engagementMeta}>
-              <span style={{ color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>
-                {workoutCompletionRate}% completed
-              </span>
-              <span style={{ color: 'var(--text-tertiary)' }}>
-                ~{avgWorkoutsPerWeek}/wk per client
-              </span>
-            </div>
-          </div>
-        </GlassCard>
-
-        <GlassCard delay={0.2} hover>
-          <div style={styles.engagementCard}>
-            <div style={{ ...styles.engagementIcon, background: 'rgba(0,229,200,0.1)' }}>
-              <ClipboardCheck size={18} color="var(--accent-primary)" />
-            </div>
-            <div>
-              <div style={styles.engagementValue}>{checkInRate}%</div>
-              <div style={styles.engagementLabel}>Check-In Rate</div>
-            </div>
-            <div style={styles.engagementMeta}>
-              <span style={{ color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }}>
-                {completedCheckIns.length} completed
-              </span>
-              <span style={{ color: 'var(--accent-danger)' }}>
-                {checkIns.filter(ci => ci.status === 'missed').length} missed
-              </span>
-            </div>
-          </div>
-        </GlassCard>
-
-        <GlassCard delay={0.25} hover>
-          <div style={styles.engagementCard}>
-            <div style={{ ...styles.engagementIcon, background: 'rgba(34,197,94,0.1)' }}>
-              <Activity size={18} color="var(--accent-success)" />
-            </div>
-            <div>
-              <div style={styles.engagementValue}>${totalCollected.toLocaleString()}</div>
-              <div style={styles.engagementLabel}>Total Collected</div>
-            </div>
-            <div style={styles.engagementMeta}>
-              <span style={{ color: 'var(--text-secondary)' }}>
-                {paidInvoices.length} invoices paid
-              </span>
-              <span style={{ color: 'var(--accent-warm)' }}>
-                {invoices.filter(inv => inv.status === 'overdue').length} overdue
-              </span>
-            </div>
-          </div>
-        </GlassCard>
+      {/* Engagement Stats - Row 2 */}
+      <div style={{ ...styles.statsRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
+        {[
+          { icon: Dumbbell, iconColor: 'var(--accent-secondary)', dim: 'rgba(99,102,241,0.1)', value: String(completedWorkouts.length), label: 'Workouts (30d)', meta1: { text: `${workoutCompletionRate}% completed`, color: workoutCompletionRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }, meta2: { text: `~${avgWorkoutsPerWeek}/wk per client`, color: 'var(--text-tertiary)' }, delay: 0.15 },
+          { icon: ClipboardCheck, iconColor: 'var(--accent-primary)', dim: 'rgba(0,229,200,0.1)', value: `${checkInRate}%`, label: 'Check-In Rate', meta1: { text: `${completedCheckIns.length} completed`, color: checkInRate >= 80 ? 'var(--accent-success)' : 'var(--accent-warm)' }, meta2: { text: `${checkIns.filter(ci => ci.status === 'missed').length} missed`, color: 'var(--accent-danger)' }, delay: 0.2 },
+          { icon: Activity, iconColor: 'var(--accent-success)', dim: 'rgba(34,197,94,0.1)', value: fmtMoney(totalCollected), label: 'All-Time Revenue', meta1: { text: `${paidInvoices.length} invoices paid`, color: 'var(--text-secondary)' }, meta2: { text: `${invoices.filter(inv => inv.status === 'overdue').length} overdue`, color: 'var(--accent-warm)' }, delay: 0.25 },
+          { icon: UserPlus, iconColor: '#6366f1', dim: 'rgba(99,102,241,0.15)', value: String(newClientsThisMonth.length), label: 'New Clients This Month', meta1: { text: 'this month', color: newClientsThisMonth.length > 0 ? 'var(--accent-success)' : 'var(--text-tertiary)' }, meta2: null, delay: 0.3 },
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <GlassCard key={i} delay={card.delay} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                <div style={{
+                  width: isMobile ? '34px' : '38px', height: isMobile ? '34px' : '38px',
+                  borderRadius: '10px', background: card.dim, boxShadow: `0 0 12px ${card.dim}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  <Icon size={isMobile ? 15 : 17} color={card.iconColor} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{card.value}</div>
+                  <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-tertiary)', marginTop: '3px' }}>{card.label}</div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '2px', fontSize: isMobile ? '10px' : '11px', fontWeight: 500 }}>
+                    <span style={{ color: card.meta1.color }}>{card.meta1.text}</span>
+                    {card.meta2 && <span style={{ color: card.meta2.color }}>{card.meta2.text}</span>}
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+          );
+        })}
       </div>
 
-      {/* Revenue Over Time + Plan Distribution */}
-      <div style={{ ...styles.chartRow, flexDirection: isMobile ? 'column' : 'row' }}>
-        <GlassCard delay={0.3} style={{ flex: 2 }}>
-          <h3 style={styles.chartTitle}>Revenue Over Time</h3>
-          <div style={{ height: isMobile ? 220 : 280, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={revenueChartData}>
-                <defs>
-                  <linearGradient id="revenueGrad2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, 'Revenue']} />
-                <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
+      {/* Revenue by Plan - CSS bars */}
+      <GlassCard delay={0.3} style={isMobile ? { padding: '16px' } : undefined}>
+        <h3 style={{ ...styles.chartTitle, fontSize: isMobile ? '15px' : '16px' }}>Revenue by Plan</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: isMobile ? '12px' : '16px' }}>
+          {(() => {
+            const maxRevenue = Math.max(...planRevenue.map(p => p.revenue), 1);
+            const totalPlanRevenue = planRevenue.reduce((s, p) => s + p.revenue, 0);
+            return planRevenue.map((plan, i) => {
+              const pct = totalPlanRevenue > 0 ? Math.round((plan.revenue / totalPlanRevenue) * 100) : 0;
+              const color = planColors[i % planColors.length];
+              return (
+                <div key={plan.name} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                      <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{plan.name}</span>
+                      <span style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-tertiary)' }}>{pct}%</span>
+                    </div>
+                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                      {fmtMoney(plan.revenue)}
+                    </span>
+                  </div>
+                  <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                    <motion.div
+                      style={{ height: '100%', borderRadius: '3px', background: color }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(plan.revenue / maxRevenue) * 100}%` }}
+                      transition={{ delay: 0.5 + i * 0.1, duration: 0.6, ease: 'easeOut' }}
+                    />
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
+      </GlassCard>
 
-        <GlassCard delay={0.35} style={{ flex: 1 }}>
-          <h3 style={styles.chartTitle}>Client Distribution</h3>
-          <div style={{ height: isMobile ? 220 : 280, marginTop: '8px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={planDistribution}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="45%"
-                  outerRadius={85}
-                  innerRadius={55}
-                  paddingAngle={4}
-                  strokeWidth={0}
-                >
-                  {planDistribution.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Legend
-                  verticalAlign="bottom"
-                  iconType="circle"
-                  iconSize={8}
-                  formatter={(value) => <span style={{ color: '#8b92a5', fontSize: '17px', fontFamily: 'Outfit' }}>{value}</span>}
-                />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [`${value} clients`, name]} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-      </div>
+      {/* Revenue Trend */}
+      <GlassCard delay={0.35} style={isMobile ? { padding: '16px' } : undefined}>
+        <h3 style={{ ...styles.chartTitle, fontSize: isMobile ? '15px' : '16px' }}>Revenue Trend</h3>
+        <div style={{ height: isMobile ? 180 : 280, marginTop: isMobile ? '12px' : '16px' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={revenueChartData}>
+              <defs>
+                <linearGradient id="revenueGrad2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)' }} />
+              <YAxis domain={[(min: number) => Math.floor(min * 0.9), (max: number) => Math.ceil(max * 1.05)]} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--text-tertiary)', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => fmtMoney(v)} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value) => [fmtMoney(value as number), 'Revenue']} />
+              <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2.5} fill="url(#revenueGrad2)" dot={{ r: 4, fill: '#22c55e', strokeWidth: 0 }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </GlassCard>
 
-      {/* Bottom Row */}
-      <div style={{ ...styles.bottomRow, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
-        {/* Revenue by Plan */}
-        <GlassCard delay={0.4}>
-          <h3 style={styles.chartTitle}>Revenue by Plan</h3>
-          <div style={{ height: 220, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={planRevenue} layout="vertical">
-                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `$${v}`} />
-                <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 18, fill: '#8b92a5' }} width={70} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`$${value}`, 'Revenue']} />
-                <Bar dataKey="revenue" radius={[0, 8, 8, 0]} barSize={24}>
-                  <Cell fill="#f59e0b" />
-                  <Cell fill="#6366f1" />
-                  <Cell fill="#525a6e" />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+      {/* Client Breakdown Table */}
+      <GlassCard delay={0.55} style={isMobile ? { padding: '16px' } : undefined}>
+        <div style={{ ...styles.tableHeader, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '6px' : undefined }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '10px' }}>
+            <Award size={isMobile ? 15 : 18} color="var(--accent-warm)" />
+            <h3 style={{ ...styles.chartTitle, fontSize: isMobile ? '15px' : '16px' }}>Client Breakdown</h3>
           </div>
-        </GlassCard>
-
-        {/* Retention */}
-        <GlassCard delay={0.45}>
-          <h3 style={styles.chartTitle}>Client Retention</h3>
-          <div style={{ height: 220, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={retentionData}>
-                <defs>
-                  <linearGradient id="retentionGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00e5c8" stopOpacity={0.2} />
-                    <stop offset="100%" stopColor="#00e5c8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <YAxis domain={[70, 105]} axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }} tickFormatter={(v) => `${v}%`} />
-                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [`${value}%`, 'Retention']} />
-                <Area type="monotone" dataKey="rate" stroke="#00e5c8" strokeWidth={2} fill="url(#retentionGrad)" dot={{ r: 4, fill: '#00e5c8', strokeWidth: 0 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-
-        {/* Progress Distribution */}
-        <GlassCard delay={0.5}>
-          <h3 style={styles.chartTitle}>Client Progress</h3>
-          <div style={{ height: 220, marginTop: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={progressDistribution}>
-                <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 15, fill: '#525a6e' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 17, fill: '#525a6e' }} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]} barSize={36} name="Clients">
-                  <Cell fill="var(--accent-danger)" />
-                  <Cell fill="var(--accent-warm)" />
-                  <Cell fill="var(--accent-primary)" />
-                  <Cell fill="var(--accent-success)" />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
-      </div>
-
-      {/* Revenue & Engagement Table */}
-      <GlassCard delay={0.55}>
-        <div style={{ ...styles.tableHeader, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '8px' : undefined }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Award size={18} color="var(--accent-warm)" />
-            <h3 style={styles.chartTitle}>Client Breakdown</h3>
-          </div>
-          <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>
+          <span style={{ fontSize: isMobile ? '12px' : '18px', color: 'var(--text-secondary)' }}>
             {activePayingClients.length} active clients
           </span>
         </div>
         <div style={{ ...styles.table, overflowX: isMobile ? 'auto' : undefined }}>
-          <div style={{ ...styles.tableRow, minWidth: isMobile ? '700px' : undefined }}>
-            <span style={{ ...styles.tableHead, width: '40px' }}>#</span>
-            <span style={{ ...styles.tableHead, flex: 1 }}>Client</span>
-            <span style={{ ...styles.tableHead, width: '80px' }}>Plan</span>
-            <span style={{ ...styles.tableHead, width: '100px' }}>Revenue</span>
-            <span style={{ ...styles.tableHead, width: '90px' }}>Workouts</span>
-            <span style={{ ...styles.tableHead, width: '90px' }}>Check-Ins</span>
-            <span style={{ ...styles.tableHead, width: '80px' }}>Status</span>
+          <div style={{ ...styles.tableRow, minWidth: isMobile ? '580px' : undefined }}>
+            <span style={{ ...styles.tableHead, width: isMobile ? '28px' : '40px', fontSize: isMobile ? '11px' : '15px' }}>#</span>
+            <span style={{ ...styles.tableHead, flex: 1, fontSize: isMobile ? '11px' : '15px' }}>Client</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '65px' : '80px', fontSize: isMobile ? '11px' : '15px' }}>Plan</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '80px' : '100px', fontSize: isMobile ? '11px' : '15px' }}>Revenue</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '11px' : '15px' }}>Workouts</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '11px' : '15px' }}>Check-Ins</span>
+            <span style={{ ...styles.tableHead, width: isMobile ? '60px' : '80px', fontSize: isMobile ? '11px' : '15px' }}>Status</span>
           </div>
           {clientEngagement.map((client, i) => (
             <motion.div
               key={client.id}
-              style={{ ...styles.tableRow, minWidth: isMobile ? '700px' : undefined, cursor: 'pointer' }}
+              style={{ ...styles.tableRow, minWidth: isMobile ? '580px' : undefined, cursor: 'pointer', padding: isMobile ? '8px 10px' : '10px 12px', gap: isMobile ? '8px' : '12px' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 + i * 0.03 }}
               onClick={() => onViewClient(client.id)}
             >
-              <span style={{ ...styles.tableCell, width: '40px', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '28px' : '40px', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', fontSize: isMobile ? '13px' : '18px' }}>
                 {i + 1}
               </span>
-              <span style={{ ...styles.tableCell, flex: 1, fontWeight: 500, gap: '8px' }}>
-                <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
+              <span style={{ ...styles.tableCell, flex: 1, fontWeight: 500, gap: isMobile ? '6px' : '8px' }}>
+                <div style={{ ...styles.avatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '24px', height: '24px', fontSize: '10px' } : {}) }}>
                   {getInitials(client.name)}
                 </div>
-                <span style={styles.clientNameLink}>{client.name}</span>
+                <span style={{ ...styles.clientNameLink, fontSize: isMobile ? '13px' : '18px' }}>{client.name}</span>
               </span>
-              <span style={{ ...styles.tableCell, width: '80px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '65px' : '80px' }}>
                 <span style={{
-                  fontSize: '15px', fontWeight: 600, padding: '2px 8px', borderRadius: '12px',
-                  color: client.plan === 'Elite' ? 'var(--accent-warm)' : client.plan === 'Premium' ? 'var(--accent-secondary)' : 'var(--text-secondary)',
-                  background: client.plan === 'Elite' ? 'var(--accent-warm-dim)' : client.plan === 'Premium' ? 'var(--accent-secondary-dim)' : 'var(--bg-subtle-hover)',
+                  fontSize: isMobile ? '11px' : '15px', fontWeight: 600, padding: isMobile ? '1px 6px' : '2px 8px', borderRadius: '12px',
+                  color: planColors[uniquePlans.indexOf(client.plan) % planColors.length] || 'var(--text-secondary)',
+                  background: `${planColors[uniquePlans.indexOf(client.plan) % planColors.length] || '#525a6e'}18`,
                 }}>
                   {client.plan}
                 </span>
               </span>
-              <span style={{ ...styles.tableCell, width: '100px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                ${client.totalPaid.toLocaleString()}
+              <span style={{ ...styles.tableCell, width: isMobile ? '80px' : '100px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: isMobile ? '13px' : '18px' }}>
+                {fmtMoney(client.totalPaid)}
               </span>
-              <span style={{ ...styles.tableCell, width: '90px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '13px' : '18px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{client.workoutsCompleted}</span>
-                <span style={{ color: 'var(--text-tertiary)', fontSize: '14px', marginLeft: '2px' }}>/{client.workoutsTotal}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: isMobile ? '11px' : '14px', marginLeft: '2px' }}>/{client.workoutsTotal}</span>
               </span>
-              <span style={{ ...styles.tableCell, width: '90px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '70px' : '90px', fontSize: isMobile ? '13px' : '18px' }}>
                 <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: client.checkInsMissed > 0 ? 'var(--text-primary)' : 'var(--accent-success)' }}>
                   {client.checkInsCompleted}
                 </span>
                 {client.checkInsMissed > 0 && (
-                  <span style={{ color: 'var(--accent-danger)', fontSize: '14px', marginLeft: '4px' }}>
+                  <span style={{ color: 'var(--accent-danger)', fontSize: isMobile ? '11px' : '14px', marginLeft: '4px' }}>
                     ({client.checkInsMissed} missed)
                   </span>
                 )}
               </span>
-              <span style={{ ...styles.tableCell, width: '80px' }}>
+              <span style={{ ...styles.tableCell, width: isMobile ? '60px' : '80px' }}>
                 <span style={{
-                  width: '8px', height: '8px', borderRadius: '50%', display: 'inline-block',
+                  width: isMobile ? '6px' : '8px', height: isMobile ? '6px' : '8px', borderRadius: '50%', display: 'inline-block',
                   background: client.status === 'active' ? 'var(--accent-success)' : client.status === 'paused' ? 'var(--accent-warm)' : 'var(--accent-secondary)',
-                  marginRight: '6px',
+                  marginRight: isMobile ? '4px' : '6px',
                 }} />
-                <span style={{ textTransform: 'capitalize', fontSize: '18px' }}>{client.status}</span>
+                <span style={{ textTransform: 'capitalize', fontSize: isMobile ? '12px' : '18px' }}>{client.status}</span>
               </span>
             </motion.div>
           ))}
@@ -489,48 +402,9 @@ const styles: Record<string, React.CSSProperties> = {
   statsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '16px',
-  },
-  statTop: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '16px',
+    gap: '12px',
   },
   statIcon: {
-    width: '40px',
-    height: '40px',
-    borderRadius: 'var(--radius-md)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  changeBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '3px',
-    fontSize: '17px',
-    fontWeight: 600,
-    padding: '3px 8px',
-    borderRadius: '20px',
-  },
-  statValue: {
-    fontSize: '39px',
-    fontWeight: 700,
-    letterSpacing: '-1px',
-    lineHeight: 1.1,
-  },
-  statLabel: {
-    fontSize: '18px',
-    color: 'var(--text-secondary)',
-    marginTop: '4px',
-  },
-  engagementCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  engagementIcon: {
     width: '36px',
     height: '36px',
     borderRadius: 'var(--radius-md)',
@@ -538,35 +412,13 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  engagementValue: {
-    fontSize: '32px',
-    fontWeight: 700,
-    letterSpacing: '-0.5px',
-    lineHeight: 1.1,
-  },
-  engagementLabel: {
-    fontSize: '16px',
-    color: 'var(--text-secondary)',
-    marginTop: '2px',
-  },
-  engagementMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-    fontSize: '14px',
-    fontWeight: 500,
-  },
-  chartRow: {
-    display: 'flex',
-    gap: '16px',
-  },
   chartTitle: {
-    fontSize: '21px',
+    fontSize: '16px',
     fontWeight: 600,
   },
   bottomRow: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateColumns: '1fr',
     gap: '16px',
   },
   tableHeader: {
@@ -589,14 +441,14 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'background 0.1s',
   },
   tableHead: {
-    fontSize: '15px',
+    fontSize: '11px',
     color: 'var(--text-tertiary)',
     fontWeight: 600,
     letterSpacing: '0.5px',
     textTransform: 'uppercase' as const,
   },
   tableCell: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-primary)',
     display: 'flex',
     alignItems: 'center',
@@ -614,7 +466,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   clientNameLink: {
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 500,
     color: 'var(--accent-primary)',
     cursor: 'pointer',

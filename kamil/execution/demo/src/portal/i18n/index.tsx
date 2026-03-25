@@ -17,11 +17,7 @@ function detectInitialLang(): Lang {
   // Priority 2: URL path (if someone lands directly on /pl/)
   if (typeof window !== 'undefined' && window.location.pathname.startsWith('/pl')) return 'pl';
 
-  // Priority 3: browser language
-  const browserLang = navigator.language?.toLowerCase() ?? '';
-  if (browserLang.startsWith('pl')) return 'pl';
-
-  // Priority 4: default
+  // Demo is always English
   return 'en';
 }
 

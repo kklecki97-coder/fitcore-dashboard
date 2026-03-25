@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, Mail, Calendar, Flame, Target,
-  TrendingUp, TrendingDown, Minus, DollarSign,
+  ArrowLeft, Mail, Calendar, Flame, Target, DollarSign,
   Edit3, MessageSquare, FileText, X, Send, Save,
   Activity, Dumbbell, Check, ClipboardCheck, Flag,
   Smile, Frown, Meh, SmilePlus, Angry,
   Moon, Download, Clock, Star,
+  Scale, Ruler, ArrowUpRight, ArrowDownRight, Percent, Trophy,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -16,7 +16,7 @@ import jsPDF from 'jspdf';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn } from '../types';
+import type { Client, Message, WorkoutProgram, WorkoutLog, CheckIn, GoalTargets } from '../types';
 
 interface ClientDetailPageProps {
   clientId: string;
@@ -70,6 +70,10 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
     squat: '',
     deadlift: '',
   });
+  // @ts-ignore - scaffolded for goal editing feature
+  const [editingGoals, setEditingGoals] = useState(false);
+  // @ts-ignore - scaffolded for goal editing feature
+  const [editGoalTargets, setEditGoalTargets] = useState<GoalTargets>({});
 
   if (!client) return null;
 
@@ -476,56 +480,179 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
         </div>
       </GlassCard>
 
-      {/* Key Metrics */}
-      <div style={{ ...styles.metricsRow, ...(isMobile ? { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' } : {}) }}>
-        <GlassCard delay={0.1} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Current Weight</div>
-          <div style={styles.metricValue}>
-            {latestWeight} <span style={styles.metricUnit}>kg</span>
+      {/* Key Metrics — Overview-style cards */}
+      {(() => {
+        const hasWeight = client.metrics.weight.length > 0;
+        const hasBF = client.metrics.bodyFat.length > 0;
+        const progressColor = client.progress > 80 ? 'var(--accent-success)' : client.progress > 50 ? 'var(--accent-primary)' : 'var(--accent-warm)';
+        const progressDim = client.progress > 80 ? 'var(--accent-success-dim)' : client.progress > 50 ? 'var(--accent-primary-dim)' : 'var(--accent-warm-dim)';
+        const metricCards = [
+          {
+            label: 'Weight',
+            value: latestWeight != null ? `${latestWeight}` : '-',
+            unit: 'kg',
+            change: hasWeight ? `${Math.abs(weightChange).toFixed(1)} kg` : null,
+            trend: hasWeight ? (weightChange <= 0 ? 'up' as const : 'down' as const) : 'neutral' as const,
+            icon: Scale,
+            color: 'var(--accent-primary)',
+            dimColor: 'var(--accent-primary-dim)',
+          },
+          {
+            label: 'Body Fat',
+            value: latestBF != null ? `${latestBF}` : '-',
+            unit: '%',
+            change: hasBF ? `${Math.abs(bfChange).toFixed(1)}%` : null,
+            trend: hasBF ? (bfChange <= 0 ? 'up' as const : 'down' as const) : 'neutral' as const,
+            icon: Percent,
+            color: 'var(--accent-warm)',
+            dimColor: 'var(--accent-warm-dim)',
+          },
+          {
+            label: 'Monthly Rate',
+            value: `$${client.monthlyRate}`,
+            unit: '',
+            change: 'per month',
+            trend: 'neutral' as const,
+            icon: DollarSign,
+            color: 'var(--accent-success)',
+            dimColor: 'var(--accent-success-dim)',
+          },
+          {
+            label: 'Overall Progress',
+            value: `${client.progress}%`,
+            unit: '',
+            change: null,
+            trend: client.progress > 50 ? 'up' as const : 'down' as const,
+            icon: Trophy,
+            color: progressColor,
+            dimColor: progressDim,
+            showProgressBar: true,
+          },
+        ];
+
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
+            {metricCards.map((stat, i) => {
+              const Icon = stat.icon;
+              return (
+                <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                    <div style={{
+                      background: stat.dimColor,
+                      boxShadow: `0 0 12px ${stat.dimColor}`,
+                      width: isMobile ? '36px' : '38px',
+                      height: isMobile ? '36px' : '38px',
+                      borderRadius: '10px',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Icon size={isMobile ? 16 : 17} color={stat.color} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                        <span style={{ fontSize: '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                          {stat.value}{stat.unit && <span style={{ fontSize: '13px', fontWeight: 500, opacity: 0.6 }}>{stat.unit}</span>}
+                        </span>
+                        {stat.change && stat.trend !== 'neutral' && (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '1px',
+                          }}>
+                            {stat.trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                            {stat.change}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '3px', lineHeight: 1.2 }}>
+                        {stat.label}
+                        {stat.trend === 'neutral' && stat.change && <span style={{ marginLeft: '6px', opacity: 0.7 }}>— {stat.change}</span>}
+                      </div>
+                      {stat.showProgressBar && (
+                        <div style={{ ...styles.bigProgressBar, marginTop: '6px' }}>
+                          <motion.div
+                            style={{ ...styles.bigProgressFill, background: stat.color }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${client.progress}%` }}
+                            transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </GlassCard>
+              );
+            })}
           </div>
-          <div style={{ ...styles.metricChange, color: weightChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-            {weightChange <= 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
-            {Math.abs(weightChange).toFixed(1)} kg
-          </div>
-        </GlassCard>
-        <GlassCard delay={0.12} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Body Fat</div>
-          <div style={styles.metricValue}>
-            {latestBF} <span style={styles.metricUnit}>%</span>
-          </div>
-          <div style={{ ...styles.metricChange, color: bfChange <= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-            {bfChange <= 0 ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
-            {Math.abs(bfChange).toFixed(1)}%
-          </div>
-        </GlassCard>
-        <GlassCard delay={0.14} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Monthly Rate</div>
-          <div style={styles.metricValue}>
-            <DollarSign size={20} style={{ opacity: 0.5 }} />
-            {client.monthlyRate}
-          </div>
-          <div style={{ ...styles.metricChange, color: 'var(--text-tertiary)' }}>
-            <Minus size={14} />
-            per month
-          </div>
-        </GlassCard>
-        <GlassCard delay={0.16} style={{ flex: 1 }}>
-          <div style={styles.metricLabel}>Overall Progress</div>
-          <div style={styles.metricValue}>{client.progress}%</div>
-          <div style={styles.bigProgressBar}>
-            <motion.div
-              style={{
-                ...styles.bigProgressFill,
-                background: client.progress > 80 ? 'var(--accent-success)' :
-                            client.progress > 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-              }}
-              initial={{ width: 0 }}
-              animate={{ width: `${client.progress}%` }}
-              transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
-            />
-          </div>
-        </GlassCard>
-      </div>
+        );
+      })()}
+
+      {/* Body Measurements */}
+      {(() => {
+        const mKeys = ['waist', 'hips', 'chest', 'bicep', 'thigh'] as const;
+        const mLabels: Record<string, string> = {
+          waist: 'Waist',
+          hips: 'Hips',
+          chest: 'Chest',
+          bicep: 'Bicep',
+          thigh: 'Thigh',
+        };
+        const hasMeasurements = mKeys.some(k => client.metrics[k] && client.metrics[k].length > 0);
+        if (!hasMeasurements) return null;
+        return (
+          <GlassCard delay={0.18} style={isMobile ? { padding: '12px' } : undefined}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '10px' : '14px' }}>
+              <Ruler size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+              <span style={{ fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Measurements
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 0 }}>
+              {/* Header */}
+              <div style={{ padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }} />
+              {['Start', 'Current', 'Change'].map(h => (
+                <div key={h} style={{ padding: '6px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', textAlign: 'right' as const }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>{h}</span>
+                </div>
+              ))}
+              {/* Rows */}
+              {mKeys.map(key => {
+                const vals = client.metrics[key];
+                if (!vals || vals.length === 0) return null;
+                const s = vals[0];
+                const c = vals[vals.length - 1];
+                const d = c - s;
+                const show = vals.length > 1;
+                return [
+                  <div key={`${key}-l`} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{mLabels[key]}</span>
+                  </div>,
+                  <div key={`${key}-s`} style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{s}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
+                  </div>,
+                  <div key={`${key}-c`} style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    <span style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>{c}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
+                  </div>,
+                  <div key={`${key}-d`} style={{ padding: '8px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
+                    {show ? (
+                      <span style={{ fontSize: '13px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: d < 0 ? 'var(--accent-success)' : d > 0 ? 'var(--accent-danger)' : 'var(--text-tertiary)' }}>
+                        {d > 0 ? '+' : ''}{d.toFixed(1)}
+                      </span>
+                    ) : <span style={{ color: 'var(--text-tertiary)' }}>—</span>}
+                  </div>,
+                ];
+              })}
+            </div>
+          </GlassCard>
+        );
+      })()}
 
       {/* Charts */}
       <div style={{ ...styles.chartsGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
@@ -959,28 +1086,100 @@ export default function ClientDetailPage({ clientId, clients, programs, workoutL
           </div>
         </GlassCard>
 
-        {/* Goals */}
-        <GlassCard delay={0.35}>
-          <h3 style={styles.chartTitle}>Goals</h3>
-          <div style={styles.goalsList}>
-            {client.goals.map((goal, i) => (
-              <motion.div
-                key={i}
-                style={styles.goalItem}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.05 }}
+        {/* Goals + Coach Notes */}
+        <GlassCard delay={0.35} style={isMobile ? { padding: '14px 16px' } : undefined}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}), margin: 0 }}>Goals</h3>
+            {!editingGoals && (
+              <button
+                onClick={() => { setEditingGoals(true); setEditGoalTargets(client.goalTargets ?? {}); }}
+                style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600 }}
               >
-                <Target size={16} color="var(--accent-primary)" />
-                <span>{goal}</span>
-              </motion.div>
-            ))}
+                <Edit3 size={14} /> Edit Goals
+              </button>
+            )}
           </div>
-
+          {!editingGoals ? (
+            <>
+              <div style={{ ...styles.goalsList, ...(isMobile ? { gap: '8px', marginTop: '10px' } : {}) }}>
+                {client.goals.map((goal, i) => (
+                  <motion.div
+                    key={i}
+                    style={{ ...styles.goalItem, ...(isMobile ? { fontSize: '12px', padding: '8px 10px', gap: '8px' } : {}) }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + i * 0.05 }}
+                  >
+                    <Target size={isMobile ? 14 : 16} color="var(--accent-primary)" />
+                    <span>{goal}</span>
+                  </motion.div>
+                ))}
+              </div>
+              {client.goalTargets && Object.values(client.goalTargets).some(v => v != null) && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>Goal Targets</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {client.goalTargets.targetWeight != null && <span style={styles.targetTag}>Target Weight: {client.goalTargets.targetWeight}</span>}
+                    {client.goalTargets.targetBodyFat != null && <span style={styles.targetTag}>Target Body Fat: {client.goalTargets.targetBodyFat}</span>}
+                    {client.goalTargets.targetBenchPress != null && <span style={styles.targetTag}>Target Bench: {client.goalTargets.targetBenchPress}</span>}
+                    {client.goalTargets.targetSquat != null && <span style={styles.targetTag}>Target Squat: {client.goalTargets.targetSquat}</span>}
+                    {client.goalTargets.targetDeadlift != null && <span style={styles.targetTag}>Target Deadlift: {client.goalTargets.targetDeadlift}</span>}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goal Targets</div>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px' }}>
+                {[
+                  { key: 'targetWeight' as const, label: 'Target Weight' },
+                  { key: 'targetBodyFat' as const, label: 'Target Body Fat' },
+                  { key: 'targetBenchPress' as const, label: 'Target Bench' },
+                  { key: 'targetSquat' as const, label: 'Target Squat' },
+                  { key: 'targetDeadlift' as const, label: 'Target Deadlift' },
+                ].map(({ key, label }) => (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>{label}</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={editGoalTargets[key] ?? ''}
+                      onChange={e => setEditGoalTargets(prev => ({ ...prev, [key]: e.target.value ? Number(e.target.value) : undefined }))}
+                      placeholder="\u2014"
+                      style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-mono)', outline: 'none' }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <button
+                  onClick={() => setEditingGoals(false)}
+                  style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                >
+                  <X size={14} /> Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const cleaned: GoalTargets = {};
+                    if (editGoalTargets.targetWeight != null) cleaned.targetWeight = editGoalTargets.targetWeight;
+                    if (editGoalTargets.targetBodyFat != null) cleaned.targetBodyFat = editGoalTargets.targetBodyFat;
+                    if (editGoalTargets.targetBenchPress != null) cleaned.targetBenchPress = editGoalTargets.targetBenchPress;
+                    if (editGoalTargets.targetSquat != null) cleaned.targetSquat = editGoalTargets.targetSquat;
+                    if (editGoalTargets.targetDeadlift != null) cleaned.targetDeadlift = editGoalTargets.targetDeadlift;
+                    onUpdateClient(client.id, { goalTargets: cleaned });
+                    setEditingGoals(false);
+                  }}
+                  style={{ flex: 1, padding: '8px', borderRadius: '8px', border: 'none', background: 'var(--accent-primary)', color: '#000', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                >
+                  <Check size={14} /> Save Goals
+                </button>
+              </div>
+            </div>
+          )}
           <div style={styles.divider} />
-
-          <h3 style={{ ...styles.chartTitle, marginTop: '16px' }}>Coach Notes</h3>
-          <p style={styles.notes}>{client.notes}</p>
+          <h3 style={{ ...styles.chartTitle, ...(isMobile ? { fontSize: '15px' } : {}), marginTop: '16px' }}>Coach Notes</h3>
+          <p style={{ ...styles.notes, ...(isMobile ? { fontSize: '12px' } : {}) }}>{client.notes}</p>
         </GlassCard>
 
         {/* Body Fat Chart */}
@@ -1671,13 +1870,23 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--bg-subtle)',
     border: '1px solid var(--glass-border)',
   },
+  targetTag: {
+    fontSize: '12px',
+    fontWeight: 600,
+    color: 'var(--accent-primary)',
+    background: 'var(--accent-primary-dim)',
+    padding: '4px 10px',
+    borderRadius: '8px',
+    border: '1px solid rgba(0,229,200,0.15)',
+    fontFamily: 'var(--font-mono)',
+  } as React.CSSProperties,
   divider: {
     height: '1px',
     background: 'var(--glass-border)',
     margin: '16px 0 0',
   },
   notes: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-secondary)',
     lineHeight: 1.6,
     marginTop: '8px',

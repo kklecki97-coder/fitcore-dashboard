@@ -263,12 +263,15 @@ export default function DashboardApp() {
   const renderPage = () => {
     switch (currentPage) {
       case 'overview':
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} checkIns={allCheckIns} invoices={allInvoices} workoutLogs={workoutLogs} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
       case 'clients':
         return (
           <ClientsPage
             clients={allClients}
             programs={allPrograms}
+            workoutLogs={workoutLogs}
+            checkIns={allCheckIns}
+            messages={allMessages}
             onViewClient={handleViewClient}
             onAddClient={handleAddClient}
             onNavigate={handleNavigate}
@@ -361,7 +364,7 @@ export default function DashboardApp() {
           />
         );
       default:
-        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
+        return <OverviewPage clients={allClients} messages={allMessages} programs={allPrograms} checkIns={allCheckIns} invoices={allInvoices} workoutLogs={workoutLogs} onViewClient={handleViewClient} onNavigate={handleNavigate} />;
     }
   };
 

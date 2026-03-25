@@ -1,27 +1,28 @@
 import { useMemo, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
   DollarSign,
-  TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
   AlertTriangle,
   CalendarCheck,
-  MessageSquare,
   Sparkles,
-  Flame,
+  Zap,
+  Bell,
+  FileBarChart,
+  ChevronDown,
+  Send,
+  RefreshCw,
   Dumbbell,
-  Clock,
+  MessageSquare,
+  CreditCard,
+  CheckCircle2,
 } from 'lucide-react';
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-} from 'recharts';
 import GlassCard from './GlassCard';
-import { revenueData } from '../data';
-import { getInitials, getAvatarColor } from '../data';
+import { getInitials, getAvatarColor, revenueData } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, Message, WorkoutProgram } from '../types';
+import type { Client, Message, WorkoutProgram, CheckIn, Invoice, WorkoutLog } from '../types';
 
 const QUOTES = [
   { text: 'The only bad workout is the one that didn\'t happen.', author: 'Unknown' },
@@ -36,49 +37,85 @@ const QUOTES = [
   { text: 'The best project you\'ll ever work on is you.', author: 'Sonny Franco' },
 ];
 
+type ActivityFilter = 'all' | 'workouts' | 'check-ins' | 'messages' | 'payments';
+
 interface OverviewPageProps {
   clients: Client[];
   messages: Message[];
   programs: WorkoutProgram[];
+  checkIns: CheckIn[];
+  invoices: Invoice[];
+  workoutLogs: WorkoutLog[];
   onViewClient: (id: string) => void;
-  onNavigate: (page: 'messages') => void;
+  onNavigate: (page: 'messages' | 'clients' | 'check-ins') => void;
 }
 
-export default function OverviewPage({ clients, messages, programs, onViewClient, onNavigate }: OverviewPageProps) {
+function getTimeGreeting(name: string): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return `Good morning, ${name}`;
+  if (hour >= 12 && hour < 18) return `Good afternoon, ${name}`;
+  if (hour >= 18 && hour < 22) return `Good evening, ${name}`;
+  return `Good night, ${name}`;
+}
+
+// ── Smart Coach insight types ──
+interface SmartCoachInsight {
+  id: string;
+  clientId: string;
+  clientName: string;
+  text: string;
+  urgency: 'urgent' | 'warning' | 'info';
+  action: string;
+  draftMessage?: string;
+}
+
+// ── Activity Feed item ──
+interface ActivityItem {
+  id: string;
+  clientId: string;
+  clientName: string;
+  type: 'workout' | 'check-in' | 'message' | 'payment';
+  description: string;
+  meta?: string;
+  timestamp: string;
+  actionLabel: string;
+  color: string;
+}
+
+export default function OverviewPage({ clients, messages, programs, checkIns, invoices, workoutLogs, onViewClient, onNavigate }: OverviewPageProps) {
   const isMobile = useIsMobile();
   const [ready, setReady] = useState(false);
+  const [smartCoachExpanded, setSmartCoachExpanded] = useState(true);
+  const [showAllInsights, setShowAllInsights] = useState(false);
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
+  const [showMoreActivity, setShowMoreActivity] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setReady(true), 500);
     return () => clearTimeout(timer);
   }, []);
+
   const activeClients = clients.filter(c => c.status === 'active').length;
   const pendingClients = clients.filter(c => c.status === 'pending').length;
   const totalRevenue = clients.filter(c => c.status !== 'paused').reduce((sum, c) => sum + c.monthlyRate, 0);
-  const unreadMessages = messages.filter(m => !m.isRead && !m.isFromCoach);
 
-  // Compute revenue change from last two months
+  // Revenue change
   const lastMonth = revenueData[revenueData.length - 1];
   const prevMonth = revenueData[revenueData.length - 2];
   const revenueChange = prevMonth ? Math.round(((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100) : 0;
 
-  // At-risk: paused, streak dropped to 0, or progress below 30%
+  // At-risk clients
   const atRiskClients = clients.filter(c =>
     c.status === 'paused' || c.streak === 0 || c.progress < 30
   );
 
-  // Pending check-ins: next check-in is today or overdue (not "-")
+  // Pending check-ins
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const pendingCheckIns = clients.filter(c => {
-    if (c.nextCheckIn === '-') return false;
-    const checkInDate = new Date(c.nextCheckIn);
-    checkInDate.setHours(0, 0, 0, 0);
-    return checkInDate <= today;
-  });
+  const pendingCheckInsList = checkIns.filter(ci => ci.reviewStatus === 'pending');
 
-
-  // Daily quote - rotate by day of year
+  // Daily quote
   const dailyQuote = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 0);
@@ -87,85 +124,230 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [new Date().toDateString()]);
 
-  // AI Summary - smart aggregation from real data
-  const insights = useMemo(() => {
-    const items: { icon: React.ElementType; text: string; color: string }[] = [];
+  // Greeting
+  const greeting = getTimeGreeting('Coach');
+  const todayFormatted = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
-    // Active clients this week
-    const active = clients.filter(c => c.status === 'active');
-    items.push({
-      icon: Users,
-      text: `${active.length}/${clients.length} clients active this week`,
-      color: 'var(--accent-primary)',
+  // ── Smart Coach Insights ──
+  const smartCoachInsights = useMemo<SmartCoachInsight[]>(() => {
+    const insights: SmartCoachInsight[] = [];
+
+    // Check for clients with no recent activity (streak = 0)
+    clients.forEach(c => {
+      if (c.streak === 0 && c.status === 'active') {
+        insights.push({
+          id: `inactive-${c.id}`,
+          clientId: c.id,
+          clientName: c.name,
+          text: `${c.name} - hasn't logged anything in 3 days`,
+          urgency: 'urgent',
+          action: 'Send motivational message',
+          draftMessage: `Hey ${c.name.split(' ')[0]}! I noticed you've been quiet lately. Everything okay? Remember, consistency beats perfection. Let's get back on track this week!`,
+        });
+      }
     });
 
-    // Best streak
-    const topStreak = [...clients].sort((a, b) => b.streak - a.streak)[0];
-    if (topStreak && topStreak.streak > 0) {
-      items.push({
-        icon: Flame,
-        text: `${topStreak.name}'s ${topStreak.streak}-day streak - longest active`,
-        color: 'var(--accent-warm)',
+    // Unreviewed check-ins
+    checkIns.filter(ci => ci.reviewStatus === 'pending' && ci.status === 'completed').forEach(ci => {
+      insights.push({
+        id: `checkin-${ci.id}`,
+        clientId: ci.clientId,
+        clientName: ci.clientName,
+        text: `${ci.clientName} - check-in from ${new Date(ci.date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' })} is unreviewed`,
+        urgency: 'warning',
+        action: 'Review',
       });
-    }
+    });
 
-    // PR / top progress
-    const topProgress = [...clients].sort((a, b) => b.progress - a.progress)[0];
-    if (topProgress) {
-      const latestBench = topProgress.metrics.benchPress[topProgress.metrics.benchPress.length - 1];
-      items.push({
-        icon: TrendingUp,
-        text: `${topProgress.name} leading at ${topProgress.progress}% progress (Bench: ${latestBench}kg)`,
-        color: 'var(--accent-success)',
+    // Overdue invoices
+    invoices.filter(inv => inv.status === 'overdue').forEach(inv => {
+      insights.push({
+        id: `invoice-${inv.id}`,
+        clientId: inv.clientId,
+        clientName: inv.clientName,
+        text: `${inv.clientName} - payment of $${inv.amount} is overdue`,
+        urgency: 'urgent',
+        action: 'Send reminder',
+        draftMessage: `Hi ${inv.clientName.split(' ')[0]}, just a friendly reminder that your invoice for $${inv.amount} is past due. Please let me know if you have any questions!`,
       });
-    }
+    });
 
-    // Overdue check-ins
-    if (pendingCheckIns.length > 0) {
-      const names = pendingCheckIns.slice(0, 3).map(c => c.name.split(' ')[0]);
-      items.push({
-        icon: Clock,
-        text: `${pendingCheckIns.length} check-in${pendingCheckIns.length > 1 ? 's' : ''} overdue (${names.join(', ')})`,
-        color: 'var(--accent-danger)',
+    // Clients with low progress
+    clients.filter(c => c.progress < 30 && c.status === 'active').forEach(c => {
+      insights.push({
+        id: `lowprog-${c.id}`,
+        clientId: c.id,
+        clientName: c.name,
+        text: `${c.name} - progress at ${c.progress}%, may need program adjustment`,
+        urgency: 'warning',
+        action: 'Review program',
       });
-    }
+    });
 
     // Unread messages
-    if (unreadMessages.length > 0) {
-      items.push({
-        icon: MessageSquare,
-        text: `${unreadMessages.length} unread message${unreadMessages.length > 1 ? 's' : ''} waiting`,
-        color: 'var(--accent-secondary)',
-      });
-    }
-
-    // Revenue trend
-    const revChange = prevMonth ? ((lastMonth.revenue - prevMonth.revenue) / prevMonth.revenue) * 100 : 0;
-    items.push({
-      icon: DollarSign,
-      text: revChange >= 0
-        ? `Revenue up ${Math.round(revChange)}% vs last month`
-        : `Revenue down ${Math.abs(Math.round(revChange))}% vs last month`,
-      color: revChange >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
+    const unreadByClient = new Map<string, number>();
+    messages.filter(m => !m.isRead && !m.isFromCoach).forEach(m => {
+      unreadByClient.set(m.clientId, (unreadByClient.get(m.clientId) || 0) + 1);
+    });
+    unreadByClient.forEach((count, clientId) => {
+      const client = clients.find(c => c.id === clientId);
+      if (client) {
+        insights.push({
+          id: `unread-${clientId}`,
+          clientId,
+          clientName: client.name,
+          text: `${client.name} - ${count} unread message${count > 1 ? 's' : ''} waiting`,
+          urgency: 'info',
+          action: 'Reply',
+        });
+      }
     });
 
-    // Active programs
-    const activePrograms = programs.filter(p => p.status === 'active' && !p.isTemplate);
-    if (activePrograms.length > 0) {
+    return insights;
+  }, [clients, checkIns, invoices, messages]);
+
+  const urgentCount = smartCoachInsights.filter(i => i.urgency === 'urgent').length;
+  const warningCount = smartCoachInsights.filter(i => i.urgency === 'warning').length;
+  const draftsCount = smartCoachInsights.filter(i => i.draftMessage).length;
+
+  const visibleInsights = showAllInsights ? smartCoachInsights : smartCoachInsights.slice(0, 4);
+
+  // ── Activity Feed ──
+  const activityItems = useMemo<ActivityItem[]>(() => {
+    const items: ActivityItem[] = [];
+
+    // Workout logs
+    workoutLogs.forEach(log => {
       items.push({
-        icon: Dumbbell,
-        text: `${activePrograms.length} active program${activePrograms.length > 1 ? 's' : ''} running`,
+        id: `wl-${log.id}`,
+        clientId: log.clientId,
+        clientName: log.clientName,
+        type: 'workout',
+        description: `completed ${log.type} workout (${log.duration}min)`,
+        timestamp: log.date + 'T14:00:00',
+        actionLabel: 'View',
         color: 'var(--accent-primary)',
       });
-    }
+    });
 
+    // Check-ins
+    checkIns.filter(ci => ci.status === 'completed').forEach(ci => {
+      const metaParts: string[] = [];
+      if (ci.mood) metaParts.push(`Mood: ${ci.mood}/5`);
+      if (ci.energy) metaParts.push(`Energy: ${ci.energy}/10`);
+      if (ci.weight) metaParts.push(`Weight: ${ci.weight}kg`);
+      items.push({
+        id: `ci-${ci.id}`,
+        clientId: ci.clientId,
+        clientName: ci.clientName,
+        type: 'check-in',
+        description: 'submitted check-in',
+        meta: metaParts.length > 0 ? metaParts.join(' · ') : undefined,
+        timestamp: ci.date + 'T10:00:00',
+        actionLabel: 'Review',
+        color: 'var(--accent-warm)',
+      });
+    });
+
+    // Messages (from clients only)
+    messages.filter(m => !m.isFromCoach).forEach(msg => {
+      items.push({
+        id: `msg-${msg.id}`,
+        clientId: msg.clientId,
+        clientName: msg.clientName,
+        type: 'message',
+        description: msg.text.length > 60 ? msg.text.slice(0, 60) + '...' : msg.text,
+        timestamp: msg.timestamp,
+        actionLabel: 'Reply',
+        color: 'var(--accent-secondary)',
+      });
+    });
+
+    // Payments
+    invoices.filter(inv => inv.status === 'paid' && inv.paidDate).forEach(inv => {
+      items.push({
+        id: `pay-${inv.id}`,
+        clientId: inv.clientId,
+        clientName: inv.clientName,
+        type: 'payment',
+        description: `paid $${inv.amount} - ${inv.plan} plan`,
+        timestamp: inv.paidDate! + 'T12:00:00',
+        actionLabel: 'View',
+        color: 'var(--accent-success)',
+      });
+    });
+
+    // Sort by timestamp descending
+    items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return items;
-  }, [clients, pendingCheckIns, unreadMessages, programs, lastMonth, prevMonth]);
+  }, [workoutLogs, checkIns, messages, invoices]);
+
+  const filteredActivity = activityFilter === 'all'
+    ? activityItems
+    : activityItems.filter(item => {
+        if (activityFilter === 'workouts') return item.type === 'workout';
+        if (activityFilter === 'check-ins') return item.type === 'check-in';
+        if (activityFilter === 'messages') return item.type === 'message';
+        if (activityFilter === 'payments') return item.type === 'payment';
+        return true;
+      });
+
+  const visibleActivity = showMoreActivity ? filteredActivity : filteredActivity.slice(0, 8);
+  const remainingActivity = filteredActivity.length - visibleActivity.length;
+
+  // Group activity by date
+  const groupedActivity = useMemo(() => {
+    const groups: { label: string; items: ActivityItem[] }[] = [];
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const dateLabels = new Map<string, string>();
+
+    visibleActivity.forEach(item => {
+      const itemDate = new Date(item.timestamp);
+      const dateKey = itemDate.toDateString();
+
+      if (!dateLabels.has(dateKey)) {
+        if (itemDate.toDateString() === now.toDateString()) {
+          dateLabels.set(dateKey, 'TODAY');
+        } else if (itemDate.toDateString() === yesterday.toDateString()) {
+          dateLabels.set(dateKey, 'YESTERDAY');
+        } else {
+          dateLabels.set(dateKey, itemDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase());
+        }
+      }
+    });
+
+    dateLabels.forEach((label, dateKey) => {
+      const items = visibleActivity.filter(i => new Date(i.timestamp).toDateString() === dateKey);
+      if (items.length > 0) {
+        groups.push({ label, items });
+      }
+    });
+
+    return groups;
+  }, [visibleActivity]);
+
+  // Activity type icon
+  const getActivityIcon = (type: ActivityItem['type']) => {
+    switch (type) {
+      case 'workout': return Dumbbell;
+      case 'check-in': return CheckCircle2;
+      case 'message': return MessageSquare;
+      case 'payment': return CreditCard;
+    }
+  };
 
   const statCards = [
     {
       label: 'Active Clients',
-      value: activeClients.toString(),
+      value: activeClients,
       change: pendingClients > 0 ? `${pendingClients} pending` : 'Stable',
       trend: pendingClients > 0 ? 'neutral' as const : 'up' as const,
       icon: Users,
@@ -174,7 +356,8 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     },
     {
       label: 'Monthly Revenue',
-      value: `$${totalRevenue.toLocaleString()}`,
+      value: totalRevenue,
+      format: (n: number) => `$${n.toLocaleString()}`,
       change: revenueChange >= 0 ? `+${revenueChange}%` : `${revenueChange}%`,
       trend: revenueChange >= 0 ? 'up' as const : 'down' as const,
       icon: DollarSign,
@@ -183,7 +366,7 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     },
     {
       label: 'At-Risk Clients',
-      value: atRiskClients.length.toString(),
+      value: atRiskClients.length,
       change: atRiskClients.length > 0 ? 'Needs attention' : 'All good',
       trend: atRiskClients.length > 0 ? 'down' as const : 'up' as const,
       icon: AlertTriangle,
@@ -192,8 +375,8 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     },
     {
       label: 'Pending Check-ins',
-      value: pendingCheckIns.length.toString(),
-      change: pendingCheckIns.length > 0 ? 'Due today' : 'All caught up',
+      value: pendingCheckInsList.length,
+      change: pendingCheckInsList.length > 0 ? 'Due today' : 'All caught up',
       trend: 'neutral' as const,
       icon: CalendarCheck,
       color: 'var(--accent-warm)',
@@ -201,16 +384,14 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
     },
   ];
 
+  // ── Loading skeleton ──
   if (!ready) {
     return (
-      <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-        {/* Quote skeleton */}
+      <div style={{ ...styles.page, padding: isMobile ? '16px' : '32px 40px' }}>
         <div style={{ ...styles.quoteBar, padding: '24px 20px' }}>
           <div style={skeletonStyles.line200} />
           <div style={{ ...skeletonStyles.line100, marginTop: '8px' }} />
         </div>
-
-        {/* Stat cards skeleton */}
         <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '10px' : '16px' }}>
           {[0, 1, 2, 3].map(i => (
             <GlassCard key={i} delay={0}>
@@ -223,8 +404,6 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
             </GlassCard>
           ))}
         </div>
-
-        {/* Summary skeleton */}
         <GlassCard delay={0}>
           <div style={skeletonStyles.line140} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
@@ -236,305 +415,509 @@ export default function OverviewPage({ clients, messages, programs, onViewClient
             ))}
           </div>
         </GlassCard>
-
-        {/* Chart skeleton */}
-        <GlassCard delay={0}>
-          <div style={skeletonStyles.line140} />
-          <div style={{ ...skeletonStyles.chartBlock, marginTop: '16px' }} />
-        </GlassCard>
       </div>
     );
   }
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
-      {/* Daily Motivation - Top of Page */}
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
+
+      {/* ── Greeting + Weekly Report ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <motion.div
+          style={styles.greetingSection}
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+          <h1 style={{ ...styles.greetingText, fontSize: isMobile ? '22px' : '32px' }}>{greeting}</h1>
+          <p style={{ ...styles.greetingDate, fontSize: isMobile ? '14px' : '15px' }}>{todayFormatted}</p>
+        </motion.div>
+        <motion.button
+          onClick={() => setReportOpen(!reportOpen)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: isMobile ? '8px 12px' : '10px 18px',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--glass-border)',
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-secondary)',
+            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font-display)',
+            cursor: 'pointer', flexShrink: 0, marginTop: '4px',
+            transition: 'border-color 0.15s, color 0.15s',
+          }}
+          whileHover={{ borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' } as Record<string, string>}
+          whileTap={{ scale: 0.97 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <FileBarChart size={15} />
+          {!isMobile && 'Weekly Report'}
+        </motion.button>
+      </div>
+
+      {/* ── Daily Motivation ── */}
       <motion.div
-        style={styles.quoteBar}
+        style={{ ...styles.quoteBar, ...(isMobile ? { padding: '8px 14px' } : { padding: '14px 28px' }) }}
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.4, delay: 0.15 }}
       >
-        <div style={styles.quoteText}>"{dailyQuote.text}"</div>
-        <div style={styles.quoteAuthor}>- {dailyQuote.author}</div>
+        <span style={{ ...styles.quoteText, ...(isMobile ? { fontSize: '12px' } : { fontSize: '15px' }) }}>"{dailyQuote.text}"</span>
+        <span style={{ ...styles.quoteAuthor, ...(isMobile ? { fontSize: '11px' } : { fontSize: '13px' }) }}> - {dailyQuote.author}</span>
       </motion.div>
 
-      {/* Stat Cards Row */}
-      <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '10px' : '16px' }}>
+      {/* ── Stat Cards ── */}
+      <div style={{ ...styles.statsGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '18px' }}>
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
+          const displayValue = stat.format ? stat.format(stat.value) : stat.value.toString();
           return (
-            <GlassCard key={stat.label} delay={i * 0.05} hover>
-              <div style={styles.statTop}>
-                <div style={{ ...styles.statIcon, background: stat.dimColor }}>
-                  <Icon size={18} color={stat.color} />
+            <GlassCard key={stat.label} delay={i * 0.05} hover style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                <div style={{
+                  ...styles.statIcon,
+                  background: stat.dimColor,
+                  boxShadow: `0 0 12px ${stat.dimColor}`,
+                  width: isMobile ? '36px' : '38px',
+                  height: isMobile ? '36px' : '38px',
+                  borderRadius: '10px',
+                  flexShrink: 0,
+                }}>
+                  <Icon size={isMobile ? 16 : 17} color={stat.color} />
                 </div>
-                {stat.trend !== 'neutral' && (
-                  <div style={{
-                    ...styles.changeBadge,
-                    color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
-                    background: stat.trend === 'up' ? 'var(--accent-success-dim)' : 'var(--accent-danger-dim)',
-                  }}>
-                    {stat.trend === 'up' ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                    {stat.change}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: isMobile ? '20px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                      {displayValue}
+                    </span>
+                    {stat.trend !== 'neutral' && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '1px',
+                      }}>
+                        {stat.trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
+                        {stat.change}
+                      </span>
+                    )}
                   </div>
-                )}
+                  <div style={{ fontSize: isMobile ? '12px' : '12px', color: 'var(--text-tertiary)', marginTop: '3px', lineHeight: 1.2 }}>
+                    {stat.label}
+                  </div>
+                </div>
               </div>
-              <div style={{ ...styles.statValue, fontSize: isMobile ? '22px' : '28px' }}>{stat.value}</div>
-              <div style={styles.statLabel}>{stat.label}</div>
             </GlassCard>
           );
         })}
       </div>
 
-      {/* Dashboard Summary */}
-      <GlassCard delay={0.15}>
-        <div style={styles.cardHeader}>
-          <div style={styles.insightTitleRow}>
-            <Sparkles size={15} color="var(--accent-primary)" />
-            <h3 style={styles.cardTitle}>Dashboard Summary</h3>
-          </div>
-        </div>
-        <div style={{ ...styles.insightList, ...(isMobile ? {} : { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 24px' }) }}>
-          {insights.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={i}
-                style={styles.insightRow}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.04 }}
-              >
-                <div style={{ ...styles.insightIcon, background: `${item.color}15` }}>
-                  <Icon size={14} color={item.color} />
-                </div>
-                <span style={styles.insightText}>{item.text}</span>
-              </motion.div>
-            );
-          })}
-        </div>
-      </GlassCard>
-
-      {/* Revenue Chart */}
-      <GlassCard delay={0.2}>
-        <div style={styles.cardHeader}>
-          <div>
-            <h3 style={styles.cardTitle}>Revenue Overview</h3>
-            <p style={styles.cardSubtitle}>Monthly recurring revenue</p>
-          </div>
-          <div style={styles.legendRow}>
-            <span style={getLegendDotStyle('#00e5c8')} />
-            <span style={styles.legendText}>Revenue</span>
-          </div>
-        </div>
-        <div style={{ height: isMobile ? 180 : 220, marginTop: '16px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={revenueData}>
-              <defs>
-                <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00e5c8" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#00e5c8" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'Outfit' }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 17, fill: '#525a6e', fontFamily: 'JetBrains Mono' }}
-                tickFormatter={(v) => `$${v}`}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle-strong)',
-                  borderRadius: '10px',
-                  boxShadow: 'var(--shadow-elevated)',
-                  fontSize: '18px',
-                  fontFamily: 'Outfit',
-                }}
-                labelStyle={{ color: '#8b92a5' }}
-                itemStyle={{ color: '#00e5c8' }}
-                formatter={(value) => [`$${value}`, 'Revenue']}
-              />
-              <Area
-                type="monotone"
-                dataKey="revenue"
-                stroke="#00e5c8"
-                strokeWidth={2.5}
-                fill="url(#revenueGrad)"
-                dot={{ fill: '#00e5c8', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, strokeWidth: 2, stroke: 'var(--text-on-accent)' }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </GlassCard>
-
-      {/* Bottom Row */}
-      <div style={{ ...styles.bottomGrid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)' }}>
-        {/* At-Risk Clients */}
-        <GlassCard delay={0.3}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h3 style={styles.cardTitle}>At-Risk Clients</h3>
-              <p style={styles.cardSubtitle}>
-                {atRiskClients.length > 0
-                  ? `${atRiskClients.length} client${atRiskClients.length > 1 ? 's' : ''} need${atRiskClients.length === 1 ? 's' : ''} attention`
-                  : 'All clients on track'}
-              </p>
+      {/* ── Smart Coach Widget ── */}
+      <GlassCard delay={0.1} style={isMobile ? { padding: '16px' } : { padding: '24px 28px' }}>
+        {/* Header */}
+        <div
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+          onClick={() => setSmartCoachExpanded(!smartCoachExpanded)}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '10px',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(0,229,200,0.2))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Zap size={16} color="var(--accent-primary)" />
             </div>
-            <AlertTriangle size={16} color={atRiskClients.length > 0 ? 'var(--accent-danger)' : 'var(--text-tertiary)'} />
+            <h3 style={{ fontSize: isMobile ? '15px' : '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              Smart Coach
+            </h3>
+            {urgentCount > 0 && (
+              <span style={{
+                fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
+                background: 'var(--accent-danger-dim)', color: 'var(--accent-danger)',
+              }}>
+                {urgentCount} urgent
+              </span>
+            )}
+            {warningCount > 0 && (
+              <span style={{
+                fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px',
+                background: 'var(--accent-warm-dim)', color: 'var(--accent-warm)',
+              }}>
+                {warningCount} this week
+              </span>
+            )}
           </div>
-          <div style={styles.riskList}>
-            {atRiskClients.length === 0 ? (
-              <div style={styles.emptyState}>
-                <span style={{ fontSize: '18px', color: 'var(--text-secondary)' }}>No at-risk clients right now</span>
-              </div>
-            ) : (
-              atRiskClients.map((client, i) => {
-                const reasons: string[] = [];
-                if (client.status === 'paused') reasons.push('Paused');
-                if (client.streak === 0) reasons.push('No streak');
-                if (client.progress < 30) reasons.push(`${client.progress}% progress`);
-                return (
+          <ChevronDown
+            size={18}
+            color="var(--text-tertiary)"
+            style={{
+              transform: smartCoachExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
+          />
+        </div>
+
+        <AnimatePresence>
+          {smartCoachExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ overflow: 'hidden' }}
+            >
+              {/* Drafts bar */}
+              {draftsCount > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '10px 14px', marginTop: '16px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'rgba(0,229,200,0.06)',
+                  border: '1px solid rgba(0,229,200,0.12)',
+                }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                    {draftsCount} message{draftsCount > 1 ? 's' : ''} ready
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '6px 14px', borderRadius: '8px',
+                      background: 'var(--accent-primary)', border: 'none',
+                      color: 'var(--text-on-accent)', fontSize: '12px', fontWeight: 600,
+                      cursor: 'pointer', fontFamily: 'var(--font-display)',
+                    }}>
+                      <Send size={11} /> Send All ({draftsCount})
+                    </button>
+                    <button style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '6px 12px', borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.06)', border: '1px solid var(--glass-border)',
+                      color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500,
+                      cursor: 'pointer', fontFamily: 'var(--font-display)',
+                    }}>
+                      <RefreshCw size={11} /> Regenerate
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Insight list */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '14px' }}>
+                {visibleInsights.map((insight, i) => (
                   <motion.div
-                    key={client.id}
-                    style={styles.riskItem}
+                    key={insight.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.35 + i * 0.05 }}
-                    onClick={() => onViewClient(client.id)}
+                    transition={{ delay: 0.05 + i * 0.03 }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      borderLeft: `3px solid ${
+                        insight.urgency === 'urgent' ? 'var(--accent-danger)' :
+                        insight.urgency === 'warning' ? 'var(--accent-warm)' :
+                        'var(--accent-primary)'
+                      }`,
+                    }}
+                    onClick={() => onViewClient(insight.clientId)}
                   >
-                    <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
-                      {getInitials(client.name)}
+                    {/* Urgency dot */}
+                    <div style={{
+                      width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                      background: insight.urgency === 'urgent' ? 'var(--accent-danger)' :
+                        insight.urgency === 'warning' ? 'var(--accent-warm)' : 'var(--accent-primary)',
+                      boxShadow: insight.urgency === 'urgent' ? '0 0 8px var(--accent-danger-dim)' : 'none',
+                    }} />
+
+                    {/* Client avatar */}
+                    <div style={{
+                      width: '28px', height: '28px', borderRadius: '8px',
+                      background: getAvatarColor(insight.clientId),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '11px', fontWeight: 700, color: 'var(--text-on-accent)', flexShrink: 0,
+                    }}>
+                      {getInitials(insight.clientName)}
                     </div>
+
+                    {/* Text */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '18px', fontWeight: 500 }}>{client.name}</div>
-                      <div style={styles.riskReasons}>
-                        {reasons.map((r, j) => (
-                          <span key={j} style={styles.riskTag}>{r}</span>
-                        ))}
-                      </div>
+                      <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500 }}>
+                        {insight.text}
+                      </span>
                     </div>
-                    <div style={{ fontSize: '17px', color: 'var(--text-tertiary)' }}>
-                      {client.lastActive}
+
+                    {/* Action */}
+                    <span style={{
+                      fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 600,
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                    }}>
+                      {insight.action} &rarr;
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Show all */}
+              {smartCoachInsights.length > 4 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowAllInsights(!showAllInsights); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    width: '100%', padding: '10px 0', marginTop: '8px',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--accent-primary)', fontSize: '13px', fontWeight: 600,
+                    fontFamily: 'var(--font-display)',
+                  }}
+                >
+                  {showAllInsights ? 'Show less' : `Show all ${smartCoachInsights.length}`}
+                  <ChevronDown size={14} style={{
+                    transform: showAllInsights ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease',
+                  }} />
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </GlassCard>
+
+      {/* ── Dashboard Summary ── */}
+      <GlassCard delay={0.15} style={isMobile ? { padding: '16px' } : { padding: '28px 32px' }}>
+        <div style={styles.cardHeader}>
+          <div style={styles.insightTitleRow}>
+            <Sparkles size={isMobile ? 13 : 17} color="var(--accent-primary)" />
+            <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '18px' }}>Dashboard Summary</h3>
+          </div>
+        </div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            fontSize: isMobile ? '14px' : '15px', color: 'var(--text-primary)', lineHeight: 1.75,
+            padding: isMobile ? '8px 10px' : '12px 4px', margin: 0, fontWeight: 400,
+          }}
+        >
+          Your coaching business is looking solid this week. You have {activeClients} active clients generating ${totalRevenue.toLocaleString()} in monthly revenue{revenueChange > 0 ? `, up ${revenueChange}% from last month` : ''}, with {programs.filter(p => p.status === 'active' && !p.isTemplate).length} active programs running. {atRiskClients.length > 0 ? `${atRiskClients.length} client${atRiskClients.length > 1 ? 's' : ''} need${atRiskClients.length === 1 ? 's' : ''} attention — ` + atRiskClients.slice(0, 2).map(c => c.name.split(' ')[0]).join(' and ') + (atRiskClients.length > 2 ? ` and ${atRiskClients.length - 2} more` : '') + ' may benefit from a check-in message.' : 'All clients are on track with no at-risk flags.'} {pendingCheckInsList.length > 0 ? `You have ${pendingCheckInsList.length} pending check-in${pendingCheckInsList.length > 1 ? 's' : ''} to review today.` : 'All check-ins are reviewed and up to date.'} {clients.filter(c => c.streak >= 7).length > 0 ? `Notable streaks: ${clients.filter(c => c.streak >= 7).sort((a, b) => b.streak - a.streak).slice(0, 2).map(c => `${c.name.split(' ')[0]} (${c.streak} days)`).join(', ')}.` : ''} Keep the momentum going!
+        </motion.p>
+      </GlassCard>
+
+      {/* ── Activity Feed ── */}
+      <GlassCard delay={0.2} style={isMobile ? { padding: '16px' } : { padding: '28px 32px' }}>
+        <div style={styles.cardHeader}>
+          <div style={styles.insightTitleRow}>
+            <Bell size={isMobile ? 13 : 17} color="var(--accent-primary)" />
+            <h3 style={{ ...styles.cardTitle, fontSize: isMobile ? '15px' : '18px' }}>Activity Feed</h3>
+          </div>
+        </div>
+
+        {/* Filter tabs */}
+        <div style={{
+          display: 'flex', gap: '4px', marginTop: '16px', flexWrap: 'wrap',
+        }}>
+          {(['all', 'workouts', 'check-ins', 'messages', 'payments'] as ActivityFilter[]).map(filter => (
+            <button
+              key={filter}
+              onClick={() => { setActivityFilter(filter); setShowMoreActivity(false); }}
+              style={{
+                padding: '6px 14px', borderRadius: '20px',
+                border: activityFilter === filter ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+                background: activityFilter === filter ? 'var(--accent-primary-dim)' : 'transparent',
+                color: activityFilter === filter ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                fontFamily: 'var(--font-display)',
+                textTransform: 'capitalize',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Grouped items */}
+        <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {groupedActivity.map((group) => (
+            <div key={group.label}>
+              {/* Date header */}
+              <div style={{
+                fontSize: '11px', fontWeight: 700, color: 'var(--text-tertiary)',
+                letterSpacing: '0.5px', padding: '12px 0 6px', fontFamily: 'var(--font-display)',
+              }}>
+                {group.label}
+              </div>
+
+              {group.items.map((item, i) => {
+                const Icon = getActivityIcon(item.type);
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.05 + i * 0.02 }}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: '12px',
+                      padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                      borderLeft: `3px solid ${item.color}`,
+                      cursor: 'pointer',
+                      transition: 'background 0.15s',
+                    }}
+                    onClick={() => {
+                      if (item.type === 'message') onNavigate('messages');
+                      else if (item.type === 'check-in') onNavigate('check-ins');
+                      else onViewClient(item.clientId);
+                    }}
+                  >
+                    {/* Avatar */}
+                    <div style={{
+                      width: '32px', height: '32px', borderRadius: '8px',
+                      background: getAvatarColor(item.clientId),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '12px', fontWeight: 700, color: 'var(--text-on-accent)', flexShrink: 0,
+                    }}>
+                      {getInitials(item.clientName)}
+                    </div>
+
+                    {/* Content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 500 }}>
+                        <span style={{ fontWeight: 600 }}>{item.clientName}</span>{' '}
+                        <span style={{ color: 'var(--text-secondary)' }}>{item.description}</span>
+                      </div>
+                      {item.meta && (
+                        <div style={{
+                          fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '3px',
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                        }}>
+                          <Icon size={11} color={item.color} />
+                          {item.meta}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Timestamp + action */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                        {new Date(item.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                      <span style={{
+                        fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {item.actionLabel} &rarr;
+                      </span>
                     </div>
                   </motion.div>
                 );
-              })
-            )}
-          </div>
-        </GlassCard>
-
-        {/* Top Performers */}
-        <GlassCard delay={0.35}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h3 style={styles.cardTitle}>Top Performers</h3>
-              <p style={styles.cardSubtitle}>Highest progress this month</p>
+              })}
             </div>
-            <TrendingUp size={16} color="var(--text-tertiary)" />
-          </div>
-          <div style={styles.clientList}>
-            {[...clients]
-              .sort((a, b) => b.progress - a.progress)
-              .slice(0, 5)
-              .map((client: Client, i: number) => (
-                <motion.div
-                  key={client.id}
-                  style={styles.clientRow}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + i * 0.05 }}
-                  onClick={() => onViewClient(client.id)}
-                >
-                  <div style={{ ...styles.rank, color: i === 0 ? 'var(--accent-warm)' : 'var(--text-tertiary)' }}>
-                    #{i + 1}
-                  </div>
-                  <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
-                    {getInitials(client.name)}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '18px', fontWeight: 500 }}>{client.name}</div>
-                    <div style={{ fontSize: '17px', color: 'var(--text-secondary)' }}>{client.plan}</div>
-                  </div>
-                  <div style={styles.progressContainer}>
-                    <div style={styles.progressBar}>
-                      <motion.div
-                        style={{
-                          ...styles.progressFill,
-                          background: client.progress > 80 ? 'var(--accent-success)' : client.progress > 50 ? 'var(--accent-primary)' : 'var(--accent-warm)',
-                        }}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${client.progress}%` }}
-                        transition={{ delay: 0.5 + i * 0.1, duration: 0.6, ease: 'easeOut' }}
-                      />
-                    </div>
-                    <span style={styles.progressText}>{client.progress}%</span>
-                  </div>
-                </motion.div>
-              ))}
-          </div>
-        </GlassCard>
+          ))}
 
-        {/* Recent Messages */}
-        <GlassCard delay={0.4} style={{ gridColumn: '1 / -1' }}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h3 style={styles.cardTitle}>Recent Messages</h3>
-              <p style={styles.cardSubtitle}>{unreadMessages.length} unread</p>
+          {filteredActivity.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-tertiary)', fontSize: '14px' }}>
+              No activity to show
             </div>
-            <button onClick={() => onNavigate('messages')} style={styles.viewAllBtn}>
-              View all
-            </button>
-          </div>
-          <div style={styles.messageList}>
-            {messages
-              .filter(m => !m.isFromCoach)
-              .slice(0, 5)
-              .map((msg, i) => (
-                <motion.div
-                  key={msg.id}
-                  style={styles.messageItem}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.45 + i * 0.05 }}
-                  onClick={() => onNavigate('messages')}
-                >
-                  <div style={{ ...styles.avatar, background: getAvatarColor(msg.clientId), flexShrink: 0 }}>
-                    {getInitials(msg.clientName)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={styles.msgHeader}>
-                      <span style={{ fontSize: '18px', fontWeight: 500 }}>{msg.clientName}</span>
-                      {!msg.isRead && <span style={styles.unreadDot} />}
-                    </div>
-                    <div style={styles.msgText}>{msg.text}</div>
-                  </div>
-                  <MessageSquare size={14} color="var(--accent-primary)" style={{ flexShrink: 0, cursor: 'pointer' }} />
-                </motion.div>
-              ))}
-          </div>
-        </GlassCard>
-      </div>
+          )}
+        </div>
+
+        {/* Show more */}
+        {remainingActivity > 0 && !showMoreActivity && (
+          <button
+            onClick={() => setShowMoreActivity(true)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              width: '100%', padding: '12px 0', marginTop: '8px',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--accent-primary)', fontSize: '13px', fontWeight: 600,
+              fontFamily: 'var(--font-display)',
+            }}
+          >
+            Show more ({remainingActivity})
+            <ChevronDown size={14} />
+          </button>
+        )}
+      </GlassCard>
+
+      {/* Weekly Report Modal (placeholder - just shows a simple overlay) */}
+      <AnimatePresence>
+        {reportOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            onClick={() => setReportOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '32px',
+                maxWidth: '480px',
+                width: '90%',
+                boxShadow: 'var(--shadow-elevated)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <FileBarChart size={20} color="var(--accent-primary)" />
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Weekly Report</h2>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Active Clients</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>{activeClients}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Revenue</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>${totalRevenue.toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Check-ins Reviewed</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>{checkIns.filter(ci => ci.reviewStatus === 'reviewed').length}/{checkIns.length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Workouts Logged</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>{workoutLogs.filter(w => w.completed).length}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-elevated)' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>At-Risk</span>
+                  <span style={{ color: atRiskClients.length > 0 ? 'var(--accent-danger)' : 'var(--accent-success)', fontSize: '14px', fontWeight: 600 }}>
+                    {atRiskClients.length > 0 ? `${atRiskClients.length} clients` : 'None'}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setReportOpen(false)}
+                style={{
+                  marginTop: '24px', width: '100%', padding: '10px',
+                  borderRadius: 'var(--radius-sm)', border: '1px solid var(--glass-border)',
+                  background: 'transparent', color: 'var(--text-secondary)',
+                  fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-display)',
+                }}
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function getLegendDotStyle(color: string): React.CSSProperties {
-  return {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: color,
-  };
-}
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
@@ -545,16 +928,31 @@ const styles: Record<string, React.CSSProperties> = {
     overflowY: 'auto',
     height: 'calc(100vh - var(--header-height))',
   },
+  greetingSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  greetingText: {
+    fontSize: '28px',
+    fontWeight: 700,
+    fontFamily: 'var(--font-display)',
+    color: 'var(--text-primary)',
+    letterSpacing: '-0.5px',
+    lineHeight: 1.2,
+    margin: 0,
+  },
+  greetingDate: {
+    fontSize: '14px',
+    color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-display)',
+    margin: 0,
+    textTransform: 'capitalize',
+  },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
     gap: '16px',
-  },
-  statTop: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '16px',
   },
   statIcon: {
     width: '40px',
@@ -564,241 +962,41 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  changeBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '3px',
-    fontSize: '17px',
-    fontWeight: 600,
-    padding: '3px 8px',
-    borderRadius: '20px',
-  },
-  statValue: {
-    fontSize: '39px',
-    fontWeight: 700,
-    letterSpacing: '-1px',
-    fontFamily: 'var(--font-display)',
-    lineHeight: 1.1,
-  },
-  statLabel: {
-    fontSize: '18px',
-    color: 'var(--text-secondary)',
-    marginTop: '4px',
-  },
-  bottomGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '16px',
-  },
   cardHeader: {
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
   cardTitle: {
-    fontSize: '21px',
+    fontSize: '18px',
     fontWeight: 600,
     color: 'var(--text-primary)',
-  },
-  cardSubtitle: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
-    marginTop: '2px',
-  },
-  legendRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  legendText: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
-  },
-  riskList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    marginTop: '16px',
-  },
-  riskItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '10px 12px',
-    borderRadius: 'var(--radius-sm)',
-    cursor: 'pointer',
-    transition: 'background 0.15s',
-  },
-  riskReasons: {
-    display: 'flex',
-    gap: '4px',
-    marginTop: '3px',
-    flexWrap: 'wrap',
-  },
-  riskTag: {
-    fontSize: '14px',
-    fontWeight: 600,
-    padding: '1px 6px',
-    borderRadius: '8px',
-    background: 'var(--accent-danger-dim)',
-    color: 'var(--accent-danger)',
-    letterSpacing: '0.3px',
-  },
-  emptyState: {
-    padding: '24px 0',
-    textAlign: 'center',
-  },
-  clientList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    marginTop: '16px',
-  },
-  clientRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '8px 10px',
-    borderRadius: 'var(--radius-sm)',
-    cursor: 'pointer',
-    transition: 'background 0.15s',
-  },
-  rank: {
-    fontSize: '17px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-    width: '24px',
-  },
-  avatar: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '15px',
-    fontWeight: 700,
-    color: 'var(--text-on-accent)',
-    flexShrink: 0,
-  },
-  progressContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    width: '100px',
-  },
-  progressBar: {
-    flex: 1,
-    height: '4px',
-    borderRadius: '2px',
-    background: 'var(--bg-subtle-hover)',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: '2px',
-  },
-  progressText: {
-    fontSize: '17px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-mono)',
-    color: 'var(--text-secondary)',
-    width: '32px',
-    textAlign: 'right',
-  },
-  messageList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    marginTop: '16px',
-  },
-  messageItem: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '10px',
-    padding: '10px',
-    borderRadius: 'var(--radius-sm)',
-    cursor: 'pointer',
-    transition: 'background 0.15s',
-  },
-  msgHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  msgText: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
-    marginTop: '2px',
-    lineHeight: 1.5,
-  },
-  unreadDot: {
-    width: '6px',
-    height: '6px',
-    borderRadius: '50%',
-    background: 'var(--accent-primary)',
-  },
-  viewAllBtn: {
-    background: 'transparent',
-    border: 'none',
-    color: 'var(--accent-primary)',
-    fontSize: '17px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'var(--font-display)',
-    padding: '4px 8px',
-    borderRadius: '6px',
-    transition: 'background 0.15s',
   },
   insightTitleRow: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
   },
-  insightList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  insightRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '8px 10px',
-    borderRadius: 'var(--radius-sm)',
-  },
-  insightIcon: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '8px',
+  quoteBar: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
-  },
-  insightText: {
-    fontSize: '18px',
-    color: 'var(--text-primary)',
-    fontWeight: 500,
-  },
-  quoteBar: {
-    textAlign: 'center',
-    padding: '16px 20px',
+    flexWrap: 'wrap',
+    gap: '4px',
+    padding: '10px 20px',
     borderRadius: 'var(--radius-md)',
     background: 'var(--bg-card)',
     border: '1px solid var(--glass-border)',
   },
   quoteText: {
-    fontSize: '21px',
+    fontSize: '14px',
     fontWeight: 500,
-    color: 'var(--text-primary)',
-    lineHeight: 1.6,
+    color: 'var(--text-secondary)',
     fontStyle: 'italic',
   },
   quoteAuthor: {
-    fontSize: '17px',
+    fontSize: '13px',
     color: 'var(--text-tertiary)',
-    marginTop: '6px',
     fontWeight: 500,
   },
 };
@@ -820,5 +1018,4 @@ const skeletonStyles: Record<string, React.CSSProperties> = {
   circle40: { ...shimmerBg, width: '40px', height: '40px', borderRadius: 'var(--radius-md)' },
   circle28: { ...shimmerBg, width: '28px', height: '28px', borderRadius: '8px' },
   badge: { ...shimmerBg, width: '60px', height: '22px', borderRadius: '20px' },
-  chartBlock: { ...shimmerBg, width: '100%', height: '220px', borderRadius: '8px' },
 };

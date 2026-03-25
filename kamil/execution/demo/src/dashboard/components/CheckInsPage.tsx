@@ -3,10 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ClipboardCheck, Search, ChevronDown, ChevronUp,
   AlertTriangle, CheckCircle2, Clock, Flag,
-  TrendingUp, TrendingDown, Moon,
+  TrendingUp, TrendingDown,
   Smile, Frown, Meh, SmilePlus, Angry,
   Award, Target, MessageSquare, Camera, Plus, X, Send,
   Image as ImageIcon,
+  Scale, Footprints, BedDouble, Percent,
+  Zap, Brain, Utensils, Heart, Ruler,
+  ArrowUpRight, ArrowDownRight,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
@@ -78,18 +81,6 @@ const moodIcons: Record<number, { icon: typeof Smile; color: string; label: stri
   5: { icon: SmilePlus, color: 'var(--accent-primary)', label: 'Great' },
 };
 
-function ScoreBar({ value, max = 10, color }: { value: number; max?: number; color: string }) {
-  const pct = (value / max) * 100;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: 'var(--score-bar-track)' }}>
-        <div style={{ width: `${pct}%`, height: '100%', borderRadius: '2px', background: color, transition: 'width 0.3s' }} />
-      </div>
-      <span style={{ fontSize: '15px', fontWeight: 700, color, minWidth: '18px', textAlign: 'right' }}>{value}</span>
-    </div>
-  );
-}
-
 export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onViewClient, onNavigate: _onNavigate }: CheckInsPageProps) {
   const isMobile = useIsMobile();
   const [filter, setFilter] = useState<FilterTab>('pending');
@@ -101,10 +92,11 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   const [messageModal, setMessageModal] = useState<{ clientId: string; clientName: string } | null>(null);
   const [messageDraft, setMessageDraft] = useState('');
   const [messageSent, setMessageSent] = useState(false);
+  const [showFlagInput, setShowFlagInput] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; label: string } | null>(null);
 
   // ── Computed data ──
   const completedCheckIns = checkIns.filter(ci => ci.status === 'completed');
-  const scheduledCheckIns = checkIns.filter(ci => ci.status === 'scheduled');
   const pendingReview = completedCheckIns.filter(ci => ci.reviewStatus === 'pending');
   const flagged = completedCheckIns.filter(ci => ci.reviewStatus === 'flagged');
   const reviewed = completedCheckIns.filter(ci => ci.reviewStatus === 'reviewed');
@@ -120,26 +112,6 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
     const now = new Date();
     return Math.floor((now.getTime() - lastDate.getTime()) / 86400000);
   };
-
-  // Point 3: Upcoming check-ins with client names and due dates
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dayAfterTomorrow = new Date(today);
-  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-  const dueToday = scheduledCheckIns.filter(ci => {
-    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
-    return d.getTime() === today.getTime();
-  });
-  const dueTomorrow = scheduledCheckIns.filter(ci => {
-    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
-    return d.getTime() === tomorrow.getTime();
-  });
-  const dueLater = scheduledCheckIns.filter(ci => {
-    const d = new Date(ci.date); d.setHours(0, 0, 0, 0);
-    return d.getTime() >= dayAfterTomorrow.getTime();
-  });
 
   // Filter the list
   const filtered = (() => {
@@ -229,91 +201,15 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
   };
 
   const tabs: { key: FilterTab; label: string; count: number; color: string }[] = [
-    { key: 'pending', label: 'To Review', count: pendingReview.length, color: 'var(--accent-warm)' },
+    { key: 'pending', label: 'Pending', count: pendingReview.length, color: 'var(--accent-warm)' },
     { key: 'flagged', label: 'Flagged', count: flagged.length, color: 'var(--accent-danger)' },
-    { key: 'reviewed', label: 'Done', count: reviewed.length, color: 'var(--accent-success)' },
-    { key: 'missed', label: 'Missed', count: missedCheckIns.length, color: 'var(--accent-danger)' },
+    { key: 'reviewed', label: 'Reviewed', count: reviewed.length, color: 'var(--accent-success)' },
     { key: 'all', label: 'All', count: completedCheckIns.length + missedCheckIns.length, color: 'var(--text-secondary)' },
   ];
 
   return (
     <div style={styles.page}>
-      {/* Summary Cards */}
-      <div style={{ ...styles.summaryRow, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
-        <GlassCard delay={0}>
-          <div style={styles.summaryLabel}>To Review</div>
-          <div style={{ ...styles.summaryValue, color: pendingReview.length > 0 ? 'var(--accent-warm)' : 'var(--text-primary)' }}>
-            {pendingReview.length}
-          </div>
-          <div style={styles.summaryHint}>check-ins waiting</div>
-        </GlassCard>
-        <GlassCard delay={0.05}>
-          <div style={styles.summaryLabel}>Flagged</div>
-          <div style={{ ...styles.summaryValue, color: flagged.length > 0 ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
-            {flagged.length}
-          </div>
-          <div style={styles.summaryHint}>need intervention</div>
-        </GlassCard>
-        <GlassCard delay={0.1}>
-          <div style={styles.summaryLabel}>Avg Steps</div>
-          <div style={styles.summaryValue}>
-            {completedCheckIns.length > 0
-              ? Math.round(completedCheckIns.filter(ci => ci.steps != null).reduce((s, ci) => s + (ci.steps || 0), 0) / completedCheckIns.filter(ci => ci.steps != null).length).toLocaleString()
-              : 0}
-          </div>
-          <div style={styles.summaryHint}>daily avg across clients</div>
-        </GlassCard>
-        <GlassCard delay={0.15}>
-          <div style={styles.summaryLabel}>Upcoming</div>
-          <div style={styles.summaryValue}>{scheduledCheckIns.length}</div>
-          <div style={styles.upcomingDetails}>
-            {dueToday.length > 0 && (
-              <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-primary)', color: 'var(--text-on-accent)' }}>{dueToday.length} today</span>
-                <span style={styles.upcomingNames}>
-                  {dueToday.map((ci, i) => (
-                    <span key={ci.id}>
-                      {i > 0 && ', '}
-                      <span
-                        onClick={() => onViewClient(ci.clientId)}
-                        style={styles.upcomingNameLink}
-                      >
-                        {ci.clientName.split(' ')[0]}
-                      </span>
-                    </span>
-                  ))}
-                </span>
-              </div>
-            )}
-            {dueTomorrow.length > 0 && (
-              <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--accent-warm)', color: 'var(--text-on-accent)' }}>{dueTomorrow.length} tomorrow</span>
-                <span style={styles.upcomingNames}>
-                  {dueTomorrow.map((ci, i) => (
-                    <span key={ci.id}>
-                      {i > 0 && ', '}
-                      <span
-                        onClick={() => onViewClient(ci.clientId)}
-                        style={styles.upcomingNameLink}
-                      >
-                        {ci.clientName.split(' ')[0]}
-                      </span>
-                    </span>
-                  ))}
-                </span>
-              </div>
-            )}
-            {dueLater.length > 0 && (
-              <div style={styles.upcomingLine}>
-                <span style={{ ...styles.upcomingBadge, background: 'var(--bg-subtle-hover)', color: 'var(--text-secondary)' }}>{dueLater.length} later</span>
-              </div>
-            )}
-            {scheduledCheckIns.length === 0 && <span style={styles.summaryHint}>none scheduled</span>}
-          </div>
-        </GlassCard>
-      </div>
-
-      {/* Main Queue */}
+      {/* Main Queue - NO stat cards at top */}
       <GlassCard delay={0.2}>
         {/* Header with tabs */}
         <div style={styles.queueHeader}>
@@ -450,7 +346,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                         )}
                         {ci.sleepHours && (
                           <div style={styles.metricChip}>
-                            <Moon size={10} color="var(--text-tertiary)" />
+                            <BedDouble size={10} color="var(--text-tertiary)" />
                             <span style={styles.metricChipValue}>{ci.sleepHours}h</span>
                           </div>
                         )}
@@ -516,123 +412,213 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </>
                           ) : (
                           <>
-                          {/* Side-by-side comparison */}
-                          <div style={{ ...styles.comparisonGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
-                            {/* This Week */}
-                            <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>This Week - {new Date(ci.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                              <div style={styles.metricsGrid}>
-                                {ci.weight != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Weight</span>
-                                    <span style={styles.metricCellValue}>{ci.weight}kg</span>
-                                    {prev?.weight != null && <DeltaBadge current={ci.weight} previous={prev.weight} unit="kg" inverse />}
-                                  </div>
-                                )}
-                                {ci.bodyFat != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Body Fat</span>
-                                    <span style={styles.metricCellValue}>{ci.bodyFat}%</span>
-                                    {prev?.bodyFat != null && <DeltaBadge current={ci.bodyFat} previous={prev.bodyFat} unit="%" inverse />}
-                                  </div>
-                                )}
-                                {ci.steps != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Steps</span>
-                                    <span style={{ ...styles.metricCellValue, color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)' }}>{ci.steps.toLocaleString()}</span>
-                                    {prev?.steps != null && <DeltaBadge current={ci.steps} previous={prev.steps} unit="" />}
-                                  </div>
-                                )}
-                                {ci.sleepHours != null && (
-                                  <div style={styles.metricCell}>
-                                    <span style={styles.metricCellLabel}>Sleep</span>
-                                    <span style={styles.metricCellValue}>{ci.sleepHours}h</span>
-                                    {prev?.sleepHours != null && <DeltaBadge current={ci.sleepHours} previous={prev.sleepHours} unit="h" />}
-                                  </div>
-                                )}
-                              </div>
+                          {/* ── Body Metrics: Premium cards with icon + sparkline + delta ── */}
+                          {(() => {
+                            const bodyMetrics = [
+                              ci.weight != null && {
+                                label: 'Weight', value: `${ci.weight}`, unit: 'kg',
+                                icon: Scale, color: 'var(--accent-primary)', dimColor: 'var(--accent-primary-dim)',
+                                trend: prev?.weight != null ? (ci.weight <= prev.weight ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.weight != null ? `${Math.abs(ci.weight - prev.weight).toFixed(1)} kg` : null,
+                                sparkData: getTrend(ci.clientId, 'weight'),
+                              },
+                              ci.bodyFat != null && {
+                                label: 'Body Fat', value: `${ci.bodyFat}`, unit: '%',
+                                icon: Percent, color: 'var(--accent-warm)', dimColor: 'var(--accent-warm-dim)',
+                                trend: prev?.bodyFat != null ? (ci.bodyFat <= prev.bodyFat ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.bodyFat != null ? `${Math.abs(ci.bodyFat - prev.bodyFat).toFixed(1)}%` : null,
+                                sparkData: getTrend(ci.clientId, 'bodyFat'),
+                              },
+                              ci.steps != null && {
+                                label: 'Steps', value: ci.steps.toLocaleString(), unit: '',
+                                icon: Footprints,
+                                color: ci.steps >= 8000 ? 'var(--accent-success)' : ci.steps >= 5000 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.steps >= 8000 ? 'var(--accent-success-dim)' : ci.steps >= 5000 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                                trend: prev?.steps != null ? (ci.steps >= prev.steps ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.steps != null ? `${Math.abs(ci.steps - prev.steps).toLocaleString()}` : null,
+                                sparkData: getTrend(ci.clientId, 'steps'),
+                              },
+                              ci.sleepHours != null && {
+                                label: 'Sleep Hours', value: `${ci.sleepHours}`, unit: 'h',
+                                icon: BedDouble, color: 'var(--accent-secondary)', dimColor: 'rgba(139,92,246,0.12)',
+                                trend: prev?.sleepHours != null ? (ci.sleepHours >= prev.sleepHours ? 'up' as const : 'down' as const) : 'neutral' as const,
+                                change: prev?.sleepHours != null ? `${Math.abs(ci.sleepHours - prev.sleepHours).toFixed(1)}h` : null,
+                                sparkData: getTrend(ci.clientId, 'sleepHours'),
+                              },
+                            ].filter(Boolean) as { label: string; value: string; unit: string; icon: typeof Scale; color: string; dimColor: string; trend: 'up' | 'down' | 'neutral'; change: string | null; sparkData: number[] }[];
 
-                              {/* Wellness bars */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px' }}>
-                                {ci.mood && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Mood</span>
-                                    <ScoreBar value={ci.mood} max={5} color={moodIcons[ci.mood]?.color || 'var(--text-secondary)'} />
-                                  </div>
-                                )}
-                                {ci.energy != null && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Energy</span>
-                                    <ScoreBar value={ci.energy} color={ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
-                                  </div>
-                                )}
-                                {ci.stress != null && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Stress</span>
-                                    <ScoreBar value={ci.stress} color={ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
-                                  </div>
-                                )}
-                                {ci.nutritionScore != null && (
-                                  <div style={styles.wellnessRow}>
-                                    <span style={styles.wellnessLabel}>Nutrition</span>
-                                    <ScoreBar value={ci.nutritionScore} color={ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)'} />
-                                  </div>
-                                )}
+                            return bodyMetrics.length > 0 && (
+                              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : `repeat(${Math.min(bodyMetrics.length, 4)}, 1fr)`, gap: '8px' }}>
+                                {bodyMetrics.map((stat) => {
+                                  const Icon = stat.icon;
+                                  return (
+                                    <div key={stat.label} style={{
+                                      padding: '10px 14px',
+                                      borderRadius: '10px',
+                                      background: 'var(--bg-subtle)',
+                                      border: '1px solid var(--glass-border)',
+                                    }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{
+                                          background: stat.dimColor,
+                                          boxShadow: `0 0 8px ${stat.dimColor}`,
+                                          width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                          <Icon size={13} color={stat.color} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+                                            <span style={{ fontSize: '17px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                                              {stat.value}<span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.6 }}>{stat.unit}</span>
+                                            </span>
+                                            {stat.change && stat.trend !== 'neutral' && (
+                                              <span style={{
+                                                fontSize: '10px', fontWeight: 600,
+                                                color: stat.trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                                                display: 'inline-flex', alignItems: 'center', gap: '1px',
+                                              }}>
+                                                {stat.trend === 'up' ? <ArrowUpRight size={9} /> : <ArrowDownRight size={9} />}
+                                                {stat.change}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '1px' }}>{stat.label}</div>
+                                        </div>
+                                      </div>
+                                      {stat.sparkData.length >= 2 && (
+                                        <div style={{ marginTop: '5px', opacity: 0.7 }}>
+                                          <Sparkline data={stat.sparkData} color={stat.color} width={130} height={18} />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            </div>
+                            );
+                          })()}
 
-                            {/* Trends */}
-                            <div style={styles.comparisonCol}>
-                              <div style={styles.comparisonLabel}>8-Week Trends</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {(() => {
-                                  const weightTrend = getTrend(ci.clientId, 'weight');
-                                  return weightTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Weight</span>
-                                      <Sparkline data={weightTrend} color="var(--accent-primary)" />
+                          {/* ── Wellness Scores: emoji pill cards ── */}
+                          {(() => {
+                            const wellnessItems = [
+                              ci.mood != null && {
+                                label: 'MOOD', value: ci.mood, max: 5,
+                                icon: Heart, emoji: ci.mood >= 5 ? '\u{1F601}' : ci.mood >= 4 ? '\u{1F60A}' : ci.mood >= 3 ? '\u{1F610}' : ci.mood >= 2 ? '\u{1F61E}' : '\u{1F621}',
+                                color: moodIcons[ci.mood]?.color || 'var(--text-secondary)',
+                                dimColor: `${moodIcons[ci.mood]?.color || 'var(--text-secondary)'}20`,
+                              },
+                              ci.energy != null && {
+                                label: 'ENERGY', value: ci.energy, max: 10,
+                                icon: Zap, emoji: ci.energy >= 7 ? '\u26A1' : ci.energy >= 4 ? '\u{1F50B}' : '\u{1FAB6}',
+                                color: ci.energy >= 7 ? 'var(--accent-success)' : ci.energy >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.energy >= 7 ? 'var(--accent-success-dim)' : ci.energy >= 4 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                              },
+                              ci.stress != null && {
+                                label: 'STRESS', value: ci.stress, max: 10,
+                                icon: Brain, emoji: ci.stress <= 3 ? '\u{1F60C}' : ci.stress <= 6 ? '\u{1F610}' : '\u{1F630}',
+                                color: ci.stress <= 3 ? 'var(--accent-success)' : ci.stress <= 6 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.stress <= 3 ? 'var(--accent-success-dim)' : ci.stress <= 6 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                              },
+                              ci.nutritionScore != null && {
+                                label: 'NUTRITION', value: ci.nutritionScore, max: 10,
+                                icon: Utensils, emoji: ci.nutritionScore >= 7 ? '\u{1F957}' : ci.nutritionScore >= 4 ? '\u{1F373}' : '\u{1F354}',
+                                color: ci.nutritionScore >= 7 ? 'var(--accent-success)' : ci.nutritionScore >= 4 ? 'var(--accent-warm)' : 'var(--accent-danger)',
+                                dimColor: ci.nutritionScore >= 7 ? 'var(--accent-success-dim)' : ci.nutritionScore >= 4 ? 'var(--accent-warm-dim)' : 'var(--accent-danger-dim)',
+                              },
+                            ].filter(Boolean) as { label: string; value: number; max: number; icon: typeof Zap; emoji: string; color: string; dimColor: string }[];
+
+                            return wellnessItems.length > 0 && (
+                              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(wellnessItems.length, 4)}, 1fr)`, gap: '8px' }}>
+                                {wellnessItems.map((w) => {
+                                  const pct = (w.value / w.max) * 100;
+                                  return (
+                                    <div key={w.label} style={{
+                                      padding: '10px 14px',
+                                      borderRadius: '10px',
+                                      background: 'var(--bg-subtle)',
+                                      border: '1px solid var(--glass-border)',
+                                      position: 'relative' as const,
+                                      overflow: 'hidden',
+                                    }}>
+                                      <div style={{
+                                        position: 'absolute' as const, left: 0, top: 0, bottom: 0,
+                                        width: `${pct}%`,
+                                        background: `linear-gradient(90deg, ${w.dimColor} 0%, transparent 100%)`,
+                                        opacity: 0.5,
+                                        transition: 'width 0.4s ease',
+                                      }} />
+                                      <div style={{ position: 'relative' as const, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ fontSize: '18px', lineHeight: 1 }}>{w.emoji}</div>
+                                        <div style={{ flex: 1 }}>
+                                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                                            <span style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-mono)', color: w.color, lineHeight: 1.1 }}>
+                                              {w.value}
+                                            </span>
+                                            <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-tertiary)' }}>/{w.max}</span>
+                                          </div>
+                                          <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '1px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+                                            {w.label}
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
                                   );
-                                })()}
-                                {(() => {
-                                  const stepsTrend = getTrend(ci.clientId, 'steps');
-                                  return stepsTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Steps</span>
-                                      <Sparkline data={stepsTrend} color="var(--accent-success)" />
-                                    </div>
-                                  );
-                                })()}
-                                {(() => {
-                                  const moodTrend = getTrend(ci.clientId, 'mood');
-                                  return moodTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Mood</span>
-                                      <Sparkline data={moodTrend} color="var(--accent-warm)" />
-                                    </div>
-                                  );
-                                })()}
-                                {(() => {
-                                  const sleepTrend = getTrend(ci.clientId, 'sleepHours');
-                                  return sleepTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Sleep</span>
-                                      <Sparkline data={sleepTrend} color="var(--accent-secondary)" />
-                                    </div>
-                                  );
-                                })()}
-                                {(() => {
-                                  const energyTrend = getTrend(ci.clientId, 'energy');
-                                  return energyTrend.length >= 2 && (
-                                    <div style={styles.trendRow}>
-                                      <span style={styles.trendLabel}>Energy</span>
-                                      <Sparkline data={energyTrend} color="#f59e0b" />
-                                    </div>
-                                  );
-                                })()}
+                                })}
                               </div>
-                            </div>
-                          </div>
+                            );
+                          })()}
+
+                          {/* ── Body Measurements ── */}
+                          {(() => {
+                            const measurements = [
+                              ci.waist != null && { label: 'Waist', value: ci.waist, prev: prev?.waist },
+                              ci.hips != null && { label: 'Hips', value: ci.hips, prev: prev?.hips },
+                              ci.chest != null && { label: 'Chest', value: ci.chest, prev: prev?.chest },
+                              ci.bicep != null && { label: 'Bicep', value: ci.bicep, prev: prev?.bicep },
+                              ci.thigh != null && { label: 'Thigh', value: ci.thigh, prev: prev?.thigh },
+                            ].filter(Boolean) as { label: string; value: number; prev: number | null | undefined }[];
+
+                            return measurements.length > 0 && (
+                              <div>
+                                <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '1px', color: 'var(--text-tertiary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <Ruler size={12} color="var(--accent-primary)" />
+                                  Measurements
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(measurements.length, 5)}, 1fr)`, gap: '8px' }}>
+                                  {measurements.map((m) => {
+                                    const diff = m.prev != null ? m.value - m.prev : null;
+                                    const trend = diff != null ? (diff <= 0 ? 'up' as const : 'down' as const) : 'neutral' as const;
+                                    return (
+                                      <div key={m.label} style={{
+                                        padding: '8px 12px',
+                                        borderRadius: '10px',
+                                        background: 'var(--bg-subtle)',
+                                        border: '1px solid var(--glass-border)',
+                                        textAlign: 'center' as const,
+                                      }}>
+                                        <div style={{ fontSize: '17px', fontWeight: 700, fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>
+                                          {m.value}<span style={{ fontSize: '11px', fontWeight: 500, opacity: 0.6 }}>cm</span>
+                                        </div>
+                                        {diff != null && Math.abs(diff) >= 0.1 && (
+                                          <div style={{
+                                            fontSize: '10px', fontWeight: 600, marginTop: '1px',
+                                            color: trend === 'up' ? 'var(--accent-success)' : 'var(--accent-danger)',
+                                            display: 'inline-flex', alignItems: 'center', gap: '1px',
+                                          }}>
+                                            {trend === 'up' ? <ArrowUpRight size={9} /> : <ArrowDownRight size={9} />}
+                                            {Math.abs(diff).toFixed(1)}cm
+                                          </div>
+                                        )}
+                                        <div style={{ fontSize: '9px', color: 'var(--text-tertiary)', marginTop: '2px', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>
+                                          {m.label}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* Client notes / wins / challenges */}
                           <div style={{ ...styles.notesGrid, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr' }}>
@@ -647,7 +633,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 <span style={{ ...styles.noteLabel, color: 'var(--accent-success)' }}>
                                   <Award size={11} /> Wins
                                 </span>
-                                <p style={styles.noteText}>{ci.wins}</p>
+                                <p style={{ ...styles.noteText, background: 'var(--accent-success-dim)', border: '1px solid rgba(34,197,94,0.1)' }}>{ci.wins}</p>
                               </div>
                             )}
                             {ci.challenges && (
@@ -655,12 +641,12 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                 <span style={{ ...styles.noteLabel, color: 'var(--accent-warm)' }}>
                                   <Target size={11} /> Challenges
                                 </span>
-                                <p style={styles.noteText}>{ci.challenges}</p>
+                                <p style={{ ...styles.noteText, background: 'var(--accent-warm-dim)', border: '1px solid rgba(245,158,11,0.1)' }}>{ci.challenges}</p>
                               </div>
                             )}
                           </div>
 
-                          {/* Point 5: Progress Photos */}
+                          {/* Progress Photos */}
                           {ci.photos && ci.photos.length > 0 && (
                             <div>
                               <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)' }}>
@@ -668,7 +654,11 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                               </span>
                               <div style={styles.photosRow}>
                                 {ci.photos.map((photo, pi) => (
-                                  <div key={pi} style={styles.photoCard}>
+                                  <div
+                                    key={pi}
+                                    style={{ ...styles.photoCard, cursor: photo.url ? 'pointer' : 'default' }}
+                                    onClick={() => { if (photo.url) setLightboxPhoto({ url: photo.url, label: photo.label }); }}
+                                  >
                                     {photo.url ? (
                                       <img src={photo.url} alt={photo.label} style={styles.photoImage} />
                                     ) : (
@@ -693,11 +683,11 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {ci.coachFeedback && ci.reviewStatus === 'reviewed' && (
                             <div style={styles.existingFeedback}>
                               <span style={{ ...styles.noteLabel, color: 'var(--accent-primary)' }}>Your Feedback</span>
-                              <p style={styles.noteText}>{ci.coachFeedback}</p>
+                              <p style={{ ...styles.noteText, background: 'rgba(0,229,200,0.04)', border: '1px solid rgba(0,229,200,0.1)' }}>{ci.coachFeedback}</p>
                             </div>
                           )}
 
-                          {/* Point 6: Follow-up notes (for reviewed/flagged) */}
+                          {/* Follow-up notes (for reviewed/flagged) */}
                           {ci.followUpNotes && ci.followUpNotes.length > 0 && (
                             <div>
                               <span style={{ ...styles.noteLabel, color: 'var(--accent-secondary)' }}>
@@ -716,8 +706,8 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Point 6: Add follow-up note (for reviewed check-ins) */}
-                          {ci.reviewStatus === 'reviewed' && (
+                          {/* Add follow-up note (only for flagged check-ins) */}
+                          {ci.reviewStatus === 'flagged' && (
                             <div style={styles.followUpInput}>
                               <input
                                 value={followUpDrafts[ci.id] || ''}
@@ -751,41 +741,47 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {/* Action bar - pending check-ins */}
                           {ci.reviewStatus === 'pending' && (
                             <div style={styles.actionBar}>
-                              <textarea
-                                value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
-                                onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                placeholder="Write your feedback..."
-                                style={styles.feedbackInput}
-                                rows={2}
-                              />
-                              {/* Point 4: Flag input now full width above buttons */}
-                              <div style={styles.flagRow}>
-                                <Flag size={13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                                <input
-                                  value={flagDrafts[ci.id] || ''}
-                                  onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                  placeholder="Flag reason (e.g. needs program change, schedule a call...)"
-                                  style={styles.flagInput}
+                              <div>
+                                <textarea
+                                  value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
+                                  onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                  placeholder="Write your feedback..."
+                                  style={styles.feedbackInput}
+                                  rows={2}
                                 />
-                                <button
-                                  onClick={() => handleFlag(ci.id)}
-                                  style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5 }}
-                                  disabled={!flagDrafts[ci.id]?.trim()}
-                                >
-                                  Flag
-                                </button>
+                                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Send size={10} />
+                                  Your feedback will be visible to the client
+                                </div>
                               </div>
+                              {/* Flag input - only shown when toggled */}
+                              {showFlagInput === ci.id && (
+                                <div style={styles.flagRow}>
+                                  <Flag size={13} color="var(--accent-danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                  <input
+                                    value={flagDrafts[ci.id] || ''}
+                                    onChange={e => setFlagDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                    placeholder="Flag reason (e.g. needs program change, schedule a call...)"
+                                    style={styles.flagInput}
+                                    autoFocus
+                                    onKeyDown={e => { if (e.key === 'Enter' && flagDrafts[ci.id]?.trim()) handleFlag(ci.id); if (e.key === 'Escape') setShowFlagInput(null); }}
+                                  />
+                                  <button
+                                    onClick={() => handleFlag(ci.id)}
+                                    style={{ ...styles.actionBtnDanger, opacity: flagDrafts[ci.id]?.trim() ? 1 : 0.5 }}
+                                    disabled={!flagDrafts[ci.id]?.trim()}
+                                  >
+                                    <Send size={12} />
+                                  </button>
+                                </div>
+                              )}
                               <div style={styles.actionButtons}>
                                 <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>
                                   View Profile
                                 </button>
-                                {/* Point 2: Send Message shortcut */}
-                                <button
-                                  onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })}
-                                  style={styles.actionBtnMessage}
-                                >
-                                  <MessageSquare size={13} />
-                                  Send Message
+                                <button onClick={() => setShowFlagInput(showFlagInput === ci.id ? null : ci.id)} style={{ ...styles.actionBtnDanger, ...(showFlagInput === ci.id ? { background: 'rgba(239,68,68,0.2)', borderColor: 'rgba(239,68,68,0.4)' } : {}) }}>
+                                  <Flag size={13} />
+                                  Flag
                                 </button>
                                 <div style={{ flex: 1 }} />
                                 <button
@@ -793,7 +789,7 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                                   style={styles.actionBtnPrimary}
                                 >
                                   <CheckCircle2 size={13} />
-                                  Mark Reviewed
+                                  Mark as Reviewed
                                 </button>
                               </div>
                             </div>
@@ -802,19 +798,21 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                           {/* Action bar - flagged check-ins */}
                           {ci.reviewStatus === 'flagged' && (
                             <div style={styles.actionBar}>
-                              <textarea
-                                value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
-                                onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
-                                placeholder="Add feedback and resolve..."
-                                style={styles.feedbackInput}
-                                rows={2}
-                              />
+                              <div>
+                                <textarea
+                                  value={feedbackDrafts[ci.id] ?? ci.coachFeedback}
+                                  onChange={e => setFeedbackDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                                  placeholder="Add feedback and resolve..."
+                                  style={styles.feedbackInput}
+                                  rows={2}
+                                />
+                                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <Send size={10} />
+                                  Your feedback will be visible to the client
+                                </div>
+                              </div>
                               <div style={styles.actionButtons}>
                                 <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>
-                                <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
-                                  <MessageSquare size={13} />
-                                  Send Message
-                                </button>
                                 <div style={{ flex: 1 }} />
                                 <button onClick={() => handleMarkReviewed(ci.id)} style={styles.actionBtnPrimary}>
                                   <CheckCircle2 size={13} />
@@ -824,14 +822,10 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
                             </div>
                           )}
 
-                          {/* Reviewed - just view + message shortcuts */}
+                          {/* Reviewed - just view profile */}
                           {ci.reviewStatus === 'reviewed' && (
-                            <div style={styles.actionButtons}>
+                            <div style={{ display: 'flex', gap: '6px' }}>
                               <button onClick={() => onViewClient(ci.clientId)} style={styles.actionBtnSecondary}>View Profile</button>
-                              <button onClick={() => setMessageModal({ clientId: ci.clientId, clientName: ci.clientName })} style={styles.actionBtnMessage}>
-                                <MessageSquare size={13} />
-                                Message
-                              </button>
                             </div>
                           )}
                           </>
@@ -947,6 +941,78 @@ export default function CheckInsPage({ clients, checkIns, onUpdateCheckIn, onVie
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Photo Lightbox */}
+      <AnimatePresence>
+        {lightboxPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxPhoto(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 9999,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '24px',
+              cursor: 'pointer',
+            }}
+          >
+            <motion.img
+              src={lightboxPhoto.url}
+              alt={lightboxPhoto.label}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                maxWidth: '100%',
+                maxHeight: 'calc(100vh - 120px)',
+                borderRadius: '12px',
+                objectFit: 'contain',
+                boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+              }}
+            />
+            <motion.span
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                marginTop: '12px',
+                fontSize: '14px',
+                color: 'rgba(255,255,255,0.7)',
+                fontFamily: 'var(--font-display)',
+              }}
+            >
+              {lightboxPhoto.label}
+            </motion.span>
+            <button
+              onClick={() => setLightboxPhoto(null)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#fff',
+              }}
+            >
+              <X size={18} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -959,29 +1025,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
-  },
-  summaryRow: {
-    display: 'grid',
-    gap: '16px',
-  },
-  summaryLabel: {
-    fontSize: '15px',
-    fontWeight: 600,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  summaryValue: {
-    fontSize: '39px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-display)',
-    color: 'var(--text-primary)',
-    marginTop: '4px',
-  },
-  summaryHint: {
-    fontSize: '15px',
-    color: 'var(--text-tertiary)',
-    marginTop: '2px',
   },
   queueHeader: {
     display: 'flex',
@@ -1146,76 +1189,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderTop: '1px solid var(--border-subtle)',
     paddingTop: '16px',
   },
-  comparisonGrid: {
-    display: 'grid',
-    gap: '16px',
-  },
-  comparisonCol: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  comparisonLabel: {
-    fontSize: '15px',
-    fontWeight: 600,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    marginBottom: '4px',
-  },
-  metricsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '8px',
-  },
-  metricCell: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-    padding: '10px 12px',
-    borderRadius: 'var(--radius-sm)',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-subtle-strong)',
-  },
-  metricCellLabel: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: 'var(--text-tertiary)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.3px',
-  },
-  metricCellValue: {
-    fontSize: '22px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-display)',
-    color: 'var(--text-primary)',
-  },
-  wellnessRow: {
-    display: 'grid',
-    gridTemplateColumns: '70px 1fr',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  wellnessLabel: {
-    fontSize: '15px',
-    fontWeight: 500,
-    color: 'var(--text-secondary)',
-  },
-  trendRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '8px 12px',
-    borderRadius: 'var(--radius-sm)',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-subtle-strong)',
-  },
-  trendLabel: {
-    fontSize: '15px',
-    fontWeight: 500,
-    color: 'var(--text-secondary)',
-    minWidth: '60px',
-  },
   notesGrid: {
     display: 'grid',
     gap: '12px',
@@ -1336,7 +1309,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
-  // Point 4: Full-width flag row
   flagRow: {
     display: 'flex',
     alignItems: 'center',
@@ -1357,7 +1329,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     outline: 'none',
   },
-  // Point 2: Send Message button
   actionBtnMessage: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -1373,38 +1344,6 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'background 0.15s',
   },
-  // Point 3: Upcoming card details
-  upcomingDetails: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    marginTop: '6px',
-  },
-  upcomingLine: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  upcomingBadge: {
-    fontSize: '12px',
-    fontWeight: 700,
-    padding: '2px 8px',
-    borderRadius: '8px',
-    flexShrink: 0,
-  },
-  upcomingNames: {
-    fontSize: '14px',
-    color: 'var(--text-secondary)',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  upcomingNameLink: {
-    color: 'var(--accent-primary)',
-    cursor: 'pointer',
-    transition: 'opacity 0.15s',
-  },
-  // Point 5: Progress photos
   photosRow: {
     display: 'flex',
     gap: '12px',
@@ -1451,7 +1390,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '14px',
     color: 'var(--text-tertiary)',
   },
-  // Point 6: Follow-up notes
   followUpNote: {
     display: 'flex',
     gap: '10px',
@@ -1502,7 +1440,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
   },
-  // Quick message modal
   modalOverlay: {
     position: 'fixed',
     inset: 0,

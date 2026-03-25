@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Search, Filter, Send, X, ChevronDown, ChevronUp, MessageSquare,
+  Search, Filter, Send, X, ChevronDown, ChevronUp,
   TrendingUp, TrendingDown,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
+import { useDemo } from '../../context/DemoContext';
 import type { Client, Invoice } from '../types';
 
 interface PaymentsPageProps {
@@ -21,7 +22,8 @@ interface PaymentsPageProps {
 type FilterStatus = 'all' | 'paid' | 'pending' | 'overdue';
 type SortKey = 'date' | 'amount' | 'name';
 
-export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
+export default function PaymentsPage({ clients, invoices, onUpdateInvoice: _onUpdateInvoice, onAddInvoice, onViewClient }: PaymentsPageProps) {
+  const { guardAction: _guardAction } = useDemo();
   const isMobile = useIsMobile();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
@@ -77,10 +79,6 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
     return a.clientName.localeCompare(b.clientName);
   });
 
-  const handleMarkPaid = (id: string) => {
-    onUpdateInvoice(id, { status: 'paid', paidDate: new Date().toISOString().split('T')[0] });
-  };
-
   const handleCreateInvoice = () => {
     if (!newInvoice.clientId) return;
     const client = clients.find(c => c.id === newInvoice.clientId);
@@ -118,70 +116,69 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
   ];
 
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
       {/* Summary Cards */}
-      <div style={{ ...styles.summaryGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)' }}>
-        <GlassCard delay={0}>
-          <div style={styles.summaryIcon}>
-            <DollarSign size={20} color="var(--accent-success)" />
-          </div>
-          <div style={styles.summaryLabel}>Revenue This Month</div>
-          <div style={styles.summaryValue}>${totalRevenue.toLocaleString()}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--accent-success)' }}>
-            {paidCount}/{totalCount} invoices paid
-          </div>
-          {lastMonthRevenue > 0 && (
-            <div style={{ ...styles.trendLine, color: revenueDelta >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-              {revenueDelta >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-              {revenueDelta >= 0 ? '+' : ''}{revenueDelta}% vs last month
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.05}>
-          <div style={{ ...styles.summaryIcon }}>
-            <Clock size={20} color="var(--accent-warm)" />
-          </div>
-          <div style={styles.summaryLabel}>Pending</div>
-          <div style={styles.summaryValue}>${pendingAmount.toLocaleString()}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--accent-warm)' }}>
-            {thisMonth.filter(i => i.status === 'pending').length} invoice{thisMonth.filter(i => i.status === 'pending').length !== 1 ? 's' : ''}
-          </div>
-          {lastMonthPending > 0 && pendingAmount !== lastMonthPending && (
-            <div style={{ ...styles.trendLine, color: pendingAmount <= lastMonthPending ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-              {pendingAmount <= lastMonthPending ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-              {pendingAmount < lastMonthPending ? 'Less' : 'More'} than last month
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.1}>
-          <div style={{ ...styles.summaryIcon }}>
-            <AlertTriangle size={20} color="var(--accent-danger)" />
-          </div>
-          <div style={styles.summaryLabel}>Overdue</div>
-          <div style={styles.summaryValue}>${overdueAmount.toLocaleString()}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--accent-danger)' }}>
-            {thisMonth.filter(i => i.status === 'overdue').length} invoice{thisMonth.filter(i => i.status === 'overdue').length !== 1 ? 's' : ''}
-          </div>
-          {lastMonthOverdue > 0 && overdueAmount !== lastMonthOverdue && (
-            <div style={{ ...styles.trendLine, color: overdueAmount <= lastMonthOverdue ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-              {overdueAmount <= lastMonthOverdue ? <TrendingDown size={13} /> : <TrendingUp size={13} />}
-              {overdueAmount < lastMonthOverdue ? 'Less' : 'More'} than last month
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard delay={0.15}>
-          <div style={{ ...styles.summaryIcon }}>
-            <CheckCircle2 size={20} color="var(--accent-primary)" />
-          </div>
-          <div style={styles.summaryLabel}>All-Time Revenue</div>
-          <div style={styles.summaryValue}>${allTimePaid.toLocaleString()}</div>
-          <div style={{ ...styles.summaryMeta, color: 'var(--text-tertiary)' }}>
-            {activeClients.length} active clients
-          </div>
-        </GlassCard>
+      <div style={{ ...styles.summaryGrid, gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '16px' }}>
+        {[
+          {
+            icon: DollarSign, iconColor: 'var(--accent-success)', dim: 'var(--accent-success-dim)',
+            label: 'Revenue This Month', value: `$${totalRevenue.toLocaleString()}`,
+            meta: <span style={{ color: 'var(--accent-success)' }}>{paidCount} invoices paid ({paidCount}/{totalCount})</span>,
+            trend: lastMonthRevenue > 0 ? { positive: revenueDelta >= 0, label: `${revenueDelta >= 0 ? '+' : ''}${revenueDelta}% vs last month` } : null,
+          },
+          {
+            icon: Clock, iconColor: 'var(--accent-warm)', dim: 'var(--accent-warm-dim)',
+            label: 'Pending', value: `$${pendingAmount.toLocaleString()}`,
+            meta: <span style={{ color: 'var(--accent-warm)' }}>{thisMonth.filter(i => i.status === 'pending').length} invoice{thisMonth.filter(i => i.status === 'pending').length !== 1 ? 's' : ''}</span>,
+            trend: lastMonthPending > 0 && pendingAmount !== lastMonthPending ? { positive: pendingAmount < lastMonthPending, label: pendingAmount < lastMonthPending ? 'Less than last month' : 'More than last month' } : null,
+          },
+          {
+            icon: AlertTriangle, iconColor: 'var(--accent-danger)', dim: 'rgba(239,68,68,0.1)',
+            label: 'Overdue', value: `$${overdueAmount.toLocaleString()}`,
+            meta: <span style={{ color: 'var(--accent-danger)' }}>{thisMonth.filter(i => i.status === 'overdue').length} invoice{thisMonth.filter(i => i.status === 'overdue').length !== 1 ? 's' : ''}</span>,
+            trend: lastMonthOverdue > 0 && overdueAmount !== lastMonthOverdue ? { positive: overdueAmount < lastMonthOverdue, label: overdueAmount < lastMonthOverdue ? 'Less than last month' : 'More than last month' } : null,
+          },
+          {
+            icon: CheckCircle2, iconColor: 'var(--accent-primary)', dim: 'var(--accent-primary-dim)',
+            label: 'All-Time Revenue', value: `$${allTimePaid.toLocaleString()}`,
+            meta: <span style={{ color: 'var(--text-tertiary)' }}>{activeClients.length} active clients</span>,
+            trend: null,
+          },
+        ].map((card, i) => {
+          const Icon = card.icon;
+          return (
+            <GlassCard key={i} delay={i * 0.05} style={isMobile ? { padding: '14px 16px' } : { padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px' }}>
+                <div style={{
+                  width: isMobile ? '34px' : '38px',
+                  height: isMobile ? '34px' : '38px',
+                  borderRadius: '10px',
+                  background: card.dim,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: `0 0 12px ${card.dim}`,
+                }}>
+                  <Icon size={isMobile ? 15 : 17} color={card.iconColor} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: isMobile ? '18px' : '20px', fontWeight: 700, letterSpacing: '-0.5px', fontFamily: 'var(--font-display)', lineHeight: 1.1 }}>{card.value}</span>
+                    {!isMobile && card.trend && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 600, color: card.trend.positive ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                        {card.trend.positive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                        {card.trend.label}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '11px' : '12px', color: 'var(--text-tertiary)', marginTop: '3px' }}>{card.label}</div>
+                  <div style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: 500, marginTop: '2px' }}>{card.meta}</div>
+                </div>
+              </div>
+            </GlassCard>
+          );
+        })}
       </div>
 
       {/* Invoice List */}
@@ -247,7 +244,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
             <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>Amount</span>
             <span style={{ ...styles.th, flex: 1 }}>Due Date</span>
             <span style={{ ...styles.th, flex: 1 }}>Status</span>
-            <span style={{ ...styles.th, flex: 1, textAlign: 'right' }}>Action</span>
+            <span style={{ ...styles.th, flex: 1.5, textAlign: 'right' }}>Action</span>
           </div>
         )}
 
@@ -275,39 +272,24 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                 >
                 {isMobile ? (
                   // Mobile card layout
-                  <div style={styles.mobileCard}>
-                    <div style={styles.mobileCardTop}>
-                      <div style={{ ...styles.avatar, background: getAvatarColor(inv.clientId) }}>
+                  <div style={{ ...styles.mobileCard, gap: '8px' }}>
+                    <div style={{ ...styles.mobileCardTop, gap: '8px' }}>
+                      <div style={{ ...styles.avatar, background: getAvatarColor(inv.clientId), width: '28px', height: '28px', fontSize: '11px' }}>
                         {getInitials(inv.clientName)}
                       </div>
                       <div style={styles.mobileCardInfo}>
-                        <div style={styles.clientNameLink} onClick={(e) => { e.stopPropagation(); onViewClient(inv.clientId); }}>{inv.clientName}</div>
-                        <div style={styles.mobileCardMeta}>{inv.period} &middot; {inv.plan}</div>
+                        <div style={{ ...styles.clientNameLink, fontSize: '14px' }} onClick={(e) => { e.stopPropagation(); onViewClient(inv.clientId); }}>{inv.clientName}</div>
+                        <div style={{ ...styles.mobileCardMeta, fontSize: '11px' }}>{inv.period} &middot; {inv.plan}</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={styles.amount}>${inv.amount}</div>
-                        <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg }}>
-                          {inv.status}
-                        </span>
+                      <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div>
+                          <div style={{ ...styles.amount, fontSize: '15px' }}>${inv.amount}</div>
+                          <span style={{ ...styles.statusBadge, color: sc.color, background: sc.bg, fontSize: '10px', padding: '2px 7px' }}>
+                            {inv.status}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    {inv.status !== 'paid' && (
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {inv.status === 'overdue' && (
-                          <button
-                            onClick={() => setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id })}
-                            style={{ ...styles.markPaidBtn, background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.15)', color: 'var(--accent-danger)', flex: 1 }}
-                          >
-                            <MessageSquare size={13} />
-                            Remind
-                          </button>
-                        )}
-                        <button onClick={() => handleMarkPaid(inv.id)} style={{ ...styles.markPaidBtn, flex: 1 }}>
-                          <CheckCircle2 size={13} />
-                          Mark Paid
-                        </button>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   // Desktop row layout
@@ -325,7 +307,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                     <span style={{ ...styles.td, flex: 1, textAlign: 'right', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
                       ${inv.amount}
                     </span>
-                    <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '17px' }}>
+                    <span style={{ ...styles.td, flex: 1, color: 'var(--text-secondary)', fontSize: '14px' }}>
                       {new Date(inv.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                     <span style={{ ...styles.td, flex: 1 }}>
@@ -336,25 +318,11 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                         {inv.status}
                       </span>
                     </span>
-                    <span style={{ ...styles.td, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                      {inv.status === 'overdue' && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setReminderModal({ clientId: inv.clientId, clientName: inv.clientName, amount: inv.amount, invoiceId: inv.id }); }}
-                          style={styles.reminderBtnSmall}
-                        >
-                          <MessageSquare size={12} />
-                          Remind
-                        </button>
-                      )}
-                      {inv.status !== 'paid' ? (
-                        <button onClick={(e) => { e.stopPropagation(); handleMarkPaid(inv.id); }} style={styles.markPaidBtnSmall}>
-                          <CheckCircle2 size={12} />
-                          Mark Paid
-                        </button>
-                      ) : (
+                    <span style={{ ...styles.td, flex: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                      {inv.status === 'paid' && inv.paidDate && (
                         <span style={styles.paidDateLabel}>
                           <CheckCircle2 size={12} />
-                          Paid {inv.paidDate && new Date(inv.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          Paid {new Date(inv.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       )}
                       {clientHistory.length > 0 && (
@@ -362,6 +330,7 @@ export default function PaymentsPage({ clients, invoices, onUpdateInvoice, onAdd
                           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </span>
                       )}
+                      <span style={{ width: '14px' }}></span>
                     </span>
                   </>
                 )}
@@ -589,18 +558,19 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '8px',
   },
   summaryLabel: {
-    fontSize: '17px',
-    color: 'var(--text-secondary)',
+    fontSize: '13px',
+    color: 'var(--text-tertiary)',
     marginBottom: '4px',
+    fontWeight: 500,
   },
   summaryValue: {
-    fontSize: '39px',
+    fontSize: '28px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
-    letterSpacing: '-1px',
+    letterSpacing: '-0.75px',
   },
   summaryMeta: {
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 500,
     marginTop: '4px',
   },
@@ -630,7 +600,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
   },
   sectionTitle: {
-    fontSize: '21px',
+    fontSize: '18px',
     fontWeight: 600,
   },
   filterTabs: {
@@ -646,7 +616,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid transparent',
     background: 'transparent',
     color: 'var(--text-tertiary)',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -658,7 +628,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderColor: 'rgba(0,229,200,0.15)',
   },
   filterCount: {
-    fontSize: '14px',
+    fontSize: '11px',
     fontWeight: 600,
     opacity: 0.6,
   },
@@ -676,7 +646,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
     width: '140px',
   },
@@ -695,7 +665,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     outline: 'none',
     color: 'var(--text-primary)',
-    fontSize: '18px',
+    fontSize: '13px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     appearance: 'none',
@@ -710,7 +680,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: 'var(--text-on-accent)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -745,39 +715,39 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   td: {
-    fontSize: '18px',
+    fontSize: '14px',
     color: 'var(--text-primary)',
   },
   avatar: {
-    width: '30px',
-    height: '30px',
+    width: '28px',
+    height: '28px',
     borderRadius: '8px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '15px',
+    fontSize: '11px',
     fontWeight: 700,
     color: 'var(--text-on-accent)',
     flexShrink: 0,
   },
   clientName: {
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
   },
   clientNameLink: {
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
     color: 'var(--accent-primary)',
     cursor: 'pointer',
     transition: 'opacity 0.15s',
   },
   amount: {
-    fontSize: '21px',
+    fontSize: '16px',
     fontWeight: 700,
     fontFamily: 'var(--font-display)',
   },
   planChip: {
-    fontSize: '15px',
+    fontSize: '12px',
     fontWeight: 600,
     padding: '2px 8px',
     borderRadius: '10px',
@@ -788,7 +758,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '4px',
-    fontSize: '15px',
+    fontSize: '12px',
     fontWeight: 600,
     padding: '3px 10px',
     borderRadius: '20px',
@@ -803,7 +773,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-success-dim)',
     border: '1px solid rgba(34,197,94,0.15)',
     color: 'var(--accent-success)',
-    fontSize: '15px',
+    fontSize: '12px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -817,7 +787,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'rgba(239,68,68,0.08)',
     border: '1px solid rgba(239,68,68,0.15)',
     color: 'var(--accent-danger)',
-    fontSize: '15px',
+    fontSize: '12px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -837,7 +807,7 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
   },
   mobileCardMeta: {
-    fontSize: '15px',
+    fontSize: '12px',
     color: 'var(--text-tertiary)',
     marginTop: '2px',
   },
@@ -851,7 +821,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-success-dim)',
     border: '1px solid rgba(34,197,94,0.15)',
     color: 'var(--accent-success)',
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -861,7 +831,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '40px 20px',
     textAlign: 'center',
     color: 'var(--text-tertiary)',
-    fontSize: '18px',
+    fontSize: '14px',
   },
   // Modal
   modalOverlay: {
@@ -889,7 +859,7 @@ const styles: Record<string, React.CSSProperties> = {
     borderBottom: '1px solid var(--glass-border)',
   },
   modalTitle: {
-    fontSize: '22px',
+    fontSize: '18px',
     fontWeight: 600,
   },
   closeBtn: {
@@ -915,7 +885,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '8px',
   },
   modalLabel: {
-    fontSize: '17px',
+    fontSize: '13px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     letterSpacing: '0.3px',
@@ -926,7 +896,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-subtle)',
     color: 'var(--text-primary)',
-    fontSize: '20px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
   },
@@ -958,7 +928,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'transparent',
     color: 'var(--text-secondary)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 500,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -972,7 +942,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: 'var(--accent-primary)',
     border: 'none',
     color: 'var(--text-on-accent)',
-    fontSize: '18px',
+    fontSize: '14px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
@@ -985,7 +955,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     background: 'var(--bg-subtle)',
     color: 'var(--text-primary)',
-    fontSize: '16px',
+    fontSize: '14px',
     fontFamily: 'var(--font-display)',
     resize: 'vertical' as const,
     outline: 'none',
@@ -1020,5 +990,20 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '16px',
     padding: '6px 0',
     borderBottom: '1px solid var(--border-subtle)',
+  },
+  deleteBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '30px',
+    height: '30px',
+    borderRadius: '6px',
+    border: 'none',
+    background: 'transparent',
+    color: 'var(--text-tertiary)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    flexShrink: 0,
+    opacity: 0.5,
   },
 };

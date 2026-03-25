@@ -1,3 +1,11 @@
+export interface GoalTargets {
+  targetWeight?: number;
+  targetBodyFat?: number;
+  targetBenchPress?: number;
+  targetSquat?: number;
+  targetDeadlift?: number;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -16,8 +24,14 @@ export interface Client {
     benchPress: number[];
     squat: number[];
     deadlift: number[];
+    waist: number[];
+    hips: number[];
+    chest: number[];
+    bicep: number[];
+    thigh: number[];
   };
   goals: string[];
+  goalTargets?: GoalTargets;
   notes: string;
   notesHistory: { text: string; date: string; isKey?: boolean }[];
   activityLog: { type: string; description: string; date: string }[];
@@ -87,6 +101,18 @@ export interface WorkoutProgram {
   updatedAt: string;
 }
 
+export interface CoachingPlan {
+  id: string;
+  coachId: string;
+  name: string;
+  price: number;
+  billingCycle: 'monthly' | 'weekly' | 'one-time';
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Invoice {
   id: string;
   clientId: string;
@@ -95,8 +121,9 @@ export interface Invoice {
   status: 'paid' | 'pending' | 'overdue';
   dueDate: string;
   paidDate: string | null;
-  period: string; // e.g. "Feb 2026"
-  plan: 'Basic' | 'Premium' | 'Elite';
+  period: string;
+  plan: string;
+  paymentUrl?: string | null;
 }
 
 export interface CheckIn {
@@ -105,29 +132,40 @@ export interface CheckIn {
   clientName: string;
   date: string;
   status: 'completed' | 'scheduled' | 'missed';
-  // ── Body metrics ──
   weight: number | null;
   bodyFat: number | null;
-  // ── Wellness scores (1-10 scales) ──
+  waist: number | null;
+  hips: number | null;
+  chest: number | null;
+  bicep: number | null;
+  thigh: number | null;
   mood: 1 | 2 | 3 | 4 | 5 | null;
-  energy: number | null;       // 1-10
-  stress: number | null;       // 1-10
+  energy: number | null;
+  stress: number | null;
   sleepHours: number | null;
-  // ── Compliance ──
-  steps: number | null;        // daily average steps
-  nutritionScore: number | null; // 1-10 (how well they stuck to macros/plan)
-  // ── Qualitative ──
-  notes: string;               // client self-report
-  wins: string;                // 3-5 wins this week
-  challenges: string;          // challenges faced
+  steps: number | null;
+  nutritionScore: number | null;
+  notes: string;
+  wins: string;
+  challenges: string;
   coachFeedback: string;
-  // ── Progress photos ──
   photos: { url: string; label: string }[];
-  // ── Review workflow ──
-  reviewStatus: 'pending' | 'reviewed' | 'flagged'; // coach review state
-  flagReason: string;          // why flagged (needs program change, call, etc.)
-  // ── Follow-up notes (post-review) ──
+  reviewStatus: 'pending' | 'reviewed' | 'flagged';
+  flagReason: string;
   followUpNotes: { text: string; date: string }[];
+}
+
+export interface WorkoutSetLog {
+  id: string;
+  date: string;
+  clientId: string;
+  exerciseId: string;
+  exerciseName: string;
+  setNumber: number;
+  reps: number;
+  weight: string;
+  completed: boolean;
+  rpe?: number | null;
 }
 
 export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'settings' | 'programs' | 'program-builder' | 'payments' | 'check-ins';

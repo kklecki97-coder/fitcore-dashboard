@@ -179,6 +179,7 @@ export default function ClientApp() {
             client={clientUser}
             workoutLogs={workoutLogs}
             checkIns={checkIns}
+            coachName={coachName}
           />
         );
       case 'invoices':

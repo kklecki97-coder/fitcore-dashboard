@@ -1,18 +1,140 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Plus, Filter, ArrowUpDown,
   Flame, Pause, Sparkles, MoreHorizontal,
   User, MessageSquare, Edit3, Play, Trash2, X, Save, Dumbbell, Star,
+  ShieldAlert,
 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import { getInitials, getAvatarColor } from '../data';
 import useIsMobile from '../hooks/useIsMobile';
-import type { Client, WorkoutProgram } from '../types';
+import type { Client, WorkoutProgram, WorkoutLog, CheckIn, Message } from '../types';
+
+/* ── Engagement helpers (inline, no external deps) ── */
+
+function getScoreColor(score: number): string {
+  if (score >= 80) return '#20dba4';
+  if (score >= 50) return '#f59e0b';
+  if (score >= 25) return '#f97316';
+  return '#e8637a';
+}
+
+function getScoreLabel(score: number): string {
+  if (score >= 80) return 'excellent';
+  if (score >= 50) return 'good';
+  if (score >= 25) return 'needsAttention';
+  return 'atRisk';
+}
+
+interface EngagementResult {
+  total: number;
+  trend: 'up' | 'stable' | 'down';
+  label: string;
+}
+
+function calculateEngagementScore(
+  client: Client,
+  workoutLogs: WorkoutLog[],
+  checkIns: CheckIn[],
+  messages: Message[],
+): EngagementResult {
+  const now = Date.now();
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+  // Workout completion (45%)
+  const clientLogs = workoutLogs.filter(
+    l => l.clientId === client.id && new Date(l.date).getTime() > thirtyDaysAgo,
+  );
+  const completedLogs = clientLogs.filter(l => l.completed).length;
+  const workoutScore = clientLogs.length > 0
+    ? Math.min(100, (completedLogs / Math.max(clientLogs.length, 1)) * 100)
+    : client.progress; // fallback to progress field
+
+  // Check-in rate (25%)
+  const clientCheckIns = checkIns.filter(
+    ci => ci.clientId === client.id && new Date(ci.date).getTime() > thirtyDaysAgo,
+  );
+  const completedCheckIns = clientCheckIns.filter(ci => ci.status === 'completed').length;
+  const checkInScore = clientCheckIns.length > 0
+    ? (completedCheckIns / clientCheckIns.length) * 100
+    : 50;
+
+  // Streak (20%)
+  const streakScore = Math.min(100, (client.streak / 14) * 100);
+
+  // Message responsiveness (10%)
+  const clientMessages = messages.filter(
+    m => m.clientId === client.id && new Date(m.timestamp).getTime() > thirtyDaysAgo,
+  );
+  const messageScore = clientMessages.length > 0 ? Math.min(100, clientMessages.length * 15) : 40;
+
+  const total = Math.round(
+    workoutScore * 0.45 + checkInScore * 0.25 + streakScore * 0.20 + messageScore * 0.10,
+  );
+
+  // Simple trend based on streak
+  const trend: 'up' | 'stable' | 'down' =
+    client.streak >= 7 ? 'up' : client.streak >= 3 ? 'stable' : 'down';
+
+  return { total, trend, label: getScoreLabel(total) };
+}
+
+/* ── Inline ScoreRing (matches production ScoreRing.tsx) ── */
+
+function ScoreRing({
+  score, size = 44, strokeWidth = 3.5,
+}: { score: number; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth * 2) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+  const color = getScoreColor(score);
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke="rgba(255,255,255,0.06)"
+          strokeWidth={strokeWidth}
+        />
+        <motion.circle
+          cx={size / 2} cy={size / 2} r={radius}
+          fill="none" stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+        />
+      </svg>
+      <div style={{
+        position: 'absolute', inset: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <span style={{
+          fontSize: size * 0.3,
+          fontWeight: 800,
+          fontFamily: 'var(--font-mono)',
+          color,
+          lineHeight: 1,
+        }}>
+          {score}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Component ── */
 
 interface ClientsPageProps {
   clients: Client[];
   programs: WorkoutProgram[];
+  workoutLogs: WorkoutLog[];
+  checkIns: CheckIn[];
+  messages: Message[];
   onViewClient: (id: string) => void;
   onAddClient: () => void;
   onNavigate?: (page: 'messages') => void;
@@ -20,18 +142,31 @@ interface ClientsPageProps {
   onDeleteClient: (id: string) => void;
 }
 
-export default function ClientsPage({ clients: allClients, programs, onViewClient, onAddClient, onNavigate, onUpdateClient, onDeleteClient }: ClientsPageProps) {
+export default function ClientsPage({
+  clients: allClients, programs, workoutLogs, checkIns, messages: allMessages,
+  onViewClient, onAddClient, onNavigate, onUpdateClient, onDeleteClient,
+}: ClientsPageProps) {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPlan, setFilterPlan] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'status' | 'name' | 'newest' | 'plan'>('status');
+  const [filterEngagement, setFilterEngagement] = useState<'all' | 'at-risk'>('all');
+  const [sortBy, setSortBy] = useState<'status' | 'name' | 'newest' | 'plan' | 'engagement'>('status');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // Edit Plan modal state
   const [editModal, setEditModal] = useState<{ clientId: string; plan: Client['plan']; status: Client['status'] } | null>(null);
   // Delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Pre-compute engagement scores
+  const engagementMap = useMemo(() => {
+    const map: Record<string, EngagementResult> = {};
+    for (const c of allClients) {
+      map[c.id] = calculateEngagementScore(c, workoutLogs, checkIns, allMessages);
+    }
+    return map;
+  }, [allClients, workoutLogs, checkIns, allMessages]);
 
   // Close dropdown when clicking anywhere
   const closeMenu = useCallback(() => setOpenMenuId(null), []);
@@ -47,7 +182,8 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                           c.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPlan = filterPlan === 'all' || c.plan === filterPlan;
     const matchesStatus = filterStatus === 'all' || c.status === filterStatus;
-    return matchesSearch && matchesPlan && matchesStatus;
+    const matchesEngagement = filterEngagement === 'all' || (engagementMap[c.id]?.total ?? 0) < 50;
+    return matchesSearch && matchesPlan && matchesStatus && matchesEngagement;
   });
 
   const statusOrder: Record<string, number> = { active: 0, paused: 1, pending: 2 };
@@ -66,6 +202,11 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
       case 'plan': {
         const p = planOrder[a.plan] - planOrder[b.plan];
         return p !== 0 ? p : a.name.localeCompare(b.name);
+      }
+      case 'engagement': {
+        const eA = engagementMap[a.id]?.total ?? 0;
+        const eB = engagementMap[b.id]?.total ?? 0;
+        return eA - eB;
       }
       default:
         return 0;
@@ -86,7 +227,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
       Premium: { color: 'var(--accent-secondary)', bg: 'var(--accent-secondary-dim)' },
       Basic: { color: 'var(--text-secondary)', bg: 'var(--bg-subtle-hover)' },
     };
-    return colors[plan];
+    return colors[plan] || { color: 'var(--accent-primary)', bg: 'var(--accent-primary-dim)' };
   };
 
   const handleTogglePause = (clientId: string) => {
@@ -112,28 +253,42 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
     setEditModal(null);
   };
 
+  const engagementLabelMap: Record<string, string> = {
+    excellent: 'Excellent',
+    good: 'Good',
+    needsAttention: 'At Risk',
+    atRisk: 'Critical',
+  };
+
   return (
-    <div style={{ ...styles.page, padding: isMobile ? '16px' : '24px 32px', gap: isMobile ? '14px' : '20px' }}>
+    <div style={{ ...styles.page, padding: isMobile ? '14px 16px' : '32px 40px', gap: isMobile ? '14px' : '24px' }}>
       {/* Top Bar */}
-      <div style={{ ...styles.topBar, flexWrap: isMobile ? 'wrap' : undefined }}>
-        <div style={{ ...styles.searchBox, maxWidth: isMobile ? '100%' : '360px', order: isMobile ? -1 : undefined }}>
-          <Search size={16} color="var(--text-tertiary)" />
+      <div style={{ ...styles.topBar, flexWrap: isMobile ? 'wrap' : undefined, gap: isMobile ? '8px' : '12px' }}>
+        <div style={{ ...styles.searchBox, maxWidth: isMobile ? '100%' : '360px', order: isMobile ? -1 : undefined, ...(isMobile ? { padding: '8px 12px', gap: '8px' } : {}) }}>
+          <Search size={isMobile ? 14 : 16} color="var(--text-tertiary)" />
           <input
             type="text"
             placeholder="Search clients..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={styles.searchInput}
+            style={{ ...styles.searchInput, ...(isMobile ? { fontSize: '13px' } : {}) }}
           />
         </div>
 
-        <div style={{ ...styles.filters, flex: isMobile ? '1 1 100%' : undefined }}>
-          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
-            <Filter size={14} color="var(--text-tertiary)" />
+        <div className={isMobile ? 'hide-scrollbar' : ''} style={{
+          ...styles.filters,
+          ...(isMobile ? {
+            flex: '1 1 100%',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          } : {}),
+        }}>
+          <div style={{ ...styles.filterGroup, flexShrink: 0, ...(isMobile ? { padding: '6px 8px', gap: '4px' } : {}) }}>
+            <Filter size={isMobile ? 12 : 14} color="var(--text-tertiary)" />
             <select
               value={filterPlan}
               onChange={(e) => setFilterPlan(e.target.value)}
-              style={styles.select}
+              style={{ ...styles.select, ...(isMobile ? { fontSize: '12px' } : {}) }}
             >
               <option value="all">All Plans</option>
               <option value="Elite">Elite</option>
@@ -141,57 +296,69 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               <option value="Basic">Basic</option>
             </select>
           </div>
-          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
+          <div style={{ ...styles.filterGroup, flexShrink: 0, ...(isMobile ? { padding: '6px 8px', gap: '4px' } : {}) }}>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={styles.select}
+              style={{ ...styles.select, ...(isMobile ? { fontSize: '12px' } : {}) }}
             >
-              <option value="all">All Status</option>
+              <option value="all">All Statuses</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
               <option value="pending">Pending</option>
             </select>
           </div>
-          <div style={{ ...styles.filterGroup, flex: isMobile ? 1 : undefined }}>
-            <ArrowUpDown size={14} color="var(--text-tertiary)" />
+          <div style={{ ...styles.filterGroup, flexShrink: 0, ...(isMobile ? { padding: '6px 8px', gap: '4px' } : {}) }}>
+            <ArrowUpDown size={isMobile ? 12 : 14} color="var(--text-tertiary)" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              style={styles.select}
+              style={{ ...styles.select, ...(isMobile ? { fontSize: '12px' } : {}) }}
             >
               <option value="status">Sort: Status</option>
-              <option value="name">Sort: Name (A–Z)</option>
+              <option value="name">Sort: Name (A-Z)</option>
               <option value="newest">Sort: Newest</option>
               <option value="plan">Sort: Plan Tier</option>
+              <option value="engagement">Sort: Engagement</option>
             </select>
           </div>
+          <button
+            onClick={() => setFilterEngagement(filterEngagement === 'all' ? 'at-risk' : 'all')}
+            style={{
+              ...styles.atRiskBtn,
+              flexShrink: 0,
+              ...(isMobile ? { fontSize: '12px', padding: '6px 8px' } : {}),
+              ...(filterEngagement === 'at-risk' ? {
+                background: 'var(--accent-danger-dim)',
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                color: 'var(--accent-danger)',
+              } : {}),
+            }}
+          >
+            <ShieldAlert size={14} />
+            {filterEngagement === 'at-risk' ? 'At Risk Only' : 'All Clients'}
+          </button>
         </div>
 
-        <button onClick={onAddClient} style={{ ...styles.addBtn, ...(isMobile ? { width: '100%', justifyContent: 'center' } : {}) }}>
-          <Plus size={16} />
+        <button onClick={onAddClient} style={{ ...styles.addBtn, ...(isMobile ? { flex: 1, justifyContent: 'center', fontSize: '13px', padding: '8px 14px', gap: '4px' } : {}) }}>
+          <Plus size={isMobile ? 14 : 16} />
           Add Client
         </button>
       </div>
 
       {/* Stats */}
-      <div style={{ ...styles.miniStats, gap: isMobile ? '12px' : '24px', flexWrap: isMobile ? 'wrap' : undefined }}>
-        <div style={styles.miniStat}>
+      <div style={{ ...styles.miniStats, gap: isMobile ? '10px' : '24px', flexWrap: isMobile ? 'wrap' : undefined }}>
+        <div style={{ ...styles.miniStat, ...(isMobile ? { fontSize: '12px' } : {}) }}>
           <span style={{ color: 'var(--accent-success)' }}>
             {allClients.filter(c => c.status === 'active').length}
           </span> Active
         </div>
-        <div style={styles.miniStat}>
+        <div style={{ ...styles.miniStat, ...(isMobile ? { fontSize: '12px' } : {}) }}>
           <span style={{ color: 'var(--accent-warm)' }}>
             {allClients.filter(c => c.status === 'paused').length}
           </span> Paused
         </div>
-        <div style={styles.miniStat}>
-          <span style={{ color: 'var(--accent-secondary)' }}>
-            {allClients.filter(c => c.status === 'pending').length}
-          </span> Pending
-        </div>
-        <div style={styles.miniStat}>
+        <div style={{ ...styles.miniStat, ...(isMobile ? { fontSize: '12px' } : {}) }}>
           <span style={{ color: 'var(--text-primary)' }}>
             {allClients.length}
           </span> Total
@@ -220,17 +387,21 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
       <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))' }}>
         {sorted.map((client, i) => {
           const badge = planBadge(client.plan);
+          const engagement = engagementMap[client.id];
+          const score = engagement?.total ?? 0;
+          const label = engagement?.label ?? 'good';
           return (
             <GlassCard
               key={client.id}
               delay={i * 0.04}
               hover
               onClick={() => onViewClient(client.id)}
+              style={{ ...(isMobile ? { padding: '14px 16px' } : {}), overflow: 'visible', ...(openMenuId === client.id ? { zIndex: 50, position: 'relative' as const } : {}) }}
             >
-              <div style={styles.cardTop}>
-                <div style={styles.clientInfo}>
+              <div style={{ ...styles.cardTop, ...(isMobile ? { marginBottom: '12px' } : {}) }}>
+                <div style={{ ...styles.clientInfo, ...(isMobile ? { gap: '8px' } : {}) }}>
                   <div className="avatar-tooltip-wrap" style={styles.avatarWrap}>
-                    <div style={{ ...styles.avatar, background: getAvatarColor(client.id) }}>
+                    <div style={{ ...styles.avatar, background: getAvatarColor(client.id), ...(isMobile ? { width: '30px', height: '30px', fontSize: '12px', borderRadius: '8px' } : {}) }}>
                       {getInitials(client.name)}
                     </div>
                     {(() => {
@@ -255,8 +426,8 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                     })()}
                   </div>
                   <div>
-                    <div style={styles.clientName}>{client.name}</div>
-                    <div style={styles.clientEmail}>{client.email}</div>
+                    <div style={{ ...styles.clientName, ...(isMobile ? { fontSize: '14px' } : {}) }}>{client.name}</div>
+                    <div style={{ ...styles.clientEmail, ...(isMobile ? { fontSize: '11px' } : {}) }}>{client.email}</div>
                   </div>
                 </div>
                 <div style={{ position: 'relative' }}>
@@ -267,7 +438,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                     }}
                     style={styles.moreBtn}
                   >
-                    <MoreHorizontal size={16} color="var(--text-tertiary)" />
+                    <MoreHorizontal size={isMobile ? 14 : 16} color="var(--text-tertiary)" />
                   </button>
                   {openMenuId === client.id && (
                       <div className="dropdown-menu" style={styles.dropdownMenu}>
@@ -320,35 +491,55 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 </div>
               </div>
 
-              <div style={styles.cardMeta}>
-                <span style={{ ...styles.planBadge, color: badge.color, background: badge.bg }}>
+              {/* Badges: Plan + Status + Programs */}
+              <div style={{ ...styles.cardMeta, ...(isMobile ? { marginBottom: '10px', gap: '6px' } : {}) }}>
+                <span style={{ ...styles.planBadge, color: badge.color, background: badge.bg, ...(isMobile ? { fontSize: '11px', padding: '2px 8px' } : {}) }}>
                   {client.plan}
                 </span>
-                <span style={styles.statusBadge}>
+                <span style={{ ...styles.statusBadge, ...(isMobile ? { fontSize: '11px' } : {}) }}>
                   {statusIcon(client.status)}
                   <span style={{ textTransform: 'capitalize' }}>{client.status}</span>
                 </span>
                 {programs.filter(p => p.clientIds.includes(client.id)).map(p => (
-                  <span key={p.id} style={styles.programBadge}>
-                    <Dumbbell size={10} />
+                  <span key={p.id} style={{ ...styles.programBadge, ...(isMobile ? { fontSize: '10px' } : {}) }}>
+                    <Dumbbell size={isMobile ? 8 : 10} />
                     {p.name}
                   </span>
                 ))}
               </div>
 
-              <div style={styles.cardStats}>
-                <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>Progress</div>
-                  <div style={styles.cardStatValue}>{client.progress}%</div>
+              {/* Engagement Row: Ring + Stats */}
+              <div style={styles.engagementRow}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                  <ScoreRing
+                    score={score}
+                    size={isMobile ? 36 : 44}
+                    strokeWidth={isMobile ? 3 : 3.5}
+                  />
+                  <span style={{
+                    fontSize: isMobile ? '8px' : '9px',
+                    fontWeight: 600,
+                    color: getScoreColor(score),
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.3px',
+                  }}>
+                    {engagementLabelMap[label] || label}
+                  </span>
                 </div>
-                <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>Rate</div>
-                  <div style={styles.cardStatValue}>${client.monthlyRate}</div>
-                </div>
-                <div style={styles.cardStatItem}>
-                  <div style={styles.cardStatLabel}>Streak</div>
-                  <div style={styles.cardStatValue}>
-                    {client.streak > 0 ? `${client.streak}d` : '-'}
+                <div style={styles.cardStats}>
+                  <div style={styles.cardStatItem}>
+                    <div style={{ ...styles.cardStatLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>Progress</div>
+                    <div style={{ ...styles.cardStatValue, ...(isMobile ? { fontSize: '13px' } : {}) }}>{client.progress}%</div>
+                  </div>
+                  <div style={styles.cardStatItem}>
+                    <div style={{ ...styles.cardStatLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>Rate</div>
+                    <div style={{ ...styles.cardStatValue, ...(isMobile ? { fontSize: '13px' } : {}) }}>${client.monthlyRate}</div>
+                  </div>
+                  <div style={styles.cardStatItem}>
+                    <div style={{ ...styles.cardStatLabel, ...(isMobile ? { fontSize: '10px' } : {}) }}>Streak</div>
+                    <div style={{ ...styles.cardStatValue, ...(isMobile ? { fontSize: '13px' } : {}) }}>
+                      {client.streak > 0 ? `${client.streak}d` : '\u2014'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -368,8 +559,8 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
               </div>
 
               <div style={styles.cardFooter}>
-                <span style={styles.footerText}>Next check-in: {client.nextCheckIn}</span>
-                <span style={styles.footerText}>{client.lastActive}</span>
+                <span style={{ ...styles.footerText, ...(isMobile ? { fontSize: '11px' } : {}) }}>Next check-in: {client.nextCheckIn}</span>
+                <span style={{ ...styles.footerText, ...(isMobile ? { fontSize: '11px' } : {}) }}>{client.lastActive}</span>
               </div>
             </GlassCard>
           );
@@ -487,7 +678,7 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
                 </button>
               </div>
               <div style={styles.modalBody}>
-                <p style={{ fontSize: '20px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>
                     {allClients.find(c => c.id === deleteConfirm)?.name}
                   </strong>? This action cannot be undone.
@@ -513,10 +704,10 @@ export default function ClientsPage({ clients: allClients, programs, onViewClien
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
-    padding: '24px 32px',
+    padding: '32px 40px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '24px',
     overflowY: 'auto',
     height: 'calc(100vh - var(--header-height))',
   },
@@ -566,6 +757,22 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '18px',
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
+  },
+  atRiskBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '7px 12px',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid var(--glass-border)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    fontSize: '12px',
+    fontWeight: 500,
+    fontFamily: 'var(--font-display)',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+    whiteSpace: 'nowrap' as const,
   },
   addBtn: {
     display: 'flex',
@@ -658,10 +865,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '17px',
     color: 'var(--text-secondary)',
   },
+  programBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '3px',
+    fontSize: '14px',
+    fontWeight: 600,
+    padding: '2px 8px',
+    borderRadius: '20px',
+    color: 'var(--accent-primary)',
+    background: 'var(--accent-primary-dim)',
+    whiteSpace: 'nowrap',
+  },
+  engagementRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '8px 0',
+    width: '100%',
+  },
   cardStats: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '12px',
+    flex: 1,
   },
   cardStatItem: {
     textAlign: 'center',
@@ -865,18 +1091,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'var(--font-display)',
     cursor: 'pointer',
     boxShadow: '0 0 16px var(--accent-primary-dim)',
-  },
-  programBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '3px',
-    fontSize: '14px',
-    fontWeight: 600,
-    padding: '2px 8px',
-    borderRadius: '20px',
-    color: 'var(--accent-primary)',
-    background: 'var(--accent-primary-dim)',
-    whiteSpace: 'nowrap',
   },
   emptyState: {
     display: 'flex',
