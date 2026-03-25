@@ -2210,7 +2210,7 @@ function Dashboard() {
           }}>
             <div style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Today</div>
             {ACCOUNTS.map(a => {
-              const eng = allLeads.filter(l => l.engaged_by === a.key && l.engaged_at && new Date(l.engaged_at).getTime() >= todayStart).length
+              const eng = allLeads.filter(l => l.engaged_by === a.key && l.last_touch_at && new Date(l.last_touch_at).getTime() >= todayStart).length
               const dm = allLeads.filter(l => l.dmed_by === a.key && l.dmed_at && new Date(l.dmed_at).getTime() >= todayStart).length
               return (
                 <div key={a.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
