@@ -1,0 +1,66 @@
+/* ═══════════════════════════════════════════════
+   KAMIL KLECKI — Freelance Portfolio
+   Dark Futuristic Theme
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #07090e;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-card-hover: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(0, 229, 200, 0.3);
+  --text: rgba(255, 255, 255, 0.6);
+  --text-strong: rgba(255, 255, 255, 0.92);
+  --accent: #00e5c8;
+  --accent-dim: rgba(0, 229, 200, 0.15);
+  --accent-glow: rgba(0, 229, 200, 0.4);
+  --purple: #a855f7;
+  --purple-dim: rgba(168, 85, 247, 0.15);
+  --blue: #3b82f6;
+  --blue-dim: rgba(59, 130, 246, 0.15);
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
