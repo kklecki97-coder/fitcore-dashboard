@@ -21,6 +21,8 @@ import { useAuth } from './auth';
    Positioning: Custom-built platforms for elite fitness coaches
    ═══════════════════════════════════════════════════════════ */
 
+const DEMO_URL = 'https://demofitcore.tech';
+
 
 // ── Reusable animated section wrapper ──
 function Section({ children, id, style }: { children: React.ReactNode; id?: string; style?: React.CSSProperties }) {
@@ -334,7 +336,7 @@ export default function App() {
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
             >{link.label}</a>
           ))}
-          <a href="https://demofitcore.tech" target="_blank" rel="noopener noreferrer" style={{
+          <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" style={{
             background: 'transparent',
             border: '1px solid rgba(0, 229, 200, 0.4)',
             color: 'var(--accent-primary)', padding: '10px 20px', borderRadius: 'var(--radius-sm)',
@@ -405,7 +407,7 @@ export default function App() {
                 {link.label}
               </a>
             ))}
-            <a href="https://demofitcore.tech" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} style={{
+            <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} style={{
               background: 'transparent',
               border: '1px solid rgba(0, 229, 200, 0.4)',
               color: 'var(--accent-primary)', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
@@ -508,7 +510,7 @@ export default function App() {
             >
               {t.hero.ctaPrimary} <ArrowRight size={18} />
             </a>
-            <a href="https://demofitcore.tech" target="_blank" rel="noopener noreferrer" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_try_demo', { section: 'hero' }); }} style={{
+            <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_try_demo', { section: 'hero' }); }} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               background: 'transparent', border: '1px solid rgba(0, 229, 200, 0.4)',
               color: 'var(--accent-primary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
