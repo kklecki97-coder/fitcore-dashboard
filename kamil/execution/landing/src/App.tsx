@@ -334,7 +334,7 @@ export default function App() {
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
             >{link.label}</a>
           ))}
-          <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" style={{
+          <a href="https://demofitcore.tech" target="_blank" rel="noopener noreferrer" style={{
             background: 'transparent',
             border: '1px solid rgba(0, 229, 200, 0.4)',
             color: 'var(--accent-primary)', padding: '10px 20px', borderRadius: 'var(--radius-sm)',
@@ -343,9 +343,9 @@ export default function App() {
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; }}
-          >{t.nav.bookDemo}</a>
+          >{t.nav.tryDemo}</a>
           {/* Start Now links to contact, Login stays visible */}
-          <a href="#contact" style={{
+          <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
             color: '#07090e', padding: '10px 22px', borderRadius: 'var(--radius-sm)',
@@ -405,14 +405,14 @@ export default function App() {
                 {link.label}
               </a>
             ))}
-            <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} style={{
+            <a href="https://demofitcore.tech" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} style={{
               background: 'transparent',
               border: '1px solid rgba(0, 229, 200, 0.4)',
               color: 'var(--accent-primary)', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
               fontWeight: 600, fontSize: 14, textDecoration: 'none', textAlign: 'center',
-            }}>{t.nav.bookDemo}</a>
+            }}>{t.nav.tryDemo}</a>
             {/* Login hidden during controlled beta */}
-            <a href="#contact" onClick={() => setMobileMenuOpen(false)} style={{
+            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} onClick={() => setMobileMenuOpen(false)} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               background: 'linear-gradient(135deg, var(--accent-primary), #00c4aa)',
               color: '#07090e', padding: '12px 24px', borderRadius: 'var(--radius-sm)',
@@ -507,6 +507,18 @@ export default function App() {
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               {t.hero.ctaPrimary} <ArrowRight size={18} />
+            </a>
+            <a href="https://demofitcore.tech" target="_blank" rel="noopener noreferrer" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_try_demo', { section: 'hero' }); }} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: 'transparent', border: '1px solid rgba(0, 229, 200, 0.4)',
+              color: 'var(--accent-primary)', padding: '16px 36px', borderRadius: 'var(--radius-md)',
+              fontWeight: 600, fontSize: 16, textDecoration: 'none', letterSpacing: 0.3,
+              transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              {t.hero.ctaDemo} <ArrowRight size={18} />
             </a>
             <a href="https://cal.com/fitcore/demo" target="_blank" rel="noopener noreferrer" onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_book_demo', { section: 'hero' }); }} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -774,7 +786,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.clients.body}
             </p>
-            <a href="#contact" style={{
+            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -820,7 +832,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.inbox.body}
             </p>
-            <a href="#contact" style={{
+            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: '#29ABE2',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -852,7 +864,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.workouts.body}
             </p>
-            <a href="#contact" style={{
+            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-secondary)',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -898,7 +910,7 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.analytics.body}
             </p>
-            <a href="#contact" style={{
+            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-warm)',
               textDecoration: 'none', transition: 'gap 0.2s',
@@ -1061,6 +1073,21 @@ export default function App() {
                       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
                       {t.pricing.demoCta} <ArrowRight size={16} />
+                    </a>
+                    <a href={lang === 'pl' ? '/pl/contact' : '/contact'}
+                      onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_contact_us', { section: 'pricing' }); }}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        border: '1px solid rgba(0, 229, 200, 0.4)',
+                        background: 'transparent',
+                        color: 'var(--accent-primary)', padding: '15px 32px', borderRadius: 'var(--radius-md)',
+                        fontWeight: 700, fontSize: 15, textDecoration: 'none',
+                        transition: 'all 0.2s',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                    >
+                      <Mail size={16} /> {t.pricing.contactCta}
                     </a>
                     <span style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center' }}>
                       {t.pricing.demoNote}
