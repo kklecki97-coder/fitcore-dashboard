@@ -335,6 +335,46 @@ function Dashboard() {
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [allLeads, account])
 
+  // Touch history: day-by-day calendar from first touch to today, including missed days
+  const touchHistory = useMemo(() => {
+    const dayMap: Record<string, { touch: number; count: number }> = {}
+    for (const lead of allLeads) {
+      if (lead.engaged_by !== account && lead.account !== account) continue
+      for (const t of [1, 2, 3] as const) {
+        const ts = lead[`touch${t}_at` as 'touch1_at' | 'touch2_at' | 'touch3_at']
+        if (!ts) continue
+        const day = ts.slice(0, 10)
+        const key = `${day}-${t}`
+        if (!dayMap[key]) dayMap[key] = { touch: t, count: 0 }
+        dayMap[key].count++
+      }
+    }
+
+    const activeDates = Object.keys(dayMap).map(k => k.slice(0, 10))
+    if (activeDates.length === 0) return []
+
+    // Fill every day from first touch to today
+    const firstDate = activeDates.sort()[0]
+    const today = new Date().toISOString().slice(0, 10)
+    const rows: { date: string; touch: number | null; count: number }[] = []
+    const cur = new Date(firstDate + 'T12:00:00')
+    const end = new Date(today + 'T12:00:00')
+
+    while (cur <= end) {
+      const day = cur.toISOString().slice(0, 10)
+      // Find any touch that happened on this day
+      const entry = Object.entries(dayMap).find(([k]) => k.startsWith(day))
+      if (entry) {
+        rows.push({ date: day, touch: entry[1].touch, count: entry[1].count })
+      } else {
+        rows.push({ date: day, touch: null, count: 0 })
+      }
+      cur.setDate(cur.getDate() + 1)
+    }
+
+    return rows.reverse()
+  }, [allLeads, account])
+
   // Follow-up leads: DM'd by this account, awaiting reply
   const followUpLeads = useMemo(() =>
     allLeads.filter(l => l.status === 'dmed' && l.dmed_by === account)
@@ -707,6 +747,61 @@ function Dashboard() {
                 'dmed_at'
               )}
             />
+
+            {/* Touch History Log */}
+            {touchHistory.length > 0 && (
+              <div style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '20px 24px',
+                backdropFilter: 'blur(20px)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <ListChecks size={18} color="var(--accent-primary)" />
+                  <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Touch History</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {touchHistory.map(row => {
+                    const d = new Date(row.date + 'T12:00:00')
+                    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                    const missed = row.touch === null
+                    const color = missed ? 'var(--text-tertiary)' : row.touch === 1 ? '#6366f1' : row.touch === 2 ? '#f59e0b' : '#00e5c8'
+                    return (
+                      <div key={row.date} style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '8px 12px',
+                        background: 'var(--bg-elevated)',
+                        borderRadius: 'var(--radius-sm)',
+                        borderLeft: `3px solid ${missed ? '#ffffff18' : color}`,
+                        opacity: missed ? 0.5 : 1,
+                      }}>
+                        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', width: 100, flexShrink: 0 }}>
+                          {label}
+                        </div>
+                        {missed ? (
+                          <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontStyle: 'italic' }}>missed</div>
+                        ) : (
+                          <>
+                            <div style={{
+                              fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-mono)',
+                              color, background: color + '18',
+                              padding: '2px 8px', borderRadius: 4,
+                            }}>
+                              Touch {row.touch}/3
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 'auto' }}>
+                              {row.count} leads
+                            </div>
+                            <div style={{ fontSize: 14 }}>✅</div>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
