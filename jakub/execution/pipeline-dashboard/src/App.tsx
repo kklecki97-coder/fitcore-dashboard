@@ -118,8 +118,8 @@ function Dashboard() {
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
     const ts = todayStart.getTime()
 
-    const jakubEngagedToday = allLeads.filter(l => l.engaged_by === 'jakub' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
-    const kamilEngagedToday = allLeads.filter(l => l.engaged_by === 'kamil' && l.engaged_at && new Date(l.engaged_at).getTime() >= ts).length
+    const jakubEngagedToday = allLeads.filter(l => l.engaged_by === 'jakub' && l.last_touch_at && new Date(l.last_touch_at).getTime() >= ts).length
+    const kamilEngagedToday = allLeads.filter(l => l.engaged_by === 'kamil' && l.last_touch_at && new Date(l.last_touch_at).getTime() >= ts).length
 
     const jakubSlots = Math.max(0, DAILY_ENGAGE_LIMIT - jakubEngagedToday)
     const kamilSlots = Math.max(0, DAILY_ENGAGE_LIMIT - kamilEngagedToday)
@@ -304,6 +304,15 @@ function Dashboard() {
       return { engageBatch: warming, touchDoneForToday: false }
     }
 
+    // Check if we already did a touch today (touch 3 just completed, leads moved to warm)
+    const touchedTodayCount = allLeads.filter(l =>
+      l.engaged_by === account && l.last_touch_at && new Date(l.last_touch_at).getTime() >= todayMidnight
+    ).length
+    if (touchedTodayCount > 0) {
+      // Already touched leads today — done for today, don't load new batch
+      return { engageBatch: [], touchDoneForToday: true }
+    }
+
     // Otherwise, pick next batch of new leads
     const ids = engageBatchIds[account]
     const newBatch = ids === null
@@ -314,14 +323,14 @@ function Dashboard() {
 
   // DM-ready batch: leads with all 3 touches done + 2 day cooldown passed
   const dmBatch = useMemo(() => {
-    const twoDaysAgo = Date.now() - (2 * 24 * 60 * 60 * 1000)
+    const oneDayAgo = Date.now() - (1 * 24 * 60 * 60 * 1000)
     return allLeads
       .filter(l => {
         if (l.status !== 'warm') return false
         if (l.engaged_by !== account) return false
         if (!l.last_touch_at) return false
-        // 2-day cooldown after last touch
-        return new Date(l.last_touch_at).getTime() <= twoDaysAgo
+        // 1-day cooldown after last touch
+        return new Date(l.last_touch_at).getTime() <= oneDayAgo
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [allLeads, account])
