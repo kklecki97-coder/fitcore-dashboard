@@ -48,6 +48,7 @@ export interface Message {
   timestamp: string;
   isRead: boolean;
   isFromCoach: boolean;
+  imageUrl?: string;
   type?: 'text' | 'workout-complete';
   workoutSummary?: {
     dayName: string;

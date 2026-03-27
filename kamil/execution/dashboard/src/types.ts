@@ -49,6 +49,7 @@ export interface Message {
   timestamp: string;
   isRead: boolean;
   isFromCoach: boolean;
+  imageUrl?: string;
   deliveryStatus?: 'sending' | 'sent' | 'delivered' | 'read';
 }
 

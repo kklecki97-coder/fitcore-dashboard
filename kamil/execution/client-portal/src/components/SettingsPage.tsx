@@ -23,6 +23,9 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
 
+  // Logout confirmation
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   // Delete account
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
@@ -278,10 +281,27 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
       </motion.div>
 
       {/* ── Log Out ── */}
-      <button onClick={onLogout} style={styles.logoutBtn}>
+      <button onClick={() => setShowLogoutConfirm(true)} style={styles.logoutBtn}>
         <LogOut size={16} />
         {s.logout}
       </button>
+
+      {/* ── Logout Confirmation Modal ── */}
+      {showLogoutConfirm && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '24px' }}>
+          <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '28px 24px', width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px' }}>Log Out</span>
+              <button onClick={() => setShowLogoutConfirm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: '4px' }}><X size={18} /></button>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>Are you sure you want to log out?</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setShowLogoutConfirm(false)} style={{ flex: 1, padding: '10px', border: '1px solid var(--border-primary)', borderRadius: '10px', background: 'transparent', color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={onLogout} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '10px', background: 'var(--accent-error, #ef4444)', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Log Out</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Delete Account (subtle) ── */}
       <button

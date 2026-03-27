@@ -72,8 +72,12 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin = (_remember: boolean) => {
-    // Session is handled by Supabase - onAuthStateChange fires automatically
+  const handleLogin = (remember: boolean) => {
+    if (!remember) {
+      sessionStorage.setItem('fitcore-no-persist', '1');
+    } else {
+      sessionStorage.removeItem('fitcore-no-persist');
+    }
   };
 
   const handleLogout = async () => {
@@ -87,7 +91,12 @@ function App() {
     setCheckIns([]);
     setMessages([]);
     setWeeklySchedule(null);
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch { /* ignore — session may already be invalid */ }
+    try {
+      Object.keys(localStorage).forEach(key => { if (key.startsWith('sb-')) localStorage.removeItem(key); });
+    } catch { /* ignore */ }
+    setIsLoggedIn(false);
+    setLoadError(false);
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -125,6 +134,17 @@ function App() {
       window.history.replaceState(null, '', window.location.pathname);
     }
   };
+
+  // Sign out on tab/browser close if "Remember Me" was not checked
+  useEffect(() => {
+    const handleUnload = () => {
+      if (sessionStorage.getItem('fitcore-no-persist')) {
+        supabase.auth.signOut();
+      }
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, []);
 
   // Close password reset modal on Escape key (#29)
   useEffect(() => {
@@ -395,16 +415,25 @@ function App() {
     if (msgError) console.error('messages query failed:', msgError);
 
     if (msgData) {
-      setMessages(msgData.map(r => ({
-        id: r.id,
-        clientId: r.client_id,
-        clientName: clientRow.name,
-        clientAvatar: '',
-        text: r.text,
-        timestamp: r.timestamp,
-        isRead: r.is_read,
-        isFromCoach: r.is_from_coach,
-      })));
+      const mapped = await Promise.all(msgData.map(async r => {
+        let imageUrl = r.image_url as string | undefined;
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          const { data: signed } = await supabase.storage.from('message-photos').createSignedUrl(imageUrl, 86400);
+          if (signed?.signedUrl) imageUrl = signed.signedUrl;
+        }
+        return {
+          id: r.id,
+          clientId: r.client_id,
+          clientName: clientRow.name,
+          clientAvatar: '',
+          text: r.text,
+          timestamp: r.timestamp,
+          isRead: r.is_read,
+          isFromCoach: r.is_from_coach,
+          imageUrl,
+        };
+      }));
+      setMessages(mapped);
       // Messages loaded - Realtime subscription handles new messages
     }
 
@@ -574,18 +603,28 @@ function App() {
         (payload) => {
           const r = payload.new as Record<string, unknown>;
           const cu = clientUserRef.current;
-          const msg: Message = {
-            id: r.id as string,
-            clientId: r.client_id as string,
-            clientName: cu?.name ?? '',
-            clientAvatar: '',
-            text: r.text as string,
-            timestamp: r.timestamp as string,
-            isRead: r.is_read as boolean,
-            isFromCoach: r.is_from_coach as boolean,
+          const rawImageUrl = r.image_url as string | undefined;
+          // Resolve signed URL for incoming realtime messages if they have a storage path
+          const resolveAndAppend = async () => {
+            let imageUrl = rawImageUrl;
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              const { data: signed } = await supabase.storage.from('message-photos').createSignedUrl(imageUrl, 86400);
+              if (signed?.signedUrl) imageUrl = signed.signedUrl;
+            }
+            const msg: Message = {
+              id: r.id as string,
+              clientId: r.client_id as string,
+              clientName: cu?.name ?? '',
+              clientAvatar: '',
+              text: r.text as string,
+              timestamp: r.timestamp as string,
+              isRead: r.is_read as boolean,
+              isFromCoach: r.is_from_coach as boolean,
+              imageUrl,
+            };
+            setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           };
-          // Only append if we don't already have it (avoids duplicating optimistic inserts)
-          setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+          resolveAndAppend();
         }
       )
       .on(
@@ -732,8 +771,10 @@ function App() {
   }, [theme]);
 
   // ── Handlers ──
-  const handleSendMessage = async (msg: Message) => {
+  const handleSendMessage = async (msg: Message & { _storagePath?: string }) => {
     setMessages(prev => [...prev, msg]);
+    // Use storage path for DB (not blob URL) — blob URLs are local only
+    const dbImageUrl = msg._storagePath ?? (msg.imageUrl?.startsWith('blob:') ? null : msg.imageUrl ?? null);
     const { error } = await supabase.from('messages').insert({
       id: msg.id,
       client_id: msg.clientId,
@@ -741,6 +782,7 @@ function App() {
       timestamp: msg.timestamp,
       is_read: msg.isRead,
       is_from_coach: msg.isFromCoach,
+      image_url: dbImageUrl,
     });
     if (error) {
       setMessages(prev => prev.filter(m => m.id !== msg.id));

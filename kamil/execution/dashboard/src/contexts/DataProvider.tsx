@@ -330,17 +330,26 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
       const { data, error } = await supabase.from('messages').select('*').order('timestamp');
       if (error) { console.error('loadMessages failed:', error); showToast('Failed to load messages.', 'error'); return; }
       if (data) {
-        setAllMessages(data.map(r => ({
-          id: r.id,
-          clientId: r.client_id,
-          clientName: nameMap.get(r.client_id) ?? '',
-          clientAvatar: '',
-          text: r.text,
-          timestamp: r.timestamp,
-          isRead: r.is_read,
-          isFromCoach: r.is_from_coach,
-          deliveryStatus: r.delivery_status,
-        })));
+        const mapped = await Promise.all(data.map(async r => {
+          let imageUrl = r.image_url as string | undefined;
+          if (imageUrl && !imageUrl.startsWith('http')) {
+            const { data: signed } = await supabase.storage.from('message-photos').createSignedUrl(imageUrl, 86400);
+            if (signed?.signedUrl) imageUrl = signed.signedUrl;
+          }
+          return {
+            id: r.id,
+            clientId: r.client_id,
+            clientName: nameMap.get(r.client_id) ?? '',
+            clientAvatar: '',
+            text: r.text,
+            timestamp: r.timestamp,
+            isRead: r.is_read,
+            isFromCoach: r.is_from_coach,
+            deliveryStatus: r.delivery_status,
+            imageUrl,
+          };
+        }));
+        setAllMessages(mapped);
       }
     };
 
@@ -585,19 +594,29 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
           if (!initialLoadDoneRef.current) return;
           const r = payload.new as Record<string, unknown>;
           const nameMap = new Map(clientsRef.current.map(c => [c.id, c.name]));
-          const msg: Message = {
-            id: r.id as string,
-            clientId: r.client_id as string,
-            clientName: nameMap.get(r.client_id as string) ?? '',
-            clientAvatar: '',
-            text: r.text as string,
-            timestamp: r.timestamp as string,
-            isRead: r.is_read as boolean,
-            isFromCoach: r.is_from_coach as boolean,
-            deliveryStatus: r.delivery_status as Message['deliveryStatus'],
+          const rawImageUrl = r.image_url as string | undefined;
+          const resolveAndAppend = async () => {
+            let imageUrl = rawImageUrl;
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              const { data: signed } = await supabase.storage.from('message-photos').createSignedUrl(imageUrl, 86400);
+              if (signed?.signedUrl) imageUrl = signed.signedUrl;
+            }
+            const msg: Message = {
+              id: r.id as string,
+              clientId: r.client_id as string,
+              clientName: nameMap.get(r.client_id as string) ?? '',
+              clientAvatar: '',
+              text: r.text as string,
+              timestamp: r.timestamp as string,
+              isRead: r.is_read as boolean,
+              isFromCoach: r.is_from_coach as boolean,
+              deliveryStatus: r.delivery_status as Message['deliveryStatus'],
+              imageUrl,
+            };
+            // Only append if we don't already have it (avoids duplicating optimistic inserts)
+            setAllMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
           };
-          // Only append if we don't already have it (avoids duplicating optimistic inserts)
-          setAllMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
+          resolveAndAppend();
         }
       )
       .on(

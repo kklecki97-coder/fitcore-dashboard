@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2, Zap, Ruler } from 'lucide-react';
+import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2, Zap, Ruler, MoreHorizontal, RefreshCw, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ShareProgressCard from './ShareProgressCard';
 // Charts will be re-enabled once clients have enough data points
@@ -170,10 +170,22 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
   }
 
   const [uploading, setUploading] = useState(false);
+  const [photoMenu, setPhotoMenu] = useState<'week1' | 'latest' | null>(null);
 
   const handlePhotoUpload = (target: 'week1' | 'latest') => {
     setUploadTarget(target);
     photoInputRef.current?.click();
+  };
+
+  const handleDeletePhoto = async (checkIn: CheckIn, pose: string) => {
+    const photo = checkIn.photos?.find(p => p.label.toLowerCase().includes(pose));
+    if (!photo) return;
+    await supabase.from('check_in_photos').delete().eq('check_in_id', checkIn.id).eq('label', photo.label);
+    setLocalCheckIns(prev => prev.map(ci =>
+      ci.id === checkIn.id
+        ? { ...ci, photos: ci.photos.filter(p => p.label !== photo.label) }
+        : ci
+    ));
   };
 
   const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
@@ -213,22 +225,48 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
       const displayUrl = signedData?.signedUrl || path;
 
       // Find the target check-in to attach the photo to
-      const targetCheckIn = uploadTarget === 'week1' ? firstPhotos : (latestPhotos ?? localCheckIns.sort((a, b) => b.date.localeCompare(a.date))[0]);
-      if (targetCheckIn) {
-        // Store path in DB (not the signed URL)
-        await supabase.from('check_in_photos').insert({
-          check_in_id: targetCheckIn.id,
-          url: path,
-          label: photoPose,
-        });
+      // Fall back to any existing check-in sorted by date
+      const sortedCheckIns = [...localCheckIns].sort((a, b) => a.date.localeCompare(b.date));
+      let targetCheckIn = uploadTarget === 'week1'
+        ? (firstPhotos ?? sortedCheckIns[0])
+        : (latestPhotos ?? sortedCheckIns[sortedCheckIns.length - 1] ?? sortedCheckIns[0]);
 
-        // Update local state with signed URL for immediate display
-        setLocalCheckIns(prev => prev.map(ci =>
-          ci.id === targetCheckIn.id
-            ? { ...ci, photos: [...(ci.photos || []), { url: displayUrl, label: photoPose }] }
-            : ci
-        ));
+      // No check-in exists at all — create a stub so the photo has somewhere to live
+      if (!targetCheckIn) {
+        const stubId = crypto.randomUUID();
+        const today = new Date().toISOString().split('T')[0];
+        await supabase.from('check_ins').insert({
+          id: stubId,
+          client_id: client.id,
+          date: today,
+          status: 'completed',
+          review_status: 'pending',
+          flag_reason: '',
+        });
+        const stub: CheckIn = {
+          id: stubId, clientId: client.id, clientName: client.name, date: today,
+          status: 'completed', weight: null, bodyFat: null, waist: null, hips: null,
+          chest: null, bicep: null, thigh: null, mood: null, energy: null, stress: null,
+          sleepHours: null, steps: null, nutritionScore: null, notes: '', wins: '',
+          challenges: '', coachFeedback: '', photos: [], reviewStatus: 'pending', flagReason: '',
+        };
+        setLocalCheckIns(prev => [...prev, stub]);
+        targetCheckIn = stub;
       }
+
+      // Store path in DB (not the signed URL)
+      await supabase.from('check_in_photos').insert({
+        check_in_id: targetCheckIn.id,
+        url: path,
+        label: photoPose,
+      });
+
+      // Update local state with signed URL for immediate display
+      setLocalCheckIns(prev => prev.map(ci =>
+        ci.id === targetCheckIn!.id
+          ? { ...ci, photos: [...(ci.photos || []), { url: displayUrl, label: photoPose }] }
+          : ci
+      ));
     } catch (err) {
       console.error('Photo upload error:', err);
     } finally {
@@ -547,8 +585,18 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                 if (userSrc) {
                   return (
                     <>
-                      <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
+                      <div style={{ ...styles.photoFrame, position: 'relative' }} onClick={() => setLightboxSrc(userSrc)}>
                         <img src={userSrc} alt={`${t.progress.week1} ${photoPose}`} style={styles.photoImg} />
+                        <button
+                          style={styles.photoMenuBtn}
+                          onClick={e => { e.stopPropagation(); setPhotoMenu(photoMenu === 'week1' ? null : 'week1'); }}
+                        ><MoreHorizontal size={14} /></button>
+                        {photoMenu === 'week1' && (
+                          <div style={styles.photoDropdown} onClick={e => e.stopPropagation()}>
+                            <button style={styles.photoDropdownItem} onClick={() => { setPhotoMenu(null); setUploadTarget('week1'); photoInputRef.current?.click(); }}><RefreshCw size={13} /> Replace</button>
+                            <button style={{ ...styles.photoDropdownItem, color: '#ef4444' }} onClick={() => { setPhotoMenu(null); handleDeletePhoto(firstPhotos, photoPose); }}><Trash2 size={13} /> Delete</button>
+                          </div>
+                        )}
                       </div>
                       <div style={styles.photoMeta}>
                         {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
@@ -571,8 +619,18 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                   if (userSrc) {
                     return (
                       <>
-                        <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
+                        <div style={{ ...styles.photoFrame, position: 'relative' }} onClick={() => setLightboxSrc(userSrc)}>
                           <img src={userSrc} alt={`${t.progress.latest} ${photoPose}`} style={styles.photoImg} />
+                          <button
+                            style={styles.photoMenuBtn}
+                            onClick={e => { e.stopPropagation(); setPhotoMenu(photoMenu === 'latest' ? null : 'latest'); }}
+                          ><MoreHorizontal size={14} /></button>
+                          {photoMenu === 'latest' && (
+                            <div style={styles.photoDropdown} onClick={e => e.stopPropagation()}>
+                              <button style={styles.photoDropdownItem} onClick={() => { setPhotoMenu(null); setUploadTarget('latest'); photoInputRef.current?.click(); }}><RefreshCw size={13} /> Replace</button>
+                              <button style={{ ...styles.photoDropdownItem, color: '#ef4444' }} onClick={() => { setPhotoMenu(null); handleDeletePhoto(latestPhotos, photoPose); }}><Trash2 size={13} /> Delete</button>
+                            </div>
+                          )}
                         </div>
                         <div style={styles.photoMeta}>
                           {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
@@ -924,6 +982,51 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--glass-border)',
     position: 'relative',
     cursor: 'pointer',
+  },
+  photoMenuBtn: {
+    position: 'absolute',
+    top: '6px',
+    right: '6px',
+    width: '28px',
+    height: '28px',
+    borderRadius: '6px',
+    border: 'none',
+    background: 'rgba(0,0,0,0.55)',
+    color: '#fff',
+    fontSize: '16px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    lineHeight: 1,
+  },
+  photoDropdown: {
+    position: 'absolute',
+    top: '38px',
+    right: '6px',
+    background: 'var(--bg-elevated)',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    zIndex: 100,
+    minWidth: '110px',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
+  },
+  photoDropdownItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    width: '100%',
+    padding: '9px 14px',
+    background: 'none',
+    border: 'none',
+    color: 'var(--text-primary)',
+    fontSize: '13px',
+    fontWeight: 600,
+    textAlign: 'left',
+    cursor: 'pointer',
+    fontFamily: 'var(--font-display)',
   },
   photoImg: {
     width: '100%',

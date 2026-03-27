@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LogIn, ArrowLeft, Mail } from 'lucide-react';
+import { LogIn, ArrowLeft, Mail, Eye, EyeOff } from 'lucide-react';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
 
@@ -13,6 +13,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -168,14 +169,35 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
               <div>
                 <label style={styles.label}>{t.login.password}</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  style={styles.input}
-                  required
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={{ ...styles.input, paddingRight: '48px' }}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    style={{
+                      position: 'absolute',
+                      right: '14px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: 0,
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div style={styles.rememberRow}>
@@ -280,13 +302,13 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '0 0 24px var(--accent-primary-dim)',
   },
   logoTitle: {
-    fontSize: '22px',
+    fontSize: '28px',
     fontWeight: 700,
     letterSpacing: '-0.5px',
     color: 'var(--text-primary)',
   },
   logoSub: {
-    fontSize: '10px',
+    fontSize: '11px',
     fontWeight: 600,
     letterSpacing: '1.5px',
     color: 'var(--accent-primary)',
@@ -294,7 +316,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   subtitle: {
     textAlign: 'center',
-    fontSize: '13px',
+    fontSize: '16px',
     color: 'var(--text-secondary)',
     marginBottom: '28px',
     lineHeight: 1.5,
@@ -306,7 +328,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   label: {
     display: 'block',
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: 600,
     color: 'var(--text-secondary)',
     marginBottom: '6px',
@@ -315,12 +337,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   input: {
     width: '100%',
-    padding: '11px 14px',
+    padding: '13px 16px',
     border: '1px solid var(--glass-border)',
     borderRadius: 'var(--radius-sm)',
     background: 'rgba(255,255,255,0.03)',
     color: 'var(--text-primary)',
-    fontSize: '14px',
+    fontSize: '18px',
     fontFamily: 'var(--font-display)',
     outline: 'none',
     transition: 'border-color 0.15s',
@@ -344,24 +366,24 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.15s',
   },
   rememberText: {
-    fontSize: '13px',
+    fontSize: '16px',
     color: 'var(--text-secondary)',
     cursor: 'pointer',
   },
   error: {
     color: 'var(--accent-danger)',
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: 500,
     textAlign: 'center',
   },
   btn: {
     width: '100%',
-    padding: '12px',
+    padding: '14px',
     border: 'none',
     borderRadius: 'var(--radius-md)',
     background: 'var(--accent-primary)',
     color: '#07090e',
-    fontSize: '14px',
+    fontSize: '18px',
     fontWeight: 600,
     fontFamily: 'var(--font-display)',
     display: 'flex',
@@ -373,7 +395,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   hint: {
     textAlign: 'center',
-    fontSize: '11px',
+    fontSize: '13px',
     color: 'var(--text-tertiary)',
     marginTop: '20px',
     fontFamily: 'var(--font-mono)',

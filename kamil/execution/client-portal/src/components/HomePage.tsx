@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dumbbell, Send, ClipboardCheck, ArrowRight, Check, X, MessageSquare, ChevronDown, Zap } from 'lucide-react';
+import { Dumbbell, Send, ClipboardCheck, ArrowRight, Check, X, MessageSquare, ChevronDown, Zap, CheckCircle2 } from 'lucide-react';
 import GlassCard from './GlassCard';
 import AnimatedNumber from './AnimatedNumber';
 import StreakFlame from './StreakFlame';
@@ -120,6 +120,9 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
   monday.setDate(today.getDate() + mondayOffset);
   monday.setHours(0, 0, 0, 0);
   const todayStr = localDateStr(today);
+  const todayCompleted = todayWorkout
+    ? workoutLogs.some(l => l.type === todayWorkout.name && l.date === todayStr && l.completed)
+    : false;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
@@ -314,9 +317,16 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
                 return t.home.approxTime(approxMin > 0 ? approxMin : 60);
               })()}</span>
             </div>
-            <button style={{ ...styles.startBtn, padding: isMobile ? '12px' : '14px', fontSize: isMobile ? '14px' : '16px' }} onClick={() => onNavigate('program')}>
-              {t.home.startWorkout} <ArrowRight size={isMobile ? 14 : 16} />
-            </button>
+            {todayCompleted ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: isMobile ? '12px' : '14px', borderRadius: '12px', background: 'var(--accent-success-dim, rgba(34,197,94,0.15))', color: 'var(--accent-success, #22c55e)', fontSize: isMobile ? '14px' : '16px', fontWeight: 600 }}>
+                <CheckCircle2 size={isMobile ? 18 : 20} />
+                Workout Complete
+              </div>
+            ) : (
+              <button style={{ ...styles.startBtn, padding: isMobile ? '12px' : '14px', fontSize: isMobile ? '14px' : '16px' }} onClick={() => onNavigate('program')}>
+                {t.home.startWorkout} <ArrowRight size={isMobile ? 14 : 16} />
+              </button>
+            )}
           </>
         ) : (
           <p style={{ ...styles.restText, fontSize: isMobile ? '13px' : '15px' }}>{t.home.restText}</p>
