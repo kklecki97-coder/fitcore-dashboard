@@ -4,6 +4,9 @@ const ALLOWED_ORIGINS = [
   "https://app.fitcore.tech",
   "https://client.fitcore.tech",
   "https://fitcore.tech",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
 ];
 
 function getCorsHeaders(req: Request) {
@@ -85,13 +88,33 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── 4. Delete the clients row first ──
-    // auth_user_id FK is ON DELETE SET NULL, so we must delete the row explicitly.
-    // Child tables (check_ins, client_metrics, messages, etc.) cascade from clients.id.
+    // ── 4. Delete all client child data first, then the client row ──
+    const clientId = clientRow.id;
+
+    // check_in_photos → depends on check_ins
+    const { data: checkIns } = await supabaseAdmin
+      .from("check_ins")
+      .select("id")
+      .eq("client_id", clientId);
+    const checkInIds = checkIns?.map(c => c.id) ?? [];
+    if (checkInIds.length > 0) {
+      await supabaseAdmin.from("check_in_photos").delete().in("check_in_id", checkInIds);
+    }
+
+    await supabaseAdmin.from("workout_set_logs").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("workout_logs").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("check_ins").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("messages").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("program_clients").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("client_metrics").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("invoices").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("push_subscriptions").delete().eq("client_id", clientId);
+    await supabaseAdmin.from("weekly_schedule").delete().eq("client_id", clientId);
+
     const { error: rowDeleteError } = await supabaseAdmin
       .from("clients")
       .delete()
-      .eq("id", clientRow.id);
+      .eq("id", clientId);
 
     if (rowDeleteError) {
       return new Response(JSON.stringify({ error: "Failed to delete client data: " + rowDeleteError.message }), {

@@ -4,6 +4,9 @@ const ALLOWED_ORIGINS = [
   "https://app.fitcore.tech",
   "https://client.fitcore.tech",
   "https://fitcore.tech",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
 ];
 
 function getCorsHeaders(req: Request) {

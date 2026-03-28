@@ -4,6 +4,9 @@ const ALLOWED_ORIGINS = [
   "https://app.fitcore.tech",
   "https://client.fitcore.tech",
   "https://fitcore.tech",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
 ];
 
 function getCorsHeaders(req: Request) {
@@ -74,25 +77,81 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
 
-    // ── 4. Find all client auth users that belong to this coach ──
-    // These are clients who were invited and have portal login accounts
+    // ── 4. Get coach row ──
+    const { data: coachRow } = await supabaseAdmin
+      .from("coaches")
+      .select("id")
+      .eq("id", coachUser.id)
+      .maybeSingle();
+
+    // ── 5. Find all clients belonging to this coach ──
     const { data: clients } = await supabaseAdmin
       .from("clients")
-      .select("auth_user_id")
-      .eq("coach_id", coachUser.id)
-      .not("auth_user_id", "is", null);
+      .select("id, auth_user_id")
+      .eq("coach_id", coachUser.id);
 
-    // ── 5. Delete client auth users first ──
-    if (clients && clients.length > 0) {
-      for (const client of clients) {
+    const clientIds = clients?.map(c => c.id) ?? [];
+
+    // ── 6. Delete all client-related data (child tables first) ──
+    if (clientIds.length > 0) {
+      // check_in_photos → depends on check_ins
+      const { data: checkIns } = await supabaseAdmin
+        .from("check_ins")
+        .select("id")
+        .in("client_id", clientIds);
+      const checkInIds = checkIns?.map(c => c.id) ?? [];
+      if (checkInIds.length > 0) {
+        await supabaseAdmin.from("check_in_photos").delete().in("check_in_id", checkInIds);
+      }
+
+      // Delete all child tables that reference client_id
+      await supabaseAdmin.from("workout_set_logs").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("workout_logs").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("check_ins").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("messages").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("program_clients").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("client_metrics").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("invoices").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("push_subscriptions").delete().in("client_id", clientIds);
+      await supabaseAdmin.from("weekly_schedule").delete().in("client_id", clientIds);
+
+      // Delete client auth users
+      for (const client of clients!) {
         if (client.auth_user_id) {
           await supabaseAdmin.auth.admin.deleteUser(client.auth_user_id);
         }
       }
+
+      // Delete client rows
+      await supabaseAdmin.from("clients").delete().in("id", clientIds);
     }
 
-    // ── 6. Delete the coach's auth user ──
-    // This cascades: auth.users → coaches → clients → all child tables
+    // ── 7. Delete coach-level data ──
+    // workout_days → exercises depend on workout_programs
+    const { data: programs } = await supabaseAdmin
+      .from("workout_programs")
+      .select("id")
+      .eq("coach_id", coachUser.id);
+    const programIds = programs?.map(p => p.id) ?? [];
+    if (programIds.length > 0) {
+      await supabaseAdmin.from("exercises").delete().in("workout_day_id",
+        (await supabaseAdmin.from("workout_days").select("id").in("program_id", programIds)).data?.map(d => d.id) ?? []
+      );
+      await supabaseAdmin.from("workout_days").delete().in("program_id", programIds);
+      await supabaseAdmin.from("program_clients").delete().in("program_id", programIds);
+      await supabaseAdmin.from("workout_programs").delete().in("id", programIds);
+    }
+
+    await supabaseAdmin.from("coaching_plans").delete().eq("coach_id", coachUser.id);
+    await supabaseAdmin.from("invite_codes").delete().eq("coach_id", coachUser.id);
+    await supabaseAdmin.from("push_subscriptions").delete().eq("coach_id", coachUser.id);
+
+    // Delete coach row
+    if (coachRow) {
+      await supabaseAdmin.from("coaches").delete().eq("id", coachUser.id);
+    }
+
+    // ── 8. Delete the coach's auth user ──
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(coachUser.id);
 
     if (deleteError) {
