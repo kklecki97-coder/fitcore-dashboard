@@ -133,7 +133,7 @@ function ScreenshotCarousel({ screenshots }: { screenshots: Screenshot[] }) {
               transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
               src={screenshots[current].src}
               alt={screenshots[current].label}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
             />
           </AnimatePresence>
         </div>
@@ -238,6 +238,28 @@ export default function App() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.12], [1, 0.96]);
 
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailModalValue, setEmailModalValue] = useState('');
+  const [emailModalSent, setEmailModalSent] = useState(false);
+  const [emailModalLoading, setEmailModalLoading] = useState(false);
+
+  const handleEmailModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailModalValue.trim()) return;
+    setEmailModalLoading(true);
+    if (typeof gtag === 'function') gtag('event', 'lead_capture_feature', { email_provided: true });
+    try {
+      await fetch('https://ntmrkbgkgdmynyqzwbxs.supabase.co/functions/v1/notify-contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Landing visitor', email: emailModalValue.trim(), message: '[Auto] Clicked Get Started in features section' }),
+      });
+    } catch { /* silent */ }
+    setEmailModalLoading(false);
+    setEmailModalSent(true);
+    setTimeout(() => { setEmailModalOpen(false); setEmailModalSent(false); setEmailModalValue(''); }, 3000);
+  };
+
   const accountUrl = lang === 'pl' ? '/pl/account' : '/account';
   // const loginUrl = lang === 'pl' ? '/pl/login' : '/login'; // hidden during controlled beta
   const { isLoggedIn } = useAuth();
@@ -252,8 +274,8 @@ export default function App() {
     { src: '/1-overview.png', label: t.carousel.labels[0], desc: t.carousel.descs[0] },
     { src: '/2-clients.png', label: t.carousel.labels[1], desc: t.carousel.descs[1] },
     { src: '/3-programs.png', label: t.carousel.labels[2], desc: t.carousel.descs[2] },
-    { src: '/4-messages.png', label: t.carousel.labels[3], desc: t.carousel.descs[3] },
-    { src: '/5-analytics.png', label: t.carousel.labels[4], desc: t.carousel.descs[4] },
+    { src: '/4-payments.png', label: t.carousel.labels[3], desc: t.carousel.descs[3] },
+    { src: '/5-checkins.png', label: t.carousel.labels[4], desc: t.carousel.descs[4] },
   ];
 
   const navLinks = [
@@ -439,7 +461,7 @@ export default function App() {
           minHeight: '100vh', display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
           padding: '80px 20px 32px', position: 'relative', zIndex: 1,
-          maxWidth: 1200, margin: '0 auto',
+          maxWidth: 950, margin: '0 auto',
         }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -463,8 +485,8 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
             style={{
-              fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 800, lineHeight: 1.08,
-              letterSpacing: '-2px', marginBottom: 24, maxWidth: 900,
+              fontSize: 'clamp(32px, 5vw, 56px)', fontWeight: 800, lineHeight: 1.1,
+              letterSpacing: '-1.5px', marginBottom: 20, maxWidth: 750,
             }}
           >
             {t.hero.title1}{' '}
@@ -483,8 +505,8 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.35 }}
             style={{
-              fontSize: 'clamp(16px, 2vw, 20px)', color: 'var(--text-secondary)', lineHeight: 1.6,
-              maxWidth: 620, marginBottom: 48, fontWeight: 400,
+              fontSize: 'clamp(15px, 1.8vw, 18px)', color: 'var(--text-secondary)', lineHeight: 1.6,
+              maxWidth: 560, marginBottom: 40, fontWeight: 400,
             }}
           >
             {t.hero.subtitle}
@@ -543,7 +565,7 @@ export default function App() {
           THE REAL PROBLEM - EMOTIONAL, NOT OPERATIONAL
          ════════════════════════════════════════════════════════ */}
       <Section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 56px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 'clamp(30px, 4.5vw, 48px)', fontWeight: 800, letterSpacing: -1.5 }}>
               {t.pain.heading1}{' '}
@@ -629,7 +651,7 @@ export default function App() {
           COACH DASHBOARD - SCREENSHOT CAROUSEL
          ════════════════════════════════════════════════════════ */}
       <Section id="features">
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 40px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 40px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -646,7 +668,7 @@ export default function App() {
       </Section>
 
       <Section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 56px' }}>
           <ScreenshotCarousel screenshots={screenshots} />
         </div>
       </Section>
@@ -654,7 +676,7 @@ export default function App() {
 
       {/* ── Stakes Bridge Line ── */}
       <Section>
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 100px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px 72px', textAlign: 'center' }}>
           <p style={{
             fontSize: 'clamp(28px, 4.5vw, 56px)', fontWeight: 800, lineHeight: 1.15,
             letterSpacing: '-1.5px', margin: '0 auto',
@@ -676,7 +698,7 @@ export default function App() {
           THE COST - WHAT DISORGANIZATION ACTUALLY COSTS YOU
          ════════════════════════════════════════════════════════ */}
       <Section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 72px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
               {t.cost.heading}
@@ -771,7 +793,7 @@ export default function App() {
       {/* Feature 1: Client Management */}
       <Section id="how-it-works">
         <div style={{
-          maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px',
+          maxWidth: 950, margin: '0 auto', padding: '0 24px 56px',
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center',
         }} className="feature-row">
           <div>
@@ -788,14 +810,14 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.clients.body}
             </p>
-            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
+            <button onClick={() => setEmailModalOpen(true)} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-primary)',
-              textDecoration: 'none', transition: 'gap 0.2s',
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'gap 0.2s',
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >{t.features.clients.cta} <ArrowRight size={14} /></a>
+            >{t.features.clients.cta} <ArrowRight size={14} /></button>
           </div>
           <div>
             <img src="/2-clients.png" alt="Client management" style={{
@@ -810,11 +832,11 @@ export default function App() {
       {/* Feature 2: Unified Inbox - reversed */}
       <Section>
         <div style={{
-          maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px',
+          maxWidth: 950, margin: '0 auto', padding: '0 24px 56px',
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center',
         }} className="feature-row-reverse">
           <div className="feature-image-reverse">
-            <img src="/4-messages.png" alt="Unified inbox" style={{
+            <img src="/7-messages.png" alt="Unified inbox" style={{
               width: '100%', borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--glass-border)',
               boxShadow: '0 8px 40px rgba(0,0,0,0.45)',
@@ -834,14 +856,14 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.inbox.body}
             </p>
-            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
+            <button onClick={() => setEmailModalOpen(true)} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: '#29ABE2',
-              textDecoration: 'none', transition: 'gap 0.2s',
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'gap 0.2s',
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >{t.features.inbox.cta} <ArrowRight size={14} /></a>
+            >{t.features.inbox.cta} <ArrowRight size={14} /></button>
           </div>
         </div>
       </Section>
@@ -849,7 +871,7 @@ export default function App() {
       {/* Feature 3: Workout Programs */}
       <Section>
         <div style={{
-          maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px',
+          maxWidth: 950, margin: '0 auto', padding: '0 24px 56px',
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center',
         }} className="feature-row">
           <div>
@@ -866,14 +888,14 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.workouts.body}
             </p>
-            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
+            <button onClick={() => setEmailModalOpen(true)} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-secondary)',
-              textDecoration: 'none', transition: 'gap 0.2s',
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'gap 0.2s',
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >{t.features.workouts.cta} <ArrowRight size={14} /></a>
+            >{t.features.workouts.cta} <ArrowRight size={14} /></button>
           </div>
           <div>
             <img src="/3-programs.png" alt="Workout programs" style={{
@@ -888,11 +910,11 @@ export default function App() {
       {/* Feature 4: Analytics - reversed */}
       <Section>
         <div style={{
-          maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px',
+          maxWidth: 950, margin: '0 auto', padding: '0 24px 72px',
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center',
         }} className="feature-row-reverse">
           <div className="feature-image-reverse">
-            <img src="/5-analytics.png" alt="Analytics and revenue" style={{
+            <img src="/6-analytics.png" alt="Analytics and revenue" style={{
               width: '100%', borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--glass-border)',
               boxShadow: '0 8px 40px rgba(0,0,0,0.45)',
@@ -912,14 +934,14 @@ export default function App() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440 }}>
               {t.features.analytics.body}
             </p>
-            <a href={lang === 'pl' ? '/pl/contact' : '/contact'} style={{
+            <button onClick={() => setEmailModalOpen(true)} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 20,
               fontSize: 13, fontWeight: 600, color: 'var(--accent-warm)',
-              textDecoration: 'none', transition: 'gap 0.2s',
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'gap 0.2s',
             }}
               onMouseEnter={e => { e.currentTarget.style.gap = '10px'; }}
               onMouseLeave={e => { e.currentTarget.style.gap = '6px'; }}
-            >{t.features.analytics.cta} <ArrowRight size={14} /></a>
+            >{t.features.analytics.cta} <ArrowRight size={14} /></button>
           </div>
         </div>
       </Section>
@@ -930,7 +952,7 @@ export default function App() {
           CLOSING SECTION 1 - THE FORK IN THE ROAD
          ════════════════════════════════════════════════════════ */}
       <Section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 80px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 56px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontSize: 'clamp(30px, 4.5vw, 52px)', fontWeight: 800, letterSpacing: -1.5, lineHeight: 1.1 }}>
               {t.fork.heading1}{' '}
@@ -1007,7 +1029,7 @@ export default function App() {
           WHAT YOU GET + FREE DEMO CTA
          ════════════════════════════════════════════════════════ */}
       <Section id="pricing">
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 100px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 72px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 44px)', fontWeight: 800, letterSpacing: -1.5, marginBottom: 16 }}>
               {t.pricing.heading1}{' '}
@@ -1076,21 +1098,21 @@ export default function App() {
                     >
                       {t.pricing.demoCta} <ArrowRight size={16} />
                     </a>
-                    <a href={lang === 'pl' ? '/pl/contact' : '/contact'}
-                      onClick={() => { if (typeof gtag === 'function') gtag('event', 'click_contact_us', { section: 'pricing' }); }}
+                    <button
+                      onClick={() => { setEmailModalOpen(true); if (typeof gtag === 'function') gtag('event', 'click_contact_us', { section: 'pricing' }); }}
                       style={{
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                         border: '1px solid rgba(0, 229, 200, 0.4)',
                         background: 'transparent',
                         color: 'var(--accent-primary)', padding: '15px 32px', borderRadius: 'var(--radius-md)',
-                        fontWeight: 700, fontSize: 15, textDecoration: 'none',
-                        transition: 'all 0.2s',
+                        fontWeight: 700, fontSize: 15, cursor: 'pointer',
+                        transition: 'all 0.2s', width: '100%',
                       }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.7)'; e.currentTarget.style.background = 'rgba(0, 229, 200, 0.06)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0, 229, 200, 0.4)'; e.currentTarget.style.background = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
                     >
                       <Mail size={16} /> {t.pricing.contactCta}
-                    </a>
+                    </button>
                     <span style={{ fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center' }}>
                       {t.pricing.demoNote}
                     </span>
@@ -1204,7 +1226,7 @@ export default function App() {
           HOW IT WORKS - STEP-BY-STEP
          ════════════════════════════════════════════════════════ */}
       <Section id="how-it-works-steps">
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 72px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -1271,7 +1293,7 @@ export default function App() {
           SECURITY & TRUST
          ════════════════════════════════════════════════════════ */}
       <Section id="security">
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 100px' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto', padding: '0 24px 72px' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -1334,7 +1356,7 @@ export default function App() {
           FAQ
          ════════════════════════════════════════════════════════ */}
       <Section id="faq">
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px 100px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px 72px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -1417,7 +1439,7 @@ export default function App() {
         borderTop: '1px solid var(--glass-border)',
         padding: '60px 24px 32px', position: 'relative', zIndex: 1,
       }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ maxWidth: 950, margin: '0 auto' }}>
           <div style={{
             display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 48,
             marginBottom: 48,
@@ -1537,6 +1559,71 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* ── Email Capture Modal ── */}
+      <AnimatePresence>
+        {emailModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => { setEmailModalOpen(false); setEmailModalSent(false); setEmailModalValue(''); }}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem',
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                background: 'linear-gradient(145deg, #0f1318, #141a22)', border: '1px solid rgba(0,229,200,0.15)',
+                borderRadius: '1rem', padding: '2.5rem 2rem', maxWidth: 420, width: '100%', textAlign: 'center',
+                position: 'relative', boxShadow: '0 24px 48px rgba(0,0,0,0.4), 0 0 60px rgba(0,229,200,0.06)',
+              }}
+            >
+              <button onClick={() => { setEmailModalOpen(false); setEmailModalSent(false); setEmailModalValue(''); }} style={{
+                position: 'absolute', top: '0.75rem', right: '0.75rem', background: 'none', border: 'none',
+                color: 'rgba(255,255,255,0.4)', fontSize: '1.25rem', cursor: 'pointer', padding: '0.25rem 0.5rem',
+              }}>✕</button>
+              {!emailModalSent ? (<>
+                <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🚀</div>
+                <h2 style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem', lineHeight: 1.3 }}>
+                  {lang === 'pl' ? 'Chcesz zobaczyć jak to działa z Twoimi klientami?' : 'Want to see how it works with your clients?'}
+                </h2>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', margin: '0 0 1.5rem', lineHeight: 1.4 }}>
+                  {lang === 'pl' ? 'Zostaw email — odezwiemy się w 24h. Zero zobowiązań.' : 'Drop your email — we\'ll reach out within 24h. Zero commitment.'}
+                </p>
+                <form onSubmit={handleEmailModalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <input type="email" required value={emailModalValue} onChange={e => setEmailModalValue(e.target.value)}
+                    placeholder="your@email.com" style={{
+                      background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem',
+                      padding: '0.875rem 1rem', color: '#fff', fontSize: '0.95rem', outline: 'none',
+                    }} />
+                  <button type="submit" disabled={emailModalLoading} style={{
+                    background: 'linear-gradient(135deg, #00e5c8, #00c4aa)', border: 'none', borderRadius: '0.5rem',
+                    padding: '0.875rem 1rem', color: '#07090e', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer',
+                    opacity: emailModalLoading ? 0.7 : 1,
+                  }}>{emailModalLoading ? (lang === 'pl' ? 'Wysyłam...' : 'Sending...') : (lang === 'pl' ? 'Chcę zobaczyć' : 'I want to see')}</button>
+                </form>
+              </>) : (
+                <div style={{ padding: '1rem 0' }}>
+                  <div style={{
+                    width: '3rem', height: '3rem', borderRadius: '50%', background: 'linear-gradient(135deg, #00e5c8, #00c4aa)',
+                    color: '#07090e', fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 1rem',
+                  }}>✓</div>
+                  <h2 style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 600, margin: '0 0 0.5rem' }}>
+                    {lang === 'pl' ? 'Mamy to!' : 'Got it!'}
+                  </h2>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem' }}>
+                    {lang === 'pl' ? 'Odezwiemy się wkrótce.' : 'We\'ll reach out soon.'}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Responsive Styles ── */}
       <style>{`

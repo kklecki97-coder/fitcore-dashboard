@@ -45,18 +45,18 @@ export const en = {
 
   carousel: {
     labels: [
-      'Dashboard Overview',
+      'Smart Coach Overview',
       'Client Management',
       'Workout Programs',
-      'Unified Inbox',
-      'Analytics & Revenue',
+      'Payments & Invoices',
+      'Weekly Check-Ins',
     ],
     descs: [
-      'Revenue, clients, check-ins, smart alerts \u2014 all at a glance',
+      'AI-powered alerts, at-risk clients, pending check-ins \u2014 your daily command center',
       "Every client's progress, plan, and status in one roster",
       'Build and assign programs with sets, reps, RPE, and tempo',
-      'Chat with every client in one place \u2014 templates, read receipts, suggestions',
-      'Revenue trends, retention rates, client value, plan breakdown',
+      'Track invoices, payments, and revenue \u2014 see who paid and who didn\u2019t',
+      'Review weight, mood, energy, measurements \u2014 flag clients who need attention',
     ],
   },
 
@@ -149,14 +149,14 @@ export const en = {
     contactEmailNote: 'Drop us a line — we reply within 24h.',
     includedLabel: 'What you get with FitCore',
     includedItems: [
-      'Full coaching platform \u2014 ready to use from day one',
-      'Full client management \u2014 roster, streaks, revenue',
-      'Workout program builder with 50+ exercises',
-      'Built-in client messaging with templates & read receipts',
-      'Analytics & revenue tracking',
-      'Weekly check-in system for every client',
-      'Smart alerts for at-risk clients',
-      'Ongoing updates and support',
+      'AI-powered Smart Coach \u2014 automated alerts, at-risk detection, suggested actions',
+      'AI Program Builder \u2014 generate workout programs in seconds, not hours',
+      'Full client management \u2014 roster, progress scores, streaks, health metrics',
+      'Weekly check-in system \u2014 weight, mood, energy, measurements, coach feedback',
+      'Built-in messaging \u2014 templates, read receipts, image sharing',
+      'Payment & invoice tracking \u2014 see who paid, who didn\u2019t, revenue trends',
+      'Analytics dashboard \u2014 monthly revenue, retention rate, client value, projections',
+      'No per-client limits \u2014 your growth doesn\u2019t cost you more',
     ],
     noLimitsNote: "No per-client limits. Manage 10 clients or 80 \u2014 same price. Your growth doesn't cost you more.",
   },
@@ -197,8 +197,8 @@ export const en = {
     item4Desc: 'Every connection to FitCore is encrypted with TLS/SSL. No exceptions, no compromises.',
     item5Title: 'Role-Based Access',
     item5Desc: 'Coaches and clients each have their own portal. Clients only see their own data \u2014 nothing else.',
-    item6Title: 'Transparent Fees',
-    item6Desc: 'A simple 5% platform fee on payments. No hidden charges, no surprise invoices. You see exactly what you pay.',
+    item6Title: 'No Hidden Costs',
+    item6Desc: 'No surprise invoices, no hidden fees. You always know exactly what you\u2019re paying for.',
   },
 
   faq: {
@@ -206,7 +206,7 @@ export const en = {
     heading: 'Frequently Asked Questions',
     items: [
       // { q: 'How does pricing work?', a: 'FitCore charges a simple 5% platform fee on each client payment processed through the system. After your 14-day free trial, it\'s $49/month + a one-time $100 setup fee.' },  // temporarily hidden
-      { q: 'Is there a free trial?', a: 'Yes! You get a full 14-day free trial with access to all features. No credit card required to start.' },
+      { q: 'Is there a free trial?', a: 'We\u2019re currently looking for beta testers who want to try FitCore for free. You get full access to all features \u2014 no credit card required. Drop us a message and we\u2019ll set you up.' },
       // { q: 'How do payments work?', a: 'You connect your own Stripe account through our dashboard. When you invoice a client, they receive a secure payment link. They pay directly \u2014 the money goes to your Stripe account minus the 5% platform fee.' },  // temporarily hidden
       { q: 'Is my data secure?', a: 'Absolutely. All data is encrypted in transit (TLS/SSL) and at rest. Payments are processed through Stripe (PCI-DSS Level 1 compliant). We never store credit card information.' },
       { q: 'Can I create custom plans and pricing?', a: 'Yes. You define your own coaching plans with custom names, prices, and billing cycles (monthly, weekly, or one-time). Your pricing, your rules.' },

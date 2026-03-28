@@ -47,18 +47,18 @@ export const pl: Translations = {
 
   carousel: {
     labels: [
-      'Przegląd dashboardu',
+      'Smart Coach — Przegląd',
       'Zarządzanie klientami',
       'Programy treningowe',
-      'Skrzynka odbiorcza',
-      'Analityka i przychody',
+      'Płatności i faktury',
+      'Tygodniowe check-iny',
     ],
     descs: [
-      'Przychody, klienci, raporty, alerty - wszystko w jednym rzucie oka',
+      'Alerty AI, zagrożeni klienci, zaległe check-iny \u2014 Twoje centrum dowodzenia',
       'Postępy, plan i status każdego klienta bez przeklikiwania się',
       'Twórz i przypisuj programy z seriami, powtórzeniami, RPE i tempem',
-      'Pisz z każdym klientem w FitCore - szablony, odczyty, sugestie',
-      'Trendy przychodów, retencja, wartość klienta - liczby, które napędzają decyzje',
+      'Śledź faktury, płatności i przychody - widzisz kto zapłacił, a kto nie',
+      'Sprawdzaj wagę, nastrój, energię, pomiary - flaguj klientów, którzy potrzebują uwagi',
     ],
   },
 
@@ -151,14 +151,14 @@ export const pl: Translations = {
     contactEmailNote: 'Napisz do nas — odpowiadamy w ciągu 24h.',
     includedLabel: 'Co dostajesz w FitCore',
     includedItems: [
-      'Pełna platforma coachingowa — gotowa od pierwszego dnia',
-      'Zarządzanie klientami — lista, passy treningowe, przychody, statusy',
-      'Kreator programów treningowych z 50+ ćwiczeniami',
-      'Wbudowany czat z klientami — szablony i potwierdzenia odczytu',
-      'Analityka i śledzenie przychodów w czasie rzeczywistym',
-      'System cotygodniowych raportów dla każdego klienta',
-      'Inteligentne alerty — wiesz, zanim klient odejdzie',
-      'Bieżące aktualizacje i wsparcie na każdym etapie',
+      'Smart Coach AI — automatyczne alerty, wykrywanie zagrożonych klientów, sugerowane akcje',
+      'AI Program Builder — generuj programy treningowe w sekundy, nie godziny',
+      'Zarządzanie klientami — lista, wyniki postępów, passy, metryki zdrowia',
+      'Tygodniowe check-iny — waga, nastrój, energia, pomiary, feedback trenera',
+      'Wbudowany czat — szablony, potwierdzenia odczytu, wysyłanie zdjęć',
+      'Płatności i faktury — widzisz kto zapłacił, kto nie, trendy przychodów',
+      'Dashboard analityczny — przychód miesięczny, retencja, wartość klienta, projekcje',
+      'Bez limitu klientów — Twój wzrost nie kosztuje Cię więcej',
     ],
     noLimitsNote: 'Bez limitu klientów. Zarządzaj 10 lub 80 — ta sama cena. Twój wzrost nie kosztuje Cię ani złotówki więcej.',
   },
@@ -199,8 +199,8 @@ export const pl: Translations = {
     item4Desc: 'Każde połączenie z FitCore jest szyfrowane za pomocą TLS/SSL. Bez wyjątków, bez kompromisów.',
     item5Title: 'Dostęp oparty na rolach',
     item5Desc: 'Trenerzy i klienci mają własne portale. Klienci widzą tylko swoje dane - nic więcej.',
-    item6Title: 'Przejrzyste opłaty',
-    item6Desc: 'Prosta prowizja 5% od płatności. Brak ukrytych opłat, brak niespodziewanych faktur. Widzisz dokładnie, ile płacisz.',
+    item6Title: 'Brak ukrytych kosztów',
+    item6Desc: 'Żadnych niespodziewanych faktur, żadnych ukrytych opłat. Zawsze wiesz za co płacisz.',
   },
 
   faq: {
@@ -208,7 +208,7 @@ export const pl: Translations = {
     heading: 'Najczęściej zadawane pytania',
     items: [
       // { q: 'Jak działa cennik?', a: 'FitCore pobiera prostą prowizję 5% od każdej płatności klienta. Po 14-dniowym okresie próbnym to 170 zł/miesiąc + jednorazowa opłata 360 zł za konfigurację.' },  // temporarily hidden
-      { q: 'Czy jest darmowy okres próbny?', a: 'Tak! Otrzymujesz 14-dniowy darmowy okres próbny z dostępem do wszystkich funkcji. Karta kredytowa nie jest wymagana.' },
+      { q: 'Czy mogę przetestować za darmo?', a: 'Szukamy beta testerów, którzy chcą wypróbować FitCore za darmo. Dostajesz pełny dostęp do wszystkich funkcji \u2014 bez karty kredytowej. Napisz do nas, a Cię ustawimy.' },
       // { q: 'Jak działają płatności?', a: 'Podłączasz swoje konto Stripe przez panel. Gdy wystawiasz fakturę klientowi, otrzymuje bezpieczny link do płatności. Pieniądze trafiają na Twoje konto Stripe minus 5% prowizji.' },  // temporarily hidden
       { q: 'Czy moje dane są bezpieczne?', a: 'Absolutnie. Wszystkie dane są szyfrowane w trakcie przesyłu (TLS/SSL) i przechowywania. Płatności przez Stripe (PCI-DSS Level 1). Nigdy nie przechowujemy danych kart.' },
       { q: 'Czy mogę tworzyć własne plany i ceny?', a: 'Tak. Definiujesz własne plany coachingowe z własnymi nazwami, cenami i cyklami rozliczeniowymi (miesięcznie, tygodniowo lub jednorazowo).' },
