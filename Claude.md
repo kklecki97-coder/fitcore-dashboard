@@ -127,6 +127,9 @@ curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_jZJeht6JKlqGLVDJ
 
 # Landing → fitcore.tech
 curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_Dlf42hGmT1GjUyETDiW2wzpVi5pM/IxIr1xhCsN"
+
+# Client Portal → app.fitcore.tech (client-facing)
+curl -X POST "https://api.vercel.com/v1/integrations/deploy/prj_nU7ugqfBBQda2JTvFVwgAlJvZHNO/C5NS7u98Gl"
 ```
 
 **Important:**

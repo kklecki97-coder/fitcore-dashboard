@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, CheckCheck, Trophy } from 'lucide-react';
+import { Send, CheckCheck, Trophy, ImagePlus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import { supabase } from '../lib/supabase';
@@ -17,6 +17,10 @@ interface MessagesPageProps {
 export default function MessagesPage({ messages, onSendMessage, coachName, clientId, clientName, coachTyping = false }: MessagesPageProps) {
   const { t, lang } = useLang();
   const [newMessage, setNewMessage] = useState('');
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const sorted = [...messages].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
@@ -25,10 +29,48 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
+  const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    e.target.value = '';
+  };
+
+  const handleClearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    // Note: don't revoke blob URL here — it may still be used by an optimistic message bubble
+  };
+
+  const handleSend = async () => {
+    if (!newMessage.trim() && !imageFile) return;
+    setUploading(true);
+
+    const localPreview = imagePreview; // capture before clearing
+    const file = imageFile;
+    const msgId = crypto.randomUUID();
+
+    // Clear input immediately for snappy UX
+    setNewMessage('');
+    handleClearImage();
+
+    let storagePath: string | undefined;
+
+    if (file) {
+      const { data: { user } } = await supabase.auth.getUser();
+      const ext = file.name.split('.').pop();
+      storagePath = `${user?.id}/${msgId}.${ext}`;
+      const { error: uploadErr } = await supabase.storage
+        .from('message-photos')
+        .upload(storagePath, file);
+      if (uploadErr) {
+        storagePath = undefined;
+      }
+    }
+
     const msg: Message = {
-      id: crypto.randomUUID(),
+      id: msgId,
       clientId,
       clientName,
       clientAvatar: '',
@@ -36,14 +78,25 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
       timestamp: new Date().toISOString(),
       isRead: false,
       isFromCoach: false,
+      // Use blob URL for optimistic display; App.tsx persists storagePath to DB
+      imageUrl: storagePath ?? localPreview ?? undefined,
     };
-    onSendMessage(msg);
-    setNewMessage('');
-    lastBroadcastRef.current = 0; // allow immediate typing broadcast on next input
+
+    // Pass storagePath separately so App.tsx can store it in DB,
+    // but display the blob URL optimistically
+    const displayMsg = localPreview
+      ? { ...msg, imageUrl: localPreview, _storagePath: storagePath }
+      : msg;
+
+    onSendMessage(displayMsg as Message);
+    setUploading(false);
+    lastBroadcastRef.current = 0;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Only send on Enter for desktop (non-touch) — on mobile, Enter = new line
+    const isTouchDevice = navigator.maxTouchPoints > 0;
+    if (e.key === 'Enter' && !e.shiftKey && !isTouchDevice) {
       e.preventDefault();
       handleSend();
     }
@@ -181,7 +234,7 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
                 );
               }
 
-              // Regular text message
+              // Regular text/image message
               return (
                 <motion.div
                   key={msg.id}
@@ -197,8 +250,24 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
                     ...styles.msgBubble,
                     background: msg.isFromCoach ? 'var(--bg-elevated)' : 'var(--accent-primary-dim)',
                     borderColor: msg.isFromCoach ? 'var(--glass-border)' : 'rgba(0,229,200,0.2)',
+                    ...(msg.imageUrl && !msg.text ? { padding: '6px' } : {}),
                   }}>
-                    <p style={styles.msgText}>{msg.text}</p>
+                    {msg.imageUrl && (
+                      <img
+                        src={msg.imageUrl}
+                        alt="attachment"
+                        style={{
+                          display: 'block',
+                          maxWidth: '240px',
+                          width: '100%',
+                          borderRadius: '10px',
+                          marginBottom: msg.text ? '8px' : '0',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => window.open(msg.imageUrl, '_blank')}
+                      />
+                    )}
+                    {msg.text && <p style={styles.msgText}>{msg.text}</p>}
                     <div style={styles.msgMeta}>
                       <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
                       {!msg.isFromCoach && msg.isRead && (
@@ -240,22 +309,49 @@ export default function MessagesPage({ messages, onSendMessage, coachName, clien
         </motion.div>
       )}
 
+      {/* Image preview above input */}
+      {imagePreview && (
+        <div style={styles.imagePreviewWrap}>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <img src={imagePreview} alt="preview" style={styles.imagePreview} />
+            <button onClick={handleClearImage} style={styles.imagePreviewRemove}>
+              <X size={12} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div style={styles.inputWrap}>
         <input
-          style={styles.input}
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleImagePick}
+        />
+        <button
+          style={styles.photoBtn}
+          onClick={() => fileInputRef.current?.click()}
+          type="button"
+        >
+          <ImagePlus size={20} />
+        </button>
+        <textarea
+          style={{ ...styles.input, resize: 'none', height: '48px', lineHeight: '24px' }}
           value={newMessage}
           onChange={e => { setNewMessage(e.target.value); broadcastClientTyping(); }}
           onKeyDown={handleKeyDown}
           placeholder={t.messages.placeholder}
+          rows={1}
         />
         <button
           style={{
             ...styles.sendBtn,
-            opacity: newMessage.trim() ? 1 : 0.4,
+            opacity: (newMessage.trim() || imageFile) && !uploading ? 1 : 0.4,
           }}
           onClick={handleSend}
-          disabled={!newMessage.trim()}
+          disabled={(!newMessage.trim() && !imageFile) || uploading}
         >
           <Send size={18} />
         </button>
@@ -413,6 +509,46 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: 'center',
     cursor: 'pointer',
     transition: 'opacity 0.15s',
+    flexShrink: 0,
+  },
+  photoBtn: {
+    width: '48px',
+    height: '48px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--glass-border)',
+    background: 'rgba(255,255,255,0.04)',
+    color: 'var(--text-secondary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  imagePreviewWrap: {
+    padding: '8px 20px 0',
+    background: 'var(--bg-card)',
+  },
+  imagePreview: {
+    height: '80px',
+    borderRadius: '10px',
+    objectFit: 'cover' as const,
+    border: '1px solid var(--glass-border)',
+  },
+  imagePreviewRemove: {
+    position: 'absolute' as const,
+    top: '-6px',
+    right: '-6px',
+    width: '20px',
+    height: '20px',
+    borderRadius: '50%',
+    background: 'var(--accent-danger)',
+    border: 'none',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    padding: 0,
   },
 };
 

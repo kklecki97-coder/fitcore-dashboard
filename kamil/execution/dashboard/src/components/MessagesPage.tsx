@@ -421,8 +421,24 @@ export default function MessagesPage({ isMobile = false }: MessagesPageProps) {
                         ...styles.msgBubble,
                         background: msg.isFromCoach ? 'var(--accent-primary-dim)' : 'var(--bg-elevated)',
                         borderColor: msg.isFromCoach ? 'rgba(0,229,200,0.15)' : 'var(--glass-border)',
+                        ...(msg.imageUrl && !msg.text ? { padding: '6px' } : {}),
                       }}>
-                        <p style={styles.msgText}>{msg.text}</p>
+                        {msg.imageUrl && (
+                          <img
+                            src={msg.imageUrl}
+                            alt="attachment"
+                            style={{
+                              display: 'block',
+                              maxWidth: '260px',
+                              width: '100%',
+                              borderRadius: '10px',
+                              marginBottom: msg.text ? '8px' : '0',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => window.open(msg.imageUrl, '_blank')}
+                          />
+                        )}
+                        {msg.text && <p style={styles.msgText}>{msg.text}</p>}
                         <div style={styles.msgMeta}>
                           <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
                           {msg.isFromCoach && (
