@@ -214,13 +214,13 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
       // Sanitize label for path construction
       const safeLabel = photoPose.replace(/[^a-zA-Z0-9_-]/g, '_');
       const path = `${client.id}/${uploadTarget}-${safeLabel}-${Date.now()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage.from('progress-photos').upload(path, file, { upsert: true });
+      const { error: uploadErr } = await supabase.storage.from('check-in-photos').upload(path, file, { upsert: true });
       if (uploadErr) { console.error('Photo upload failed:', uploadErr); return; }
 
       // Store path (not signed URL) — signed URLs generated on-the-fly when loading
       // Generate a signed URL for immediate display
       const { data: signedData } = await supabase.storage
-        .from('progress-photos')
+        .from('check-in-photos')
         .createSignedUrl(path, 86400);
       const displayUrl = signedData?.signedUrl || path;
 

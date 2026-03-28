@@ -242,9 +242,9 @@ async def main_async():
 
         if regenerate:
             print("REGENERATE MODE: overwriting existing DM drafts")
-            endpoint = f"instagram_leads?status=eq.engaged&select={select}&limit={limit}"
+            endpoint = f"instagram_leads?status=in.(engaged,warm)&select={select}&limit={limit}"
         else:
-            endpoint = f"instagram_leads?status=eq.engaged&dm_draft=is.null&select={select}&limit={limit}"
+            endpoint = f"instagram_leads?status=in.(engaged,warm)&dm_draft=is.null&select={select}&limit={limit}"
 
         leads = await supabase_get(session, sb_url, sb_key, endpoint)
 

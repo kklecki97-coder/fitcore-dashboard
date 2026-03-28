@@ -359,17 +359,26 @@ function App() {
         let photoUrl = p.url;
         // If stored value is a path (not a full URL), generate a signed URL
         if (photoUrl && !photoUrl.startsWith('http')) {
+          // Try check-in-photos first, fall back to progress-photos (legacy bucket)
           const { data: signedData } = await supabase.storage
             .from('check-in-photos')
             .createSignedUrl(photoUrl, 86400);
-          if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
+          if (signedData?.signedUrl) {
+            photoUrl = signedData.signedUrl;
+          } else {
+            const { data: fallbackData } = await supabase.storage
+              .from('progress-photos')
+              .createSignedUrl(photoUrl, 86400);
+            if (fallbackData?.signedUrl) photoUrl = fallbackData.signedUrl;
+          }
         } else if (photoUrl && photoUrl.includes('/storage/v1/')) {
           // Legacy: extract path from old full URLs and regenerate
-          const pathMatch = photoUrl.match(/\/check-in-photos\/(.+?)(\?|$)/);
-          if (pathMatch?.[1]) {
+          const pathMatch = photoUrl.match(/\/(check-in-photos|progress-photos)\/(.+?)(\?|$)/);
+          if (pathMatch?.[2]) {
+            const bucket = pathMatch[1] as string;
             const { data: signedData } = await supabase.storage
-              .from('check-in-photos')
-              .createSignedUrl(decodeURIComponent(pathMatch[1]), 86400);
+              .from(bucket)
+              .createSignedUrl(decodeURIComponent(pathMatch[2]), 86400);
             if (signedData?.signedUrl) photoUrl = signedData.signedUrl;
           }
         }

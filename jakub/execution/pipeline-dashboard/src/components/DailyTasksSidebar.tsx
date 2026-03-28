@@ -3,12 +3,13 @@ import {
 } from 'lucide-react'
 import type { Lead } from '../types'
 
-function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, touchDoneForToday, onMarkReplied }: {
+function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, touchDoneForToday, warmupComplete, onMarkReplied }: {
   engageBatch: Lead[]
   dmBatch: Lead[]
   followUpLeads: Lead[]
   todayDmed: number
   touchDoneForToday: boolean
+  warmupComplete: boolean
   onMarkReplied: (id: number) => void
 }) {
   const today = new Date()
@@ -70,7 +71,7 @@ function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, tou
             marginBottom: 4,
           }}>
             <span>3-touch warmup</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>{engageBatch.length > 0 ? `${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1}/3` : '-'}</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>{warmupComplete ? '3/3' : engageBatch.length > 0 ? `${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1}/3` : '-'}</span>
           </div>
           <div style={{
             height: 6,
@@ -80,8 +81,8 @@ function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, tou
           }}>
             <div style={{
               height: '100%',
-              width: engageBatch.length > 0 ? `${((Math.min(...engageBatch.map(l => l.touch_count || 0))) / 3) * 100}%` : '0%',
-              background: '#6366f1',
+              width: warmupComplete ? '100%' : engageBatch.length > 0 ? `${((Math.min(...engageBatch.map(l => l.touch_count || 0))) / 3) * 100}%` : '0%',
+              background: warmupComplete ? '#22c55e' : '#6366f1',
               borderRadius: 3,
               transition: 'width 0.5s ease',
             }} />
@@ -89,11 +90,13 @@ function DailyTasksSidebar({ engageBatch, dmBatch, followUpLeads, todayDmed, tou
         </div>
 
         <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-          {engageBatch.length > 0
-            ? touchDoneForToday
-              ? 'Done for today \u2713'
-              : `${engageBatch.length} profiles — touch ${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1} of 3`
-            : 'No leads to warm up'}
+          {warmupComplete
+            ? 'All 3 touches complete \u2713'
+            : engageBatch.length > 0
+              ? touchDoneForToday
+                ? 'Done for today \u2713'
+                : `${engageBatch.length} profiles — touch ${Math.min(...engageBatch.map(l => l.touch_count || 0)) + 1} of 3`
+              : 'No leads to warm up'}
         </div>
       </div>
 
