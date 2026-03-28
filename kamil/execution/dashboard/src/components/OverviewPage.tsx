@@ -48,7 +48,7 @@ const QUOTE_AUTHORS = [
 
 interface OverviewPageProps {
   onViewClient: (id: string) => void;
-  onNavigate: (page: 'messages' | 'clients' | 'check-ins') => void;
+  onNavigate: (page: 'messages' | 'clients' | 'check-ins', opts?: { openInvite?: boolean }) => void;
 }
 
 function getTimeGreeting(t: { overview: { greetingMorning: (n: string) => string; greetingAfternoon: (n: string) => string; greetingEvening: (n: string) => string; greetingNight: (n: string) => string } }, name: string): string {
@@ -205,7 +205,7 @@ export default function OverviewPage({ onViewClient, onNavigate }: OverviewPageP
               {t.overview.welcomeSub}
             </p>
             <motion.button
-              onClick={() => onNavigate('clients')}
+              onClick={() => onNavigate('clients', { openInvite: true })}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',

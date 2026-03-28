@@ -86,8 +86,10 @@ function AppInner() {
   }, []);
 
   // ── Navigation ──
-  const handleNavigate = (page: Page) => {
+  const [openInviteModal, setOpenInviteModal] = useState(false);
+  const handleNavigate = (page: Page, opts?: { openInvite?: boolean }) => {
     setCurrentPage(page);
+    if (opts?.openInvite) setOpenInviteModal(true);
     if (isMobile) setSidebarOpen(false);
   };
 
@@ -129,7 +131,7 @@ function AppInner() {
       case 'overview':
         return <ErrorBoundary><OverviewPage onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
       case 'clients':
-        return <ErrorBoundary><ClientsPage onViewClient={handleViewClient} onNavigate={handleNavigate} /></ErrorBoundary>;
+        return <ErrorBoundary><ClientsPage onViewClient={handleViewClient} onNavigate={handleNavigate} openInviteModal={openInviteModal} onInviteModalOpened={() => setOpenInviteModal(false)} /></ErrorBoundary>;
       case 'client-detail':
         return (
           <ErrorBoundary>

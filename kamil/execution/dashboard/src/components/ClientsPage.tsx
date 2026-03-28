@@ -20,9 +20,11 @@ import type { Client } from '../types';
 interface ClientsPageProps {
   onViewClient: (id: string) => void;
   onNavigate?: (page: 'messages') => void;
+  openInviteModal?: boolean;
+  onInviteModalOpened?: () => void;
 }
 
-export default function ClientsPage({ onViewClient, onNavigate }: ClientsPageProps) {
+export default function ClientsPage({ onViewClient, onNavigate, openInviteModal, onInviteModalOpened }: ClientsPageProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useLang();
   const { clients: allClients, programs, plans, workoutLogs, checkIns, messages, invoices, updateClient: onUpdateClient, deleteClient: onDeleteClient, addInvoice: onAddInvoice } = useData();
@@ -53,6 +55,14 @@ export default function ClientsPage({ onViewClient, onNavigate }: ClientsPagePro
   const [invitePlan, setInvitePlan] = useState<string>('');
   const [inviteGenerating, setInviteGenerating] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ success: boolean; link?: string; error?: string } | null>(null);
+
+  // Auto-open invite modal when navigated from overview
+  useEffect(() => {
+    if (openInviteModal) {
+      setShowInviteModal(true);
+      onInviteModalOpened?.();
+    }
+  }, [openInviteModal]);
   const [inviteCopied, setInviteCopied] = useState(false);
 
   const generateInviteCode = () => {

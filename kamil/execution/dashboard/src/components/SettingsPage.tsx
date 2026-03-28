@@ -7,6 +7,7 @@ import GlassCard from './GlassCard';
 import SettingsSecurityModals from './SettingsSecurityModals';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+import { formatCurrency } from '../lib/locale';
 import type { Theme, CoachingPlan } from '../types';
 import { isPushSupported, getPushPermission, isSubscribed, subscribeToPush, unsubscribeFromPush } from '../lib/pushNotifications';
 
@@ -24,10 +25,10 @@ interface SettingsPageProps {
   onDeletePlan: (id: string) => void;
 }
 
-type SettingsTab = 'profile' | 'payments' | 'notifications' | 'security' | 'appearance' | 'danger';
+type SettingsTab = 'profile' | 'payments' | 'plans' | 'notifications' | 'security' | 'appearance' | 'danger';
 
 export default function SettingsPage({ theme, onThemeChange, profileName, profileEmail, onProfileChange, profilePhoto, onPhotoChange, plans, onAddPlan, onUpdatePlan, onDeletePlan }: SettingsPageProps) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const isMobile = useIsMobile();
   const { showToast } = useToast();
 
@@ -176,6 +177,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
   const tabs: { id: SettingsTab; label: string; icon: typeof User; color?: string; iconBg?: string }[] = [
     { id: 'profile', label: t.settings.profile, icon: User },
     { id: 'payments', label: t.settings.payments, icon: CreditCard, color: '#635bff', iconBg: 'rgba(99, 91, 255, 0.08)' },
+    { id: 'plans', label: t.settings.plansAndPricing || 'Plans', icon: Package, color: 'var(--accent-primary)', iconBg: 'rgba(0, 229, 200, 0.08)' },
     { id: 'notifications', label: t.settings.notifications, icon: Bell, color: '#f59e0b', iconBg: 'rgba(245,158,11,0.08)' },
     { id: 'security', label: t.settings.security, icon: Shield },
     { id: 'appearance', label: t.settings.appearance, icon: Palette, color: 'var(--accent-primary)', iconBg: 'var(--accent-primary-dim)' },
@@ -357,9 +359,12 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
             </div>
 
           </GlassCard>
+          </>
+        );
 
-          {/* Plans & Pricing — separate card */}
-          <GlassCard delay={0.1}>
+      case 'plans':
+        return (
+          <GlassCard delay={0.05}>
             <div style={styles.sectionHeader}>
               <div style={{ ...styles.sectionIcon, background: 'rgba(0, 229, 200, 0.08)' }}>
                 <Package size={18} color="var(--accent-primary)" />
@@ -386,7 +391,7 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
                     <div>
                       <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)' }}>{plan.name}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        ${plan.price}{plan.billingCycle === 'monthly' ? '/mo' : plan.billingCycle === 'weekly' ? '/wk' : ' one-time'}
+                        {formatCurrency(plan.price, lang)}{plan.billingCycle === 'monthly' ? '/mo' : plan.billingCycle === 'weekly' ? '/wk' : ' one-time'}
                         {plan.description && ` · ${plan.description}`}
                       </div>
                     </div>
@@ -446,7 +451,6 @@ export default function SettingsPage({ theme, onThemeChange, profileName, profil
               {t.settings.addPlan || 'Add Plan'}
             </button>
           </GlassCard>
-          </>
         );
 
       case 'security':
