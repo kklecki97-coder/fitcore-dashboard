@@ -4,6 +4,7 @@ import { DemoProvider } from './context/DemoContext';
 import ViewToggle from './components/ViewToggle';
 import DemoModeBadge from './components/DemoModeBadge';
 import DemoToast from './components/DemoToast';
+import LeadCaptureModal from './components/LeadCaptureModal';
 import DashboardApp from './dashboard/DashboardApp';
 import ClientApp from './portal/ClientApp';
 import { I18nProvider } from './portal/i18n';
@@ -63,6 +64,7 @@ function App() {
 
         <DemoModeBadge />
         <DemoToast message={toast} />
+        <LeadCaptureModal />
       </div>
     </DemoProvider>
   );
