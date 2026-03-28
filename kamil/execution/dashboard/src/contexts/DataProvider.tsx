@@ -181,7 +181,7 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
 
     if (allInvoices.length > prevInvoiceCount.current) {
       const newInvs = allInvoices.slice(prevInvoiceCount.current);
-      newInvs.forEach(inv => {
+      newInvs.filter(inv => inv.status === 'paid').forEach(inv => {
         newNotifs.push({
           id: `notif-inv-${inv.id}`,
           type: 'payment',
