@@ -320,18 +320,26 @@ function Dashboard() {
   }, [allLeads, engageBatchIds, account, todayMidnight])
 
   // DM-ready batch: leads with all 3 touches done, ready next day
-  // But only show DMs if there's no active warming batch — finish warmup first
+  // Hide DMs if: active warming batch exists, OR any touches were done today (focus on warmup day)
   const dmBatch = useMemo(() => {
     const hasWarmingBatch = allLeads.some(l =>
       l.status === 'warming' && (l.engaged_by === account || l.account === account) && (l.touch_count || 0) < 3
     )
     if (hasWarmingBatch) return []
 
+    // If any leads were touched today, it's a warmup day — DMs wait until tomorrow
+    const touchedToday = allLeads.some(l =>
+      l.engaged_by === account && l.last_touch_at && new Date(l.last_touch_at).getTime() >= todayMidnight
+      && l.status === 'warm' && !l.dmed_at
+    )
+    if (touchedToday) return []
+
     return allLeads
       .filter(l => {
         if (l.status !== 'warm') return false
         if (l.engaged_by !== account) return false
         if (!l.last_touch_at) return false
+        if (l.dmed_at) return false
         // Ready next day: last touch must be before today
         return new Date(l.last_touch_at).getTime() < todayMidnight
       })
