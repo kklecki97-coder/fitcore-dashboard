@@ -50,7 +50,7 @@ export default function ClientsPage({ onViewClient, onNavigate }: ClientsPagePro
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [invitePlan, setInvitePlan] = useState<string>(plans.length > 0 ? plans[0].name : 'Basic');
+  const [invitePlan, setInvitePlan] = useState<string>('');
   const [inviteGenerating, setInviteGenerating] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ success: boolean; link?: string; error?: string } | null>(null);
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -827,7 +827,7 @@ export default function ClientsPage({ onViewClient, onNavigate }: ClientsPagePro
                         ? plans.filter(p => p.isActive).map((p) => (
                             <button
                               key={p.id}
-                              onClick={() => setInvitePlan(p.name)}
+                              onClick={() => setInvitePlan(prev => prev === p.name ? '' : p.name)}
                               style={{
                                 flex: 1,
                                 padding: '10px 12px',
@@ -842,7 +842,8 @@ export default function ClientsPage({ onViewClient, onNavigate }: ClientsPagePro
                                 transition: 'all 0.15s',
                               }}
                             >
-                              {p.name}
+                              <div style={{ fontWeight: 600 }}>{p.name}</div>
+                              <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '2px' }}>{formatCurrency(p.price, lang)}{p.billingCycle === 'monthly' ? '/mo' : p.billingCycle === 'weekly' ? '/wk' : ''}</div>
                             </button>
                           ))
                         : <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', padding: '10px 12px', border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
