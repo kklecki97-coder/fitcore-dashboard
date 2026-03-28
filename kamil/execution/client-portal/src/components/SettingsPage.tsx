@@ -434,8 +434,8 @@ export default function SettingsPage({ client, theme, onThemeChange, onLogout, o
                         setDeleteLoading(true);
                         setDeleteError('');
                         try {
-                          const { data: { session } } = await supabase.auth.getSession();
-                          if (!session) {
+                          const { data: { session }, error: refreshErr } = await supabase.auth.refreshSession();
+                          if (refreshErr || !session) {
                             setDeleteError(s.deleteErrorGeneric);
                             setDeleteLoading(false);
                             return;

@@ -470,8 +470,8 @@ export default function SettingsSecurityModals({ securityModal, onClose, profile
                           setDeleteLoading(true);
                           setDeleteError('');
                           try {
-                            const { data: { session } } = await supabase.auth.getSession();
-                            if (!session) {
+                            const { data: { session }, error: refreshErr } = await supabase.auth.refreshSession();
+                            if (refreshErr || !session) {
                               setDeleteError(t.settings.deleteErrorGeneric);
                               setDeleteLoading(false);
                               return;
