@@ -526,42 +526,70 @@ export default function HomePage({ client, program, workoutLogs, checkIns, messa
             <div style={{ ...styles.weekGrid, gap: isMobile ? '6px' : '8px', marginTop: isMobile ? '10px' : '12px' }}>
               {allProgramWeeks.map((w) => {
                 const isPerfect = !w.isFuture && w.completed >= w.target;
-                const pct = w.isFuture ? 0 : w.target > 0 ? w.completed / w.target : 0;
+                const pct = w.isFuture ? 0 : w.target > 0 ? Math.min(w.completed / w.target, 1) : 0;
+                const barColor = isPerfect ? '#22c55e' : w.isCurrent ? '#00e5c8' : pct > 0 ? '#00e5c8' : 'transparent';
                 return (
                   <div
                     key={w.weekNum}
                     style={{
                       ...styles.weekSquare,
-                      ...(w.isCurrent ? styles.weekSquareCurrent : {}),
                       background: w.isCurrent
-                        ? 'rgba(0,229,200,0.1)'
+                        ? 'rgba(0,229,200,0.08)'
                         : w.isFuture
-                          ? 'rgba(255,255,255,0.03)'
+                          ? 'rgba(255,255,255,0.02)'
                           : isPerfect
-                            ? 'rgba(34,197,94,0.15)'
-                            : pct > 0
-                              ? 'rgba(34,197,94,0.07)'
-                              : 'rgba(255,255,255,0.04)',
+                            ? 'rgba(34,197,94,0.08)'
+                            : 'rgba(255,255,255,0.03)',
                       border: w.isCurrent
-                        ? '2px solid var(--accent-primary)'
-                        : '1px solid var(--glass-border)',
-                      opacity: w.isFuture ? 0.4 : 1,
+                        ? '1.5px solid rgba(0,229,200,0.5)'
+                        : '1px solid rgba(255,255,255,0.06)',
+                      opacity: w.isFuture ? 0.35 : 1,
+                      boxShadow: w.isCurrent ? '0 0 16px rgba(0,229,200,0.12)' : isPerfect ? '0 0 8px rgba(34,197,94,0.08)' : 'none',
                     }}
                   >
+                    {isPerfect && (
+                      <span style={{ fontSize: isMobile ? '12px' : '14px', marginBottom: '-2px' }}>✓</span>
+                    )}
                     <span style={{
-                      ...styles.weekSquareNum,
-                      fontSize: isMobile ? '13px' : '15px',
-                      color: w.isCurrent ? 'var(--accent-primary)' : isPerfect ? 'var(--accent-success)' : 'var(--text-secondary)',
+                      fontSize: isMobile ? '11px' : '12px',
+                      fontWeight: 700,
+                      color: w.isFuture ? 'var(--text-tertiary)' : 'var(--text-secondary)',
+                      letterSpacing: '0.3px',
                     }}>
-                      {w.weekNum}
+                      {lang === 'pl' ? `Tydz ${w.weekNum}` : `Wk ${w.weekNum}`}
                     </span>
-                    <span style={{
-                      ...styles.weekSquareSub,
-                      fontSize: isMobile ? '9px' : '10px',
-                      color: w.isFuture ? 'var(--text-tertiary)' : isPerfect ? 'var(--accent-success)' : w.isCurrent ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                    }}>
-                      {w.isFuture ? '-' : `${w.completed}/${w.target}`}
-                    </span>
+                    {!w.isFuture && (
+                      <>
+                        <div style={{
+                          width: '100%',
+                          height: isMobile ? '3px' : '4px',
+                          borderRadius: '2px',
+                          background: 'rgba(255,255,255,0.08)',
+                          overflow: 'hidden',
+                          marginTop: '4px',
+                        }}>
+                          <div style={{
+                            width: `${Math.max(pct * 100, 4)}%`,
+                            height: '100%',
+                            borderRadius: '2px',
+                            background: isPerfect ? 'linear-gradient(90deg, #22c55e, #4ade80)' : `${barColor}`,
+                            transition: 'width 0.5s ease',
+                          }} />
+                        </div>
+                        <span style={{
+                          fontSize: isMobile ? '9px' : '10px',
+                          fontWeight: 600,
+                          fontFamily: 'var(--font-mono)',
+                          color: isPerfect ? '#22c55e' : w.isCurrent ? '#00e5c8' : 'var(--text-tertiary)',
+                          marginTop: '2px',
+                        }}>
+                          {w.completed}/{w.target}
+                        </span>
+                      </>
+                    )}
+                    {w.isFuture && (
+                      <span style={{ fontSize: isMobile ? '9px' : '10px', color: 'var(--text-tertiary)', marginTop: '4px' }}>—</span>
+                    )}
                   </div>
                 );
               })}
@@ -962,23 +990,12 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    aspectRatio: '1.2',
-    borderRadius: '10px',
-    gap: '2px',
-  },
-  weekSquareCurrent: {
-    boxShadow: '0 0 12px rgba(0,229,200,0.15)',
-  },
-  weekSquareNum: {
-    fontSize: '15px',
-    fontWeight: 700,
-    fontFamily: 'var(--font-mono)',
-  },
-  weekSquareSub: {
-    fontSize: '10px',
-    fontWeight: 600,
-    fontFamily: 'var(--font-mono)',
-  },
+    aspectRatio: '1',
+    borderRadius: '12px',
+    gap: '0px',
+    padding: '8px 6px',
+    transition: 'all 0.15s',
+  } as React.CSSProperties,
   expandBtn: {
     display: 'flex',
     alignItems: 'center',

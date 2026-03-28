@@ -220,7 +220,7 @@ function buildEmailHtml({
       <p style="color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;margin:0 0 24px;">
         <strong style="color:#ffffff;">${escapeHtml(coachName || "Your coach")}</strong> has invited
         ${clientName ? ` you, <strong style="color:#ffffff;">${escapeHtml(clientName)}</strong>,` : " you"}
-        to join their <strong style="color:#00e5c8;">${escapeHtml(plan || "Basic")}</strong> coaching program on FitCore.
+        to join ${plan ? `their <strong style="color:#00e5c8;">${escapeHtml(plan)}</strong> program on` : ""} <strong style="color:#00e5c8;">FitCore</strong>.
       </p>
       <a href="${inviteLink}"
          style="display:inline-block;padding:14px 32px;background:#00e5c8;color:#07090e;font-size:16px;font-weight:600;text-decoration:none;border-radius:10px;letter-spacing:-0.3px;">

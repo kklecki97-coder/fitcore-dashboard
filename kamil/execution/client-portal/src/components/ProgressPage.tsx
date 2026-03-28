@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2, Zap, Ruler, MoreHorizontal, RefreshCw, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { TrendingUp, Target, Scale, Droplets, Camera, X, Share2, Zap, Ruler } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ShareProgressCard from './ShareProgressCard';
 // Charts will be re-enabled once clients have enough data points
@@ -30,8 +30,6 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
   useEffect(() => { setLocalCheckIns(checkIns); }, [checkIns]);
   const [photoPose, setPhotoPose] = useState<'front' | 'side' | 'back'>('front');
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const [uploadTarget, setUploadTarget] = useState<'week1' | 'latest'>('week1');
 
 
   const { metrics } = client;
@@ -169,111 +167,6 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
     }
   }
 
-  const [uploading, setUploading] = useState(false);
-  const [photoMenu, setPhotoMenu] = useState<'week1' | 'latest' | null>(null);
-
-  const handlePhotoUpload = (target: 'week1' | 'latest') => {
-    setUploadTarget(target);
-    photoInputRef.current?.click();
-  };
-
-  const handleDeletePhoto = async (checkIn: CheckIn, pose: string) => {
-    const photo = checkIn.photos?.find(p => p.label.toLowerCase().includes(pose));
-    if (!photo) return;
-    await supabase.from('check_in_photos').delete().eq('check_in_id', checkIn.id).eq('label', photo.label);
-    setLocalCheckIns(prev => prev.map(ci =>
-      ci.id === checkIn.id
-        ? { ...ci, photos: ci.photos.filter(p => p.label !== photo.label) }
-        : ci
-    ));
-  };
-
-  const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
-  const [photoError, setPhotoError] = useState<string | null>(null);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setPhotoError(null);
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
-    if (!allowedTypes.includes(file.type)) {
-      setPhotoError(t.progress.photoInvalidType);
-      e.target.value = '';
-      return;
-    }
-    if (file.size > MAX_PHOTO_SIZE) {
-      setPhotoError(t.progress.photoTooLarge);
-      e.target.value = '';
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      // Sanitize label for path construction
-      const safeLabel = photoPose.replace(/[^a-zA-Z0-9_-]/g, '_');
-      const path = `${client.id}/${uploadTarget}-${safeLabel}-${Date.now()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage.from('check-in-photos').upload(path, file, { upsert: true });
-      if (uploadErr) { console.error('Photo upload failed:', uploadErr); return; }
-
-      // Store path (not signed URL) — signed URLs generated on-the-fly when loading
-      // Generate a signed URL for immediate display
-      const { data: signedData } = await supabase.storage
-        .from('check-in-photos')
-        .createSignedUrl(path, 86400);
-      const displayUrl = signedData?.signedUrl || path;
-
-      // Find the target check-in to attach the photo to
-      // Fall back to any existing check-in sorted by date
-      const sortedCheckIns = [...localCheckIns].sort((a, b) => a.date.localeCompare(b.date));
-      let targetCheckIn = uploadTarget === 'week1'
-        ? (firstPhotos ?? sortedCheckIns[0])
-        : (latestPhotos ?? sortedCheckIns[sortedCheckIns.length - 1] ?? sortedCheckIns[0]);
-
-      // No check-in exists at all — create a stub so the photo has somewhere to live
-      if (!targetCheckIn) {
-        const stubId = crypto.randomUUID();
-        const today = new Date().toISOString().split('T')[0];
-        await supabase.from('check_ins').insert({
-          id: stubId,
-          client_id: client.id,
-          date: today,
-          status: 'completed',
-          review_status: 'pending',
-          flag_reason: '',
-        });
-        const stub: CheckIn = {
-          id: stubId, clientId: client.id, clientName: client.name, date: today,
-          status: 'completed', weight: null, bodyFat: null, waist: null, hips: null,
-          chest: null, bicep: null, thigh: null, mood: null, energy: null, stress: null,
-          sleepHours: null, steps: null, nutritionScore: null, notes: '', wins: '',
-          challenges: '', coachFeedback: '', photos: [], reviewStatus: 'pending', flagReason: '',
-        };
-        setLocalCheckIns(prev => [...prev, stub]);
-        targetCheckIn = stub;
-      }
-
-      // Store path in DB (not the signed URL)
-      await supabase.from('check_in_photos').insert({
-        check_in_id: targetCheckIn.id,
-        url: path,
-        label: photoPose,
-      });
-
-      // Update local state with signed URL for immediate display
-      setLocalCheckIns(prev => prev.map(ci =>
-        ci.id === targetCheckIn!.id
-          ? { ...ci, photos: [...(ci.photos || []), { url: displayUrl, label: photoPose }] }
-          : ci
-      ));
-    } catch (err) {
-      console.error('Photo upload error:', err);
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
-  };
 
   // Compute share card data
   const weeksIn = client.startDate ? Math.max(1, Math.floor((Date.now() - new Date(client.startDate).getTime()) / (7 * 24 * 60 * 60 * 1000))) : 0;
@@ -451,6 +344,8 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
         };
         const hasMeasurements = measurementKeys.some(k => metrics[k] && metrics[k].length > 0);
 
+        const measurementIcons: Record<string, string> = { waist: '📏', hips: '🫧', chest: '💪', bicep: '💪', thigh: '🦵' };
+
         return hasMeasurements ? (
           <GlassCard delay={0.32} style={{ marginTop: '14px', ...(isMobile ? { padding: '14px' } : {}) }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: isMobile ? '12px' : '16px' }}>
@@ -459,49 +354,66 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                 {t.progress.measurements ?? 'Measurements'}
               </span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr auto auto auto' : '1fr auto auto auto', gap: 0 }}>
-              {/* Header row */}
-              <div style={{ padding: isMobile ? '6px 0' : '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>&nbsp;</span>
-              </div>
-              {[t.progress.start ?? 'Start', t.progress.current ?? 'Current', t.progress.change ?? 'Change'].map(header => (
-                <div key={header} style={{ padding: isMobile ? '6px 8px' : '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)', textAlign: 'right' as const }}>
-                  <span style={{ fontSize: isMobile ? '10px' : '11px', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.5px' }}>{header}</span>
-                </div>
-              ))}
-              {/* Data rows */}
-              {measurementKeys.map(key => {
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: isMobile ? '8px' : '10px' }}>
+              {measurementKeys.map((key, i) => {
                 const vals = metrics[key];
                 if (!vals || vals.length === 0) return null;
                 const startVal = vals[0];
                 const currentVal = vals[vals.length - 1];
                 const change = currentVal - startVal;
                 const showChange = vals.length > 1;
-                return [
-                  <div key={`${key}-label`} style={{ padding: isMobile ? '8px 0' : '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{measurementLabels[key]}</span>
-                  </div>,
-                  <div key={`${key}-start`} style={{ padding: isMobile ? '8px 8px' : '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
-                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{startVal}</span>
-                    <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
-                  </div>,
-                  <div key={`${key}-current`} style={{ padding: isMobile ? '8px 8px' : '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
-                    <span style={{ fontSize: isMobile ? '13px' : '14px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>{currentVal}</span>
-                    <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', marginLeft: '2px' }}>cm</span>
-                  </div>,
-                  <div key={`${key}-change`} style={{ padding: isMobile ? '8px 8px' : '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', textAlign: 'right' as const }}>
-                    {showChange ? (
-                      <span style={{
-                        fontSize: isMobile ? '13px' : '14px', fontFamily: 'var(--font-mono)', fontWeight: 600,
-                        color: change < 0 ? 'var(--accent-primary)' : change > 0 ? 'var(--accent-warm)' : 'var(--text-tertiary)',
-                      }}>
-                        {change > 0 ? '+' : ''}{change.toFixed(1)}
+                const changeColor = change < 0 ? '#00e5c8' : change > 0 ? '#f59e0b' : 'var(--text-tertiary)';
+
+                return (
+                  <motion.div
+                    key={key}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    style={{
+                      padding: isMobile ? '12px' : '14px',
+                      borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      display: 'flex',
+                      flexDirection: 'column' as const,
+                      gap: '8px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '14px' }}>{measurementIcons[key] || '📐'}</span>
+                      <span style={{ fontSize: isMobile ? '12px' : '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        {measurementLabels[key]}
                       </span>
-                    ) : (
-                      <span style={{ fontSize: isMobile ? '12px' : '13px', color: 'var(--text-tertiary)' }}>—</span>
-                    )}
-                  </div>,
-                ];
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                      <span style={{ fontSize: isMobile ? '22px' : '24px', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                        {currentVal}
+                      </span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>cm</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                        {lang === 'pl' ? 'Start' : 'Start'}: {startVal}cm
+                      </span>
+                      {showChange ? (
+                        <span style={{
+                          fontSize: isMobile ? '11px' : '12px',
+                          fontWeight: 700,
+                          fontFamily: 'var(--font-mono)',
+                          color: changeColor,
+                          background: change !== 0 ? `${changeColor}15` : 'transparent',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                        }}>
+                          {change > 0 ? '+' : ''}{change.toFixed(1)}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>—</span>
+                      )}
+                    </div>
+                  </motion.div>
+                );
               })}
             </div>
           </GlassCard>
@@ -518,26 +430,85 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
               {goalProgress.filter(g => g.progress >= 100).length}/{goalProgress.length}
             </span>
           </div>
-          <div style={{ ...styles.goalsList, gap: isMobile ? '12px' : undefined }}>
+          <div style={{ ...styles.goalsList, gap: isMobile ? '10px' : '12px' }}>
             {goalProgress.map((g, i) => {
-              const color = g.progress >= 100 ? 'var(--accent-success)' : g.progress > 0 ? 'var(--accent-primary)' : 'var(--text-tertiary)';
+              const completed = g.progress >= 100;
+              const color = completed ? '#22c55e' : g.progress > 0 ? '#00e5c8' : 'var(--text-tertiary)';
+              const bgGlow = completed ? 'rgba(34,197,94,0.06)' : g.progress > 0 ? 'rgba(0,229,200,0.04)' : 'transparent';
+              const borderColor = completed ? 'rgba(34,197,94,0.2)' : g.progress > 0 ? 'rgba(0,229,200,0.12)' : 'rgba(255,255,255,0.06)';
+              const goalNames: Record<string, Record<string, string>> = {
+                pl: { goalLoseWeight: 'Schudnąć', goalBuildMuscle: 'Budowa Mięśni', goalHealth: 'Zdrowie', goalStrength: 'Siła', goalEndurance: 'Wytrzymałość' },
+                en: { goalLoseWeight: 'Lose Weight', goalBuildMuscle: 'Build Muscle', goalHealth: 'Health', goalStrength: 'Strength', goalEndurance: 'Endurance' },
+              };
+              const goalIcons: Record<string, string> = {
+                'Target Weight': '⚖️', 'Target Body Fat': '📉', 'Bench Press': '🏋️', 'Squat': '🦵', 'Deadlift': '💪',
+                'Schudnąć': '⚖️', 'Budowa Mięśni': '💪', 'Zdrowie': '❤️', 'Siła': '🏋️', 'Wytrzymałość': '🔥',
+              };
+              const displayName = goalNames[lang]?.[g.goal] || g.goal;
+              const icon = goalIcons[displayName] || goalIcons[g.goal] || '🎯';
+
               return (
-                <div key={i} style={{ ...styles.goalItem, gap: isMobile ? '4px' : undefined }}>
-                  <div style={styles.goalTop}>
-                    <div style={{ ...styles.goalName, fontSize: isMobile ? '13px' : undefined }}>{(() => {
-                      const goalNames: Record<string, Record<string, string>> = {
-                        pl: { goalLoseWeight: 'Schudnąć', goalBuildMuscle: 'Budowa Mięśni', goalHealth: 'Zdrowie', goalStrength: 'Siła', goalEndurance: 'Wytrzymałość' },
-                        en: { goalLoseWeight: 'Lose Weight', goalBuildMuscle: 'Build Muscle', goalHealth: 'Health', goalStrength: 'Strength', goalEndurance: 'Endurance' },
-                      };
-                      return goalNames[lang]?.[g.goal] || g.goal;
-                    })()}</div>
-                    <div style={{ ...styles.goalPct, color, fontSize: isMobile ? '13px' : undefined }}>{g.progress}%</div>
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  style={{
+                    padding: isMobile ? '12px' : '14px 16px',
+                    borderRadius: '12px',
+                    background: bgGlow,
+                    border: `1px solid ${borderColor}`,
+                    display: 'flex',
+                    flexDirection: 'column' as const,
+                    gap: '8px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: isMobile ? '16px' : '18px' }}>{icon}</span>
+                      <div>
+                        <div style={{ fontSize: isMobile ? '13px' : '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {displayName}
+                        </div>
+                        <div style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginTop: '1px' }}>
+                          {g.label}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{
+                      fontSize: isMobile ? '16px' : '18px',
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-mono)',
+                      color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}>
+                      {completed && <span style={{ fontSize: '14px' }}>✓</span>}
+                      {g.progress}%
+                    </div>
                   </div>
-                  <div style={{ ...styles.goalBarBg, height: isMobile ? '5px' : undefined }}>
-                    <div style={{ ...styles.goalBarFill, width: `${Math.max(g.progress, 2)}%`, background: color }} />
+                  <div style={{
+                    height: isMobile ? '6px' : '8px',
+                    borderRadius: '4px',
+                    background: 'rgba(255,255,255,0.06)',
+                    overflow: 'hidden',
+                  }}>
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.max(g.progress, 2)}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      style={{
+                        height: '100%',
+                        borderRadius: '4px',
+                        background: completed
+                          ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+                          : 'linear-gradient(90deg, #00e5c8, #00c4aa)',
+                        boxShadow: g.progress > 0 ? `0 0 8px ${color}40` : 'none',
+                      }}
+                    />
                   </div>
-                  <div style={{ ...styles.goalLabel, fontSize: isMobile ? '10px' : undefined }}>{g.label}</div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -565,14 +536,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
             ))}
           </div>
         </div>
-        <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-        {photoError && (
-          <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', fontSize: '13px', marginBottom: '8px' }}>
-            {photoError}
-          </div>
-        )}
-
-        {/* Show photos if any exist */}
+        {/* Show photos from check-ins */}
         {(firstPhotos || latestPhotos) ? (
           <div style={styles.photoCompare}>
             {/* Week 1 / Starting photo */}
@@ -585,18 +549,8 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                 if (userSrc) {
                   return (
                     <>
-                      <div style={{ ...styles.photoFrame, position: 'relative' }} onClick={() => setLightboxSrc(userSrc)}>
+                      <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
                         <img src={userSrc} alt={`${t.progress.week1} ${photoPose}`} style={styles.photoImg} />
-                        <button
-                          style={styles.photoMenuBtn}
-                          onClick={e => { e.stopPropagation(); setPhotoMenu(photoMenu === 'week1' ? null : 'week1'); }}
-                        ><MoreHorizontal size={14} /></button>
-                        {photoMenu === 'week1' && (
-                          <div style={styles.photoDropdown} onClick={e => e.stopPropagation()}>
-                            <button style={styles.photoDropdownItem} onClick={() => { setPhotoMenu(null); setUploadTarget('week1'); photoInputRef.current?.click(); }}><RefreshCw size={13} /> Replace</button>
-                            <button style={{ ...styles.photoDropdownItem, color: '#ef4444' }} onClick={() => { setPhotoMenu(null); handleDeletePhoto(firstPhotos, photoPose); }}><Trash2 size={13} /> Delete</button>
-                          </div>
-                        )}
                       </div>
                       <div style={styles.photoMeta}>
                         {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
@@ -619,18 +573,8 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                   if (userSrc) {
                     return (
                       <>
-                        <div style={{ ...styles.photoFrame, position: 'relative' }} onClick={() => setLightboxSrc(userSrc)}>
+                        <div style={styles.photoFrame} onClick={() => setLightboxSrc(userSrc)}>
                           <img src={userSrc} alt={`${t.progress.latest} ${photoPose}`} style={styles.photoImg} />
-                          <button
-                            style={styles.photoMenuBtn}
-                            onClick={e => { e.stopPropagation(); setPhotoMenu(photoMenu === 'latest' ? null : 'latest'); }}
-                          ><MoreHorizontal size={14} /></button>
-                          {photoMenu === 'latest' && (
-                            <div style={styles.photoDropdown} onClick={e => e.stopPropagation()}>
-                              <button style={styles.photoDropdownItem} onClick={() => { setPhotoMenu(null); setUploadTarget('latest'); photoInputRef.current?.click(); }}><RefreshCw size={13} /> Replace</button>
-                              <button style={{ ...styles.photoDropdownItem, color: '#ef4444' }} onClick={() => { setPhotoMenu(null); handleDeletePhoto(latestPhotos, photoPose); }}><Trash2 size={13} /> Delete</button>
-                            </div>
-                          )}
                         </div>
                         <div style={styles.photoMeta}>
                           {ciDate ? monthNames[ciDate.getMonth()] : ''}{ciWeight != null ? ` · ${ciWeight}kg` : ''}
@@ -645,21 +589,12 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
           </div>
         ) : null}
 
-        {/* Add photo button */}
-        <button
-          onClick={() => handlePhotoUpload(firstPhotos ? 'latest' : 'week1')}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            width: '100%', padding: isMobile ? '11px' : '14px', borderRadius: '10px',
-            border: '1.5px dashed rgba(0,229,200,0.3)', background: 'rgba(0,229,200,0.04)',
-            color: 'var(--accent-primary)', fontSize: isMobile ? '13px' : '14px', fontWeight: 600,
-            fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
-            marginTop: (firstPhotos || latestPhotos) ? '8px' : '0',
-          }}
-        >
-          <Camera size={16} />
-          {uploading ? t.progress.uploading : `+ ${t.progress.uploadPhoto}`}
-        </button>
+        {/* No photos message */}
+        {!firstPhotos && !latestPhotos && (
+          <div style={{ textAlign: 'center', padding: '20px 16px', color: 'var(--text-tertiary)', fontSize: '13px' }}>
+            {lang === 'pl' ? 'Zdjęcia pojawią się po wysłaniu raportu ze zdjęciami' : 'Photos will appear after submitting a check-in with photos'}
+          </div>
+        )}
       </GlassCard>
 
       {/* Share Progress Button */}

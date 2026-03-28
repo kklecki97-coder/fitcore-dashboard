@@ -7,32 +7,28 @@
 export function relativeTime(isoString: string, lang: 'en' | 'pl'): string {
   const now = new Date();
   const date = new Date(isoString);
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHr = Math.floor(diffMin / 60);
-  const diffDays = Math.floor(diffHr / 24);
 
-  if (diffSec < 60) {
-    return lang === 'pl' ? 'Przed chwilą' : 'Just now';
-  }
-  if (diffMin < 60) {
-    return lang === 'pl' ? `${diffMin} min temu` : `${diffMin} min ago`;
-  }
-  if (diffHr < 24) {
-    return lang === 'pl' ? `${diffHr}h temu` : `${diffHr}h ago`;
+  // Same day = "Today"
+  if (date.toDateString() === now.toDateString()) {
+    return lang === 'pl' ? 'Dziś' : 'Today';
   }
 
-  // Check if yesterday
+  // Yesterday
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   if (date.toDateString() === yesterday.toDateString()) {
-    const time = date.toLocaleTimeString(lang === 'pl' ? 'pl-PL' : 'en-US', { hour: '2-digit', minute: '2-digit' });
-    return lang === 'pl' ? `Wczoraj ${time}` : `Yesterday ${time}`;
+    return lang === 'pl' ? 'Wczoraj' : 'Yesterday';
   }
 
+  // 2-6 days ago
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
   if (diffDays < 7) {
-    return lang === 'pl' ? `${diffDays} dni temu` : `${diffDays} days ago`;
+    if (lang === 'pl') {
+      return diffDays === 2 ? '2 dni temu' : `${diffDays} dni temu`;
+    }
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
   }
 
   // Older than 7 days — show date

@@ -78,7 +78,7 @@ const LANG: Record<'en' | 'pl', LangStrings> = {
     invoicePaid: (name, amount, period) => `${name} paid ${amount} (${period})`,
     invoiceOverdue: (name, amount, days) => `${name}'s invoice (${amount}) is ${days} day${days === 1 ? '' : 's'} overdue`,
     personalRecord: (name, exercise, weight, diff) => `${name} — new PR! ${exercise} ${weight}kg (+${diff}kg)`,
-    clientJoined: (name, plan) => `${name} joined as ${plan} client`,
+    clientJoined: (name, plan) => plan ? `${name} joined as ${plan} client` : `${name} joined as client`,
   },
   pl: {
     workoutCompleted: (name, type, dur) => `${name} ukończył/a ${type} (${dur} min)`,
@@ -96,9 +96,23 @@ const LANG: Record<'en' | 'pl', LangStrings> = {
     invoicePaid: (name, amount, period) => `${name} zapłacił/a ${amount} (${period})`,
     invoiceOverdue: (name, amount, days) => `Faktura ${name} (${amount}) — ${days} dni po terminie`,
     personalRecord: (name, exercise, weight, diff) => `${name} — nowy rekord! ${exercise} ${weight}kg (+${diff}kg)`,
-    clientJoined: (name, plan) => `${name} dołączył/a jako klient ${plan}`,
+    clientJoined: (name, plan) => plan ? `${name} dołączył/a jako klient ${plan}` : `${name} dołączył/a jako klient`,
   },
 };
+
+// Fix date-only strings (YYYY-MM-DD) — these lack time info.
+// If it's today, treat as "just happened". Otherwise add noon.
+function fixDateOnly(dateStr: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const today = new Date().toISOString().split('T')[0];
+    if (dateStr === today) {
+      // Today's event — use current time so it shows "Just now" / "X min ago"
+      return new Date().toISOString();
+    }
+    return `${dateStr}T12:00:00`;
+  }
+  return dateStr;
+}
 
 export function buildFeed(
   clients: Client[],
@@ -124,7 +138,7 @@ export function buildFeed(
         type: 'workout_completed',
         clientId: log.clientId,
         clientName: name,
-        timestamp: log.date,
+        timestamp: fixDateOnly(log.date),
         title: t.workoutCompleted(name, log.type, log.duration),
         actionType: 'view',
       });
@@ -134,7 +148,7 @@ export function buildFeed(
         type: 'workout_missed',
         clientId: log.clientId,
         clientName: name,
-        timestamp: log.date,
+        timestamp: fixDateOnly(log.date),
         title: t.workoutMissed(name, log.type),
         actionType: 'view',
       });
@@ -150,7 +164,7 @@ export function buildFeed(
       type: 'checkin_submitted',
       clientId: ci.clientId,
       clientName: name,
-      timestamp: ci.date,
+      timestamp: fixDateOnly(ci.date),
       title: t.checkinSubmitted(name),
       detail: t.checkinDetail(ci.mood, ci.energy, ci.weight),
       actionType: ci.reviewStatus === 'pending' ? 'review' : 'view',
@@ -163,7 +177,7 @@ export function buildFeed(
         type: 'checkin_reviewed',
         clientId: ci.clientId,
         clientName: name,
-        timestamp: ci.date, // approximate — we don't have exact review time
+        timestamp: fixDateOnly(ci.date), // approximate — we don't have exact review time
         title: t.checkinReviewed(name),
         actionType: 'view',
       });
@@ -249,7 +263,7 @@ export function buildFeed(
           type: 'personal_record',
           clientId: log.clientId,
           clientName: name,
-          timestamp: log.date,
+          timestamp: fixDateOnly(log.date),
           title: t.personalRecord(name, log.exerciseName, weightStr, diff),
           actionType: 'view',
           metadata: { exercise: log.exerciseName, weight: w, diff: parseFloat(diff) },
@@ -267,7 +281,7 @@ export function buildFeed(
         type: 'client_joined',
         clientId: client.id,
         clientName: client.name,
-        timestamp: client.startDate,
+        timestamp: fixDateOnly(client.startDate),
         title: t.clientJoined(client.name, client.plan),
         actionType: 'view',
       });
