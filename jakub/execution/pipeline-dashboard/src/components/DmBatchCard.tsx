@@ -1,20 +1,32 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
-  Instagram, ExternalLink, Send, Copy, Check, CheckCircle, RefreshCw, Play, Pause,
+  Instagram, ExternalLink, Send, Copy, Check, CheckCircle, RefreshCw, Play, Pause, Undo2,
 } from 'lucide-react'
 import GlassCard from './GlassCard'
 import type { Lead } from '../types'
 
-function DmBatchCard({ leads, onMarkAllDmed }: {
+function DmBatchCard({ leads, onMarkAllDmed, onCommitDmed, onUndoDmed }: {
   leads: Lead[]
-  onMarkAllDmed: () => void
+  onMarkAllDmed: () => Promise<number[]>
+  onCommitDmed: (ids: number[]) => void
+  onUndoDmed: (ids: number[]) => Promise<void>
 }) {
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [marking, setMarking] = useState(false)
   const [done, setDone] = useState(false)
+  const [undoCountdown, setUndoCountdown] = useState(0)
+  const undoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const markedIdsRef = useRef<number[]>([])
+  const markedCountRef = useRef(0)
   const [openingAll, setOpeningAll] = useState(false)
   const [openedCount, setOpenedCount] = useState(0)
   const [openTimerRef, setOpenTimerRef] = useState<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearInterval(undoTimerRef.current)
+    }
+  }, [])
 
   const handleCopy = async (id: number, text: string) => {
     try {
@@ -22,7 +34,6 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
       setCopiedId(id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch {
-      // Fallback for older browsers
       const ta = document.createElement('textarea')
       ta.value = text
       document.body.appendChild(ta)
@@ -36,9 +47,35 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
 
   const handleMarkAll = async () => {
     setMarking(true)
-    await onMarkAllDmed()
+    const ids = await onMarkAllDmed()
+    markedIdsRef.current = ids
+    markedCountRef.current = ids.length
     setDone(true)
     setMarking(false)
+    setUndoCountdown(10)
+    undoTimerRef.current = setInterval(() => {
+      setUndoCountdown(prev => {
+        if (prev <= 1) {
+          if (undoTimerRef.current) clearInterval(undoTimerRef.current)
+          undoTimerRef.current = null
+          // Undo window expired — commit local state
+          onCommitDmed(markedIdsRef.current)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  const handleUndo = async () => {
+    if (undoTimerRef.current) clearInterval(undoTimerRef.current)
+    undoTimerRef.current = null
+    setUndoCountdown(0)
+    setDone(false)
+    const ids = markedIdsRef.current
+    markedIdsRef.current = []
+    markedCountRef.current = 0
+    await onUndoDmed(ids)
   }
 
   const handleOpenAll = () => {
@@ -74,6 +111,46 @@ function DmBatchCard({ leads, onMarkAllDmed }: {
     }, 30000)
 
     setOpenTimerRef(timer)
+  }
+
+  // Show undo state when done and countdown active — leads prop still has data since we didn't update local state
+  if (done && undoCountdown > 0) {
+    const count = markedCountRef.current
+    return (
+      <GlassCard style={{ marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Check size={20} color="#22c55e" />
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: '#22c55e' }}>
+                {count} leads marked as DM'd
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                Accidentally clicked? Undo within {undoCountdown} seconds
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={handleUndo}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: '#ef444420',
+              color: '#ef4444',
+              border: '1px solid #ef444450',
+              borderRadius: 'var(--radius-md)',
+              padding: '12px 24px',
+              fontSize: 14,
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <Undo2 size={16} /> Undo ({undoCountdown}s)
+          </button>
+        </div>
+      </GlassCard>
+    )
   }
 
   const readyCount = leads.filter(l => l.dm_draft).length

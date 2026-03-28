@@ -198,27 +198,7 @@ function Dashboard() {
     }
   }
 
-  // Batch update helper - now includes engaged_by/dmed_by
-  const batchUpdateStatus = async (ids: number[], newStatus: PipelineStage, timestampField?: string) => {
-    const now = new Date().toISOString()
-    const updates: Record<string, string> = { status: newStatus }
-    if (timestampField) updates[timestampField] = now
-    if (newStatus === 'warming') updates.engaged_by = account
-    if (newStatus === 'dmed') updates.dmed_by = account
 
-    try {
-      const idList = ids.join(',')
-      await supabaseFetch(`instagram_leads?id=in.(${idList})`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
-      })
-      setAllLeads(prev => prev.map(l =>
-        ids.includes(l.id) ? { ...l, ...updates } as Lead : l
-      ))
-    } catch (err) {
-      console.error('Failed to batch update:', err)
-    }
-  }
 
   // ─── Computed data (filtered to current account's work) ───
   // For pipeline counts, only show leads this account worked on (not the shared new pool)
@@ -288,7 +268,7 @@ function Dashboard() {
     const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime()
   }, [])
 
-  const { engageBatch, touchDoneForToday } = useMemo(() => {
+  const { engageBatch, touchDoneForToday, warmupComplete } = useMemo(() => {
     // First: leads currently being warmed (touch 1 or 2 — not done yet)
     const warming = allLeads
       .filter(l => l.status === 'warming' && l.account === account && (l.touch_count || 0) < 3)
@@ -299,9 +279,9 @@ function Dashboard() {
       const lastTouched = warming.some(l => l.last_touch_at && new Date(l.last_touch_at).getTime() >= todayMidnight)
       if (lastTouched) {
         // Already touched today — don't show batch, show "done for today"
-        return { engageBatch: warming, touchDoneForToday: true }
+        return { engageBatch: warming, touchDoneForToday: true, warmupComplete: false }
       }
-      return { engageBatch: warming, touchDoneForToday: false }
+      return { engageBatch: warming, touchDoneForToday: false, warmupComplete: false }
     }
 
     // Check if we already did a touch today (touch 3 just completed, leads moved to warm)
@@ -310,7 +290,25 @@ function Dashboard() {
     ).length
     if (touchedTodayCount > 0) {
       // Already touched leads today — done for today, don't load new batch
-      return { engageBatch: [], touchDoneForToday: true }
+      return { engageBatch: [], touchDoneForToday: true, warmupComplete: false }
+    }
+
+    // Check if there are warm leads (3/3 touches done) not yet DM'd — don't start a new batch,
+    // the operator should be sending DMs to these leads instead
+    const warmUndmed = allLeads.filter(l =>
+      l.status === 'warm' && l.engaged_by === account && !l.dmed_at
+    )
+    if (warmUndmed.length > 0) {
+      // Warm leads exist — no new warmup batch, DM batch takes priority
+      return { engageBatch: [], touchDoneForToday: true, warmupComplete: true }
+    }
+
+    // Check if DMs were sent today — don't start a new warmup batch on the same day
+    const dmedTodayCount = allLeads.filter(l =>
+      l.dmed_by === account && l.dmed_at && new Date(l.dmed_at).getTime() >= todayMidnight
+    ).length
+    if (dmedTodayCount > 0) {
+      return { engageBatch: [], touchDoneForToday: true, warmupComplete: false }
     }
 
     // Otherwise, pick next batch of new leads
@@ -318,24 +316,24 @@ function Dashboard() {
     const newBatch = ids === null
       ? []
       : allLeads.filter(l => ids.includes(l.id) && l.status === 'new')
-    return { engageBatch: newBatch, touchDoneForToday: false }
+    return { engageBatch: newBatch, touchDoneForToday: false, warmupComplete: false }
   }, [allLeads, engageBatchIds, account, todayMidnight])
 
-  // DM-ready batch: leads with all 3 touches done + 2 day cooldown passed
+  // DM-ready batch: leads with all 3 touches done, ready next day
   const dmBatch = useMemo(() => {
-    const oneDayAgo = Date.now() - (1 * 24 * 60 * 60 * 1000)
     return allLeads
       .filter(l => {
         if (l.status !== 'warm') return false
         if (l.engaged_by !== account) return false
         if (!l.last_touch_at) return false
-        // 1-day cooldown after last touch
-        return new Date(l.last_touch_at).getTime() <= oneDayAgo
+        // Ready next day: last touch must be before today
+        return new Date(l.last_touch_at).getTime() < todayMidnight
       })
       .sort((a, b) => (b.score || 0) - (a.score || 0))
-  }, [allLeads, account])
+  }, [allLeads, account, todayMidnight])
 
   // Touch history: day-by-day calendar from first touch to today, including missed days
+  // Activity history: touches + DMs, day by day
   const touchHistory = useMemo(() => {
     const dayMap: Record<string, { touch: number; count: number }> = {}
     for (const lead of allLeads) {
@@ -346,6 +344,13 @@ function Dashboard() {
         const day = ts.slice(0, 10)
         const key = `${day}-${t}`
         if (!dayMap[key]) dayMap[key] = { touch: t, count: 0 }
+        dayMap[key].count++
+      }
+      // Track DMs as touch 4 (special value for display)
+      if (lead.dmed_by === account && lead.dmed_at) {
+        const day = lead.dmed_at.slice(0, 10)
+        const key = `${day}-4`
+        if (!dayMap[key]) dayMap[key] = { touch: 4, count: 0 }
         dayMap[key].count++
       }
     }
@@ -362,7 +367,6 @@ function Dashboard() {
 
     while (cur <= end) {
       const day = cur.toISOString().slice(0, 10)
-      // Find any touch that happened on this day
       const entry = Object.entries(dayMap).find(([k]) => k.startsWith(day))
       if (entry) {
         rows.push({ date: day, touch: entry[1].touch, count: entry[1].count })
@@ -590,6 +594,7 @@ function Dashboard() {
             followUpLeads={followUpLeads}
             todayDmed={todayDmed}
             touchDoneForToday={touchDoneForToday}
+            warmupComplete={warmupComplete}
             onMarkReplied={(id) => handleStatusChange(id, 'replied')}
           />
 
@@ -741,11 +746,34 @@ function Dashboard() {
 
             <DmBatchCard
               leads={dmBatch}
-              onMarkAllDmed={() => batchUpdateStatus(
-                dmBatch.map(l => l.id),
-                'dmed',
-                'dmed_at'
-              )}
+              onMarkAllDmed={async () => {
+                // Only write to Supabase — do NOT update local state yet
+                const ids = dmBatch.map(l => l.id)
+                const now = new Date().toISOString()
+                const idList = ids.join(',')
+                await supabaseFetch(`instagram_leads?id=in.(${idList})`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ status: 'dmed', dmed_at: now, dmed_by: account }),
+                })
+                // Return ids so the card can track what was marked
+                return ids
+              }}
+              onCommitDmed={(ids: number[]) => {
+                // Called after undo window expires — update local state
+                const now = new Date().toISOString()
+                setAllLeads(prev => prev.map(l =>
+                  ids.includes(l.id) ? { ...l, status: 'dmed' as PipelineStage, dmed_at: now, dmed_by: account } as Lead : l
+                ))
+              }}
+              onUndoDmed={async (ids: number[]) => {
+                // Revert Supabase — local state was never changed
+                if (ids.length === 0) return
+                const idList = ids.join(',')
+                await supabaseFetch(`instagram_leads?id=in.(${idList})`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ status: 'warm', dmed_at: null, dmed_by: null }),
+                })
+              }}
             />
 
             {/* Touch History Log */}
@@ -766,7 +794,8 @@ function Dashboard() {
                     const d = new Date(row.date + 'T12:00:00')
                     const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
                     const missed = row.touch === null
-                    const color = missed ? 'var(--text-tertiary)' : row.touch === 1 ? '#6366f1' : row.touch === 2 ? '#f59e0b' : '#00e5c8'
+                    const isDm = row.touch === 4
+                    const color = missed ? 'var(--text-tertiary)' : isDm ? '#fb923c' : row.touch === 1 ? '#6366f1' : row.touch === 2 ? '#f59e0b' : '#00e5c8'
                     return (
                       <div key={row.date} style={{
                         display: 'flex', alignItems: 'center', gap: 12,
@@ -788,7 +817,7 @@ function Dashboard() {
                               color, background: color + '18',
                               padding: '2px 8px', borderRadius: 4,
                             }}>
-                              Touch {row.touch}/3
+                              {isDm ? 'DMs sent' : `Touch ${row.touch}/3`}
                             </div>
                             <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 'auto' }}>
                               {row.count} leads
