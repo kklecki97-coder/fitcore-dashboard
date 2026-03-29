@@ -31,10 +31,7 @@ export default function LeadCaptureModal() {
 
     setLoading(true);
 
-    // Track GA event
-    if (typeof gtag === 'function') {
-      gtag('event', 'demo_lead_capture', { email_provided: true });
-    }
+    if (typeof gtag === 'function') gtag('event', 'form_submit_attempt', { form: 'demo_capture' });
 
     try {
       const res = await fetch(
@@ -49,9 +46,13 @@ export default function LeadCaptureModal() {
           }),
         }
       );
-      if (!res.ok) throw new Error('Failed');
+      if (res.ok) {
+        if (typeof gtag === 'function') gtag('event', 'form_submit_success', { form: 'demo_capture' });
+      } else {
+        if (typeof gtag === 'function') gtag('event', 'form_submit_error', { form: 'demo_capture', status: res.status });
+      }
     } catch {
-      // Silently fail — we still show success to the user
+      if (typeof gtag === 'function') gtag('event', 'form_submit_error', { form: 'demo_capture', status: 'network_error' });
     }
 
     setLoading(false);

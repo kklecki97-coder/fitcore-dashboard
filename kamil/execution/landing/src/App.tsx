@@ -247,14 +247,21 @@ export default function App() {
     e.preventDefault();
     if (!emailModalValue.trim()) return;
     setEmailModalLoading(true);
-    if (typeof gtag === 'function') gtag('event', 'lead_capture_feature', { email_provided: true });
+    if (typeof gtag === 'function') gtag('event', 'form_submit_attempt', { form: 'email_capture' });
     try {
-      await fetch('https://vawghpnaoimtplfimjrw.supabase.co/functions/v1/notify-contact', {
+      const res = await fetch('https://vawghpnaoimtplfimjrw.supabase.co/functions/v1/notify-contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'Landing visitor', email: emailModalValue.trim(), message: '[Auto] Clicked Get Started in features section' }),
       });
-    } catch { /* silent */ }
+      if (res.ok) {
+        if (typeof gtag === 'function') gtag('event', 'form_submit_success', { form: 'email_capture' });
+      } else {
+        if (typeof gtag === 'function') gtag('event', 'form_submit_error', { form: 'email_capture', status: res.status });
+      }
+    } catch {
+      if (typeof gtag === 'function') gtag('event', 'form_submit_error', { form: 'email_capture', status: 'network_error' });
+    }
     setEmailModalLoading(false);
     setEmailModalSent(true);
     setTimeout(() => { setEmailModalOpen(false); setEmailModalSent(false); setEmailModalValue(''); }, 3000);
