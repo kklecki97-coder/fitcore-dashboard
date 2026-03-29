@@ -249,7 +249,7 @@ export default function App() {
     setEmailModalLoading(true);
     if (typeof gtag === 'function') gtag('event', 'lead_capture_feature', { email_provided: true });
     try {
-      await fetch('https://ntmrkbgkgdmynyqzwbxs.supabase.co/functions/v1/notify-contact', {
+      await fetch('https://vawghpnaoimtplfimjrw.supabase.co/functions/v1/notify-contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'Landing visitor', email: emailModalValue.trim(), message: '[Auto] Clicked Get Started in features section' }),

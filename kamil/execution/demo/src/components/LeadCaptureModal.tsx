@@ -38,7 +38,7 @@ export default function LeadCaptureModal() {
 
     try {
       const res = await fetch(
-        'https://ntmrkbgkgdmynyqzwbxs.supabase.co/functions/v1/notify-contact',
+        'https://vawghpnaoimtplfimjrw.supabase.co/functions/v1/notify-contact',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
