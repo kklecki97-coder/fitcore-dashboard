@@ -15,6 +15,7 @@ import {
 import { useLang } from './i18n';
 import type { Lang } from './i18n';
 import { useAuth } from './auth';
+import Section from './components/Section';
 
 /* ═══════════════════════════════════════════════════════════
    FitCore Demo Landing Page - Identity-Driven Redesign
@@ -22,26 +23,6 @@ import { useAuth } from './auth';
    ═══════════════════════════════════════════════════════════ */
 
 const DEMO_URL = 'https://demofitcore.tech';
-
-
-// ── Reusable animated section wrapper ──
-function Section({ children, id, style }: { children: React.ReactNode; id?: string; style?: React.CSSProperties }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
-
-  return (
-    <motion.section
-      ref={ref}
-      id={id}
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-      style={{ position: 'relative', zIndex: 1, ...style }}
-    >
-      {children}
-    </motion.section>
-  );
-}
 
 // ── Glass Card ──
 function GlassCard({ children, style, delay = 0 }: { children: React.ReactNode; style?: React.CSSProperties; delay?: number }) {
@@ -290,6 +271,7 @@ export default function App() {
     { label: t.nav.howItWorks, href: '#how-it-works-steps' },
     { label: t.nav.pricing, href: '#pricing' },
     { label: 'FAQ', href: '#faq' },
+    { label: 'Blog', href: lang === 'pl' ? '/pl/blog' : '/blog' },
   ];
 
   return (
@@ -1505,6 +1487,7 @@ export default function App() {
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
+                  { label: 'Blog', href: lang === 'pl' ? '/pl/blog' : '/blog' },
                   { label: t.footer?.bookCall || 'Book a Call', href: 'https://cal.com/fitcore/demo', external: true },
                   { label: t.footer?.privacyPolicy || 'Privacy Policy', href: lang === 'pl' ? '/pl/privacy' : '/privacy' },
                   { label: t.footer?.termsOfService || 'Terms of Service', href: lang === 'pl' ? '/pl/terms' : '/terms' },

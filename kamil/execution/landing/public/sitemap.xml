@@ -1,8 +1,160 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- Homepage -->
   <url>
     <loc>https://fitcore.tech/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/" />
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/" />
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Checkout -->
+  <url>
+    <loc>https://fitcore.tech/checkout</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/checkout" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/checkout" />
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/checkout</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/checkout" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/checkout" />
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Contact -->
+  <url>
+    <loc>https://fitcore.tech/contact</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/contact" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/contact" />
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/contact</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/contact" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/contact" />
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Privacy -->
+  <url>
+    <loc>https://fitcore.tech/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Terms -->
+  <url>
+    <loc>https://fitcore.tech/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Blog Index -->
+  <url>
+    <loc>https://fitcore.tech/blog</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog" />
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/blog</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog" />
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Blog Posts -->
+  <url>
+    <loc>https://fitcore.tech/blog/how-to-manage-clients-as-personal-trainer</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/how-to-manage-clients-as-personal-trainer" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/how-to-manage-clients-as-personal-trainer" />
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/blog/how-to-manage-clients-as-personal-trainer</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/how-to-manage-clients-as-personal-trainer" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/how-to-manage-clients-as-personal-trainer" />
+    <lastmod>2026-03-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://fitcore.tech/blog/best-tools-for-fitness-trainers-2026</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/best-tools-for-fitness-trainers-2026" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/best-tools-for-fitness-trainers-2026" />
+    <lastmod>2026-03-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/blog/best-tools-for-fitness-trainers-2026</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/best-tools-for-fitness-trainers-2026" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/best-tools-for-fitness-trainers-2026" />
+    <lastmod>2026-03-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://fitcore.tech/blog/automate-payments-and-workouts</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/automate-payments-and-workouts" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/automate-payments-and-workouts" />
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/blog/automate-payments-and-workouts</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/automate-payments-and-workouts" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/automate-payments-and-workouts" />
+    <lastmod>2026-03-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://fitcore.tech/blog/why-excel-is-not-enough-for-fitness-coaching</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/why-excel-is-not-enough-for-fitness-coaching" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/why-excel-is-not-enough-for-fitness-coaching" />
+    <lastmod>2026-03-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://fitcore.tech/pl/blog/why-excel-is-not-enough-for-fitness-coaching</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fitcore.tech/blog/why-excel-is-not-enough-for-fitness-coaching" />
+    <xhtml:link rel="alternate" hreflang="pl" href="https://fitcore.tech/pl/blog/why-excel-is-not-enough-for-fitness-coaching" />
+    <lastmod>2026-03-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>
