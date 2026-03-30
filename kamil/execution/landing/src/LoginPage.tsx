@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -110,7 +111,15 @@ export default function LoginPage() {
     pointerEvents: 'none',
   };
 
+  const prefix = lang === 'pl' ? '/pl' : '';
+
   return (
+    <>
+    <Helmet>
+      <title>{t.meta.titleLogin}</title>
+      <meta name="description" content={t.meta.descLogin} />
+      <link rel="canonical" href={`https://fitcore.tech${prefix}/login`} />
+    </Helmet>
     <div style={{
       minHeight: '100vh',
       display: 'flex',
@@ -375,5 +384,6 @@ export default function LoginPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }

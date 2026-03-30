@@ -5,6 +5,7 @@ import { useLang } from '../i18n';
 import type {
   Client, Message, WorkoutProgram, Invoice, CheckIn,
   AppNotification, WorkoutLog, WorkoutSetLog, CoachingPlan,
+  NutritionPlan, NutritionPlanAssignment,
 } from '../types';
 import { calculateOverallProgress } from '../utils/calculateProgress';
 
@@ -66,6 +67,17 @@ interface DataContextValue {
   // Check-in handlers
   updateCheckIn: (id: string, updates: Partial<CheckIn>) => Promise<void>;
   addCheckIn: (checkIn: CheckIn) => Promise<void>;
+
+  // Nutrition handlers
+  nutritionPlans: NutritionPlan[];
+  nutritionAssignments: NutritionPlanAssignment[];
+  addNutritionPlan: (plan: NutritionPlan) => Promise<void>;
+  updateNutritionPlan: (id: string, updates: Partial<NutritionPlan>) => Promise<void>;
+  deleteNutritionPlan: (id: string) => Promise<void>;
+  duplicateNutritionPlan: (id: string) => Promise<void>;
+  assignNutritionPlan: (assignment: NutritionPlanAssignment) => Promise<void>;
+  updateNutritionAssignment: (id: string, updates: Partial<NutritionPlanAssignment>) => Promise<void>;
+  deleteNutritionAssignment: (id: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -96,6 +108,8 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
   const [allWorkoutLogs, setAllWorkoutLogs] = useState<WorkoutLog[]>([]);
   const [allSetLogs, setAllSetLogs] = useState<WorkoutSetLog[]>([]);
   const [allPlans, setAllPlans] = useState<CoachingPlan[]>([]);
+  const [allNutritionPlans, setAllNutritionPlans] = useState<NutritionPlan[]>([]);
+  const [allNutritionAssignments, setAllNutritionAssignments] = useState<NutritionPlanAssignment[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
   const triggerConfetti = () => setConfettiKey(k => k + 1);
@@ -534,6 +548,64 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
       }
     };
 
+    const loadNutritionPlans = async () => {
+      const { data, error } = await supabase
+        .from('nutrition_plans')
+        .select('*, nutrition_plan_days(*, nutrition_meals(*)), nutrition_plan_assignments(*)')
+        .order('created_at');
+      if (error) { console.error('loadNutritionPlans failed:', error); showToast('Failed to load nutrition plans.', 'error'); return; }
+      if (data) {
+        const plans: NutritionPlan[] = [];
+        const assignments: NutritionPlanAssignment[] = [];
+        for (const p of data) {
+          const planAssignments = (p.nutrition_plan_assignments ?? []).map((a: { id: string; plan_id: string; client_id: string; assigned_at: string; start_date: string | null; end_date: string | null; status: string; coach_notes: string }) => ({
+            id: a.id,
+            planId: a.plan_id,
+            clientId: a.client_id,
+            assignedAt: a.assigned_at,
+            startDate: a.start_date,
+            endDate: a.end_date,
+            status: a.status as 'active' | 'completed' | 'paused',
+            coachNotes: a.coach_notes ?? '',
+          }));
+          assignments.push(...planAssignments);
+          plans.push({
+            id: p.id,
+            title: p.title,
+            description: p.description ?? '',
+            type: p.type ?? 'flexible',
+            isTemplate: p.is_template ?? false,
+            clientIds: planAssignments.filter((a: NutritionPlanAssignment) => a.status === 'active').map((a: NutritionPlanAssignment) => a.clientId),
+            createdAt: p.created_at?.split('T')[0] ?? '',
+            updatedAt: p.updated_at?.split('T')[0] ?? '',
+            days: (p.nutrition_plan_days ?? [])
+              .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+              .map((d: { id: string; day_label: string; sort_order: number; notes: string; nutrition_meals: { id: string; meal_type: string; title: string; description: string; calories: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null; sort_order: number }[] }) => ({
+                id: d.id,
+                dayLabel: d.day_label,
+                sortOrder: d.sort_order,
+                notes: d.notes ?? '',
+                meals: (d.nutrition_meals ?? [])
+                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .map(m => ({
+                    id: m.id,
+                    mealType: m.meal_type as NutritionPlan['days'][0]['meals'][0]['mealType'],
+                    title: m.title,
+                    description: m.description ?? '',
+                    calories: m.calories,
+                    proteinG: m.protein_g,
+                    carbsG: m.carbs_g,
+                    fatG: m.fat_g,
+                    sortOrder: m.sort_order,
+                  })),
+              })),
+          });
+        }
+        setAllNutritionPlans(plans);
+        setAllNutritionAssignments(assignments);
+      }
+    };
+
     setDataLoading(true);
     loadClients().then((clientsList) => {
       Promise.all([
@@ -544,6 +616,7 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
         loadWorkoutLogs(),
         loadSetLogs(),
         loadPlans(),
+        loadNutritionPlans(),
       ]).then(([, , , , workoutLogs]) => {
         // ── Auto-calculate overall progress for each client ──
         const logs = (workoutLogs ?? []) as WorkoutLog[];
@@ -797,6 +870,63 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
     return () => { supabase.removeChannel(channel); };
   }, [isLoggedIn]);
 
+  // ── Realtime nutrition assignments — reload plans on assignment changes ──
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const channel = supabase
+      .channel('coach-nutrition-assignments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'nutrition_plan_assignments' },
+        () => {
+          if (!initialLoadDoneRef.current) return;
+          // Re-fetch all nutrition data to stay in sync (simpler than partial updates for nested data)
+          (async () => {
+            const { data } = await supabase
+              .from('nutrition_plans')
+              .select('*, nutrition_plan_days(*, nutrition_meals(*)), nutrition_plan_assignments(*)')
+              .order('created_at');
+            if (data) {
+              const plans: NutritionPlan[] = [];
+              const assignments: NutritionPlanAssignment[] = [];
+              for (const p of data) {
+                const planAssignments = (p.nutrition_plan_assignments ?? []).map((a: { id: string; plan_id: string; client_id: string; assigned_at: string; start_date: string | null; end_date: string | null; status: string; coach_notes: string }) => ({
+                  id: a.id, planId: a.plan_id, clientId: a.client_id, assignedAt: a.assigned_at,
+                  startDate: a.start_date, endDate: a.end_date,
+                  status: a.status as 'active' | 'completed' | 'paused', coachNotes: a.coach_notes ?? '',
+                }));
+                assignments.push(...planAssignments);
+                plans.push({
+                  id: p.id, title: p.title, description: p.description ?? '', type: p.type ?? 'flexible',
+                  isTemplate: p.is_template ?? false,
+                  clientIds: planAssignments.filter((a: NutritionPlanAssignment) => a.status === 'active').map((a: NutritionPlanAssignment) => a.clientId),
+                  createdAt: p.created_at?.split('T')[0] ?? '', updatedAt: p.updated_at?.split('T')[0] ?? '',
+                  days: (p.nutrition_plan_days ?? [])
+                    .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order)
+                    .map((d: { id: string; day_label: string; sort_order: number; notes: string; nutrition_meals: { id: string; meal_type: string; title: string; description: string; calories: number | null; protein_g: number | null; carbs_g: number | null; fat_g: number | null; sort_order: number }[] }) => ({
+                      id: d.id, dayLabel: d.day_label, sortOrder: d.sort_order, notes: d.notes ?? '',
+                      meals: (d.nutrition_meals ?? [])
+                        .sort((a, b) => a.sort_order - b.sort_order)
+                        .map(m => ({
+                          id: m.id, mealType: m.meal_type as NutritionPlan['days'][0]['meals'][0]['mealType'],
+                          title: m.title, description: m.description ?? '',
+                          calories: m.calories, proteinG: m.protein_g, carbsG: m.carbs_g, fatG: m.fat_g, sortOrder: m.sort_order,
+                        })),
+                    })),
+                });
+              }
+              setAllNutritionPlans(plans);
+              setAllNutritionAssignments(assignments);
+            }
+          })();
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoggedIn]);
+
   // ── Handlers ──
 
   const handleUpdateClient = async (id: string, updates: Partial<Client>) => {
@@ -972,6 +1102,166 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
     setAllPrograms(prev => [...prev, newProgram]);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) await saveProgramToDb(newProgram, user.id);
+  };
+
+  // ── Nutrition plan helpers ──
+  const saveNutritionPlanToDb = async (plan: NutritionPlan, coachId: string) => {
+    const r1 = await supabase.from('nutrition_plans').upsert({
+      id: plan.id,
+      coach_id: coachId,
+      title: plan.title,
+      description: plan.description,
+      type: plan.type,
+      is_template: plan.isTemplate,
+      updated_at: new Date().toISOString(),
+    });
+    if (r1.error) { console.error('saveNutritionPlanToDb upsert:', r1.error); showToast('Failed to save nutrition plan.', 'error'); return; }
+    // Delete old days (cascade deletes meals) and re-insert
+    await supabase.from('nutrition_plan_days').delete().eq('plan_id', plan.id);
+    if (plan.days.length > 0) {
+      const dayRows = plan.days.map((day, di) => ({
+        id: day.id, plan_id: plan.id, day_label: day.dayLabel, sort_order: di, notes: day.notes,
+      }));
+      const { error: daysError } = await supabase.from('nutrition_plan_days').insert(dayRows);
+      if (daysError) { console.error('saveNutritionPlanToDb days:', daysError); showToast('Failed to save plan days.', 'error'); return; }
+      const mealRows = plan.days.flatMap(day =>
+        day.meals.map((meal, mi) => ({
+          id: meal.id, day_id: day.id, meal_type: meal.mealType, title: meal.title,
+          description: meal.description, calories: meal.calories, protein_g: meal.proteinG,
+          carbs_g: meal.carbsG, fat_g: meal.fatG, sort_order: mi,
+        }))
+      );
+      if (mealRows.length > 0) {
+        const { error: mealsError } = await supabase.from('nutrition_meals').insert(mealRows);
+        if (mealsError) { console.error('saveNutritionPlanToDb meals:', mealsError); showToast('Failed to save meals.', 'error'); }
+      }
+    }
+  };
+
+  // ── Nutrition plan handlers ──
+  const handleAddNutritionPlan = async (plan: NutritionPlan) => {
+    showToast('Meal plan saved!', 'success');
+    setAllNutritionPlans(prev => [...prev, plan]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await saveNutritionPlanToDb(plan, user.id);
+  };
+
+  const handleUpdateNutritionPlan = async (id: string, updates: Partial<NutritionPlan>) => {
+    let updated: NutritionPlan | null = null;
+    setAllNutritionPlans(prev => {
+      const next = prev.map(p => p.id === id ? { ...p, ...updates } : p);
+      updated = next.find(p => p.id === id) ?? null;
+      return next;
+    });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && updated) await saveNutritionPlanToDb(updated, user.id);
+  };
+
+  const handleDeleteNutritionPlan = async (id: string) => {
+    const removed = allNutritionPlans.find(p => p.id === id);
+    const removedAssignments = allNutritionAssignments.filter(a => a.planId === id);
+    setAllNutritionPlans(prev => prev.filter(p => p.id !== id));
+    setAllNutritionAssignments(prev => prev.filter(a => a.planId !== id));
+    const { error } = await supabase.from('nutrition_plans').delete().eq('id', id);
+    if (error) {
+      console.error('handleDeleteNutritionPlan failed:', error); showToast('Failed to delete plan.', 'error');
+      if (removed) setAllNutritionPlans(prev => [...prev, removed]);
+      if (removedAssignments.length > 0) setAllNutritionAssignments(prev => [...prev, ...removedAssignments]);
+    }
+  };
+
+  const handleDuplicateNutritionPlan = async (id: string) => {
+    const source = allNutritionPlans.find(p => p.id === id);
+    if (!source) return;
+    const now = new Date().toISOString().split('T')[0];
+    const newPlan: NutritionPlan = {
+      ...source,
+      id: crypto.randomUUID(),
+      title: `${source.title} (Copy)`,
+      clientIds: [],
+      createdAt: now,
+      updatedAt: now,
+      days: source.days.map(d => ({
+        ...d,
+        id: crypto.randomUUID(),
+        meals: d.meals.map(m => ({ ...m, id: crypto.randomUUID() })),
+      })),
+    };
+    setAllNutritionPlans(prev => [...prev, newPlan]);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await saveNutritionPlanToDb(newPlan, user.id);
+  };
+
+  // Helper: recalculate clientIds for a plan based on active assignments
+  const recalcPlanClientIds = (planId: string, assignmentsList: NutritionPlanAssignment[]) => {
+    const activeClientIds = assignmentsList.filter(a => a.planId === planId && a.status === 'active').map(a => a.clientId);
+    setAllNutritionPlans(prev =>
+      prev.map(p => p.id === planId ? { ...p, clientIds: [...new Set(activeClientIds)] } : p)
+    );
+  };
+
+  const handleAssignNutritionPlan = async (assignment: NutritionPlanAssignment) => {
+    // Auto-complete ALL previous active assignments for this client
+    const prevActives = allNutritionAssignments.filter(
+      a => a.clientId === assignment.clientId && a.status === 'active'
+    );
+    const updatedAssignments = allNutritionAssignments.map(a =>
+      prevActives.some(pa => pa.id === a.id) ? { ...a, status: 'completed' as const } : a
+    );
+    const newAssignments = [...updatedAssignments, assignment];
+    setAllNutritionAssignments(newAssignments);
+
+    // Update clientIds on affected plans (old plans lose this client, new plan gains it)
+    const affectedPlanIds = new Set(prevActives.map(a => a.planId));
+    affectedPlanIds.add(assignment.planId);
+    for (const pid of affectedPlanIds) {
+      recalcPlanClientIds(pid, newAssignments);
+    }
+
+    // Persist: complete old assignments
+    for (const pa of prevActives) {
+      await supabase.from('nutrition_plan_assignments').update({ status: 'completed' }).eq('id', pa.id);
+    }
+    // Insert new assignment
+    const { error } = await supabase.from('nutrition_plan_assignments').insert({
+      id: assignment.id,
+      plan_id: assignment.planId,
+      client_id: assignment.clientId,
+      start_date: assignment.startDate,
+      end_date: assignment.endDate,
+      status: assignment.status,
+      coach_notes: assignment.coachNotes,
+    });
+    if (error) { console.error('handleAssignNutritionPlan failed:', error); showToast('Failed to assign plan.', 'error'); }
+    else showToast('Meal plan assigned!', 'success');
+  };
+
+  const handleUpdateNutritionAssignment = async (id: string, updates: Partial<NutritionPlanAssignment>) => {
+    setAllNutritionAssignments(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.startDate !== undefined) dbUpdates.start_date = updates.startDate;
+    if (updates.endDate !== undefined) dbUpdates.end_date = updates.endDate;
+    if (updates.coachNotes !== undefined) dbUpdates.coach_notes = updates.coachNotes;
+    if (Object.keys(dbUpdates).length > 0) {
+      const { error } = await supabase.from('nutrition_plan_assignments').update(dbUpdates).eq('id', id);
+      if (error) { console.error('handleUpdateNutritionAssignment failed:', error); showToast('Failed to update assignment.', 'error'); }
+    }
+  };
+
+  const handleDeleteNutritionAssignment = async (id: string) => {
+    const removed = allNutritionAssignments.find(a => a.id === id);
+    const remaining = allNutritionAssignments.filter(a => a.id !== id);
+    setAllNutritionAssignments(remaining);
+    if (removed) recalcPlanClientIds(removed.planId, remaining);
+    const { error } = await supabase.from('nutrition_plan_assignments').delete().eq('id', id);
+    if (error) {
+      console.error('handleDeleteNutritionAssignment failed:', error); showToast('Failed to remove assignment.', 'error');
+      if (removed) {
+        setAllNutritionAssignments(prev => [...prev, removed]);
+        recalcPlanClientIds(removed.planId, [...remaining, removed]);
+      }
+    }
   };
 
   // ── Invoice handlers ──
@@ -1175,9 +1465,20 @@ export function DataProvider({ isLoggedIn, children }: DataProviderProps) {
 
     updateCheckIn: handleUpdateCheckIn,
     addCheckIn: handleAddCheckIn,
+
+    nutritionPlans: allNutritionPlans,
+    nutritionAssignments: allNutritionAssignments,
+    addNutritionPlan: handleAddNutritionPlan,
+    updateNutritionPlan: handleUpdateNutritionPlan,
+    deleteNutritionPlan: handleDeleteNutritionPlan,
+    duplicateNutritionPlan: handleDuplicateNutritionPlan,
+    assignNutritionPlan: handleAssignNutritionPlan,
+    updateNutritionAssignment: handleUpdateNutritionAssignment,
+    deleteNutritionAssignment: handleDeleteNutritionAssignment,
   }), [
     allClients, allMessages, allPrograms, allInvoices, allCheckIns,
-    allWorkoutLogs, allSetLogs, allPlans, dataLoading, showOnboarding,
+    allWorkoutLogs, allSetLogs, allPlans, allNutritionPlans, allNutritionAssignments,
+    dataLoading, showOnboarding,
     confettiKey, profileName, profileEmail, profilePhoto,
     appNotifications,
   ]);

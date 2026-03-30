@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Users,
   Dumbbell,
+  UtensilsCrossed,
   MessageSquare,
   BarChart3,
   Settings,
@@ -24,16 +25,18 @@ const navPages: { icon: typeof LayoutDashboard; page: Page }[] = [
   { icon: LayoutDashboard, page: 'overview' },
   { icon: Users, page: 'clients' },
   { icon: Dumbbell, page: 'programs' },
+  { icon: UtensilsCrossed, page: 'nutrition' },
   { icon: MessageSquare, page: 'messages' },
   { icon: ClipboardCheck, page: 'check-ins' },
   { icon: CreditCard, page: 'payments' },
   { icon: BarChart3, page: 'analytics' },
 ];
 
-const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'messages' | 'checkIns' | 'payments' | 'analytics'> = {
+const navLabelKeys: Record<string, 'overview' | 'clients' | 'programs' | 'nutrition' | 'messages' | 'checkIns' | 'payments' | 'analytics'> = {
   'overview': 'overview',
   'clients': 'clients',
   'programs': 'programs',
+  'nutrition': 'nutrition',
   'messages': 'messages',
   'check-ins': 'checkIns',
   'payments': 'payments',

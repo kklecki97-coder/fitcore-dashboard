@@ -176,7 +176,54 @@ export interface WorkoutSetLog {
   rpe?: number | null;
 }
 
-export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'program-create-chooser' | 'ai-program-creator' | 'program-import' | 'payments' | 'check-ins';
+// ── Nutrition Plan types ──
+export type NutritionPlanType = 'strict' | 'flexible' | 'guidelines';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'pre-workout' | 'post-workout';
+
+export interface NutritionMeal {
+  id: string;
+  mealType: MealType;
+  title: string;
+  description: string;
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  sortOrder: number;
+}
+
+export interface NutritionPlanDay {
+  id: string;
+  dayLabel: string;
+  sortOrder: number;
+  notes: string;
+  meals: NutritionMeal[];
+}
+
+export interface NutritionPlan {
+  id: string;
+  title: string;
+  description: string;
+  type: NutritionPlanType;
+  isTemplate: boolean;
+  days: NutritionPlanDay[];
+  clientIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NutritionPlanAssignment {
+  id: string;
+  planId: string;
+  clientId: string;
+  assignedAt: string;
+  startDate: string | null;
+  endDate: string | null;
+  status: 'active' | 'completed' | 'paused';
+  coachNotes: string;
+}
+
+export type Page = 'overview' | 'clients' | 'client-detail' | 'add-client' | 'messages' | 'analytics' | 'schedule' | 'settings' | 'programs' | 'program-builder' | 'program-create-chooser' | 'ai-program-creator' | 'program-import' | 'payments' | 'check-ins' | 'nutrition' | 'nutrition-builder' | 'nutrition-import';
 
 export type Theme = 'dark' | 'light';
 

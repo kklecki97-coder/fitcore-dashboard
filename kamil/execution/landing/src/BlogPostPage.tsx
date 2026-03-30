@@ -71,6 +71,7 @@ export default function BlogPostPage() {
         <meta property="og:description" content={post.description[lang]} />
         <meta property="og:url" content={`https://fitcore.tech${prefix}/blog/${post.slug}`} />
         <meta property="og:type" content="article" />
+        <meta property="og:image" content={`https://fitcore.tech/og/${post.slug}${lang === 'pl' ? '-pl' : ''}.png`} />
         <meta property="article:published_time" content={post.date} />
         {post.tags.map(tag => (
           <meta key={tag} property="article:tag" content={tag} />
@@ -78,6 +79,7 @@ export default function BlogPostPage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={post.title[lang]} />
         <meta name="twitter:description" content={post.description[lang]} />
+        <meta name="twitter:image" content={`https://fitcore.tech/og/${post.slug}${lang === 'pl' ? '-pl' : ''}.png`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 

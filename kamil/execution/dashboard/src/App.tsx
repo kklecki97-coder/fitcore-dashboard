@@ -23,6 +23,8 @@ const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const ProgramBuilderPage = lazy(() => import('./components/ProgramBuilderPage'));
 const AIProgramCreator = lazy(() => import('./components/AIProgramCreator'));
 const ProgramImporter = lazy(() => import('./components/ProgramImporter'));
+const NutritionPlanBuilder = lazy(() => import('./components/NutritionPlanBuilder'));
+const NutritionImporter = lazy(() => import('./components/NutritionImporter'));
 import {
   ClientsPageSkeleton, MessagesPageSkeleton, AnalyticsPageSkeleton,
   ProgramsPageSkeleton, PaymentsPageSkeleton, CheckInsPageSkeleton,
@@ -33,7 +35,8 @@ import { useLang } from './i18n';
 import { exerciseLibrary } from './data';
 import { supabase } from './lib/supabase';
 import { DataProvider, useData } from './contexts/DataProvider';
-import type { Page, Theme, WorkoutProgram } from './types';
+import NutritionPage from './components/NutritionPage';
+import type { Page, Theme, WorkoutProgram, NutritionPlan } from './types';
 
 // ── Inner app (has access to DataProvider context) ──
 
@@ -46,7 +49,7 @@ function AppInner() {
   const [currentPage, _setCurrentPage] = useState<Page>(() => {
     try {
       const saved = sessionStorage.getItem('fitcore-page');
-      const contextPages: Page[] = ['client-detail', 'program-builder', 'ai-program-creator', 'program-import'];
+      const contextPages: Page[] = ['client-detail', 'program-builder', 'ai-program-creator', 'program-import', 'nutrition-builder', 'nutrition-import'];
       if (saved && !contextPages.includes(saved as Page)) return saved as Page;
     } catch { /* ignore */ }
     return 'overview';
@@ -57,6 +60,8 @@ function AppInner() {
   };
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
+  const [selectedNutritionPlanId, setSelectedNutritionPlanId] = useState<string>('');
+  const [pendingNutritionPlan, setPendingNutritionPlan] = useState<NutritionPlan | null>(null);
   const [pendingProgram, setPendingProgram] = useState<WorkoutProgram | null>(null);
   const [previousPage, setPreviousPage] = useState<Page>('clients');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -119,6 +124,12 @@ function AppInner() {
     setCurrentPage(previousPage);
     setSelectedProgramId('');
     setPendingProgram(null);
+  };
+
+  const handleViewNutritionPlan = (id: string) => {
+    setPreviousPage(currentPage);
+    setSelectedNutritionPlanId(id);
+    setCurrentPage('nutrition-builder');
   };
 
   const handleLogout = async () => {
@@ -230,6 +241,61 @@ function AppInner() {
             </Suspense>
           </ErrorBoundary>
         );
+      case 'nutrition':
+        return (
+          <ErrorBoundary>
+            <NutritionPage
+              onViewPlan={handleViewNutritionPlan}
+              onAddPlan={() => { setSelectedNutritionPlanId(''); setCurrentPage('nutrition-builder'); }}
+              onImportPlan={() => setCurrentPage('nutrition-import')}
+            />
+          </ErrorBoundary>
+        );
+      case 'nutrition-import':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<ProgramsPageSkeleton isMobile={isMobile} />}>
+              <NutritionImporter
+                onImported={(plan: NutritionPlan) => {
+                  // Set as pending and open in builder for review/edit
+                  setSelectedNutritionPlanId('');
+                  setPendingNutritionPlan(plan);
+                  setCurrentPage('nutrition-builder');
+                }}
+                onBack={() => setCurrentPage('nutrition')}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        );
+      case 'nutrition-builder':
+        return (
+          <ErrorBoundary>
+            <Suspense fallback={<ProgramsPageSkeleton isMobile={isMobile} />}>
+              <NutritionPlanBuilder
+                plan={selectedNutritionPlanId ? data.nutritionPlans.find(p => p.id === selectedNutritionPlanId) || null : pendingNutritionPlan}
+                clients={data.clients}
+                onSave={(plan: NutritionPlan) => {
+                  if (data.nutritionPlans.find(p => p.id === plan.id)) {
+                    data.updateNutritionPlan(plan.id, plan);
+                  } else {
+                    data.addNutritionPlan(plan);
+                  }
+                  setPendingNutritionPlan(null);
+                  setCurrentPage('nutrition');
+                }}
+                onBack={() => {
+                  if (pendingNutritionPlan) {
+                    setPendingNutritionPlan(null);
+                    setCurrentPage('nutrition-import');
+                  } else {
+                    setCurrentPage(previousPage === 'nutrition-builder' ? 'nutrition' : previousPage);
+                    setSelectedNutritionPlanId('');
+                  }
+                }}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        );
       case 'payments':
         return <ErrorBoundary><PaymentsPage onViewClient={handleViewClient} /></ErrorBoundary>;
       case 'check-ins':
@@ -291,6 +357,7 @@ function AppInner() {
       case 'messages': return <MessagesPageSkeleton isMobile={isMobile} />;
       case 'analytics': return <AnalyticsPageSkeleton isMobile={isMobile} />;
       case 'programs': case 'program-builder': return <ProgramsPageSkeleton isMobile={isMobile} />;
+      case 'nutrition': case 'nutrition-builder': case 'nutrition-import': return <ProgramsPageSkeleton isMobile={isMobile} />;
       case 'payments': return <PaymentsPageSkeleton isMobile={isMobile} />;
       case 'check-ins': return <CheckInsPageSkeleton isMobile={isMobile} />;
       default:

@@ -8,6 +8,7 @@ import GlassCard from './GlassCard';
 import AnimatedNumber from './AnimatedNumber';
 import useIsMobile from '../hooks/useIsMobile';
 import { useLang } from '../i18n';
+// @ts-ignore — scaffolded for future backend integration (progress photo uploads)
 import { supabase } from '../lib/supabase';
 import { matchMainLift, MAIN_LIFT_PATTERNS, parseTarget } from '../utils/lift-matching';
 import { calculateOverallProgress } from '../utils/calculateProgress';
@@ -371,13 +372,13 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
                     style={{
-                      padding: isMobile ? '12px' : '14px',
+                      padding: isMobile ? '10px' : '12px',
                       borderRadius: '12px',
                       background: 'rgba(255,255,255,0.03)',
                       border: '1px solid rgba(255,255,255,0.06)',
                       display: 'flex',
                       flexDirection: 'column' as const,
-                      gap: '8px',
+                      gap: '6px',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -393,7 +394,7 @@ export default function ProgressPage({ client, workoutLogs, checkIns, setLogs, c
                       <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>cm</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: isMobile ? '10px' : '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: isMobile ? '12px' : '13px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                         {lang === 'pl' ? 'Start' : 'Start'}: {startVal}cm
                       </span>
                       {showChange ? (

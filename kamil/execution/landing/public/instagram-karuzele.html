@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>FitCore - Karuzele Instagram (Tydzień)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #07090e; color: #f0f2f5; font-family: 'Outfit', sans-serif;
+      padding: 48px 24px; display: flex; flex-direction: column; align-items: center; gap: 48px;
+    }
+    h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
+    h1 span { color: #00e5c8; }
+    .subtitle { color: #8b92a5; font-size: 15px; margin-top: 8px; }
+    .day-section {
+      max-width: 1400px; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 48px;
+    }
+    .day-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+    }
+    .day-badge {
+      background: linear-gradient(135deg, #00e5c8, #00c4aa);
+      color: #07090e; font-weight: 800; font-size: 13px; padding: 6px 16px;
+      border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .day-title { font-size: 22px; font-weight: 700; }
+    .day-theme { color: #8b92a5; font-size: 14px; margin-left: auto; }
+    .carousel-strip {
+      display: flex; gap: 16px; overflow-x: auto; padding: 8px 0 16px;
+      scrollbar-width: thin; scrollbar-color: #1a1f2e #07090e;
+    }
+    .carousel-strip::-webkit-scrollbar { height: 6px; }
+    .carousel-strip::-webkit-scrollbar-track { background: #07090e; }
+    .carousel-strip::-webkit-scrollbar-thumb { background: #1a1f2e; border-radius: 3px; }
+    .slide-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .slide-num { font-size: 11px; color: #525a6e; font-weight: 600; letter-spacing: 1px; }
+    .slide-frame {
+      width: 400px; height: 400px; border-radius: 14px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    canvas { width: 400px; height: 400px; display: block; }
+    .slide-btn {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.08);
+      color: #8b92a5; padding: 6px 16px; border-radius: 8px;
+      font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 11px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .slide-btn:hover { border-color: #00e5c8; color: #00e5c8; }
+    .carousel-actions {
+      display: flex; gap: 12px; margin-top: 8px; align-items: center;
+    }
+    .dl-carousel {
+      background: linear-gradient(135deg, #00e5c8, #00c4aa);
+      color: #07090e; border: none; padding: 10px 24px; border-radius: 10px;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 13px;
+      cursor: pointer; transition: transform 0.2s;
+    }
+    .dl-carousel:hover { transform: translateY(-2px); }
+    .dl-all-btn {
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      color: #fff; border: none; padding: 14px 36px; border-radius: 12px;
+      font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px;
+      cursor: pointer; transition: transform 0.2s;
+    }
+    .dl-all-btn:hover { transform: translateY(-2px); }
+    .caption-box {
+      background: rgba(14,18,27,0.85); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px; padding: 14px 18px; font-size: 12px; color: #8b92a5;
+      max-width: 100%; width: 100%; line-height: 1.6; white-space: pre-wrap;
+      cursor: pointer; transition: border-color 0.2s; margin-top: 8px;
+    }
+    .caption-box:hover { border-color: rgba(255,255,255,0.12); }
+    .caption-box .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #525a6e; margin-bottom: 6px; }
+    .copied { color: #00e5c8; font-size: 11px; margin-top: 4px; }
+    .swipe-hint { color: #525a6e; font-size: 11px; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div style="text-align:center">
+    <h1>Fit<span>Core</span> — Karuzele na tydzień</h1>
+    <p class="subtitle">7 karuzeli (3-4 slajdy każda) gotowych do pobrania. Hook → Rozwinięcie → CTA.</p>
+  </div>
+
+  <button class="dl-all-btn" onclick="downloadAll()">Pobierz wszystkie karuzele</button>
+
+  <div id="carousels"></div>
+
+  <script>
+    const S = 1080;
+    const ACCENT = '#00e5c8';
+    const ACCENT2 = '#6366f1';
+    const BG = '#07090e';
+    const BG2 = '#0c1017';
+    const TEXT = '#f0f2f5';
+    const TEXT2 = '#8b92a5';
+    const TEXT3 = '#525a6e';
+    const RED = '#ef4444';
+    const GREEN = '#22c55e';
+    const AMBER = '#f59e0b';
+
+    // ── Helper Functions ──
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function fillRoundRect(ctx, x, y, w, h, r, color) {
+      roundRect(ctx, x, y, w, h, r); ctx.fillStyle = color; ctx.fill();
+    }
+
+    function strokeRoundRect(ctx, x, y, w, h, r, color, lw) {
+      roundRect(ctx, x, y, w, h, r); ctx.strokeStyle = color; ctx.lineWidth = lw || 1; ctx.stroke();
+    }
+
+    function drawBG(ctx) {
+      ctx.fillStyle = BG; ctx.fillRect(0, 0, S, S);
+      const g1 = ctx.createRadialGradient(S * 0.8, S * 0.1, 0, S * 0.8, S * 0.1, S * 0.7);
+      g1.addColorStop(0, 'rgba(0, 229, 200, 0.06)'); g1.addColorStop(1, 'transparent');
+      ctx.fillStyle = g1; ctx.fillRect(0, 0, S, S);
+      const g2 = ctx.createRadialGradient(S * 0.1, S * 0.9, 0, S * 0.1, S * 0.9, S * 0.5);
+      g2.addColorStop(0, 'rgba(99, 102, 241, 0.04)'); g2.addColorStop(1, 'transparent');
+      ctx.fillStyle = g2; ctx.fillRect(0, 0, S, S);
+    }
+
+    function drawLogo(ctx, x, y, size) {
+      const half = size / 2, cx = x + half, cy = y + half;
+      ctx.beginPath(); ctx.arc(cx, cy, half, 0, Math.PI * 2);
+      ctx.fillStyle = BG2; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, half - 1, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 229, 200, 0.2)'; ctx.lineWidth = size * 0.005; ctx.stroke();
+      const fs = size * 0.39;
+      ctx.font = `800 ${fs}px 'Outfit', sans-serif`;
+      ctx.textBaseline = 'middle';
+      const fW = ctx.measureText('F').width;
+      const cW = ctx.measureText('C').width;
+      const startX = cx - (fW + cW) / 2;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF'; ctx.fillText('F', startX, cy + fs * 0.04);
+      const tg = ctx.createLinearGradient(cx - size * 0.2, 0, cx + size * 0.2, y + size);
+      tg.addColorStop(0, '#00e5c8'); tg.addColorStop(1, '#00c4aa');
+      ctx.fillStyle = tg; ctx.fillText('C', startX + fW, cy + fs * 0.04);
+    }
+
+    function drawBrandSmall(ctx, x, y, fs) {
+      ctx.font = `700 ${fs}px 'Outfit', sans-serif`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = TEXT;
+      const w = ctx.measureText('Fit').width;
+      ctx.fillText('Fit', x, y);
+      ctx.fillStyle = ACCENT; ctx.fillText('Core', x + w, y);
+    }
+
+    function drawHeader(ctx) {
+      drawLogo(ctx, 60, 45, 48);
+      drawBrandSmall(ctx, 120, 69, 22);
+    }
+
+    function drawGlass(ctx, x, y, w, h, r) {
+      fillRoundRect(ctx, x, y, w, h, r || 20, 'rgba(14, 18, 27, 0.85)');
+      strokeRoundRect(ctx, x, y, w, h, r || 20, 'rgba(255,255,255,0.06)', 1.5);
+    }
+
+    function accentLine(ctx, y) {
+      const g = ctx.createLinearGradient(S / 2 - 140, 0, S / 2 + 140, 0);
+      g.addColorStop(0, 'transparent'); g.addColorStop(0.5, ACCENT); g.addColorStop(1, 'transparent');
+      ctx.strokeStyle = g; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(S / 2 - 140, y); ctx.lineTo(S / 2 + 140, y); ctx.stroke();
+    }
+
+    function wrapText(ctx, text, x, y, maxW, lh) {
+      const words = text.split(' ');
+      let line = '', ty = y;
+      for (let i = 0; i < words.length; i++) {
+        const test = line + words[i] + ' ';
+        if (ctx.measureText(test).width > maxW && i > 0) {
+          ctx.fillText(line.trim(), x, ty); line = words[i] + ' '; ty += lh;
+        } else { line = test; }
+      }
+      ctx.fillText(line.trim(), x, ty);
+      return ty;
+    }
+
+    function drawFooter(ctx, text) {
+      ctx.fillStyle = TEXT3; ctx.font = '500 18px "Outfit", sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText(text || 'fitcore.tech', S / 2, S - 50);
+    }
+
+    function slideIndicator(ctx, total, current) {
+      const dotR = 6, gap = 20, startX = S / 2 - ((total - 1) * gap) / 2;
+      for (let i = 0; i < total; i++) {
+        ctx.beginPath();
+        ctx.arc(startX + i * gap, S - 90, dotR, 0, Math.PI * 2);
+        ctx.fillStyle = i === current ? ACCENT : 'rgba(255,255,255,0.15)';
+        ctx.fill();
+      }
+    }
+
+    function drawCTAButton(ctx, text, x, y, w, h) {
+      const g = ctx.createLinearGradient(x, y, x + w, y + h);
+      g.addColorStop(0, '#00e5c8'); g.addColorStop(1, '#00c4aa');
+      fillRoundRect(ctx, x, y, w, h, h / 2, 'placeholder');
+      roundRect(ctx, x, y, w, h, h / 2); ctx.fillStyle = g; ctx.fill();
+      ctx.fillStyle = BG; ctx.font = `700 ${h * 0.42}px "Outfit", sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + w / 2, y + h / 2 + 1);
+    }
+
+    // ═══════════════════════════════════════════
+    //  PONIEDZIAŁEK — Ból admina
+    // ═══════════════════════════════════════════
+
+    function pn_hook(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 0);
+
+      // Big shocking number
+      ctx.fillStyle = RED;
+      ctx.font = '900 180px "Outfit", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('12h', S / 2, S * 0.38);
+
+      // Subtitle
+      ctx.fillStyle = TEXT;
+      ctx.font = '700 36px "Outfit", sans-serif';
+      ctx.fillText('tygodniowo na administrację.', S / 2, S * 0.53);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 24px "Outfit", sans-serif';
+      ctx.fillText('Tyle traci przeciętny trener personalny.', S / 2, S * 0.6);
+
+      // Swipe hint
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.fillText('Przesuń, żeby zobaczyć na co →', S / 2, S * 0.72);
+
+      drawFooter(ctx);
+    }
+
+    function pn_slide2(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 1);
+
+      ctx.fillStyle = AMBER;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('NA CO TRACISZ CZAS?', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 38px "Outfit", sans-serif';
+      wrapText(ctx, 'Twój tygodniowy audyt czasu', 60, 200, S - 120, 46);
+
+      accentLine(ctx, 270);
+
+      const tasks = [
+        { task: 'Odpisywanie na wiadomości', time: '3h 45min', icon: '💬' },
+        { task: 'Pisanie planów treningowych', time: '2h', icon: '📝' },
+        { task: 'Śledzenie płatności', time: '1h', icon: '💳' },
+        { task: 'Aktualizacja postępów klientów', time: '1h 30min', icon: '📊' },
+        { task: 'Szukanie info o kliencie', time: '2h 30min', icon: '🔍' },
+        { task: 'Koordynacja grafiku', time: '1h 15min', icon: '📅' },
+      ];
+
+      tasks.forEach((t, i) => {
+        const y = 305 + i * 82;
+        fillRoundRect(ctx, 60, y, S - 120, 68, 14, 'rgba(239, 68, 68, 0.06)');
+        strokeRoundRect(ctx, 60, y, S - 120, 68, 14, 'rgba(239, 68, 68, 0.12)', 1);
+
+        ctx.font = '26px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(t.icon, 85, y + 40);
+
+        ctx.fillStyle = TEXT; ctx.font = '500 20px "Outfit", sans-serif';
+        ctx.fillText(t.task, 130, y + 38);
+
+        ctx.fillStyle = RED; ctx.font = '700 20px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(t.time, S - 85, y + 38);
+      });
+
+      // Total bar
+      fillRoundRect(ctx, 60, 805, S - 120, 64, 14, 'rgba(239, 68, 68, 0.15)');
+      strokeRoundRect(ctx, 60, 805, S - 120, 64, 14, 'rgba(239, 68, 68, 0.3)', 2);
+      ctx.fillStyle = RED; ctx.font = '800 26px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('RAZEM: ~12 GODZIN / TYDZIEŃ', S / 2, 842);
+
+      drawFooter(ctx);
+    }
+
+    function pn_slide3(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 2);
+
+      ctx.fillStyle = GREEN;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('A GDYBY TAK...', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 42px "Outfit", sans-serif';
+      wrapText(ctx, 'Te 12 godzin zamienić w 30 minut?', 60, 200, S - 120, 52);
+
+      accentLine(ctx, 300);
+
+      const cardW = S / 2 - 80;
+      const cardH = 480;
+      const cardY = 330;
+      const leftX = 55;
+      const rightX = S / 2 + 25;
+
+      // BEFORE card
+      fillRoundRect(ctx, leftX, cardY, cardW, cardH, 20, 'rgba(239, 68, 68, 0.06)');
+      strokeRoundRect(ctx, leftX, cardY, cardW, cardH, 20, 'rgba(239, 68, 68, 0.15)', 1.5);
+
+      // Header bar
+      fillRoundRect(ctx, leftX, cardY, cardW, 56, 20, 'rgba(239, 68, 68, 0.12)');
+      fillRoundRect(ctx, leftX, cardY + 40, cardW, 16, 0, 'rgba(239, 68, 68, 0.12)');
+      ctx.fillStyle = RED; ctx.font = '800 22px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('❌  TERAZ', leftX + cardW / 2, cardY + 36);
+
+      const beforeItems = [
+        { icon: '📱', text: 'WhatsApp chaos' },
+        { icon: '📊', text: 'Excel tabele' },
+        { icon: '🧾', text: 'Ręczne faktury' },
+        { icon: '🔍', text: 'Szukanie info' },
+        { icon: '😵', text: 'Brak kontroli' },
+        { icon: '😰', text: 'Stres i chaos' },
+      ];
+
+      beforeItems.forEach((item, i) => {
+        const iy = cardY + 90 + i * 62;
+        ctx.font = '22px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(item.icon, leftX + 30, iy + 6);
+        ctx.fillStyle = TEXT2; ctx.font = '500 20px "Outfit", sans-serif';
+        ctx.fillText(item.text, leftX + 65, iy + 4);
+        // Separator line
+        if (i < beforeItems.length - 1) {
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.08)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(leftX + 30, iy + 36); ctx.lineTo(leftX + cardW - 30, iy + 36); ctx.stroke();
+        }
+      });
+
+      // AFTER card
+      fillRoundRect(ctx, rightX, cardY, cardW, cardH, 20, 'rgba(0, 229, 200, 0.06)');
+      strokeRoundRect(ctx, rightX, cardY, cardW, cardH, 20, 'rgba(0, 229, 200, 0.15)', 1.5);
+
+      // Header bar
+      fillRoundRect(ctx, rightX, cardY, cardW, 56, 20, 'rgba(0, 229, 200, 0.12)');
+      fillRoundRect(ctx, rightX, cardY + 40, cardW, 16, 0, 'rgba(0, 229, 200, 0.12)');
+      ctx.fillStyle = GREEN; ctx.font = '800 22px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✅  Z FITCORE', rightX + cardW / 2, cardY + 36);
+
+      const afterItems = [
+        { icon: '🖥️', text: 'Jeden dashboard' },
+        { icon: '👆', text: 'Klik i gotowe' },
+        { icon: '💳', text: 'Auto-płatności' },
+        { icon: '📦', text: 'Wszystko w jednym' },
+        { icon: '🎯', text: 'Pełna kontrola' },
+        { icon: '😌', text: 'Spokój i wolność' },
+      ];
+
+      afterItems.forEach((item, i) => {
+        const iy = cardY + 90 + i * 62;
+        ctx.font = '22px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(item.icon, rightX + 30, iy + 6);
+        ctx.fillStyle = TEXT2; ctx.font = '500 20px "Outfit", sans-serif';
+        ctx.fillText(item.text, rightX + 65, iy + 4);
+        if (i < afterItems.length - 1) {
+          ctx.strokeStyle = 'rgba(0, 229, 200, 0.08)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(rightX + 30, iy + 36); ctx.lineTo(rightX + cardW - 30, iy + 36); ctx.stroke();
+        }
+      });
+
+      // Center arrow between cards
+      const arrowY = cardY + cardH / 2;
+      ctx.fillStyle = ACCENT;
+      ctx.font = '900 36px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('→', S / 2, arrowY);
+
+      // Bottom transformation bar
+      const barY = cardY + cardH + 30;
+      fillRoundRect(ctx, 120, barY, S - 240, 70, 18, 'rgba(0, 229, 200, 0.1)');
+      strokeRoundRect(ctx, 120, barY, S - 240, 70, 18, 'rgba(0, 229, 200, 0.2)', 1.5);
+
+      ctx.fillStyle = RED; ctx.font = '800 28px "Outfit", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText('12h', S / 2 - 30, barY + 43);
+
+      ctx.fillStyle = ACCENT; ctx.font = '800 28px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('→', S / 2, barY + 43);
+
+      ctx.fillStyle = GREEN; ctx.font = '800 28px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('30 min', S / 2 + 30, barY + 43);
+
+      drawFooter(ctx);
+    }
+
+    function pn_cta(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 4, 3);
+
+      // Big centered logo
+      drawLogo(ctx, S / 2 - 60, 160, 120);
+
+      ctx.fillStyle = TEXT; ctx.font = '800 48px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Odzyskaj swój czas.', S / 2, 370);
+
+      ctx.fillStyle = TEXT2; ctx.font = '400 24px "Outfit", sans-serif';
+      ctx.fillText('Ty trenujesz. My ogarniamy resztę.', S / 2, 430);
+
+      accentLine(ctx, 490);
+
+      drawCTAButton(ctx, 'fitcore.tech', S / 2 - 150, 540, 300, 64);
+
+      drawFooter(ctx);
+    }
+
+    // ═══════════════════════════════════════════
+    //  WTOREK — Excel to nie narzędzie
+    // ═══════════════════════════════════════════
+
+    function wt_hook(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 0);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 52px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Twój klient dostaje', S / 2, S * 0.28, S - 120, 62);
+
+      // Highlighted "PDF z Excela"
+      fillRoundRect(ctx, S / 2 - 240, S * 0.46, 480, 80, 16, 'rgba(239, 68, 68, 0.12)');
+      strokeRoundRect(ctx, S / 2 - 240, S * 0.46, 480, 80, 16, 'rgba(239, 68, 68, 0.25)', 2);
+      ctx.fillStyle = RED;
+      ctx.font = '900 52px "Outfit", sans-serif';
+      ctx.fillText('PDF z Excela.', S / 2, S * 0.46 + 52);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '500 28px "Outfit", sans-serif';
+      ctx.fillText('Serio?', S / 2, S * 0.64);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.fillText('Przesuń i zobacz jak to wygląda z drugiej strony →', S / 2, S * 0.74);
+
+      drawFooter(ctx);
+    }
+
+    function wt_slide2(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 1);
+
+      ctx.fillStyle = RED;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('CO WIDZI TWÓJ KLIENT', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 36px "Outfit", sans-serif';
+      wrapText(ctx, 'Gdy zarządzasz przez Excela...', 60, 195, S - 120, 44);
+
+      accentLine(ctx, 270);
+
+      // Mock "ugly" Excel experience
+      fillRoundRect(ctx, 80, 300, S - 160, 580, 18, 'rgba(239, 68, 68, 0.04)');
+      strokeRoundRect(ctx, 80, 300, S - 160, 580, 18, 'rgba(239, 68, 68, 0.1)', 1);
+
+      const problems = [
+        { icon: '📄', title: 'Plan treningowy', desc: 'PDF w chacie WhatsApp — ginie po 2 dniach' },
+        { icon: '💸', title: 'Płatność', desc: '"Hej, przelew miał być do piątku" — SMS' },
+        { icon: '📊', title: 'Postępy', desc: 'Screenshot tabeli z 200 wierszami' },
+        { icon: '💬', title: 'Komunikacja', desc: 'WhatsApp + Mail + SMS + Messenger' },
+        { icon: '🤷', title: 'Profesjonalizm', desc: 'Klient myśli: "czy to poważna firma?"' },
+      ];
+
+      problems.forEach((p, i) => {
+        const y = 330 + i * 100;
+        ctx.font = '28px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(p.icon, 110, y + 40);
+
+        ctx.fillStyle = TEXT; ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.fillText(p.title, 160, y + 30);
+
+        ctx.fillStyle = RED; ctx.font = '400 17px "Outfit", sans-serif';
+        ctx.fillText(p.desc, 160, y + 60);
+      });
+
+      drawFooter(ctx);
+    }
+
+    function wt_slide3(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 2);
+
+      ctx.fillStyle = GREEN;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('CO WIDZI TWÓJ KLIENT', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 36px "Outfit", sans-serif';
+      wrapText(ctx, 'Gdy masz dedykowany portal...', 60, 195, S - 120, 44);
+
+      accentLine(ctx, 270);
+
+      fillRoundRect(ctx, 80, 300, S - 160, 580, 18, 'rgba(0, 229, 200, 0.04)');
+      strokeRoundRect(ctx, 80, 300, S - 160, 580, 18, 'rgba(0, 229, 200, 0.1)', 1);
+
+      const features = [
+        { icon: '🏋️', title: 'Plan treningowy', desc: 'Interaktywny, zawsze dostępny, z instrukcjami' },
+        { icon: '💳', title: 'Płatność', desc: 'Automatyczna faktura, status w panelu' },
+        { icon: '📈', title: 'Postępy', desc: 'Wykresy, zdjęcia, pomiary — wizualnie' },
+        { icon: '💬', title: 'Komunikacja', desc: 'Wbudowany czat, jedno miejsce' },
+        { icon: '⭐', title: 'Profesjonalizm', desc: 'Klient myśli: "to jest premium usługa"' },
+      ];
+
+      features.forEach((f, i) => {
+        const y = 330 + i * 100;
+        ctx.font = '28px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(f.icon, 110, y + 40);
+
+        ctx.fillStyle = TEXT; ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.fillText(f.title, 160, y + 30);
+
+        ctx.fillStyle = GREEN; ctx.font = '400 17px "Outfit", sans-serif';
+        ctx.fillText(f.desc, 160, y + 60);
+      });
+
+      drawFooter(ctx);
+    }
+
+    function wt_cta(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 4, 3);
+      drawLogo(ctx, S / 2 - 60, 160, 120);
+
+      ctx.fillStyle = TEXT; ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Twój klient zasługuje na lepsze.', S / 2, 360, S - 120, 54);
+
+      ctx.fillStyle = TEXT2; ctx.font = '400 24px "Outfit", sans-serif';
+      ctx.fillText('Ty też.', S / 2, 440);
+
+      accentLine(ctx, 500);
+
+      drawCTAButton(ctx, 'Sprawdź demo → fitcore.tech', S / 2 - 220, 550, 440, 64);
+
+      ctx.fillStyle = TEXT3; ctx.font = '400 18px "Outfit", sans-serif';
+      ctx.fillText('Darmowe. Bez karty kredytowej.', S / 2, 660);
+
+      drawFooter(ctx);
+    }
+
+    // ═══════════════════════════════════════════
+    //  ŚRODA — Tracisz klientów
+    // ═══════════════════════════════════════════
+
+    function sr_hook(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 0);
+
+      // Warning icon big
+      ctx.font = '120px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('🚨', S / 2, S * 0.28);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 46px "Outfit", sans-serif';
+      wrapText(ctx, '3 sygnały że klient odchodzi', S / 2, S * 0.42, S - 120, 56);
+
+      ctx.fillStyle = RED;
+      ctx.font = '700 28px "Outfit", sans-serif';
+      ctx.fillText('zanim sam Ci powie.', S / 2, S * 0.58);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.fillText('Przesuń →', S / 2, S * 0.72);
+
+      drawFooter(ctx);
+    }
+
+    function sr_slide2(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 1);
+
+      const signs = [
+        {
+          num: '01',
+          title: 'Przestaje odpisywać',
+          desc: 'Nie jest zajęty.\nStracił motywację.\nNie czuje że Ci zależy.',
+          color: AMBER
+        },
+        {
+          num: '02',
+          title: 'Nie loguje treningów',
+          desc: 'Albo nie trenuje.\nAlbo trenuje sam.\nAlbo znalazł kogoś innego.',
+          color: RED
+        },
+      ];
+
+      ctx.fillStyle = RED;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('SYGNAŁY OSTRZEGAWCZE', 60, 140);
+
+      signs.forEach((s, i) => {
+        const y = 190 + i * 380;
+        drawGlass(ctx, 60, y, S - 120, 340, 20);
+
+        // Number circle
+        ctx.beginPath(); ctx.arc(130, y + 60, 36, 0, Math.PI * 2);
+        ctx.fillStyle = s.color + '25'; ctx.fill();
+        ctx.fillStyle = s.color; ctx.font = '800 28px "Outfit", sans-serif';
+        ctx.textAlign = 'center'; ctx.fillText(s.num, 130, y + 64);
+
+        ctx.fillStyle = TEXT; ctx.font = '700 30px "Outfit", sans-serif';
+        ctx.textAlign = 'left'; ctx.fillText(s.title, 190, y + 64);
+
+        accentLine(ctx, y + 110);
+
+        ctx.fillStyle = TEXT2; ctx.font = '400 22px "Outfit", sans-serif';
+        const lines = s.desc.split('\n');
+        lines.forEach((l, li) => {
+          ctx.fillText(l, 100, y + 165 + li * 45);
+        });
+      });
+
+      drawFooter(ctx);
+    }
+
+    function sr_slide3(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 2);
+
+      ctx.fillStyle = RED;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('SYGNAŁ OSTRZEGAWCZY', 60, 140);
+
+      drawGlass(ctx, 60, 180, S - 120, 340, 20);
+
+      ctx.beginPath(); ctx.arc(130, 240, 36, 0, Math.PI * 2);
+      ctx.fillStyle = RED + '25'; ctx.fill();
+      ctx.fillStyle = RED; ctx.font = '800 28px "Outfit", sans-serif';
+      ctx.textAlign = 'center'; ctx.fillText('03', 130, 244);
+
+      ctx.fillStyle = TEXT; ctx.font = '700 30px "Outfit", sans-serif';
+      ctx.textAlign = 'left'; ctx.fillText('"Ile zostało w pakiecie?"', 190, 244);
+
+      accentLine(ctx, 295);
+
+      ctx.fillStyle = TEXT2; ctx.font = '400 22px "Outfit", sans-serif';
+      ctx.fillText('Liczy dni do końca.', 100, 350);
+      ctx.fillText('Szuka wymówki żeby nie przedłużyć.', 100, 395);
+      ctx.fillText('Już podjął decyzję.', 100, 440);
+
+      // Bottom insight
+      accentLine(ctx, 570);
+
+      ctx.fillStyle = TEXT; ctx.font = '700 28px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Żeby zobaczyć te sygnały — potrzebujesz danych.', S / 2, 620, S - 140, 40);
+
+      ctx.fillStyle = ACCENT; ctx.font = '700 28px "Outfit", sans-serif';
+      ctx.fillText('Nie intuicji.', S / 2, 710);
+
+      drawFooter(ctx);
+    }
+
+    function sr_cta(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 4, 3);
+      drawLogo(ctx, S / 2 - 60, 160, 120);
+
+      ctx.fillStyle = TEXT; ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Widzisz dane = Reagujesz wcześniej.', S / 2, 360, S - 120, 54);
+
+      ctx.fillStyle = TEXT2; ctx.font = '400 24px "Outfit", sans-serif';
+      ctx.fillText('Dashboard pokaże Ci kto odchodzi.', S / 2, 450);
+
+      accentLine(ctx, 510);
+
+      drawCTAButton(ctx, 'Wypróbuj za darmo → fitcore.tech', S / 2 - 240, 560, 480, 64);
+
+      ctx.fillStyle = TEXT3; ctx.font = '400 18px "Outfit", sans-serif';
+      ctx.fillText('Zatrzymaj klientów zanim odejdą.', S / 2, 670);
+
+      drawFooter(ctx);
+    }
+
+    // ═══════════════════════════════════════════
+    //  CZWARTEK — Dzień z 20+ klientami
+    // ═══════════════════════════════════════════
+
+    function czw_hook(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 3, 0);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Dzień trenera z 20+ klientami.', S / 2, S * 0.25, S - 120, 54);
+
+      ctx.fillStyle = RED;
+      ctx.font = '700 32px "Outfit", sans-serif';
+      ctx.fillText('Który punkt chcesz usunąć?', S / 2, S * 0.42);
+
+      // Mini schedule preview
+      const items = ['6:00 — Pobudka', '7-12 — 5 treningów', '12:30 — 23 wiadomości', '13:00 — Plany treningowe', '14:00 — Sprawdzenie płatności', '16-20 — 4 treningi', '21:00 — Wciąż odpisuje...'];
+      items.forEach((item, i) => {
+        const y = S * 0.50 + i * 48;
+        const isBad = [2, 3, 4, 6].includes(i);
+        ctx.fillStyle = isBad ? RED : TEXT3;
+        ctx.font = `${isBad ? '600' : '400'} 20px "Outfit", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(item, S / 2, y);
+      });
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.fillText('Przesuń →', S / 2, S * 0.92);
+
+      drawFooter(ctx);
+    }
+
+    function czw_slide2(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 3, 1);
+
+      ctx.fillStyle = AMBER;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('TWÓJ HARMONOGRAM', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 36px "Outfit", sans-serif';
+      wrapText(ctx, 'Czerwone = czas który możesz odzyskać', 60, 195, S - 120, 44);
+
+      accentLine(ctx, 280);
+
+      const schedule = [
+        { time: '06:00', task: 'Pobudka', bad: false },
+        { time: '07:00', task: '5 treningów z klientami', bad: false },
+        { time: '12:30', task: 'Odpisanie na 23 wiadomości', bad: true },
+        { time: '13:00', task: 'Napisanie 2 planów treningowych', bad: true },
+        { time: '14:00', task: 'Sprawdzenie kto zapłacił', bad: true },
+        { time: '14:30', task: 'Aktualizacja postępów klientów', bad: true },
+        { time: '16:00', task: '4 kolejne treningi', bad: false },
+        { time: '21:00', task: 'Wciąż odpisuje na wiadomości...', bad: true },
+      ];
+
+      schedule.forEach((s, i) => {
+        const y = 310 + i * 74;
+        if (s.bad) {
+          fillRoundRect(ctx, 60, y, S - 120, 60, 12, 'rgba(239, 68, 68, 0.08)');
+          strokeRoundRect(ctx, 60, y, S - 120, 60, 12, 'rgba(239, 68, 68, 0.15)', 1);
+        } else {
+          drawGlass(ctx, 60, y, S - 120, 60, 12);
+        }
+
+        ctx.fillStyle = s.bad ? AMBER : TEXT3;
+        ctx.font = '700 17px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(s.time, 85, y + 36);
+
+        ctx.fillStyle = s.bad ? RED : TEXT2;
+        ctx.font = '500 18px "Outfit", sans-serif';
+        ctx.fillText(s.task, 210, y + 36);
+      });
+
+      // Bottom
+      fillRoundRect(ctx, 60, S - 115, S - 120, 56, 14, 'rgba(0, 229, 200, 0.12)');
+      strokeRoundRect(ctx, 60, S - 115, S - 120, 56, 14, 'rgba(0, 229, 200, 0.25)', 1.5);
+      ctx.fillStyle = ACCENT;
+      ctx.font = '700 20px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Z FitCore te czerwone wiersze = 15 minut', S / 2, S - 83);
+    }
+
+    function czw_cta(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 3, 2);
+      drawLogo(ctx, S / 2 - 60, 160, 120);
+
+      ctx.fillStyle = TEXT; ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Skup się na treningach. Resztę zostaw nam.', S / 2, 350, S - 120, 54);
+
+      ctx.fillStyle = TEXT2; ctx.font = '400 24px "Outfit", sans-serif';
+      ctx.fillText('Ty trenujesz. My ogarniamy resztę.', S / 2, 480);
+
+      accentLine(ctx, 540);
+
+      drawCTAButton(ctx, 'fitcore.tech — darmowe demo', S / 2 - 220, 590, 440, 64);
+
+      drawFooter(ctx);
+    }
+
+    // ═══════════════════════════════════════════
+    //  PIĄTEK — Portal klienta
+    // ═══════════════════════════════════════════
+
+    function pt_hook(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 0);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 42px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Co widzi Twój klient po zalogowaniu?', S / 2, S * 0.25, S - 120, 52);
+
+      // Two options visual
+      // PDF option
+      fillRoundRect(ctx, 100, S * 0.44, S / 2 - 130, 200, 18, 'rgba(239, 68, 68, 0.08)');
+      strokeRoundRect(ctx, 100, S * 0.44, S / 2 - 130, 200, 18, 'rgba(239, 68, 68, 0.15)', 1.5);
+      ctx.font = '60px sans-serif'; ctx.fillText('📄', S / 4 - 15, S * 0.52);
+      ctx.fillStyle = RED; ctx.font = '700 24px "Outfit", sans-serif';
+      ctx.fillText('PDF', S / 4 - 15, S * 0.60);
+
+      // Platform option
+      fillRoundRect(ctx, S / 2 + 30, S * 0.44, S / 2 - 130, 200, 18, 'rgba(0, 229, 200, 0.08)');
+      strokeRoundRect(ctx, S / 2 + 30, S * 0.44, S / 2 - 130, 200, 18, 'rgba(0, 229, 200, 0.15)', 1.5);
+      ctx.font = '60px sans-serif'; ctx.fillText('🖥️', S * 3 / 4 + 15, S * 0.52);
+      ctx.fillStyle = GREEN; ctx.font = '700 24px "Outfit", sans-serif';
+      ctx.fillText('Platforma', S * 3 / 4 + 15, S * 0.60);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.fillText('Przesuń i zobacz różnicę →', S / 2, S * 0.78);
+
+      drawFooter(ctx);
+    }
+
+    function pt_slide2(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 1);
+
+      ctx.fillStyle = ACCENT2;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('PORTAL KLIENTA — PODGLĄD', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 36px "Outfit", sans-serif';
+      wrapText(ctx, 'Tak wygląda portal Twojego klienta', 60, 195, S - 120, 44);
+
+      accentLine(ctx, 270);
+
+      const sections = [
+        { icon: '🏋️', title: 'Dzisiejszy trening', desc: 'Wyciskanie 4x8 • Przysiady 4x10 • Wiosło 3x12', color: ACCENT },
+        { icon: '📈', title: 'Moje postępy', desc: 'Waga ↓2.3kg • Wyciskanie ↑15kg • Tkanka ↓2%', color: GREEN },
+        { icon: '💬', title: 'Czat z trenerem', desc: 'Świetna robota! Ciśniemy dalej w tym tygodniu', color: ACCENT2 },
+        { icon: '📋', title: 'Historia', desc: '47 sesji ukończonych • 12 tyg. seria 🔥', color: AMBER },
+        { icon: '🎯', title: 'Cele', desc: 'Masa: 82kg → 78kg (postęp: 65%)', color: ACCENT },
+      ];
+
+      sections.forEach((s, i) => {
+        const y = 300 + i * 115;
+        drawGlass(ctx, 60, y, S - 120, 95, 16);
+        fillRoundRect(ctx, 60, y, 5, 95, 3, s.color);
+
+        ctx.font = '28px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(s.icon, 90, y + 50);
+
+        ctx.fillStyle = TEXT; ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.fillText(s.title, 138, y + 40);
+
+        ctx.fillStyle = TEXT2; ctx.font = '400 17px "Outfit", sans-serif';
+        ctx.fillText(s.desc, 138, y + 70);
+      });
+
+      drawFooter(ctx);
+    }
+
+    function pt_slide3(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 2);
+
+      ctx.fillStyle = GREEN;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('EFEKT', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 40px "Outfit", sans-serif';
+      wrapText(ctx, 'Co zyskujesz z portalem klienta?', 60, 200, S - 120, 50);
+
+      accentLine(ctx, 290);
+
+      const benefits = [
+        { icon: '💎', title: 'Premium wizerunek', desc: 'Klient czuje się jak w luksusowej usłudze' },
+        { icon: '📱', title: 'Dostęp 24/7', desc: 'Plan, postępy, czat — zawsze pod ręką' },
+        { icon: '🔄', title: 'Wyższa retencja', desc: 'Klient widzi wartość → przedłuża pakiet' },
+        { icon: '⏱️', title: 'Oszczędność czasu', desc: 'Zero "wyślij mi plan", "co mam dziś robić"' },
+        { icon: '📊', title: 'Dane zamiast domysłów', desc: 'Widzisz kto trenuje, kto odpuszcza' },
+      ];
+
+      benefits.forEach((b, i) => {
+        const y = 320 + i * 110;
+        drawGlass(ctx, 60, y, S - 120, 90, 16);
+
+        ctx.font = '26px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(b.icon, 90, y + 50);
+
+        ctx.fillStyle = TEXT; ctx.font = '700 22px "Outfit", sans-serif';
+        ctx.fillText(b.title, 140, y + 38);
+
+        ctx.fillStyle = TEXT2; ctx.font = '400 17px "Outfit", sans-serif';
+        ctx.fillText(b.desc, 140, y + 66);
+      });
+
+      drawFooter(ctx);
+    }
+
+    function pt_cta(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 4, 3);
+      drawLogo(ctx, S / 2 - 60, 160, 120);
+
+      ctx.fillStyle = TEXT; ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Daj klientom to, na co zasługują.', S / 2, 350, S - 120, 54);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 28px "Outfit", sans-serif';
+      ctx.fillText('Profesjonalny portal. Twoje logo.', S / 2, 450);
+
+      accentLine(ctx, 510);
+
+      drawCTAButton(ctx, 'Darmowe demo → fitcore.tech', S / 2 - 220, 560, 440, 64);
+
+      ctx.fillStyle = TEXT3; ctx.font = '400 18px "Outfit", sans-serif';
+      ctx.fillText('Konfiguracja w 5 minut.', S / 2, 670);
+
+      drawFooter(ctx);
+    }
+
+    // ═══════════════════════════════════════════
+    //  SOBOTA — Excel vs System
+    // ═══════════════════════════════════════════
+
+    function so_hook(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 3, 0);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '900 64px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Excel', S / 2, S * 0.30);
+
+      ctx.fillStyle = RED;
+      ctx.font = '300 48px "Outfit", sans-serif';
+      ctx.fillText('vs', S / 2, S * 0.40);
+
+      const brandG = ctx.createLinearGradient(S / 2 - 150, 0, S / 2 + 150, 0);
+      brandG.addColorStop(0, '#00e5c8'); brandG.addColorStop(1, '#00c4aa');
+      ctx.fillStyle = brandG;
+      ctx.font = '900 64px "Outfit", sans-serif';
+      ctx.fillText('FitCore', S / 2, S * 0.52);
+
+      // Swords emoji
+      ctx.font = '80px sans-serif';
+      ctx.fillText('⚔️', S / 2, S * 0.67);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '500 22px "Outfit", sans-serif';
+      ctx.fillText('Porównanie które boli.', S / 2, S * 0.78);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.fillText('Przesuń →', S / 2, S * 0.86);
+
+      drawFooter(ctx);
+    }
+
+    function so_slide2(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 3, 1);
+
+      ctx.fillStyle = TEXT3;
+      ctx.font = '600 14px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('PORÓWNANIE', S / 2, 130);
+
+      const comparisons = [
+        { cat: 'SZUKANIE KLIENTA', bad: 'Ctrl+F → scrollujesz 200 wierszy', good: 'Klikasz imię → masz wszystko' },
+        { cat: 'PLAN TRENINGOWY', bad: 'Kopiuj-wklej → edytuj → wyślij PDF', good: 'Wybierz ćwiczenia → przypisz → gotowe' },
+        { cat: 'KOMUNIKACJA', bad: 'WhatsApp + Mail + SMS + notatki', good: 'Wbudowany czat, jedno miejsce' },
+        { cat: 'PŁATNOŚCI', bad: '"Hej, przelew miał być do piątku..."', good: 'Dashboard pokazuje status na żywo' },
+        { cat: 'POSTĘPY KLIENTA', bad: 'Screenshot tabeli z komentarzami', good: 'Wykresy, zdjęcia, pomiary — auto' },
+      ];
+
+      comparisons.forEach((c, i) => {
+        const y = 155 + i * 170;
+
+        ctx.fillStyle = TEXT3; ctx.font = '600 13px "Outfit", sans-serif';
+        ctx.textAlign = 'center'; ctx.fillText(c.cat, S / 2, y);
+
+        // Bad
+        fillRoundRect(ctx, 50, y + 12, S / 2 - 65, 60, 12, 'rgba(239, 68, 68, 0.06)');
+        strokeRoundRect(ctx, 50, y + 12, S / 2 - 65, 60, 12, 'rgba(239, 68, 68, 0.12)', 1);
+        ctx.fillStyle = RED; ctx.font = '600 13px "Outfit", sans-serif';
+        ctx.textAlign = 'left'; ctx.fillText('❌ Excel', 70, y + 35);
+        ctx.fillStyle = TEXT2; ctx.font = '400 13px "Outfit", sans-serif';
+        ctx.fillText(c.bad, 70, y + 56);
+
+        // Good
+        fillRoundRect(ctx, S / 2 + 15, y + 12, S / 2 - 65, 60, 12, 'rgba(0, 229, 200, 0.06)');
+        strokeRoundRect(ctx, S / 2 + 15, y + 12, S / 2 - 65, 60, 12, 'rgba(0, 229, 200, 0.12)', 1);
+        ctx.fillStyle = GREEN; ctx.font = '600 13px "Outfit", sans-serif';
+        ctx.textAlign = 'left'; ctx.fillText('✅ FitCore', S / 2 + 35, y + 35);
+        ctx.fillStyle = TEXT2; ctx.font = '400 13px "Outfit", sans-serif';
+        ctx.fillText(c.good, S / 2 + 35, y + 56);
+      });
+
+      ctx.fillStyle = TEXT2; ctx.font = '500 18px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Nic złego w Excelu. Ale nie do tego został stworzony.', S / 2, S - 85);
+      drawFooter(ctx);
+    }
+
+    function so_cta(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 3, 2);
+      drawLogo(ctx, S / 2 - 60, 160, 120);
+
+      ctx.fillStyle = TEXT; ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Przenieś się na system stworzony dla trenerów.', S / 2, 350, S - 120, 54);
+
+      ctx.fillStyle = TEXT2; ctx.font = '400 24px "Outfit", sans-serif';
+      ctx.fillText('Nie kolejny arkusz. Prawdziwe narzędzie.', S / 2, 480);
+
+      accentLine(ctx, 540);
+
+      drawCTAButton(ctx, 'fitcore.tech → darmowe demo', S / 2 - 220, 590, 440, 64);
+
+      drawFooter(ctx);
+    }
+
+    // ═══════════════════════════════════════════
+    //  NIEDZIELA — Autopilot
+    // ═══════════════════════════════════════════
+
+    function nd_hook(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 4, 0);
+
+      ctx.font = '100px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('🚀', S / 2, S * 0.22);
+
+      const brandG = ctx.createLinearGradient(S / 2 - 200, 0, S / 2 + 200, 0);
+      brandG.addColorStop(0, '#00e5c8'); brandG.addColorStop(1, '#00c4aa');
+      ctx.fillStyle = brandG;
+      ctx.font = '800 24px "Outfit", sans-serif';
+      ctx.fillText('NOWOŚĆ W FITCORE', S / 2, S * 0.34);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '900 60px "Outfit", sans-serif';
+      ctx.fillText('Coach', S / 2, S * 0.46);
+      ctx.fillText('Autopilot', S / 2, S * 0.55);
+
+      ctx.fillStyle = TEXT2;
+      ctx.font = '400 24px "Outfit", sans-serif';
+      ctx.fillText('Twój dashboard teraz sam pilnuje klientów.', S / 2, S * 0.66);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 20px "Outfit", sans-serif';
+      ctx.fillText('Zobacz jak to działa →', S / 2, S * 0.78);
+
+      drawFooter(ctx);
+    }
+
+    function nd_slide2(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 1);
+
+      ctx.fillStyle = ACCENT;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('JAK TO DZIAŁA', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 36px "Outfit", sans-serif';
+      wrapText(ctx, 'Dashboard pilnuje za Ciebie', 60, 195, S - 120, 44);
+
+      accentLine(ctx, 270);
+
+      const alerts = [
+        { icon: '⚠️', title: 'Alert nieaktywności', desc: 'Klient nie trenował od 3 dni', action: 'Powiadomienie wysłane automatycznie', color: AMBER },
+        { icon: '💳', title: 'Zaległa płatność', desc: 'Faktura #127 — 5 dni po terminie', action: 'Przypomnienie zaplanowane', color: RED },
+        { icon: '🏆', title: 'Nowy rekord!', desc: 'Klient wyciskał 120kg na ławce', action: 'Osiągnięcie odblokowane', color: GREEN },
+      ];
+
+      alerts.forEach((a, i) => {
+        const y = 300 + i * 185;
+        drawGlass(ctx, 60, y, S - 120, 160, 18);
+
+        // Color dot + glow
+        ctx.beginPath(); ctx.arc(105, y + 45, 14, 0, Math.PI * 2);
+        ctx.fillStyle = a.color + '25'; ctx.fill();
+        ctx.beginPath(); ctx.arc(105, y + 45, 8, 0, Math.PI * 2);
+        ctx.fillStyle = a.color; ctx.fill();
+
+        ctx.font = '28px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(a.icon, 135, y + 52);
+
+        ctx.fillStyle = TEXT; ctx.font = '700 24px "Outfit", sans-serif';
+        ctx.fillText(a.title, 180, y + 48);
+
+        ctx.fillStyle = TEXT2; ctx.font = '400 18px "Outfit", sans-serif';
+        ctx.fillText(a.desc, 105, y + 95);
+
+        // Action pill
+        const pw = ctx.measureText(a.action).width + 28;
+        fillRoundRect(ctx, 105, y + 115, pw, 30, 15, a.color + '1A');
+        ctx.fillStyle = a.color; ctx.font = '500 14px "Outfit", sans-serif';
+        ctx.fillText(a.action, 119, y + 134);
+      });
+
+      drawFooter(ctx);
+    }
+
+    function nd_slide3(ctx) {
+      drawBG(ctx);
+      drawHeader(ctx);
+      slideIndicator(ctx, 4, 2);
+
+      ctx.fillStyle = GREEN;
+      ctx.font = '600 16px "Outfit", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('CO ZYSKUJESZ', 60, 140);
+
+      ctx.fillStyle = TEXT;
+      ctx.font = '800 38px "Outfit", sans-serif';
+      wrapText(ctx, 'Zero ręcznego sprawdzania. Zero zgubionych klientów.', 60, 200, S - 120, 48);
+
+      accentLine(ctx, 320);
+
+      const gains = [
+        { num: '0', unit: 'min', desc: 'Ręcznego sprawdzania aktywności klientów' },
+        { num: '100%', unit: '', desc: 'Kontrola nad płatnościami' },
+        { num: '3x', unit: '', desc: 'Szybsza reakcja na problemy' },
+        { num: '↑40%', unit: '', desc: 'Wyższa retencja klientów' },
+      ];
+
+      gains.forEach((g, i) => {
+        const y = 360 + i * 140;
+        drawGlass(ctx, 60, y, S - 120, 115, 18);
+
+        ctx.fillStyle = ACCENT;
+        ctx.font = '800 48px "Outfit", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(g.num + g.unit, 100, y + 55);
+
+        ctx.fillStyle = TEXT2;
+        ctx.font = '400 20px "Outfit", sans-serif';
+        ctx.fillText(g.desc, 100, y + 88);
+      });
+
+      drawFooter(ctx);
+    }
+
+    function nd_cta(ctx) {
+      drawBG(ctx);
+      slideIndicator(ctx, 4, 3);
+      drawLogo(ctx, S / 2 - 60, 140, 120);
+
+      ctx.fillStyle = TEXT; ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      wrapText(ctx, 'Ty trenujesz ludzi.', S / 2, 340, S - 120, 54);
+
+      ctx.fillStyle = ACCENT; ctx.font = '800 44px "Outfit", sans-serif';
+      ctx.fillText('Dashboard ogarnia resztę.', S / 2, 410);
+
+      accentLine(ctx, 480);
+
+      drawCTAButton(ctx, 'Darmowe testy → fitcore.tech', S / 2 - 220, 530, 440, 64);
+
+      ctx.fillStyle = TEXT3; ctx.font = '400 18px "Outfit", sans-serif';
+      ctx.fillText('Bez zobowiązań. Konfiguracja w 5 minut.', S / 2, 640);
+
+      // Social proof
+      ctx.fillStyle = TEXT3; ctx.font = '400 16px "Outfit", sans-serif';
+      ctx.fillText('Dołącz do trenerów, którzy mają czas na to, co kochają.', S / 2, 700);
+
+      drawFooter(ctx);
+    }
+
+    // ═══════════════════════════════════════════
+    //  CAROUSEL DATA
+    // ═══════════════════════════════════════════
+
+    const carousels = [
+      {
+        day: 'Poniedziałek',
+        theme: 'Ból admina — 12h tygodniowo na administrację',
+        slides: [
+          { label: 'HOOK', draw: pn_hook },
+          { label: 'AUDYT CZASU', draw: pn_slide2 },
+          { label: 'PRZED / PO', draw: pn_slide3 },
+          { label: 'CTA', draw: pn_cta },
+        ],
+        caption: `12 godzin tygodniowo na administrację. 😤\n\nTyle traci przeciętny trener personalny na:\n→ Odpisywanie na wiadomości\n→ Pisanie planów treningowych\n→ Śledzenie płatności\n→ Aktualizacja postępów klientów\n→ Szukanie informacji\n→ Koordynacja grafiku\n\nA gdyby to wszystko zajęło 30 minut?\n\nZ FitCore masz jeden dashboard do wszystkiego.\nTy trenujesz. My ogarniamy resztę.\n\n🔗 fitcore.tech — darmowe demo\n\n#trenerpersonalny #fitnessbiznes #produktywność #trenerOnline #zarządzanieklientami #coachingtools #fitcore`
+      },
+      {
+        day: 'Wtorek',
+        theme: 'Excel to nie narzędzie — klient widzi różnicę',
+        slides: [
+          { label: 'HOOK', draw: wt_hook },
+          { label: 'Z EXCELEM', draw: wt_slide2 },
+          { label: 'Z PORTALEM', draw: wt_slide3 },
+          { label: 'CTA', draw: wt_cta },
+        ],
+        caption: `Twój klient dostaje PDF z Excela. 📄\n\nA potem loguje się do konkurencji i widzi:\n✅ Interaktywny plan treningowy\n✅ Automatyczne faktury\n✅ Wykresy postępów\n✅ Wbudowany czat z trenerem\n✅ Premium doświadczenie\n\nPytanie: do kogo wróci?\n\nTwój klient zasługuje na lepsze. Ty też.\n\n🔗 fitcore.tech — darmowe demo, bez karty\n\n#trenerpersonalny #portalklienta #fitnesstech #profesjonalizm #trenerOnline #fitcore`
+      },
+      {
+        day: 'Środa',
+        theme: 'Tracisz klientów — 3 sygnały ostrzegawcze',
+        slides: [
+          { label: 'HOOK', draw: sr_hook },
+          { label: 'SYGNAŁY 1-2', draw: sr_slide2 },
+          { label: 'SYGNAŁ 3 + WNIOSEK', draw: sr_slide3 },
+          { label: 'CTA', draw: sr_cta },
+        ],
+        caption: `3 sygnały że tracisz klienta (zanim sam Ci powie) 🚨\n\n1️⃣ Przestaje odpisywać na wiadomości\n→ Nie jest zajęty. Stracił motywację.\n\n2️⃣ Nie loguje wyników treningów\n→ Trenuje sam albo znalazł kogoś innego.\n\n3️⃣ "Ile zostało w pakiecie?"\n→ Liczy dni do końca. Nie przedłuży.\n\nŻeby zobaczyć te sygnały — potrzebujesz danych. Nie intuicji.\n\nDashboard pokaże Ci kto odchodzi. Zanim będzie za późno.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #retencja #fitnessbiznes #klienci #coachingbusiness #fitcore`
+      },
+      {
+        day: 'Czwartek',
+        theme: 'Dzień z 20+ klientami — co możesz usunąć',
+        slides: [
+          { label: 'HOOK', draw: czw_hook },
+          { label: 'HARMONOGRAM', draw: czw_slide2 },
+          { label: 'CTA', draw: czw_cta },
+        ],
+        caption: `Dzień trenera z 20+ klientami 📋\n\n6:00 — Pobudka\n7-12 — 5 treningów\n12:30 — Odpisanie na 23 wiadomości 🔴\n13:00 — Napisanie 2 planów treningowych 🔴\n14:00 — Sprawdzenie kto zapłacił 🔴\n14:30 — Aktualizacja postępów 🔴\n16-20 — 4 treningi\n21:00 — Wciąż odpisuje na wiadomości... 🔴\n\nCzerwone wiersze? Z FitCore to 15 minut.\n\nSkup się na treningach. Resztę zostaw nam.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #dzieńtrenera #fitnessbiznes #produktywność #trenerOnline #fitcore`
+      },
+      {
+        day: 'Piątek',
+        theme: 'Portal klienta — PDF czy platforma?',
+        slides: [
+          { label: 'HOOK', draw: pt_hook },
+          { label: 'PORTAL PODGLĄD', draw: pt_slide2 },
+          { label: 'KORZYŚCI', draw: pt_slide3 },
+          { label: 'CTA', draw: pt_cta },
+        ],
+        caption: `Co widzi Twój klient po zalogowaniu? 👀\n\n📄 PDF na WhatsAppie?\n🖥️ Czy profesjonalny portal?\n\nZ FitCore Twój klient widzi:\n✅ Dzisiejszy trening z instrukcjami\n✅ Swoje postępy — wykresy i pomiary\n✅ Czat z trenerem\n✅ Historię wszystkich sesji\n✅ Swoje cele i postęp\n\nProfesjonalny portal. Twoje logo. Twoje kolory.\n\nKlient czuje się jak w premium usłudze.\nBo jest w premium usłudze.\n\n🔗 fitcore.tech — darmowe demo\n\n#trenerpersonalny #portalklienta #premiumservice #fitnesstech #fitcore`
+      },
+      {
+        day: 'Sobota',
+        theme: 'Excel vs FitCore — porównanie które boli',
+        slides: [
+          { label: 'HOOK', draw: so_hook },
+          { label: 'PORÓWNANIE', draw: so_slide2 },
+          { label: 'CTA', draw: so_cta },
+        ],
+        caption: `Excel vs FitCore ⚔️\n\nSzukanie klienta:\n❌ Ctrl+F → scrollujesz 200 wierszy\n✅ Klikasz imię → masz wszystko\n\nPlan treningowy:\n❌ Kopiuj-wklej → edytuj → wyślij PDF\n✅ Wybierz ćwiczenia → przypisz → gotowe\n\nKomunikacja:\n❌ WhatsApp + Mail + SMS + notatki\n✅ Wbudowany czat, jedno miejsce\n\nPłatności:\n❌ "Hej, przelew miał być do piątku..."\n✅ Dashboard pokazuje status na żywo\n\nNic złego w Excelu. Ale nie do tego został stworzony.\n\n🔗 fitcore.tech\n\n#trenerpersonalny #excelvssoftware #fitnessbiznes #coachingtools #fitcore`
+      },
+      {
+        day: 'Niedziela',
+        theme: 'Coach Autopilot — dashboard sam pilnuje klientów',
+        slides: [
+          { label: 'HOOK', draw: nd_hook },
+          { label: 'ALERTY', draw: nd_slide2 },
+          { label: 'STATYSTYKI', draw: nd_slide3 },
+          { label: 'CTA', draw: nd_cta },
+        ],
+        caption: `🚀 Nowość: Coach Autopilot\n\nTwój dashboard teraz sam pilnuje klientów.\n\n⚠️ Klient nie trenował 3 dni? → Alert\n💳 Płatność przeterminowana? → Przypomnienie\n🏆 Nowy rekord? → Powiadomienie\n\nCo zyskujesz:\n→ 0 min ręcznego sprawdzania\n→ 100% kontroli nad płatnościami\n→ 3x szybsza reakcja na problemy\n→ ↑40% wyższa retencja\n\nTy trenujesz ludzi. Dashboard ogarnia resztę.\n\n🔗 fitcore.tech — darmowe testy\n\n#trenerpersonalny #nowafunkcja #fitnesstech #automatyzacja #coachautopilot #fitcore`
+      },
+    ];
+
+    // ═══════════════════════════════════════════
+    //  RENDER & DOWNLOAD
+    // ═══════════════════════════════════════════
+
+    function renderAll() {
+      const container = document.getElementById('carousels');
+
+      carousels.forEach((car, ci) => {
+        const section = document.createElement('div');
+        section.className = 'day-section';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'day-header';
+        header.innerHTML = `
+          <span class="day-badge">${car.day}</span>
+          <span class="day-title">${car.theme}</span>
+          <span class="swipe-hint">${car.slides.length} slajdów → przewiń</span>
+        `;
+        section.appendChild(header);
+
+        // Carousel strip
+        const strip = document.createElement('div');
+        strip.className = 'carousel-strip';
+
+        car.slides.forEach((slide, si) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'slide-wrap';
+
+          const num = document.createElement('div');
+          num.className = 'slide-num';
+          num.textContent = `SLAJD ${si + 1} — ${slide.label}`;
+
+          const frame = document.createElement('div');
+          frame.className = 'slide-frame';
+
+          const canvas = document.createElement('canvas');
+          canvas.width = S; canvas.height = S;
+          canvas.id = `c${ci}_s${si}`;
+          frame.appendChild(canvas);
+
+          const btn = document.createElement('button');
+          btn.className = 'slide-btn';
+          btn.textContent = 'Pobierz PNG';
+          btn.onclick = () => downloadSlide(ci, si);
+
+          wrap.appendChild(num);
+          wrap.appendChild(frame);
+          wrap.appendChild(btn);
+          strip.appendChild(wrap);
+        });
+
+        section.appendChild(strip);
+
+        // Actions row
+        const actions = document.createElement('div');
+        actions.className = 'carousel-actions';
+
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'dl-carousel';
+        dlBtn.textContent = `Pobierz całą karuzelę (${car.slides.length} slajdów)`;
+        dlBtn.onclick = () => downloadCarousel(ci);
+        actions.appendChild(dlBtn);
+
+        section.appendChild(actions);
+
+        // Caption
+        const captionBox = document.createElement('div');
+        captionBox.className = 'caption-box';
+        captionBox.innerHTML = `<div class="label">Caption (kliknij żeby skopiować)</div>${car.caption}`;
+        captionBox.onclick = () => {
+          navigator.clipboard.writeText(car.caption);
+          let c = captionBox.querySelector('.copied');
+          if (!c) { c = document.createElement('div'); c.className = 'copied'; captionBox.appendChild(c); }
+          c.textContent = '✓ Skopiowano!';
+          setTimeout(() => c.textContent = '', 2000);
+        };
+        section.appendChild(captionBox);
+
+        container.appendChild(section);
+
+        // Draw all slides
+        car.slides.forEach((slide, si) => {
+          const ctx = document.getElementById(`c${ci}_s${si}`).getContext('2d');
+          slide.draw(ctx);
+        });
+      });
+    }
+
+    function downloadSlide(ci, si) {
+      const canvas = document.getElementById(`c${ci}_s${si}`);
+      const link = document.createElement('a');
+      const day = carousels[ci].day.toLowerCase();
+      link.download = `fitcore-${day}-slajd-${si + 1}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function downloadCarousel(ci) {
+      carousels[ci].slides.forEach((_, si) => {
+        setTimeout(() => downloadSlide(ci, si), si * 300);
+      });
+    }
+
+    function downloadAll() {
+      let delay = 0;
+      carousels.forEach((car, ci) => {
+        car.slides.forEach((_, si) => {
+          setTimeout(() => downloadSlide(ci, si), delay);
+          delay += 300;
+        });
+      });
+    }
+
+    document.fonts.ready.then(() => renderAll());
+  </script>
+</body>
+</html>

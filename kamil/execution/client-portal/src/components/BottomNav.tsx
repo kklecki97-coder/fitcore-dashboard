@@ -1,4 +1,4 @@
-import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut } from 'lucide-react';
+import { Home, Zap, CalendarDays, ClipboardCheck, TrendingUp, MessageSquare, DollarSign, Settings, LogOut, UtensilsCrossed } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
@@ -17,6 +17,7 @@ const navIcons: Record<string, typeof Home> = {
   calendar: CalendarDays,
   'check-in': ClipboardCheck,
   progress: TrendingUp,
+  nutrition: UtensilsCrossed,
   messages: MessageSquare,
   invoices: DollarSign,
   settings: Settings,
@@ -34,6 +35,7 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
     'check-in': t.nav.checkIn,
     progress: t.nav.progress,
     messages: t.nav.messages,
+    nutrition: t.nav.nutrition || 'Nutrition',
     invoices: t.nav.invoices || 'Invoices',
     settings: t.nav.settings,
   };
@@ -146,9 +148,34 @@ export default function BottomNav({ currentPage, onNavigate, isMobile, onLogout,
         })}
       </div>
 
-      {/* Bottom section: invoices + settings + logout */}
+      {/* Bottom section: nutrition + invoices + settings + logout */}
       <div style={styles.bottomSection}>
         <div style={styles.divider} />
+
+        {/* Nutrition */}
+        <motion.button
+          data-tour="nav-nutrition"
+          onClick={() => onNavigate('nutrition')}
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            ...styles.sideItem,
+            color: currentPage === 'nutrition' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            background: currentPage === 'nutrition' ? 'var(--accent-primary-dim)' : 'transparent',
+          }}
+        >
+          {currentPage === 'nutrition' && (
+            <motion.div
+              layoutId="nav-indicator"
+              style={styles.activeBar}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <UtensilsCrossed size={20} style={{ opacity: currentPage === 'nutrition' ? 1 : 0.5, flexShrink: 0 }} />
+          <span style={{ fontSize: '14px', fontWeight: currentPage === 'nutrition' ? 600 : 500, opacity: currentPage === 'nutrition' ? 1 : 0.6 }}>
+            {navLabels.nutrition}
+          </span>
+        </motion.button>
 
         {/* Invoices */}
         <motion.button

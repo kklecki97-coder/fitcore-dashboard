@@ -14,6 +14,7 @@ import CalendarPage from './components/CalendarPage';
 import ProgressPage from './components/ProgressPage';
 import SettingsPage from './components/SettingsPage';
 import InvoicesPage from './components/InvoicesPage';
+import ClientNutritionPage from './components/NutritionPage';
 import OnboardingPage from './components/OnboardingPage';
 import OnboardingWalkthrough from './components/OnboardingWalkthrough';
 import { useToast } from './components/Toast';
@@ -26,7 +27,7 @@ import useIsMobile from './hooks/useIsMobile';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
 import { mockClient, mockCoachName, mockProgram, mockWorkoutLogs, mockCheckIns, mockMessages, mockSetLogs, mockWeeklySchedule } from './mockData';
-import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule, Invoice } from './types';
+import type { ClientPage, Theme, Client, Message, CheckIn, WorkoutSetLog, WorkoutProgram, WorkoutLog, WeeklySchedule, Invoice, NutritionPlan, NutritionPlanAssignment } from './types';
 
 // Toggle this to true to bypass auth and use mock data for UI development
 const USE_MOCK_DATA = false;
@@ -86,6 +87,9 @@ function App() {
     setClientUser(null);
     setCoachName('');
     setMyProgram(null);
+    setMyNutritionPlan(null);
+    setNutritionAssignment(null);
+    setPastNutritionPlans([]);
     setSetLogs([]);
     setWorkoutLogs([]);
     setCheckIns([]);
@@ -193,6 +197,9 @@ function App() {
   const [clientUser, setClientUser] = useState<Client | null>(null);
   const [coachName, setCoachName] = useState('Your Coach');
   const [myProgram, setMyProgram] = useState<WorkoutProgram | null>(null);
+  const [myNutritionPlan, setMyNutritionPlan] = useState<NutritionPlan | null>(null);
+  const [nutritionAssignment, setNutritionAssignment] = useState<NutritionPlanAssignment | null>(null);
+  const [pastNutritionPlans, setPastNutritionPlans] = useState<{ plan: NutritionPlan; assignment: NutritionPlanAssignment }[]>([]);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
@@ -333,6 +340,71 @@ function App() {
                 })),
             })),
         });
+      }
+    }
+
+    // Load nutrition plan assignments
+    const { data: nutritionAssignData } = await supabase
+      .from('nutrition_plan_assignments')
+      .select('*')
+      .eq('client_id', clientRow.id)
+      .order('assigned_at', { ascending: false });
+
+    if (nutritionAssignData && nutritionAssignData.length > 0) {
+      const planIds = [...new Set(nutritionAssignData.map(a => a.plan_id))];
+      const { data: nutritionPlansData } = await supabase
+        .from('nutrition_plans')
+        .select('*, nutrition_plan_days(*, nutrition_meals(*))')
+        .in('id', planIds);
+
+      if (nutritionPlansData) {
+        const mapPlan = (p: typeof nutritionPlansData[0]): NutritionPlan => ({
+          id: p.id,
+          title: p.title,
+          description: p.description ?? '',
+          type: p.type ?? 'flexible',
+          createdAt: p.created_at?.split('T')[0] ?? '',
+          days: ((p as Record<string, unknown>).nutrition_plan_days as Array<Record<string, unknown>> ?? [])
+            .sort((a: Record<string, unknown>, b: Record<string, unknown>) => (a.sort_order as number) - (b.sort_order as number))
+            .map((d: Record<string, unknown>) => ({
+              id: d.id as string,
+              dayLabel: d.day_label as string,
+              sortOrder: d.sort_order as number,
+              notes: (d.notes as string) ?? '',
+              meals: ((d.nutrition_meals as Array<Record<string, unknown>>) ?? [])
+                .sort((a: Record<string, unknown>, b: Record<string, unknown>) => (a.sort_order as number) - (b.sort_order as number))
+                .map((m: Record<string, unknown>) => ({
+                  id: m.id as string,
+                  mealType: m.meal_type as NutritionPlan['days'][0]['meals'][0]['mealType'],
+                  title: m.title as string,
+                  description: (m.description as string) ?? '',
+                  calories: m.calories as number | null,
+                  proteinG: m.protein_g as number | null,
+                  carbsG: m.carbs_g as number | null,
+                  fatG: m.fat_g as number | null,
+                  sortOrder: m.sort_order as number,
+                })),
+            })),
+        });
+        const mapAssign = (a: typeof nutritionAssignData[0]): NutritionPlanAssignment => ({
+          id: a.id,
+          planId: a.plan_id,
+          startDate: a.start_date,
+          endDate: a.end_date,
+          status: a.status,
+          coachNotes: a.coach_notes ?? '',
+        });
+
+        const planMap = new Map(nutritionPlansData.map(p => [p.id, mapPlan(p)]));
+        const activeAssign = nutritionAssignData.find(a => a.status === 'active');
+        if (activeAssign && planMap.has(activeAssign.plan_id)) {
+          setMyNutritionPlan(planMap.get(activeAssign.plan_id)!);
+          setNutritionAssignment(mapAssign(activeAssign));
+        }
+        const past = nutritionAssignData
+          .filter(a => a.status !== 'active' && planMap.has(a.plan_id))
+          .map(a => ({ plan: planMap.get(a.plan_id)!, assignment: mapAssign(a) }));
+        setPastNutritionPlans(past);
       }
     }
 
@@ -1142,6 +1214,7 @@ function App() {
         case 'progress': return <ProgressPageSkeleton isMobile={isMobile} />;
         case 'messages': return <MessagesPageSkeleton isMobile={isMobile} />;
         case 'calendar': return <CalendarPageSkeleton isMobile={isMobile} />;
+        case 'nutrition': return <ProgramPageSkeleton isMobile={isMobile} />;
         case 'invoices': return <InvoicesPageSkeleton isMobile={isMobile} />;
         default: return <HomePageSkeleton isMobile={isMobile} />;
       }
@@ -1232,6 +1305,17 @@ function App() {
               workoutLogs={workoutLogs}
               checkIns={checkIns}
               setLogs={setLogs}
+              coachName={coachName}
+            />
+          </ErrorBoundary>
+        );
+      case 'nutrition':
+        return (
+          <ErrorBoundary>
+            <ClientNutritionPage
+              plan={myNutritionPlan}
+              assignment={nutritionAssignment}
+              pastPlans={pastNutritionPlans}
               coachName={coachName}
             />
           </ErrorBoundary>

@@ -1,4 +1,4 @@
-import { Settings } from 'lucide-react';
+import { Settings, UtensilsCrossed } from 'lucide-react';
 import { useLang } from '../i18n';
 import type { ClientPage } from '../types';
 
@@ -36,13 +36,22 @@ export default function Header({ clientName, isMobile, onNavigate }: HeaderProps
         </button>
 
         {isMobile && onNavigate && (
-          <button
-            onClick={() => onNavigate('settings')}
-            style={styles.settingsBtn}
-            aria-label="Settings"
-          >
-            <Settings size={20} />
-          </button>
+          <>
+            <button
+              onClick={() => onNavigate('nutrition')}
+              style={styles.settingsBtn}
+              aria-label="Nutrition"
+            >
+              <UtensilsCrossed size={20} />
+            </button>
+            <button
+              onClick={() => onNavigate('settings')}
+              style={styles.settingsBtn}
+              aria-label="Settings"
+            >
+              <Settings size={20} />
+            </button>
+          </>
         )}
       </div>
     </div>

@@ -163,6 +163,47 @@ export interface Invoice {
   paymentUrl: string | null;
 }
 
-export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar' | 'invoices';
+// ── Nutrition Plan types ──
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'pre-workout' | 'post-workout';
+
+export interface NutritionMeal {
+  id: string;
+  mealType: MealType;
+  title: string;
+  description: string;
+  calories: number | null;
+  proteinG: number | null;
+  carbsG: number | null;
+  fatG: number | null;
+  sortOrder: number;
+}
+
+export interface NutritionPlanDay {
+  id: string;
+  dayLabel: string;
+  sortOrder: number;
+  notes: string;
+  meals: NutritionMeal[];
+}
+
+export interface NutritionPlan {
+  id: string;
+  title: string;
+  description: string;
+  type: 'strict' | 'flexible' | 'guidelines';
+  days: NutritionPlanDay[];
+  createdAt: string;
+}
+
+export interface NutritionPlanAssignment {
+  id: string;
+  planId: string;
+  startDate: string | null;
+  endDate: string | null;
+  status: 'active' | 'completed' | 'paused';
+  coachNotes: string;
+}
+
+export type ClientPage = 'home' | 'program' | 'check-in' | 'progress' | 'messages' | 'settings' | 'calendar' | 'invoices' | 'nutrition';
 
 export type Theme = 'dark' | 'light';

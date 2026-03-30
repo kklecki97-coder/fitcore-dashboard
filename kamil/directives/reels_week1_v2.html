@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitCore — Rolki Tydzień 1 v2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: #07090e;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #00e5c8, #00c4aa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    color: #64748b;
+    font-size: 0.95rem;
+  }
+
+  .header .version {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(0, 229, 200, 0.08);
+    border: 1px solid rgba(0, 229, 200, 0.15);
+    color: #00e5c8;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .header .changes {
+    display: block;
+    margin-top: 10px;
+    color: #4ade80;
+    font-size: 0.82rem;
+  }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .nav-btn {
+    flex-shrink: 0;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .nav-btn:hover {
+    background: rgba(0, 229, 200, 0.08);
+    border-color: rgba(0, 229, 200, 0.2);
+    color: #e2e8f0;
+  }
+
+  .nav-btn.active {
+    background: rgba(0, 229, 200, 0.12);
+    border-color: #00e5c8;
+    color: #00e5c8;
+  }
+
+  .day-label {
+    font-weight: 700;
+    margin-right: 4px;
+  }
+
+  /* Cards */
+  .reel-card {
+    display: none;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 36px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .reel-card.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reel-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+  }
+
+  .reel-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+
+  .tag-technique {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: #a5b4fc;
+  }
+
+  .tag-day {
+    background: rgba(0, 229, 200, 0.1);
+    border: 1px solid rgba(0, 229, 200, 0.2);
+    color: #00e5c8;
+  }
+
+  .tag-nosale {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+  }
+
+  .tag-softsale {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+  }
+
+  /* Sections */
+  .section { margin-bottom: 20px; }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label .label-text { color: #00e5c8; }
+
+  .section-label .timing {
+    color: #475569;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+  }
+
+  .text-box {
+    border-radius: 14px;
+    padding: 20px 24px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .text-box:hover { filter: brightness(1.15); }
+
+  .text-box p {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #cbd5e1;
+  }
+
+  .text-box p + p { margin-top: 10px; }
+
+  /* Box variants */
+  .box-hook {
+    background: rgba(0, 229, 200, 0.06);
+    border: 1px solid rgba(0, 229, 200, 0.15);
+  }
+
+  .box-hook p {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #f1f5f9;
+  }
+
+  .box-problem {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+  }
+
+  .box-insight {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .box-punch {
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+  }
+
+  .box-punch p {
+    font-weight: 600;
+    color: #fbbf24;
+  }
+
+  .box-cta {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+  }
+
+  .box-cta p {
+    font-weight: 500;
+    color: #a5b4fc;
+  }
+
+  .box-closer {
+    background: linear-gradient(135deg, rgba(0, 229, 200, 0.1), rgba(0, 196, 170, 0.06));
+    border: 1px solid rgba(0, 229, 200, 0.3);
+  }
+
+  .box-closer p {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00e5c8, #00c4aa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  .box-broll {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: default;
+  }
+
+  .box-broll:hover { filter: brightness(1); }
+
+  .box-broll p {
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  .copy-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #334155;
+    margin-top: 5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Full script */
+  .full-script-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 24px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 229, 200, 0.15);
+    background: rgba(0, 229, 200, 0.05);
+    color: #00e5c8;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .full-script-toggle:hover {
+    background: rgba(0, 229, 200, 0.1);
+    border-color: rgba(0, 229, 200, 0.3);
+  }
+
+  .full-script {
+    display: none;
+    margin-top: 16px;
+    background: rgba(0, 229, 200, 0.04);
+    border: 1px solid rgba(0, 229, 200, 0.1);
+    border-radius: 14px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .full-script:hover { background: rgba(0, 229, 200, 0.07); }
+
+  .full-script.visible { display: block; animation: fadeIn 0.3s ease; }
+
+  .full-script p {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #e2e8f0;
+  }
+
+  .full-script p + p { margin-top: 12px; }
+
+  /* Toast */
+  .copied-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #00e5c8;
+    color: #07090e;
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
+
+  .copied-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Summary */
+  .summary {
+    margin-top: 40px;
+  }
+
+  .summary h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 16px;
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .summary-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .summary-table td {
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .summary-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+  /* Checklist */
+  .checklist {
+    margin-top: 32px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 28px 32px;
+  }
+
+  .checklist h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 16px;
+  }
+
+  .checklist label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 0.92rem;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+
+  .checklist label:hover { color: #e2e8f0; }
+
+  .checklist input[type="checkbox"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .checklist input[type="checkbox"]:checked {
+    background: #00e5c8;
+    border-color: #00e5c8;
+  }
+
+  .checklist input[type="checkbox"]:checked::after {
+    content: '\2713';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #07090e;
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+
+  .checklist input[type="checkbox"]:checked + span {
+    color: #00e5c8;
+    text-decoration: line-through;
+    text-decoration-color: rgba(0, 229, 200, 0.3);
+  }
+
+  /* Structure guide */
+  .structure {
+    margin-top: 32px;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    border-radius: 20px;
+    padding: 28px 32px;
+  }
+
+  .structure h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 16px;
+  }
+
+  .structure-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .structure-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #00e5c8;
+    min-width: 55px;
+    font-weight: 500;
+  }
+
+  .structure-bar {
+    height: 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .structure-name {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    color: #334155;
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 20px 12px; }
+    .reel-card { padding: 24px 18px; }
+    .header h1 { font-size: 1.6rem; }
+    .reel-title { font-size: 1.2rem; }
+    .box-hook p { font-size: 1rem; }
+    .checklist, .structure { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1>FitCore — Rolki Tydzień 1</h1>
+    <p>5 rolek · poniedziałek–piątek · zaufanie + uświadomienie · zero agresywnej sprzedaży</p>
+    <div class="version">v2 — 31.03 – 04.04.2026</div>
+    <span class="changes">v2: mocniejsze hooki, konkretniejsze CTA, lepsza struktura</span>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showReel(0)"><span class="day-label">Pn</span> Pół dnia na Excelu</button>
+    <button class="nav-btn" onclick="showReel(1)"><span class="day-label">Wt</span> Problem to chaos</button>
+    <button class="nav-btn" onclick="showReel(2)"><span class="day-label">Śr</span> Wszystko na WhatsApp</button>
+    <button class="nav-btn" onclick="showReel(3)"><span class="day-label">Cz</span> Nie wiesz którego</button>
+    <button class="nav-btn" onclick="showReel(4)"><span class="day-label">Pt</span> Zero klientów</button>
+  </div>
+
+  <!-- PONIEDZIAŁEK -->
+  <div class="reel-card active" id="reel-0">
+    <div class="reel-title">Pół dnia na Excelu</div>
+    <div class="reel-meta">
+      <span class="tag tag-day">Poniedziałek 31.03</span>
+      <span class="tag tag-technique">Emotional Granularity</span>
+      <span class="tag tag-technique">Hard Truth</span>
+      <span class="tag tag-nosale">Bez sprzedaży</span>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">HOOK</span><span class="timing">0–2s</span></div>
+      <div class="text-box box-hook" onclick="copyText(this)">
+        <p>Trenujesz ludzi online? To powiedz mi dlaczego pół dnia spędzasz na Excelu zamiast na trenowaniu.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PROBLEM</span><span class="timing">2–6s</span></div>
+      <div class="text-box box-problem" onclick="copyText(this)">
+        <p>Pisanie planów — to nie trening. Sprawdzanie kto zapłacił — to nie trening. Odpisywanie na 3 komunikatorach — to nie trening.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">ZMIANA MYŚLENIA</span><span class="timing">6–15s</span></div>
+      <div class="text-box box-insight" onclick="copyText(this)">
+        <p>Zostałeś trenerem żeby trenować ludzi. A spędzasz pół dnia na administracji.</p>
+        <p>To nie jest zarzut. To jest rzeczywistość większości trenerów online.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PUNCHLINE</span></div>
+      <div class="text-box box-punch" onclick="copyText(this)">
+        <p>Pytanie czy chcesz żeby tak zostało.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CTA</span></div>
+      <div class="text-box box-cta" onclick="copyText(this)">
+        <p>Napisz liczbę — ile godzin dziennie tracisz na admin?</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CLOSER</span><span class="timing">+ logo FC</span></div>
+      <div class="text-box box-closer" onclick="copyText(this)">
+        <p>Ty trenujesz. My ogarniamy resztę.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">B-ROLL</span></div>
+      <div class="text-box box-broll">
+        <p>Szybki montaż — ktoś pisze w Excelu, scrolluje WhatsApp, szuka w notatkach → kontrast z treningiem / rozmową z klientem.</p>
+      </div>
+    </div>
+
+    <button class="full-script-toggle" onclick="toggleScript(0)">Pokaż cały skrypt do nagrania</button>
+    <div class="full-script" id="script-0" onclick="copyText(this)">
+      <p>Trenujesz ludzi online? To powiedz mi dlaczego pół dnia spędzasz na Excelu zamiast na trenowaniu.</p>
+      <p>Pisanie planów — to nie trening. Sprawdzanie kto zapłacił — to nie trening. Odpisywanie na 3 komunikatorach — to nie trening.</p>
+      <p>Zostałeś trenerem żeby trenować ludzi. A spędzasz pół dnia na administracji. To nie jest zarzut. To jest rzeczywistość większości trenerów online.</p>
+      <p>Pytanie czy chcesz żeby tak zostało.</p>
+      <p>Napisz liczbę — ile godzin dziennie tracisz na admin?</p>
+      <p style="font-weight: 700; color: #00e5c8;">Ty trenujesz. My ogarniamy resztę.</p>
+      <p style="margin-top: 16px; font-weight: 700; color: #00e5c8;">Ty trenujesz. My ogarniamy resztę.</p>
+    </div>
+  </div>
+
+  <!-- WTOREK -->
+  <div class="reel-card" id="reel-1">
+    <div class="reel-title">Problem nie jest w ilości</div>
+    <div class="reel-meta">
+      <span class="tag tag-day">Wtorek 01.04</span>
+      <span class="tag tag-technique">Hard Truth</span>
+      <span class="tag tag-technique">Cognitive Dissonance</span>
+      <span class="tag tag-nosale">Bez sprzedaży</span>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">HOOK</span><span class="timing">0–2s</span></div>
+      <div class="text-box box-hook" onclick="copyText(this)">
+        <p>Masz klientów online ale dalej nie rośniesz? Bo problem nie jest w ilości — jest w chaosie.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PROBLEM</span><span class="timing">2–6s</span></div>
+      <div class="text-box box-problem" onclick="copyText(this)">
+        <p>Przy 20 klientach gubisz wiadomości, zapominasz o check-inach i nie wiesz kto zapłacił w tym miesiącu.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">ZMIANA MYŚLENIA</span><span class="timing">6–15s</span></div>
+      <div class="text-box box-insight" onclick="copyText(this)">
+        <p>To co się stanie przy 40? Więcej klientów z chaotycznym systemem to nie jest wzrost. To szybsza droga do wypalenia.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PUNCHLINE</span></div>
+      <div class="text-box box-punch" onclick="copyText(this)">
+        <p>Najpierw ogarnij fundament. Potem skaluj.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CTA</span></div>
+      <div class="text-box box-cta" onclick="copyText(this)">
+        <p>Napisz TAK jeśli to znasz, albo NIE jeśli u ciebie jest inaczej.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CLOSER</span><span class="timing">+ logo FC</span></div>
+      <div class="text-box box-closer" onclick="copyText(this)">
+        <p>Ty trenujesz. My ogarniamy resztę.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">B-ROLL</span></div>
+      <div class="text-box box-broll">
+        <p>Excel z danymi klientów, telefon z milionem powiadomień.</p>
+      </div>
+    </div>
+
+    <button class="full-script-toggle" onclick="toggleScript(1)">Pokaż cały skrypt do nagrania</button>
+    <div class="full-script" id="script-1" onclick="copyText(this)">
+      <p>Masz klientów online ale dalej nie rośniesz? Bo problem nie jest w ilości — jest w chaosie.</p>
+      <p>Przy 20 klientach gubisz wiadomości, zapominasz o check-inach i nie wiesz kto zapłacił w tym miesiącu.</p>
+      <p>To co się stanie przy 40? Więcej klientów z chaotycznym systemem to nie jest wzrost. To szybsza droga do wypalenia.</p>
+      <p>Najpierw ogarnij fundament. Potem skaluj.</p>
+      <p>Napisz TAK jeśli to znasz, albo NIE jeśli u ciebie jest inaczej.</p>
+      <p style="font-weight: 700; color: #00e5c8;">Ty trenujesz. My ogarniamy resztę.</p>
+    </div>
+  </div>
+
+  <!-- ŚRODA -->
+  <div class="reel-card" id="reel-2">
+    <div class="reel-title">Wszystko na WhatsApp</div>
+    <div class="reel-meta">
+      <span class="tag tag-day">Środa 02.04</span>
+      <span class="tag tag-technique">Pattern Break Question</span>
+      <span class="tag tag-technique">Loss Aversion</span>
+      <span class="tag tag-nosale">Bez sprzedaży</span>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">HOOK</span><span class="timing">0–2s</span></div>
+      <div class="text-box box-hook" onclick="copyText(this)">
+        <p>Robisz wszystko przez WhatsApp? To odpowiedz sobie na jedno pytanie.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PROBLEM</span><span class="timing">2–6s</span></div>
+      <div class="text-box box-problem" onclick="copyText(this)">
+        <p>Gdybyś jutro stracił dostęp do WhatsApp — co zostaje z twojego biznesu?</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">ZMIANA MYŚLENIA</span><span class="timing">6–15s</span></div>
+      <div class="text-box box-insight" onclick="copyText(this)">
+        <p>Plany treningowe — wysyłałeś tam. Rozmowy z klientami — tam. Zdjęcia postępów — tam. Umówione terminy — tam.</p>
+        <p>Jeden komunikator pada i nie masz nic.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PUNCHLINE</span></div>
+      <div class="text-box box-punch" onclick="copyText(this)">
+        <p>Większość trenerów online trzyma cały biznes w jednej apce która do tego nie jest przeznaczona. Warto się nad tym zastanowić.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CTA</span></div>
+      <div class="text-box box-cta" onclick="copyText(this)">
+        <p>Napisz 'WhatsApp' jeśli tam trzymasz wszystko. Bez oceniania.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CLOSER</span><span class="timing">+ logo FC</span></div>
+      <div class="text-box box-closer" onclick="copyText(this)">
+        <p>Ty trenujesz. My ogarniamy resztę.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">B-ROLL</span></div>
+      <div class="text-box box-broll">
+        <p>Ekran WhatsApp z listą czatów → czarny ekran „brak dostępu" → puste biurko.</p>
+      </div>
+    </div>
+
+    <button class="full-script-toggle" onclick="toggleScript(2)">Pokaż cały skrypt do nagrania</button>
+    <div class="full-script" id="script-2" onclick="copyText(this)">
+      <p>Robisz wszystko przez WhatsApp? To odpowiedz sobie na jedno pytanie.</p>
+      <p>Gdybyś jutro stracił dostęp do WhatsApp — co zostaje z twojego biznesu?</p>
+      <p>Plany treningowe — wysyłałeś tam. Rozmowy z klientami — tam. Zdjęcia postępów — tam. Umówione terminy — tam. Jeden komunikator pada i nie masz nic.</p>
+      <p>Większość trenerów online trzyma cały biznes w jednej apce która do tego nie jest przeznaczona. Warto się nad tym zastanowić.</p>
+      <p>Napisz 'WhatsApp' jeśli tam trzymasz wszystko. Bez oceniania.</p>
+      <p style="font-weight: 700; color: #00e5c8;">Ty trenujesz. My ogarniamy resztę.</p>
+    </div>
+  </div>
+
+  <!-- CZWARTEK -->
+  <div class="reel-card" id="reel-3">
+    <div class="reel-title">Nie wiesz którego klienta stracisz</div>
+    <div class="reel-meta">
+      <span class="tag tag-day">Czwartek 03.04</span>
+      <span class="tag tag-technique">Emotional Granularity</span>
+      <span class="tag tag-technique">Psychological Distance</span>
+      <span class="tag tag-nosale">Bez sprzedaży</span>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">HOOK</span><span class="timing">0–2s</span></div>
+      <div class="text-box box-hook" onclick="copyText(this)">
+        <p>Stracisz klienta w tym miesiącu. I nawet nie wiesz którego.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PROBLEM</span><span class="timing">2–6s</span></div>
+      <div class="text-box box-problem" onclick="copyText(this)">
+        <p>Najpierw przestaje logować treningi. Potem odpowiada krócej. Potem pomija check-in. Potem cisza.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">ZMIANA MYŚLENIA</span><span class="timing">6–15s</span></div>
+      <div class="text-box box-insight" onclick="copyText(this)">
+        <p>I w końcu dostajesz wiadomość — rezygnuję. Ale ta decyzja nie padła tego dnia. Padła 3 tygodnie wcześniej. Kiedy poczuł że nikt nie patrzy.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PUNCHLINE</span></div>
+      <div class="text-box box-punch" onclick="copyText(this)">
+        <p>Wystarczyło jedno pytanie w odpowiednim momencie. „Hej, wszystko ok? Widzę że dawno nie było treningu." Tyle.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CTA</span></div>
+      <div class="text-box box-cta" onclick="copyText(this)">
+        <p>Napisz kiedy ostatnio sprawdziłeś aktywność klientów — tydzień temu? Miesiąc? Nigdy?</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CLOSER</span><span class="timing">+ logo FC</span></div>
+      <div class="text-box box-closer" onclick="copyText(this)">
+        <p>Ty trenujesz. My ogarniamy resztę.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">B-ROLL</span></div>
+      <div class="text-box box-broll">
+        <p>Telefon z powiadomieniem „klient rezygnuje" → cofnięcie w czasie → puste logi treningowe.</p>
+      </div>
+    </div>
+
+    <button class="full-script-toggle" onclick="toggleScript(3)">Pokaż cały skrypt do nagrania</button>
+    <div class="full-script" id="script-3" onclick="copyText(this)">
+      <p>Stracisz klienta w tym miesiącu. I nawet nie wiesz którego.</p>
+      <p>Najpierw przestaje logować treningi. Potem odpowiada krócej. Potem pomija check-in. Potem cisza.</p>
+      <p>I w końcu dostajesz wiadomość — rezygnuję. Ale ta decyzja nie padła tego dnia. Padła 3 tygodnie wcześniej. Kiedy poczuł że nikt nie patrzy.</p>
+      <p>Wystarczyło jedno pytanie w odpowiednim momencie. „Hej, wszystko ok? Widzę że dawno nie było treningu." Tyle.</p>
+      <p>Napisz kiedy ostatnio sprawdziłeś aktywność klientów — tydzień temu? Miesiąc? Nigdy?</p>
+      <p style="font-weight: 700; color: #00e5c8;">Ty trenujesz. My ogarniamy resztę.</p>
+    </div>
+  </div>
+
+  <!-- PIĄTEK -->
+  <div class="reel-card" id="reel-4">
+    <div class="reel-title">Zero klientów, jeden cel</div>
+    <div class="reel-meta">
+      <span class="tag tag-day">Piątek 04.04</span>
+      <span class="tag tag-technique">Pratfall Effect</span>
+      <span class="tag tag-technique">Reactance</span>
+      <span class="tag tag-technique">Cognitive Fluency</span>
+      <span class="tag tag-softsale">Delikatnie — demo</span>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">HOOK</span><span class="timing">0–2s</span></div>
+      <div class="text-box box-hook" onclick="copyText(this)">
+        <p>Zbudowaliśmy narzędzie dla trenerów online. I nie mamy jeszcze ani jednego klienta.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PROBLEM</span><span class="timing">2–6s</span></div>
+      <div class="text-box box-problem" onclick="copyText(this)">
+        <p>Nie jesteśmy korporacją. Nie mamy inwestorów. Jesteśmy dwóch gości którzy widzą że trenerzy online zasługują na lepsze narzędzia.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">ZMIANA MYŚLENIA</span><span class="timing">6–15s</span></div>
+      <div class="text-box box-insight" onclick="copyText(this)">
+        <p>Jestem Kamil, razem z Kubą budujemy FitCore. Dashboard do zarządzania klientami — treningi, postępy, płatności, czat, wszystko w jednym panelu.</p>
+        <p>Nie wiem czy to jest dla ciebie.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">PUNCHLINE</span></div>
+      <div class="text-box box-punch" onclick="copyText(this)">
+        <p>Ale jeśli chcesz zobaczyć — link jest w bio. A jeśli masz feedback — napisz. Dosłownie odpiszę osobiście.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CTA</span></div>
+      <div class="text-box box-cta" onclick="copyText(this)">
+        <p>Napisz 'demo' a wyślę ci link w DM.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">CLOSER</span><span class="timing">+ logo FC</span></div>
+      <div class="text-box box-closer" onclick="copyText(this)">
+        <p>Ty trenujesz. My ogarniamy resztę.</p>
+      </div>
+      <div class="copy-hint">kliknij aby skopiować</div>
+    </div>
+
+    <div class="section">
+      <div class="section-label"><span class="label-text">B-ROLL</span></div>
+      <div class="text-box box-broll">
+        <p>Kamil przy komputerze → ekran z kodem → dashboard na telefonie → logo FitCore.</p>
+      </div>
+    </div>
+
+    <button class="full-script-toggle" onclick="toggleScript(4)">Pokaż cały skrypt do nagrania</button>
+    <div class="full-script" id="script-4" onclick="copyText(this)">
+      <p>Zbudowaliśmy narzędzie dla trenerów online. I nie mamy jeszcze ani jednego klienta.</p>
+      <p>Nie jesteśmy korporacją. Nie mamy inwestorów. Jesteśmy dwóch gości którzy widzą że trenerzy online zasługują na lepsze narzędzia.</p>
+      <p>Jestem Kamil, razem z Kubą budujemy FitCore. Dashboard do zarządzania klientami — treningi, postępy, płatności, czat, wszystko w jednym panelu. Nie wiem czy to jest dla ciebie.</p>
+      <p>Ale jeśli chcesz zobaczyć — link jest w bio. A jeśli masz feedback — napisz. Dosłownie odpiszę osobiście.</p>
+      <p>Napisz 'demo' a wyślę ci link w DM.</p>
+      <p style="font-weight: 700; color: #00e5c8;">Ty trenujesz. My ogarniamy resztę.</p>
+    </div>
+  </div>
+
+  <!-- STRUCTURE -->
+  <div class="structure">
+    <h3>Struktura każdej rolki</h3>
+    <div class="structure-row">
+      <span class="structure-time">0–2s</span>
+      <div class="structure-bar" style="width: 60px; background: linear-gradient(90deg, #00e5c8, #00c4aa);"></div>
+      <span class="structure-name">Hook — zatrzymaj scroll</span>
+    </div>
+    <div class="structure-row">
+      <span class="structure-time">2–6s</span>
+      <div class="structure-bar" style="width: 100px; background: linear-gradient(90deg, #ef4444, #dc2626);"></div>
+      <span class="structure-name">Problem — uderz w ból</span>
+    </div>
+    <div class="structure-row">
+      <span class="structure-time">6–15s</span>
+      <div class="structure-bar" style="width: 200px; background: linear-gradient(90deg, #64748b, #94a3b8);"></div>
+      <span class="structure-name">Zmiana myślenia — insight</span>
+    </div>
+    <div class="structure-row">
+      <span class="structure-time">15–20s</span>
+      <div class="structure-bar" style="width: 80px; background: linear-gradient(90deg, #fbbf24, #f59e0b);"></div>
+      <span class="structure-name">Punchline — mocne zamknięcie</span>
+    </div>
+    <div class="structure-row">
+      <span class="structure-time">20–25s</span>
+      <div class="structure-bar" style="width: 80px; background: linear-gradient(90deg, #6366f1, #818cf8);"></div>
+      <span class="structure-name">CTA — konkretna akcja</span>
+    </div>
+    <div class="structure-row">
+      <span class="structure-time">25–28s</span>
+      <div class="structure-bar" style="width: 50px; background: linear-gradient(90deg, #00e5c8, #00c4aa);"></div>
+      <span class="structure-name">Closer — „Ty trenujesz. My ogarniamy resztę." + logo FC</span>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary">
+    <h3>Podsumowanie tygodnia</h3>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Dzień</th>
+          <th>Temat</th>
+          <th>Techniki</th>
+          <th>Sprzedaż?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pn</td>
+          <td>Pół dnia na Excelu</td>
+          <td>Emotional Granularity + Hard Truth</td>
+          <td style="color: #4ade80">Nie</td>
+        </tr>
+        <tr>
+          <td>Wt</td>
+          <td>Problem to chaos</td>
+          <td>Hard Truth + Cognitive Dissonance</td>
+          <td style="color: #4ade80">Nie</td>
+        </tr>
+        <tr>
+          <td>Śr</td>
+          <td>Wszystko na WhatsApp</td>
+          <td>Pattern Break + Loss Aversion</td>
+          <td style="color: #4ade80">Nie</td>
+        </tr>
+        <tr>
+          <td>Cz</td>
+          <td>Nie wiesz którego stracisz</td>
+          <td>Emotional Granularity + Psych. Distance</td>
+          <td style="color: #4ade80">Nie</td>
+        </tr>
+        <tr>
+          <td>Pt</td>
+          <td>Zero klientów, jeden cel</td>
+          <td>Pratfall + Reactance + Cognitive Fluency</td>
+          <td style="color: #fbbf24">Delikatnie</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="checklist">
+    <h3>Checklist przed publikacją</h3>
+    <label><input type="checkbox"><span>Hook w pierwszych 2 sekundach — tekst na ekranie + mówisz</span></label>
+    <label><input type="checkbox"><span>Napisy PL na całości</span></label>
+    <label><input type="checkbox"><span>Logo FC w rogu</span></label>
+    <label><input type="checkbox"><span>B-roll przeplata twarz do kamery</span></label>
+    <label><input type="checkbox"><span>Konkretne CTA — nie „napisz" ale „napisz X"</span></label>
+    <label><input type="checkbox"><span>25–30 sekund max</span></label>
+    <label><input type="checkbox"><span>Trending audio lub lo-fi beat w tle</span></label>
+    <label><input type="checkbox"><span>Struktura: Hook → Problem → Insight → Punchline → CTA → Closer</span></label>
+    <label><input type="checkbox"><span>Closer na końcu: „Ty trenujesz. My ogarniamy resztę." + logo FC na ekranie</span></label>
+  </div>
+
+  <div class="footer">
+    FitCore — 5 rolek · 5 dni · zero wciskania · budujemy zaufanie · v2
+  </div>
+
+</div>
+
+<div class="copied-toast" id="toast">Skopiowano!</div>
+
+<script>
+  function showReel(index) {
+    document.querySelectorAll('.reel-card').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('reel-' + index).classList.add('active');
+    document.querySelectorAll('.nav-btn')[index].classList.add('active');
+  }
+
+  function copyText(element) {
+    const text = element.innerText.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1500);
+    });
+  }
+
+  function toggleScript(index) {
+    const script = document.getElementById('script-' + index);
+    script.classList.toggle('visible');
+    const btn = script.previousElementSibling;
+    btn.textContent = script.classList.contains('visible') ? 'Schowaj skrypt' : 'Pokaż cały skrypt do nagrania';
+  }
+</script>
+
+</body>
+</html>

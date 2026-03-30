@@ -6,6 +6,12 @@ export const pl: Translations = {
     description: 'Przestań żonglować arkuszami i WhatsAppem. FitCore to platforma, dzięki której prowadzisz coaching jak profesjonalista - klienci, treningi, płatności, analityka w jednym miejscu.',
     titleCheckout: 'FitCore - Zacznij za darmo, bez karty',
     descCheckout: 'Przetestuj FitCore za darmo przez 14 dni. Zero ryzyka, zero zobowiązań. Pełen dostęp do platformy od pierwszej minuty.',
+    titleContact: 'Kontakt \u2014 FitCore',
+    descContact: 'Masz pytania o FitCore? Napisz do nas. Odpowiadamy w ciągu 24 godzin.',
+    titleRegister: 'Załóż konto \u2014 FitCore',
+    descRegister: 'Zarejestruj się w FitCore i zacznij 14-dniowy darmowy trial. Bez karty kredytowej.',
+    titleLogin: 'Zaloguj się \u2014 FitCore',
+    descLogin: 'Zaloguj się do swojego panelu trenerskiego FitCore.',
   },
 
   nav: {

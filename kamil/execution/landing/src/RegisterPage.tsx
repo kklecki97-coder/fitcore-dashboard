@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, User, Mail, Lock, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -162,7 +163,15 @@ export default function RegisterPage() {
     e.target.style.borderColor = 'rgba(255, 255, 255, 0.06)';
   }
 
+  const prefix = lang === 'pl' ? '/pl' : '';
+
   return (
+    <>
+    <Helmet>
+      <title>{t.meta.titleRegister}</title>
+      <meta name="description" content={t.meta.descRegister} />
+      <link rel="canonical" href={`https://fitcore.tech${prefix}/register`} />
+    </Helmet>
     <div style={{
       minHeight: '100vh',
       display: 'flex',
@@ -807,5 +816,6 @@ export default function RegisterPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }

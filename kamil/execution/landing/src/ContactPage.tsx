@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Send, CheckCircle2, Mail, Loader2 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { useLang } from './i18n';
 import { supabase } from './lib/supabase';
 
 export default function ContactPage() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const homeUrl = lang === 'pl' ? '/pl/' : '/';
 
   const [name, setName] = useState('');
@@ -48,7 +49,18 @@ export default function ContactPage() {
     boxSizing: 'border-box',
   };
 
+  const prefix = lang === 'pl' ? '/pl' : '';
+
   return (
+    <>
+    <Helmet>
+      <title>{t.meta.titleContact}</title>
+      <meta name="description" content={t.meta.descContact} />
+      <link rel="canonical" href={`https://fitcore.tech${prefix}/contact`} />
+      <meta property="og:title" content={t.meta.titleContact} />
+      <meta property="og:description" content={t.meta.descContact} />
+      <meta property="og:url" content={`https://fitcore.tech${prefix}/contact`} />
+    </Helmet>
     <div style={{
       minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)',
       fontFamily: 'var(--font-display)',
@@ -198,5 +210,6 @@ export default function ContactPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

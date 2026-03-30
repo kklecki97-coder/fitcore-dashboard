@@ -583,6 +583,14 @@ export default function App() {
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 {t.pain.card1Body}
               </p>
+              <Link to={lang === 'pl' ? '/pl/blog/automate-payments-and-workouts' : '/blog/automate-payments-and-workouts'} style={{
+                fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', textDecoration: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 16,
+                opacity: 0.7, transition: 'opacity 0.2s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
+              >{lang === 'pl' ? 'Jak to rozwiązać →' : 'How to fix this →'}</Link>
             </GlassCard>
 
             {/* Card 2 - The Perception Gap (slightly elevated) */}
@@ -606,6 +614,14 @@ export default function App() {
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 {t.pain.card2Body}
               </p>
+              <Link to={lang === 'pl' ? '/pl/blog/why-excel-is-not-enough-for-fitness-coaching' : '/blog/why-excel-is-not-enough-for-fitness-coaching'} style={{
+                fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', textDecoration: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 16,
+                opacity: 0.7, transition: 'opacity 0.2s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
+              >{lang === 'pl' ? 'Dlaczego Excel nie wystarczy →' : 'Why spreadsheets fail →'}</Link>
             </GlassCard>
 
             {/* Card 3 - The Invisible Ceiling (climax - strongest styling) */}
@@ -630,6 +646,14 @@ export default function App() {
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 {t.pain.card3Body}
               </p>
+              <Link to={lang === 'pl' ? '/pl/blog/how-to-manage-clients-as-personal-trainer' : '/blog/how-to-manage-clients-as-personal-trainer'} style={{
+                fontSize: 12, fontWeight: 600, color: 'var(--accent-primary)', textDecoration: 'none',
+                display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 16,
+                opacity: 0.7, transition: 'opacity 0.2s',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.7')}
+              >{lang === 'pl' ? 'Jak przebić ten sufit →' : 'How to break through →'}</Link>
             </GlassCard>
           </div>
         </div>
@@ -711,6 +735,7 @@ export default function App() {
                 bg: 'rgba(239, 68, 68, 0.12)',
                 border: '1px solid rgba(239, 68, 68, 0.2)',
                 gradient: 'linear-gradient(160deg, rgba(239, 68, 68, 0.04) 0%, var(--bg-card) 60%)',
+                blogSlug: 'automate-payments-and-workouts',
               },
               {
                 icon: DollarSign,
@@ -720,6 +745,7 @@ export default function App() {
                 bg: 'rgba(245, 158, 11, 0.12)',
                 border: '1px solid rgba(245, 158, 11, 0.2)',
                 gradient: 'linear-gradient(160deg, rgba(245, 158, 11, 0.04) 0%, var(--bg-card) 60%)',
+                blogSlug: 'why-excel-is-not-enough-for-fitness-coaching',
               },
               {
                 icon: UserMinus,
@@ -729,6 +755,7 @@ export default function App() {
                 bg: 'rgba(99, 102, 241, 0.12)',
                 border: '1px solid rgba(99, 102, 241, 0.25)',
                 gradient: 'linear-gradient(160deg, rgba(99, 102, 241, 0.06) 0%, var(--bg-card) 60%)',
+                blogSlug: 'how-to-manage-clients-as-personal-trainer',
               },
               {
                 icon: AlertTriangle,
@@ -738,6 +765,7 @@ export default function App() {
                 bg: 'rgba(0, 229, 200, 0.1)',
                 border: '1px solid rgba(0, 229, 200, 0.2)',
                 gradient: 'linear-gradient(160deg, rgba(0, 229, 200, 0.04) 0%, var(--bg-card) 60%)',
+                blogSlug: 'best-tools-for-fitness-trainers-2026',
               },
             ].map((stat, i) => (
               <GlassCard key={i} delay={i * 0.08} style={{
@@ -767,6 +795,13 @@ export default function App() {
                 }}>
                   {stat.followup}
                 </div>
+                <Link to={`${lang === 'pl' ? '/pl' : ''}/blog/${stat.blogSlug}`} style={{
+                  fontSize: 11, fontWeight: 600, color: 'var(--accent-primary)', textDecoration: 'none',
+                  marginTop: 14, opacity: 0.6, transition: 'opacity 0.2s',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = '0.6')}
+                >{lang === 'pl' ? 'Czytaj więcej →' : 'Learn more →'}</Link>
               </GlassCard>
             ))}
           </div>

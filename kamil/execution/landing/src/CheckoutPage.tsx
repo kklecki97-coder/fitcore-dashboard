@@ -5,6 +5,7 @@ import {
   ArrowRight, ArrowLeft, Shield,
   Users, Dumbbell, MessageSquare, BarChart3, Zap, AlertTriangle,
 } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import { useLang } from './i18n';
 import { useAuth } from './auth';
 
@@ -33,8 +34,18 @@ export default function CheckoutPage() {
   const registerUrl = lang === 'pl' ? '/pl/register' : '/register';
   const accountUrl = lang === 'pl' ? '/pl/account' : '/account';
   const tc = t.checkout;
+  const prefix = lang === 'pl' ? '/pl' : '';
 
   return (
+    <>
+    <Helmet>
+      <title>{t.meta.titleCheckout}</title>
+      <meta name="description" content={t.meta.descCheckout} />
+      <link rel="canonical" href={`https://fitcore.tech${prefix}/checkout`} />
+      <meta property="og:title" content={t.meta.titleCheckout} />
+      <meta property="og:description" content={t.meta.descCheckout} />
+      <meta property="og:url" content={`https://fitcore.tech${prefix}/checkout`} />
+    </Helmet>
     <div style={{ minHeight: '100vh', position: 'relative' }}>
       {/* Ambient glow */}
       <div style={{
@@ -502,5 +513,6 @@ export default function CheckoutPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }

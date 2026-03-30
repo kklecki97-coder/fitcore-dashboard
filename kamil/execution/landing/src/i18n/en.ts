@@ -4,6 +4,12 @@ export const en = {
     description: 'Custom-built coaching dashboards for fitness professionals. Your clients, programs, and revenue in one branded platform.',
     titleCheckout: 'FitCore \u2014 Start Your Free Trial',
     descCheckout: 'Try FitCore free for 14 days. No credit card required. Full coaching platform access.',
+    titleContact: 'Contact Us \u2014 FitCore',
+    descContact: 'Have questions about FitCore? Get in touch. We reply within 24 hours.',
+    titleRegister: 'Create Your Account \u2014 FitCore',
+    descRegister: 'Sign up for FitCore and start your 14-day free trial. No credit card required.',
+    titleLogin: 'Sign In \u2014 FitCore',
+    descLogin: 'Log in to your FitCore coaching dashboard.',
   },
 
   nav: {
